@@ -1113,7 +1113,15 @@ class GPUMemoryValidator(ConfigValidator):
     """
 
     def _format_alert_box(self, title: str, message_lines: list) -> str:
-        """Generate a clean, aligned ASCII border box for terminal alerts."""
+        """Generate a clean, aligned ASCII border box for terminal alerts.
+
+        Args:
+            title (str): The title to display at the top of the alert box.
+            message_lines (list of str): List of message lines to include in the box body.
+
+        Returns:
+            str: A formatted multi-line string representing the bordered alert box.
+        """
         # Combine title and all message lines to compute max width
         all_lines = [title] + message_lines
         max_content_width = max(len(line) for line in all_lines)
@@ -1134,6 +1142,14 @@ class GPUMemoryValidator(ConfigValidator):
         return "\n".join(lines)
 
     def validate(self, config: Config) -> None:
+        """Validate GPU memory usage based on the provided configuration.
+
+        Skips validation if suggestions are disabled or if model tinker mode is enabled.
+        Only runs memory validation for 'train' or 'both' modes.
+
+        Args:
+            config (Config): The global configuration object.
+        """
         if config.ignore_validator_suggestions:
             return
 
@@ -1145,6 +1161,13 @@ class GPUMemoryValidator(ConfigValidator):
             self.validate_trainer_memory_usage(config)
 
     def validate_trainer_memory_usage(self, config: Config) -> None:
+        """Perform GPU memory validation for trainer components.
+
+        Detects CUDA availability and delegates to FSDP-specific checks if applicable.
+
+        Args:
+            config (Config): The global configuration object.
+        """
         import torch
 
         if not torch.cuda.is_available():
@@ -1164,6 +1187,21 @@ class GPUMemoryValidator(ConfigValidator):
             self.logger.info("GPU memory check skipped for non-FSDP strategies.")
 
     def _get_model_params_num_and_config(self, model_path: str) -> Tuple[int, Any]:
+        """Load model configuration and estimate total parameter count without loading weights.
+
+        Uses `accelerate.init_empty_weights()` to avoid GPU memory allocation during inspection.
+
+        Args:
+            model_path (str): Path or identifier for the Hugging Face model.
+
+        Returns:
+            Tuple[int, Any]: A tuple containing:
+                - Total number of model parameters (int)
+                - Hugging Face model configuration object (Any)
+
+        Raises:
+            AssertionError: If no parameters are found in the model.
+        """
         import torch
         import transformers
         from accelerate import init_empty_weights
@@ -1181,6 +1219,37 @@ class GPUMemoryValidator(ConfigValidator):
         fsdp_strategy: str,
         fsdp_config: "FSDPConfig",
     ) -> Tuple[float, float, float, int]:
+        """Estimate memory usage for model parameters and optimizer states under FSDP.
+
+        This function calculates memory consumption in three different scenarios:
+
+        1. **Running memory**: Memory used when a module is actively processing (forward/backward pass)
+        2. **Idle memory**: Memory used when a module is not active but still holds some state
+        3. **Optimizer step memory**: Additional memory required during the optimizer update step
+
+        The estimates account for FSDP sharding, mixed precision training, and offloading configurations.
+        Memory calculations are based on empirical observations and simplified formulas that consider:
+        - Parameter storage (weights)
+        - Gradient storage
+        - Optimizer state (typically 12 bytes per parameter for Adam-like optimizers)
+        - Data type precision (fp16/bf16 vs fp32)
+
+        Args:
+            params_num (int): Total number of model parameters across all layers.
+            fsdp_strategy (str): FSDP implementation strategy ('fsdp' or 'fsdp2').
+            fsdp_config (FSDPConfig): Configuration object containing FSDP settings including:
+                - mixed_precision settings
+                - sharding configuration (fsdp_size)
+                - offloading options
+                - reshard_after_forward setting
+
+        Returns:
+            Tuple[float, float, float, int]: A tuple containing:
+                - running_memory (float): Memory in bytes during active computation
+                - idle_memory (float): Memory in bytes when module is inactive
+                - optim_step_memory (float): Peak memory in bytes during optimizer.step()
+                - dtype_coeff (int): Data type coefficient (1 for fp16/bf16, 2 for fp32)
+        """
         dtype_str = str(fsdp_config.mixed_precision.get("dtype", fsdp_config.dtype))
         dtype_coeff = 1 if "16" in dtype_str else 2
         fsdp_size = fsdp_config.fsdp_size
@@ -1213,6 +1282,17 @@ class GPUMemoryValidator(ConfigValidator):
         return running_memory, idle_memory, optim_step_memory, dtype_coeff
 
     def fsdp_memory_check(self, config: Config) -> None:
+        """Perform comprehensive FSDP memory validation for actor and critic models.
+
+        Estimates total GPU memory usage including parameters, optimizer states, and activations.
+        Issues warnings and suggestions if usage exceeds safe thresholds.
+
+        Args:
+            config (Config): The global configuration object.
+
+        Raises:
+            ValueError: If estimated memory usage exceeds safe limits and suggestions are not bypassed.
+        """
         from trinity.common.verl_config import veRLConfig
 
         self.pytorch_env_flag = (
@@ -1322,6 +1402,19 @@ class GPUMemoryValidator(ConfigValidator):
         logits_memory_type: str,
         dtype_coeff: int,
     ) -> float:
+        """Estimate activation memory usage during FSDP training with gradient checkpointing.
+
+        Includes memory for hidden states, logits, and backward pass buffers.
+
+        Args:
+            hf_config: Hugging Face model configuration object.
+            num_tokens (int): Maximum number of tokens per GPU during training.
+            logits_memory_type (str): Type of logits computation ('fusion', 'normal-with-entropy', etc.).
+            dtype_coeff (int): Data type coefficient (1 for fp16/bf16, 2 for fp32).
+
+        Returns:
+            float: Estimated activation memory in bytes.
+        """
         hidden_size: int = hf_config.hidden_size
         num_layers: int = hf_config.num_hidden_layers
         vocab_size: int = hf_config.vocab_size
@@ -1356,6 +1449,24 @@ class GPUMemoryValidator(ConfigValidator):
         params_memory: float,
         optim_step_memory: float,
     ):
+        """Check if estimated GPU memory usage for a module exceeds safe thresholds.
+
+        Logs detailed memory breakdown and appends actionable suggestions if overuse is detected.
+
+        Args:
+            module_name (str): Name of the module ('actor' or 'critic').
+            model_path (str): Path to the model.
+            hf_config: Hugging Face model configuration.
+            num_tokens (int): Maximum tokens per GPU.
+            strategy (str): FSDP strategy in use.
+            fsdp_config (FSDPConfig): FSDP configuration for the module.
+            gradient_checkpointing (bool): Whether gradient checkpointing is enabled.
+            world_size (int): Total number of trainer GPUs.
+            logits_memory_type (str): Type of logits memory estimation.
+            dtype_coeff (int): Data type coefficient.
+            params_memory (float): Estimated parameter + optimizer memory (bytes).
+            optim_step_memory (float): Estimated optimizer step memory (bytes).
+        """
         max_activation_memory = self._calc_fsdp_activation_memory(
             hf_config, num_tokens, logits_memory_type, dtype_coeff
         )
@@ -1440,6 +1551,14 @@ class GPUMemoryValidator(ConfigValidator):
             )
 
     def _get_user_choice(self, e: Exception, timeout: float = 30.0):
+        """Prompt user to continue despite validation failure or re-raise the exception.
+
+        Waits for user input with a timeout; defaults to continuing if no input is received.
+
+        Args:
+            e (Exception): The exception to potentially re-raise.
+            timeout (float): Number of seconds to wait for user input. Defaults to 30.0.
+        """
         if not sys.stdin.isatty():
             return
 
