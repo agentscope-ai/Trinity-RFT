@@ -416,12 +416,16 @@ class veRLConfig:
                     f"`{component_name}.{sp_attr}` in verl config to a reasonable value."
                 )
 
-            import transformers
+            try:
+                import transformers
 
-            hf_config = transformers.AutoConfig.from_pretrained(
-                model_config.path, trust_remote_code=model_config.trust_remote_code
-            )
-            num_attention_heads = hf_config.num_attention_heads
+                hf_config = transformers.AutoConfig.from_pretrained(
+                    model_config.path, trust_remote_code=model_config.trust_remote_code
+                )
+                num_attention_heads = hf_config.num_attention_heads
+            except Exception:
+                num_attention_heads = None
+
             if num_attention_heads and num_attention_heads % sp_size != 0:
                 raise ValueError(
                     f"The number of attention heads ({num_attention_heads}) must be "

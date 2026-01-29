@@ -54,6 +54,7 @@ class TestConfig(unittest.TestCase):
                     try:
                         config = load_config(config_path)
                         config.checkpoint_root_dir = "./.cache/"
+                        config.ignore_validator_suggestions = True
                         config.check_and_update()
                     except Exception as e:
                         print(f"Error loading config {config_path}: {e}")

@@ -1200,10 +1200,13 @@ class GPUMemoryValidator(ConfigValidator):
         # idle memory
         idle_memory = 0
         if fsdp_strategy == "fsdp":
-            if not fsdp_config.param_offload:
-                idle_memory += model_params_memory
             if not fsdp_config.optimizer_offload:
-                idle_memory += optim_params_memory
+                idle_memory += 12 * params_num / fsdp_size
+            elif fsdp_size == 1:
+                running_memory += 2 * dtype_coeff * params_num
+        else:  # fsdp2
+            if not fsdp_config.offload_policy:
+                idle_memory += 12 * params_num / fsdp_size
 
         # optim step memory
         optim_step_memory = 4 * dtype_coeff * params_num / fsdp_size
