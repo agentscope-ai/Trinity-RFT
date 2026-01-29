@@ -1,6 +1,6 @@
 import torch
 
-from trinity.common.experience import Experience
+from trinity.common.experience import EID, Experience
 from trinity.common.workflows import WORKFLOWS
 from trinity.common.workflows.workflow import SimpleWorkflow, Task
 
@@ -22,6 +22,7 @@ class SyntheticExpWorkflow(SimpleWorkflow):
                 logprobs=torch.ones((self.response_len,), dtype=torch.float32),
                 prompt_length=self.prompt_len,
                 reward=torch.tensor(0.0),
+                eid=EID(),
             )
             for _ in range(self.repeat_times)
         ]

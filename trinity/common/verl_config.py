@@ -1,7 +1,7 @@
 import math
 import sys
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from omegaconf import OmegaConf
 from verl.workers.config import PolicyLossConfig, RouterReplayConfig
@@ -183,6 +183,7 @@ class Actor:
 
 @dataclass
 class Ref:
+    strategy: Optional[str] = None
     fsdp_config: FSDPConfig = field(default_factory=FSDPConfig)
     log_prob_micro_batch_size: Optional[int] = None
     log_prob_micro_batch_size_per_gpu: int = 1
@@ -395,13 +396,61 @@ class veRLConfig:
     synchronizer: Optional[SynchronizerConfig] = None
     enable_preview: bool = True
 
+    def _check_parallel_config(
+        self,
+        obj: Union[Actor, Ref, Critic],
+        component_name: str,
+        model_config: Union[ActorModel, CriticModel],
+        fsdp_config: FSDPConfig,
+        world_size: int,
+        sp_attr: str = "ulysses_sequence_parallel_size",
+    ) -> None:
+        if obj.strategy.startswith("fsdp"):
+            # check sequence parallelism
+            sp_size = getattr(obj, sp_attr, 1)
+            if world_size % sp_size != 0:
+                raise ValueError(
+                    f"The number of trainer GPUs ({world_size}) must be "
+                    f"divisible by `{component_name}.{sp_attr}` ({sp_size}). "
+                    f"Please change `trainer.{sp_attr}` or "
+                    f"`{component_name}.{sp_attr}` in verl config to a reasonable value."
+                )
+
+            import transformers
+
+            hf_config = transformers.AutoConfig.from_pretrained(
+                model_config.path, trust_remote_code=model_config.trust_remote_code
+            )
+            num_attention_heads = hf_config.num_attention_heads
+            if num_attention_heads and num_attention_heads % sp_size != 0:
+                raise ValueError(
+                    f"The number of attention heads ({num_attention_heads}) must be "
+                    f"divisible by `trainer.ulysses_sequence_parallel_size` ({sp_size})."
+                    f"Please change `trainer.{sp_attr}` or "
+                    f"`{component_name}.{sp_attr}` in verl config to a reasonable value."
+                )
+
+            fsdp_size = fsdp_config.fsdp_size
+            if fsdp_size <= 0 or fsdp_size >= world_size:
+                fsdp_size = fsdp_config.fsdp_size = world_size
+            if world_size % fsdp_size != 0:
+                raise ValueError(
+                    f"The number of GPUs ({world_size}) must be "
+                    f"divisible by `{component_name}.fsdp_config.fsdp_size` ({fsdp_size}). "
+                    f"Please change `{component_name}.fsdp_config.fsdp_size` in verl config "
+                    f"to a reasonable value."
+                )
+        else:
+            # TODO: add check for megatron strategy
+            pass
+
     def _adjust_token_len_if_needed(
         self,
         obj,
         config: Config,
         component_name: str,
         token_len_attr: str = "ppo_max_token_len_per_gpu",
-        seq_parallel_attr: str = "ulysses_sequence_parallel_size",
+        sp_attr: str = "ulysses_sequence_parallel_size",
     ) -> None:
         """
         Helper to adjust token length per GPU if current setting is too small.
@@ -409,7 +458,7 @@ class veRLConfig:
         Ensures: token_len * seq_parallel >= config.model.max_model_len * 2
         """
         current_token_len = getattr(obj, token_len_attr)
-        seq_parallel = getattr(obj, seq_parallel_attr)
+        seq_parallel = getattr(obj, sp_attr)
         required_min = config.model.max_model_len * 2  # type: ignore
 
         if current_token_len * seq_parallel < required_min:
@@ -479,6 +528,13 @@ class veRLConfig:
             ("strategy", "trainer_strategy"),
         ]:
             set_if_none(actor_config, actor_attr, getattr(config.trainer, trainer_attr))
+        self._check_parallel_config(
+            obj=actor_config,
+            component_name="actor",
+            model_config=actor_model_config,
+            fsdp_config=actor_config.fsdp_config,
+            world_size=config.cluster.trainer_gpu_num,
+        )
         self._adjust_token_len_if_needed(
             obj=self.actor_rollout_ref.actor,
             config=config,
@@ -491,8 +547,16 @@ class veRLConfig:
             ("log_prob_use_dynamic_bsz", "use_dynamic_bsz"),
             ("log_prob_max_token_len_per_gpu", "max_token_len_per_gpu"),
             ("ulysses_sequence_parallel_size",) * 2,
+            ("strategy", "trainer_strategy"),
         ]:
             set_if_none(ref_config, ref_attr, getattr(config.trainer, trainer_attr))
+        self._check_parallel_config(
+            obj=ref_config,
+            component_name="ref",
+            model_config=actor_model_config,
+            fsdp_config=ref_config.fsdp_config,
+            world_size=config.cluster.trainer_gpu_num,
+        )
         self._adjust_token_len_if_needed(
             obj=self.actor_rollout_ref.ref,
             config=config,
@@ -517,7 +581,13 @@ class veRLConfig:
             ("ppo_max_token_len_per_gpu", "max_token_len_per_gpu"),
         ]:
             set_if_none(self.critic, critic_attr, getattr(config.trainer, trainer_attr))
-
+        self._check_parallel_config(
+            obj=self.critic,
+            component_name="critic",
+            model_config=self.critic.model,
+            fsdp_config=self.critic.model.fsdp_config,
+            world_size=config.cluster.trainer_gpu_num,
+        )
         self._adjust_token_len_if_needed(
             obj=self.critic,
             config=config,

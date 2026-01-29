@@ -4,6 +4,7 @@ import sys
 import time
 from abc import ABC, abstractmethod
 from datetime import datetime
+from typing import TYPE_CHECKING, Any, Tuple
 
 import ray
 from omegaconf import OmegaConf
@@ -17,6 +18,9 @@ from trinity.common.config import (
 from trinity.common.constants import StorageType, SyncMethod, SyncStyle
 from trinity.utils.log import get_logger
 from trinity.utils.lora_utils import create_dummy_lora
+
+if TYPE_CHECKING:
+    from trinity.common.verl_config import FSDPConfig
 
 
 class ConfigValidator(ABC):
@@ -1108,7 +1112,7 @@ class GPUMemoryValidator(ConfigValidator):
         2. The coefficients of the following formulas are roughly estimated using the `torch.profile` tool and may not be accurate.
     """
 
-    def _format_alert_box(self, title: str, message_lines: list, level="WARNING") -> str:
+    def _format_alert_box(self, title: str, message_lines: list) -> str:
         """Generate a clean, aligned ASCII border box for terminal alerts."""
         # Combine title and all message lines to compute max width
         all_lines = [title] + message_lines
@@ -1135,6 +1139,12 @@ class GPUMemoryValidator(ConfigValidator):
 
         if config.model.tinker.enable:
             return
+
+        if config.mode in {"train", "both"}:
+            self.suggestions = []
+            self.validate_trainer_memory_usage(config)
+
+    def validate_trainer_memory_usage(self, config: Config) -> None:
         import torch
 
         if not torch.cuda.is_available():
@@ -1144,137 +1154,294 @@ class GPUMemoryValidator(ConfigValidator):
                     "No CUDA-compatible GPU found.",
                     "Please ensure a GPU is available and drivers are installed.",
                 ],
-                level="ERROR",
             )
             self.logger.error("\n" + alert_msg)
             return
-        memory_capacity = torch.cuda.get_device_properties(0).total_memory
+        self.memory_capacity = torch.cuda.get_device_properties(0).total_memory
         if config.trainer.trainer_strategy.startswith("fsdp"):
-            self._fsdp_memory_check(config, memory_capacity)
+            self.fsdp_memory_check(config)
         else:
             self.logger.info("GPU memory check skipped for non-FSDP strategies.")
 
-    def _fsdp_memory_check(self, config: Config, memory_capacity: float) -> None:
+    def _get_model_params_num_and_config(self, model_path: str) -> Tuple[int, Any]:
         import torch
         import transformers
         from accelerate import init_empty_weights
 
+        model_config = transformers.AutoConfig.from_pretrained(model_path)
+        with init_empty_weights():
+            model = transformers.AutoModel.from_config(model_config, torch_dtype=torch.bfloat16)
+        params_num = model.num_parameters()
+        assert params_num > 0, f"No parameters found in the model at path: {model_path}"
+        return params_num, model_config
+
+    def _calc_params_memory_and_dtype_coeff(
+        self,
+        params_num: int,
+        fsdp_stragegy: str,
+        fsdp_config: "FSDPConfig",
+    ) -> Tuple[float, float, float, int]:
+        dtype_str = str(fsdp_config.mixed_precision.get("dtype", fsdp_config.dtype))
+        dtype_coeff = 1 if "16" in dtype_str else 2
+        fsdp_size = fsdp_config.fsdp_size
+
+        if fsdp_stragegy == "fsdp2" and fsdp_config.offload_policy:
+            return 0, 0, 0, dtype_coeff
+
+        # running memory
+        model_params_memory = 2 * dtype_coeff * params_num
+        if fsdp_config.reshard_after_forward:  # enable zero3
+            model_params_memory /= fsdp_size
+        optim_params_memory = (12 * params_num + 2 * dtype_coeff * params_num) / fsdp_size
+        running_memory = model_params_memory + optim_params_memory
+        if fsdp_stragegy == "fsdp" and fsdp_size == 1:  # TODO: observerd by torch.profile
+            running_memory += 2 * dtype_coeff * params_num
+
+        # idle memory
+        idle_memory = 0
+        if fsdp_stragegy == "fsdp":
+            if not fsdp_config.param_offload:
+                idle_memory += model_params_memory
+            if not fsdp_config.optimizer_offload:
+                idle_memory += optim_params_memory
+
+        # optim step memory
+        optim_step_memory = 2 * dtype_coeff * params_num / fsdp_size
+        return running_memory, idle_memory, optim_step_memory, dtype_coeff
+
+    def fsdp_memory_check(self, config: Config) -> None:
         from trinity.common.verl_config import veRLConfig
 
-        pytorch_env_flag = (
+        self.pytorch_env_flag = (
             os.environ.get("PYTORCH_CUDA_ALLOC_CONF", "") == "expandable_segments:True"
         )
-        memory_threshold = (0.9 if pytorch_env_flag else 0.8) * memory_capacity
+        self.memory_threshold = (0.9 if self.pytorch_env_flag else 0.8) * self.memory_capacity
 
         try:
             model_path = config.model.model_path
-            model_config = transformers.AutoConfig.from_pretrained(model_path)
-            with init_empty_weights():
-                save_model = transformers.AutoModel.from_config(
-                    model_config, torch_dtype=torch.bfloat16
-                )
-            params_num: int = save_model.num_parameters()
-            hidden_size: int = model_config.hidden_size
-            num_layers: int = model_config.num_hidden_layers
-            num_tokens: int = config.trainer.max_token_len_per_gpu
-            vocab_size: int = model_config.vocab_size
+            params_num, hf_config = self._get_model_params_num_and_config(model_path)
 
             verl_config: veRLConfig = config.trainer.trainer_config
-            fsdp_config = verl_config.actor_rollout_ref.actor.fsdp_config
-            dtype_str = str(fsdp_config.mixed_precision.get("dtype", fsdp_config.dtype))
-            dtype_coeff = 1 if "16" in dtype_str else 2
-            actor_params_memory = (12 + 4 * dtype_coeff) * params_num
-            ref_params_memory = 2 * dtype_coeff * params_num
-            critic_params_memory = (
-                (12 + 4 * dtype_coeff) * params_num if verl_config.critic.enable else 0
+            world_size = config.cluster.trainer_gpu_num
+
+            # calculate actor memory, and ref is always being offloaded
+            actor_config = verl_config.actor_rollout_ref.actor
+            (
+                actor_running_memory,
+                actor_idle_memory,
+                actor_optim_step_memory,
+                actor_dtype_coeff,
+            ) = self._calc_params_memory_and_dtype_coeff(
+                params_num,
+                fsdp_stragegy=config.trainer.trainer_strategy,
+                fsdp_config=actor_config.fsdp_config,
             )
-            params_memory = actor_params_memory + ref_params_memory + critic_params_memory
-            if verl_config.actor_rollout_ref.model.enable_gradient_checkpointing:
-                hidden_state_memory = 2 * num_tokens * hidden_size * (num_layers + 4)
-                actor_model_config = verl_config.actor_rollout_ref.model
-                if actor_model_config.use_fused_kernels and actor_model_config.fused_kernel_options:
-                    logits_memory = vocab_size * 20480
+            # calculate critic memory
+            if verl_config.critic.enable:
+                critic_model_path = config.model.critic_model_path
+                if model_path == critic_model_path:
+                    critic_params_num = params_num
+                    critic_hf_config = hf_config
                 else:
-                    coeff = 8 if config.algorithm.entropy_loss_fn != "none" else 10
-                    logits_memory = coeff * num_tokens * vocab_size
-                back_memory = 4 * vocab_size * hidden_size + 80 * num_tokens * hidden_size
-                max_activation_memory = hidden_state_memory + max(logits_memory, back_memory)
-                max_activation_memory *= dtype_coeff
+                    critic_params_num, critic_hf_config = self._get_model_params_num_and_config(
+                        config.model.critic_model_path
+                    )
 
-                total_memory = params_memory + max_activation_memory
-                total_mb = total_memory / (1024**2)
-                params_mb = params_memory / (1024**2)
-                activation_mb = max_activation_memory / (1024**2)
-                gpu_capacity_mb = memory_capacity / (1024**2)
-
-                self.logger.info(
-                    f"Estimated GPU memory usage for model '{model_path}': "
-                    f"{total_mb:.2f} MB ({params_mb:.2f} MB params + {activation_mb:.2f} MB activations) "
-                    f"on a {gpu_capacity_mb:.2f} MB GPU."
+                (
+                    critic_running_memory,
+                    critic_idle_memory,
+                    critic_optim_step_memory,
+                    critic_dtype_coeff,
+                ) = self._calc_params_memory_and_dtype_coeff(
+                    critic_params_num,
+                    fsdp_stragegy=config.trainer.trainer_strategy,
+                    fsdp_config=verl_config.critic.model.fsdp_config,
                 )
-
-                if total_memory > memory_threshold:
-                    threshold_mb = memory_threshold / (1024**2)
-                    self.logger.warning(
-                        f"⚠️  Estimated memory usage ({total_mb:.2f} MB) exceeds recommended limit "
-                        f"({threshold_mb:.2f} MB, ~{int(80 if not pytorch_env_flag else 90)}% of GPU capacity)."
-                    )
-
-                    suggestions = []
-                    if not pytorch_env_flag:
-                        suggestions.append(
-                            "• Set environment variable `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True` "
-                            "before launching your training job to reduce memory fragmentation."
-                        )
-                    suggestions.extend(
-                        [
-                            "• Consider reducing `trainer.max_token_len_per_gpu` to lower activation memory.",
-                            "• Increase `ulysses_sequence_parallel_size` to split sequence across more GPUs.",
-                        ]
-                    )
-
-                    message_lines = (
-                        [
-                            f"Model '{os.path.basename(model_path)}' may exceed GPU memory!",
-                            f"Estimated: {total_mb:.1f} MB > Limit: {threshold_mb:.1f} MB",
-                            "",
-                            "Suggested fixes:",
-                        ]
-                        + suggestions
-                        + [
-                            "",
-                            "To bypass this check, set `ignore_validator_suggestions: true` in config.",
-                        ]
-                    )
-
-                    alert_box = self._format_alert_box(
-                        "MEMORY OVERUSE WARNING", message_lines, level="ERROR"
-                    )
-                    self.logger.error("\n" + alert_box)
-                    raise ValueError(
-                        "GPU memory estimation exceeded safe threshold. See alert above."
-                    )
             else:
-                # TODO: add memory check for non-gradient checkpointing.
-                warning_lines = [
-                    "Gradient checkpointing is DISABLED.",
-                    "Memory usage will be MUCH higher than estimated.",
-                    "Consider enabling it or verifying GPU capacity manually.",
-                ]
-                warning_box = self._format_alert_box(
-                    "HIGH MEMORY RISK", warning_lines, level="WARNING"
+                critic_running_memory = critic_idle_memory = 0
+
+            actor_model_config = verl_config.actor_rollout_ref.model
+            if actor_model_config.use_fused_kernels and actor_model_config.fused_kernel_options:
+                logits_memory_type = "fusion"
+            else:
+                if config.algorithm.entropy_loss_fn != "none":
+                    logits_memory_type = "normal-with-entropy"
+                else:
+                    logits_memory_type = "normal-without-entropy"
+            self._check_max_memory_in_fsdp_training(
+                module_name="actor",
+                model_path=model_path,
+                hf_config=hf_config,
+                num_tokens=actor_config.ppo_max_token_len_per_gpu,  # type: ignore
+                strategy=config.trainer.trainer_strategy,
+                fsdp_config=actor_config.fsdp_config,
+                gradient_checkpointing=actor_model_config.enable_gradient_checkpointing,
+                world_size=world_size,
+                logits_memory_type=logits_memory_type,
+                dtype_coeff=actor_dtype_coeff,
+                params_memory=(actor_running_memory + critic_idle_memory),
+                optim_step_memory=actor_optim_step_memory,
+            )
+            if verl_config.critic.enable:
+                critic_model = verl_config.critic.model
+                self._check_max_memory_in_fsdp_training(
+                    module_name="critic",
+                    model_path=critic_model_path,
+                    hf_config=critic_hf_config,
+                    num_tokens=verl_config.critic.ppo_max_token_len_per_gpu,  # type: ignore
+                    strategy=config.trainer.trainer_strategy,
+                    fsdp_config=critic_model.fsdp_config,
+                    gradient_checkpointing=critic_model.enable_gradient_checkpointing,
+                    world_size=world_size,
+                    logits_memory_type="none",  # no logits in critic
+                    dtype_coeff=critic_dtype_coeff,
+                    params_memory=(critic_running_memory + actor_idle_memory),
+                    optim_step_memory=critic_optim_step_memory,
                 )
-                self.logger.warning("\n" + warning_box)
+            if len(self.suggestions) > 0:
+                self.suggestions.extend(
+                    [
+                        "",
+                        "To bypass this check, set `ignore_validator_suggestions: true` in config.",
+                    ]
+                )
+                alert_box = self._format_alert_box("MEMORY OVERUSE WARNING", self.suggestions)
+                self.logger.warning("\n" + alert_box)
+                raise ValueError("Unsafe GPU memory usage. See alert above.")
         except Exception as e:
             self.logger.error("Failed to check model config.", exc_info=True)
             self._get_user_choice(e)
+
+    def _calc_fsdp_activation_memory(
+        self,
+        hf_config,
+        num_tokens: int,
+        logits_memory_type: str,
+        dtype_coeff: int,
+    ) -> float:
+        hidden_size: int = hf_config.hidden_size
+        num_layers: int = hf_config.num_hidden_layers
+        vocab_size: int = hf_config.vocab_size
+
+        # Currently, only gradient_checkpointing is considered
+        # TODO: add memory calculation for non-gradient checkpointing.
+        hidden_state_memory = 2 * num_tokens * hidden_size * (num_layers + 4)
+        if logits_memory_type == "fusion":
+            logits_memory = vocab_size * 20480
+        elif logits_memory_type.startswith("normal"):
+            coeff = 8 if logits_memory_type == "normal-with-entropy" else 10
+            logits_memory = coeff * num_tokens * vocab_size
+        else:  # no logits in critic
+            logits_memory = 0
+        back_memory = 4 * vocab_size * hidden_size + 80 * num_tokens * hidden_size
+        max_activation_memory = hidden_state_memory + max(logits_memory, back_memory)
+        max_activation_memory *= dtype_coeff
+        return max_activation_memory
+
+    def _check_max_memory_in_fsdp_training(
+        self,
+        module_name: str,
+        model_path: str,
+        hf_config,
+        num_tokens: int,
+        strategy: str,
+        fsdp_config: "FSDPConfig",
+        gradient_checkpointing: bool,
+        world_size: int,
+        logits_memory_type: str,
+        dtype_coeff: int,
+        params_memory: float,
+        optim_step_memory: float,
+    ):
+        max_activation_memory = self._calc_fsdp_activation_memory(
+            hf_config, num_tokens, logits_memory_type, dtype_coeff
+        )
+        total_memory = params_memory + max(max_activation_memory, optim_step_memory)
+        total_mb = total_memory / (1024**2)
+        params_mb = params_memory / (1024**2)
+        activation_mb = max_activation_memory / (1024**2)
+        optim_step_mb = optim_step_memory / (1024**2)
+        gpu_capacity_mb = self.memory_capacity / (1024**2)
+
+        self.logger.info(
+            f"Estimated GPU memory usage for {module_name} model '{model_path}': "
+            f"{total_mb:.2f} MB ({params_mb:.2f} MB params + "
+            f"max({activation_mb:.2f} MB activations, {optim_step_mb:.2f} MB optimizer step)) "
+            f"on a {gpu_capacity_mb:.2f} MB GPU."
+        )
+
+        if gradient_checkpointing:
+            if total_memory > self.memory_threshold:
+                threshold_mb = self.memory_threshold / (1024**2)
+                self.logger.warning(
+                    f"⚠️  The estimated memory usage for the {module_name} ({total_mb:.2f} MB) "
+                    f"exceeds the recommended limit ({threshold_mb:.2f} MB, "
+                    f"~{int(80 if not self.pytorch_env_flag else 90)}% of total GPU memory). "
+                )
+
+                if len(self.suggestions) > 0:
+                    self.suggestions.append("")
+                self.suggestions.extend(
+                    [
+                        f"{module_name.capitalize()} model '{os.path.basename(model_path)}' "
+                        "may exceed GPU memory!",
+                        f"Estimated: {total_mb:.1f} MB > Limit: {threshold_mb:.1f} MB",
+                        "",
+                        "Suggested fixes:",
+                    ]
+                )
+                if not self.pytorch_env_flag:
+                    self.suggestions.extend(
+                        [
+                            "• Set environment variable `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`",
+                            "  before launching your training job to reduce memory fragmentation.",
+                        ]
+                    )
+                if strategy == "fsdp":
+                    self.suggestions.extend(
+                        [
+                            f"• Set `fsdp_config.offload_policy=true` in {module_name} config and",
+                            "  set `trainer.trainer_strategy=fsdp2` to reduce memory usage.",
+                        ]
+                    )
+                if strategy == "fsdp2" and not fsdp_config.offload_policy:
+                    self.suggestions.extend(
+                        [
+                            f"• Set `fsdp_config.offload_policy=true` in {module_name} config",
+                            "  to reduce parameters memory usage.",
+                        ]
+                    )
+                if fsdp_config.fsdp_size != world_size:
+                    self.suggestions.extend(
+                        [
+                            f"• Set `fsdp_config.fsdp_size` in {module_name} config to match the number of trainer GPUs",
+                            f"  (currently set to {fsdp_config.fsdp_size}).",
+                        ]
+                    )
+                self.suggestions.extend(
+                    [
+                        "• Consider reducing `trainer.max_token_len_per_gpu` to lower activation memory.",
+                        "• Increase `ulysses_sequence_parallel_size` to split sequence across more GPUs.",
+                    ]
+                )
+        else:
+            # TODO: add memory check for non-gradient checkpointing.
+            if len(self.suggestions) > 0:
+                self.suggestions.append("")
+            self.suggestions.extend(
+                [
+                    f"Gradient checkpointing in {module_name} is DISABLED.",
+                    "Memory usage will be MUCH higher than enabling gradient checkpointing.",
+                    "Consider enabling it or verifying GPU capacity manually.",
+                ]
+            )
 
     def _get_user_choice(self, e: Exception, timeout: float = 30.0):
         if not sys.stdin.isatty():
             return
 
         self.logger.warning(
-            "Ignore suggestions and continue? [y/n] "
+            "Ignore suggestions and warnings, then continue training? [y/n] "
             f"(It will automatically choose 'y' after {timeout} seconds)"
         )
         start_time = time.time()
