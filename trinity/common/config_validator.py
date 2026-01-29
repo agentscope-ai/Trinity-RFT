@@ -1206,7 +1206,7 @@ class GPUMemoryValidator(ConfigValidator):
                 idle_memory += optim_params_memory
 
         # optim step memory
-        optim_step_memory = 2 * dtype_coeff * params_num / fsdp_size
+        optim_step_memory = 4 * dtype_coeff * params_num / fsdp_size
         return running_memory, idle_memory, optim_step_memory, dtype_coeff
 
     def fsdp_memory_check(self, config: Config) -> None:
