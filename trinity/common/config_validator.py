@@ -1178,14 +1178,14 @@ class GPUMemoryValidator(ConfigValidator):
     def _calc_params_memory_and_dtype_coeff(
         self,
         params_num: int,
-        fsdp_stragegy: str,
+        fsdp_strategy: str,
         fsdp_config: "FSDPConfig",
     ) -> Tuple[float, float, float, int]:
         dtype_str = str(fsdp_config.mixed_precision.get("dtype", fsdp_config.dtype))
         dtype_coeff = 1 if "16" in dtype_str else 2
         fsdp_size = fsdp_config.fsdp_size
 
-        if fsdp_stragegy == "fsdp2" and fsdp_config.offload_policy:
+        if fsdp_strategy == "fsdp2" and fsdp_config.offload_policy:
             return 0, 0, 0, dtype_coeff
 
         # running memory
@@ -1194,12 +1194,12 @@ class GPUMemoryValidator(ConfigValidator):
             model_params_memory /= fsdp_size
         optim_params_memory = (12 * params_num + 2 * dtype_coeff * params_num) / fsdp_size
         running_memory = model_params_memory + optim_params_memory
-        if fsdp_stragegy == "fsdp" and fsdp_size == 1:  # TODO: observerd by torch.profile
+        if fsdp_strategy == "fsdp" and fsdp_size == 1:  # TODO: observerd by torch.profile
             running_memory += 2 * dtype_coeff * params_num
 
         # idle memory
         idle_memory = 0
-        if fsdp_stragegy == "fsdp":
+        if fsdp_strategy == "fsdp":
             if not fsdp_config.param_offload:
                 idle_memory += model_params_memory
             if not fsdp_config.optimizer_offload:
@@ -1233,7 +1233,7 @@ class GPUMemoryValidator(ConfigValidator):
                 actor_dtype_coeff,
             ) = self._calc_params_memory_and_dtype_coeff(
                 params_num,
-                fsdp_stragegy=config.trainer.trainer_strategy,
+                fsdp_strategy=config.trainer.trainer_strategy,
                 fsdp_config=actor_config.fsdp_config,
             )
             # calculate critic memory
@@ -1254,7 +1254,7 @@ class GPUMemoryValidator(ConfigValidator):
                     critic_dtype_coeff,
                 ) = self._calc_params_memory_and_dtype_coeff(
                     critic_params_num,
-                    fsdp_stragegy=config.trainer.trainer_strategy,
+                    fsdp_strategy=config.trainer.trainer_strategy,
                     fsdp_config=verl_config.critic.model.fsdp_config,
                 )
             else:
