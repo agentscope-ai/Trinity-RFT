@@ -680,6 +680,12 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.config_validator.TrainerConfigValidator.validate"><code class="docutils literal notranslate"><span class="pre">TrainerConfigValidator.validate()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.config_validator.GPUMemoryValidator"><code class="docutils literal notranslate"><span class="pre">GPUMemoryValidator</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.config_validator.GPUMemoryValidator.validate"><code class="docutils literal notranslate"><span class="pre">GPUMemoryValidator.validate()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.config_validator.GPUMemoryValidator.validate_trainer_memory_usage"><code class="docutils literal notranslate"><span class="pre">GPUMemoryValidator.validate_trainer_memory_usage()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.config_validator.GPUMemoryValidator.fsdp_memory_check"><code class="docutils literal notranslate"><span class="pre">GPUMemoryValidator.fsdp_memory_check()</span></code></a></li>
+</ul>
+</li>
 </ul>
             </nav>
         </div>
@@ -1036,6 +1042,62 @@ for different trainer implementations (veRL, Tinker, etc.).</p>
 
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="trinity.common.config_validator.GPUMemoryValidator">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">trinity.common.config_validator.</span></span><span class="sig-name descname"><span class="pre">GPUMemoryValidator</span></span><a class="reference internal" href="../_modules/trinity/common/config_validator.html#GPUMemoryValidator"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.config_validator.GPUMemoryValidator" title="Link to this definition">#</a></dt>
+<dd><p>基类：<a class="reference internal" href="#trinity.common.config_validator.ConfigValidator" title="trinity.common.config_validator.ConfigValidator"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConfigValidator</span></code></a></p>
+<p>Validator for GPU memory settings.</p>
+<p>Checks GPU memory usage and suggests changes to configuration settings.</p>
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<ol class="arabic simple">
+<li><p>This validator is disabled when <cite>ignore_validator_suggestions</cite> is set to True.</p></li>
+<li><p>The coefficients of the following formulas are roughly estimated using the <cite>torch.profile</cite> tool and may not be accurate.</p></li>
+</ol>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.common.config_validator.GPUMemoryValidator.validate">
+<span class="sig-name descname"><span class="pre">validate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="trinity.common.config.html#trinity.common.config.Config" title="trinity.common.config.Config"><span class="pre">Config</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/trinity/common/config_validator.html#GPUMemoryValidator.validate"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.config_validator.GPUMemoryValidator.validate" title="Link to this definition">#</a></dt>
+<dd><p>Validate GPU memory usage based on the provided configuration.</p>
+<p>Skips validation if suggestions are disabled or if model tinker mode is enabled.
+Only runs memory validation for 'train' or 'both' modes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config</strong> (<a class="reference internal" href="trinity.common.config.html#trinity.common.config.Config" title="trinity.common.config.Config"><em>Config</em></a>) -- The global configuration object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.common.config_validator.GPUMemoryValidator.validate_trainer_memory_usage">
+<span class="sig-name descname"><span class="pre">validate_trainer_memory_usage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="trinity.common.config.html#trinity.common.config.Config" title="trinity.common.config.Config"><span class="pre">Config</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/trinity/common/config_validator.html#GPUMemoryValidator.validate_trainer_memory_usage"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.config_validator.GPUMemoryValidator.validate_trainer_memory_usage" title="Link to this definition">#</a></dt>
+<dd><p>Perform GPU memory validation for trainer components.</p>
+<p>Detects CUDA availability and delegates to FSDP-specific checks if applicable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config</strong> (<a class="reference internal" href="trinity.common.config.html#trinity.common.config.Config" title="trinity.common.config.Config"><em>Config</em></a>) -- The global configuration object.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.common.config_validator.GPUMemoryValidator.fsdp_memory_check">
+<span class="sig-name descname"><span class="pre">fsdp_memory_check</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="trinity.common.config.html#trinity.common.config.Config" title="trinity.common.config.Config"><span class="pre">Config</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/trinity/common/config_validator.html#GPUMemoryValidator.fsdp_memory_check"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.config_validator.GPUMemoryValidator.fsdp_memory_check" title="Link to this definition">#</a></dt>
+<dd><p>Perform comprehensive FSDP memory validation for actor and critic models.</p>
+<p>Estimates total GPU memory usage including parameters, optimizer states, and activations.
+Issues warnings and suggestions if usage exceeds safe thresholds.</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>config</strong> (<a class="reference internal" href="trinity.common.config.html#trinity.common.config.Config" title="trinity.common.config.Config"><em>Config</em></a>) -- The global configuration object.</p>
+</dd>
+<dt class="field-even">抛出<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> -- If estimated memory usage exceeds safe limits and suggestions are not bypassed.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 
@@ -1130,6 +1192,12 @@ for different trainer implementations (veRL, Tinker, etc.).</p>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.config_validator.TrainerConfigValidator"><code class="docutils literal notranslate"><span class="pre">TrainerConfigValidator</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.config_validator.TrainerConfigValidator.validate"><code class="docutils literal notranslate"><span class="pre">TrainerConfigValidator.validate()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.config_validator.GPUMemoryValidator"><code class="docutils literal notranslate"><span class="pre">GPUMemoryValidator</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.config_validator.GPUMemoryValidator.validate"><code class="docutils literal notranslate"><span class="pre">GPUMemoryValidator.validate()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.config_validator.GPUMemoryValidator.validate_trainer_memory_usage"><code class="docutils literal notranslate"><span class="pre">GPUMemoryValidator.validate_trainer_memory_usage()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.config_validator.GPUMemoryValidator.fsdp_memory_check"><code class="docutils literal notranslate"><span class="pre">GPUMemoryValidator.fsdp_memory_check()</span></code></a></li>
 </ul>
 </li>
 </ul>
