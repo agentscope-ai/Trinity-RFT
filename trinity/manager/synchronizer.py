@@ -302,7 +302,7 @@ class Synchronizer:
         explorer = ray.get_actor(self.config.explorer.name, namespace=self.config.ray_namespace)
         await explorer.setup_weight_sync_group.remote(master_address, master_port, state_dict_meta)
 
-    async def wait_new_model_state_dict(self, current_version: int, no_wait: bool = False) -> int:
+    async def wait_new_model_state_dict(self, current_version: int) -> int:
         """
         Wait until a new model state is available.
 
@@ -316,19 +316,27 @@ class Synchronizer:
             assert (
                 self.model_version >= current_version
             ), f"The model version in Synchronizer ({self.model_version}) should be no smaller than that in Explorer ({current_version})!"
+            await self.set_explorer_status(
+                RunningStatus.REQUIRE_SYNC, old_status=RunningStatus.RUNNING
+            )
             if self.model_version == current_version:
-                if not no_wait and self.trainer_status != RunningStatus.STOPPED:
-                    # TODO: explorer need support no wait
-                    # TODO: handle timeout
+                if self.trainer_status != RunningStatus.STOPPED:
                     await asyncio.wait_for(
                         self._ready_condition.wait(),
                         timeout=self.config.synchronizer.sync_timeout,
                     )
-            if self.model_version > current_version:
-                await self.set_explorer_status(
-                    RunningStatus.RUNNING, old_status=RunningStatus.REQUIRE_SYNC
-                )
+            await self.set_explorer_status(
+                RunningStatus.RUNNING, old_status=RunningStatus.REQUIRE_SYNC
+            )
             return self.model_version
+
+    async def notify_no_new_model_state_dict(self) -> None:
+        """
+        Notify the explorer that there is no new model state.
+        Used for `wait_new_model_state_dict`.
+        """
+        async with self._ready_condition:
+            self._ready_condition.notify_all()
 
     async def get_latest_model_version(self) -> int:
         """
@@ -361,11 +369,11 @@ class Synchronizer:
             if module == "explorer":
                 another_module = "Trainer"
                 await self.set_explorer_status(
-                    RunningStatus.REQUIRE_SYNC, old_status=RunningStatus.WAITING_SYNC
+                    RunningStatus.RUNNING, old_status=RunningStatus.REQUIRE_SYNC
                 )
             else:
                 another_module = "Explorer"
-                self.trainer_status = RunningStatus.REQUIRE_SYNC
+                self.trainer_status = RunningStatus.RUNNING
             self.logger.error(f"{another_module} is not ready for model weight sync.")
             return None
 
@@ -381,12 +389,12 @@ class Synchronizer:
             try:
                 if module == "trainer":
                     self.model_version = trainer_step
-                    self.trainer_status = RunningStatus.WAITING_SYNC
+                    self.trainer_status = RunningStatus.REQUIRE_SYNC
                     self._ready_condition.notify_all()
-                    if self.explorer_status_counts[RunningStatus.WAITING_SYNC] != 1:
+                    if self.explorer_status_counts[RunningStatus.REQUIRE_SYNC] != 1:
                         await asyncio.wait_for(
                             self._ready_condition.wait_for(
-                                lambda: self.explorer_status_counts[RunningStatus.WAITING_SYNC]
+                                lambda: self.explorer_status_counts[RunningStatus.REQUIRE_SYNC]
                                 + self.explorer_status_counts[RunningStatus.STOPPED]
                                 == 1,
                             ),
@@ -396,18 +404,18 @@ class Synchronizer:
                             return await sync_failed()
                     await self.set_explorer_status(
                         RunningStatus.RUNNING,
-                        old_status=RunningStatus.WAITING_SYNC,
+                        old_status=RunningStatus.REQUIRE_SYNC,
                     )
                 elif module == "explorer":
                     await self.set_explorer_status(
-                        RunningStatus.WAITING_SYNC, old_status=RunningStatus.REQUIRE_SYNC
+                        RunningStatus.REQUIRE_SYNC, old_status=RunningStatus.RUNNING
                     )
                     self._ready_condition.notify_all()
-                    if self.trainer_status != RunningStatus.WAITING_SYNC:
+                    if self.trainer_status != RunningStatus.REQUIRE_SYNC:
                         await asyncio.wait_for(
                             self._ready_condition.wait_for(
                                 lambda: self.trainer_status
-                                in {RunningStatus.WAITING_SYNC, RunningStatus.STOPPED},
+                                in {RunningStatus.REQUIRE_SYNC, RunningStatus.STOPPED},
                             ),
                             timeout=self.config.synchronizer.sync_timeout,
                         )

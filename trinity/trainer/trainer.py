@@ -61,6 +61,9 @@ class Trainer:
         self.save_interval = config.trainer.save_interval
         self.last_sync_step = 0
         self.last_sync_time = None
+        self.sync_interval = config.synchronizer.sync_interval
+        self.sync_method = config.synchronizer.sync_method
+        self.sync_style = config.synchronizer.sync_style
         self.total_steps = config.trainer.total_steps or float("inf")
         self.save_hf_checkpoint = config.trainer.save_hf_checkpoint
 
@@ -137,20 +140,18 @@ class Trainer:
 
     async def need_sync(self) -> bool:
         """Whether to sync the model weight."""
-        if self.config.synchronizer.sync_style == SyncStyle.FIXED:
+        if self.sync_style in {SyncStyle.FIXED, SyncStyle.DYNAMIC_BY_TRAINER}:
             return (
                 self.last_sync_step != self.train_step_num
-                and self.train_step_num % self.config.synchronizer.sync_interval == 0
+                and self.train_step_num % self.sync_interval == 0
             )
-        else:
-            if self.config.synchronizer.sync_style == SyncStyle.DYNAMIC_BY_TRAINER:
-                delta = self.train_step_num - self.last_sync_step
-                if delta >= self.config.synchronizer.sync_interval:
-                    await self.synchronizer.set_trainer_status.remote(RunningStatus.REQUIRE_SYNC)
+        else:  # dynamic by explorer
             explorer_status_counts = await self.synchronizer.get_explorer_status_counts.remote()
-            if self.config.synchronizer.sync_method == SyncMethod.NCCL:
-                return explorer_status_counts[RunningStatus.WAITING_SYNC] > 0
+            if self.sync_method == SyncMethod.NCCL:
+                return explorer_status_counts[RunningStatus.REQUIRE_SYNC] > 0
             else:  # memory & checkpoint
+                if self.last_sync_step == self.train_step_num:
+                    await self.synchronizer.notify_no_new_model_state_dict.remote()
                 return (
                     self.last_sync_step != self.train_step_num
                     and explorer_status_counts[RunningStatus.REQUIRE_SYNC] > 0
@@ -167,7 +168,7 @@ class Trainer:
         if self.last_sync_time is not None:
             metrics["time/trainer_sync_interval"] = time.time() - self.last_sync_time
         with Timer(metrics, "time/sync_weight"):
-            if self.config.synchronizer.sync_method == SyncMethod.NCCL:
+            if self.sync_method == SyncMethod.NCCL:
                 result = await self.synchronizer.ready_to_nccl_sync.remote(
                     "trainer", self.train_step_num
                 )
@@ -175,13 +176,12 @@ class Trainer:
                     self.logger.error("Trainer sync_weights failed.")
                 else:
                     self.engine.sync_weight()
-            elif self.config.synchronizer.sync_method == SyncMethod.CHECKPOINT:
+            elif self.sync_method == SyncMethod.CHECKPOINT:
                 self.engine.save_state_dict()
-            elif self.config.synchronizer.sync_method == SyncMethod.MEMORY:
+            elif self.sync_method == SyncMethod.MEMORY:
                 self.engine.upload_state_dict()
             self.last_sync_step = self.train_step_num
             self.last_sync_time = time.time()
-            await self.synchronizer.set_trainer_status.remote(RunningStatus.RUNNING)
         self.logger.info(f"Trainer sync_weights at step {self.train_step_num} finished.")
         return metrics
 
