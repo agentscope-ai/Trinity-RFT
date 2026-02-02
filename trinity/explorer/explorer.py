@@ -258,6 +258,7 @@ class Explorer:
             tasks = await self.taskset.read_async()
         except StopAsyncIteration:
             self.logger.warning("No more tasks to explore. Stop exploring.")
+            await self.finish_current_steps()
             await self.save_checkpoint()
             await self.synchronizer.set_explorer_status.remote(
                 RunningStatus.STOPPED,
@@ -265,20 +266,23 @@ class Explorer:
             )
             await self.shutdown()
             return False
-        self.scheduler.schedule(tasks, batch_id=self.explore_step_num + 1)
         self.explore_step_num += 1
+        self.scheduler.schedule(tasks, batch_id=self.explore_step_num)
         return True
+
+    async def finish_current_steps(self) -> None:
+        if self.scheduler:
+            await self._finish_steps(
+                self.last_monitored_step + 1, self.explore_step_num, self.model_version
+            )
+            self.last_monitored_step = self.explore_step_num
 
     async def need_sync(self) -> bool:
         if self.explore_step_num <= self.sync_offset:
             return False
         require_sync = False
         if (self.explore_step_num - self.sync_offset) % self.sync_interval == 0:
-            if self.scheduler:
-                await self._finish_steps(
-                    self.last_monitored_step + 1, self.explore_step_num, self.model_version
-                )
-                self.last_monitored_step = self.explore_step_num
+            await self.finish_current_steps()
             if (
                 self.sync_style == SyncStyle.DYNAMIC_BY_TRAINER
                 and self.sync_method == SyncMethod.NCCL

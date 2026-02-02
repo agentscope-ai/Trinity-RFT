@@ -103,6 +103,7 @@ class FSDPCheckpointManager(OldFSDPCheckpointManager):
         state_dict_config = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
         with get_fsdp_state_ctx(self.model, StateDictType.FULL_STATE_DICT, state_dict_config, None):
             state_dict = self.model.state_dict()
+        state_dict = {key: value.to("cpu") for key, value in state_dict.items()}
         self._upload_state_dict(state_dict, global_step)
 
     def _save_with_thread(

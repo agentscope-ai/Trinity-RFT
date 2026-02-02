@@ -30,7 +30,6 @@ from trinity.trainer.trainer import Trainer
 from trinity.utils.log import get_logger
 
 logger = get_logger(__name__)
-CHECKPOINT_ROOT_DIR = os.path.join(os.path.dirname(__file__), "temp_checkpoint_dir")
 
 
 def trainer_monkey_patch(sample_time_list: List[int], train_step_time_list: List[int]):
@@ -54,20 +53,19 @@ def trainer_monkey_patch(sample_time_list: List[int], train_step_time_list: List
 
 def explorer_monkey_patch(explore_step_time_list: List[int]):
     async def new_explore_step(self: Explorer):
-        if self.explore_step_num == len(explore_step_time_list):
-            await self.save_checkpoint()
-        self.explore_step_num += 1
-        continue_flag = self.explore_step_num <= len(explore_step_time_list)
-        if not continue_flag:
+        if self.explore_step_num >= len(explore_step_time_list):
+            await self.finish_current_steps()
             await self.save_checkpoint()
             await self.synchronizer.set_explorer_status.remote(
                 RunningStatus.STOPPED,
                 old_status=RunningStatus.RUNNING,
             )
             await self.shutdown()
-        return continue_flag
+            return False
+        self.explore_step_num += 1
+        return True
 
-    async def new_finish_explore_step(self, step: int, model_version: int) -> None:
+    async def new_finish_explore_step(self: Explorer, step: int, model_version: int) -> None:
         metric = {"rollout/model_version": model_version}
         await asyncio.sleep(explore_step_time_list[step - 1])
         self.monitor.log(metric, step=step)
@@ -126,7 +124,7 @@ class BaseTestSynchronizer(unittest.TestCase):
             storage_type=StorageType.QUEUE.value,
         )
         self.config.buffer.trainer_input.experience_buffer = deepcopy(experience_buffer)
-        self.config.synchronizer.sync_method = getattr(self, 'sync_method', SyncMethod.NCCL)
+        self.config.synchronizer.sync_method = getattr(self, "sync_method", SyncMethod.NCCL)
         self.config.synchronizer.sync_style = self.sync_style
         self.config.synchronizer.sync_interval = 2
         self.config.monitor.monitor_type = "tensorboard"
@@ -182,18 +180,21 @@ class BaseTestSynchronizer(unittest.TestCase):
                 time.sleep(5)
         return synchronizer
 
-    def _check_metrics(self, module: str, metric_name_list: List[str], metric_value_list: List[float]):
-        parser = TensorBoardParser(
-            os.path.join(self.config.monitor.cache_dir, "tensorboard", module)
-        )
-        for metric_name, metric_value in zip(metric_name_list, metric_value_list):
+    def _check_metrics(
+        self,
+        config: Config,
+        module: str,
+        metric_check_dict: Dict[str, float],
+    ):
+        parser = TensorBoardParser(os.path.join(config.monitor.cache_dir, "tensorboard", module))
+        for metric_name, metric_value in metric_check_dict.items():
             metric_list = parser.metric_list(metric_name)
             self.assertEqual(parser.metric_max_step(metric_list[0]), metric_value)
 
     def tearDown(self):
         ray.shutdown(_exiting_interpreter=True)
-        if os.path.exists(CHECKPOINT_ROOT_DIR):
-            shutil.rmtree(CHECKPOINT_ROOT_DIR, ignore_errors=True)
+        if os.path.exists(self.config.checkpoint_root_dir):
+            shutil.rmtree(self.config.checkpoint_root_dir, ignore_errors=True)
         for process in self.process_list:
             if process.is_alive():
                 process.terminate()
@@ -213,6 +214,7 @@ class TestSynchronizerExit(BaseTestSynchronizer):
 
     def test_synchronizer(self):
         trainer_config = deepcopy(self.config)
+        trainer_config.cluster.gpu_per_node = 1
         trainer_config.mode = "train"
         trainer_config.check_and_update()
 
@@ -270,6 +272,16 @@ class TestSynchronizerExit(BaseTestSynchronizer):
             ],
         },
         {
+            "sync_method": SyncMethod.CHECKPOINT,
+            "sync_style": SyncStyle.DYNAMIC_BY_TRAINER,
+            "sample_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
+            "train_step_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
+            "explore_step_time_lists": [
+                [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5],
+                [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+            ],
+        },
+        {
             "sync_method": SyncMethod.MEMORY,
             "sync_style": SyncStyle.FIXED,
             "sample_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
@@ -282,6 +294,16 @@ class TestSynchronizerExit(BaseTestSynchronizer):
         {
             "sync_method": SyncMethod.MEMORY,
             "sync_style": SyncStyle.DYNAMIC_BY_EXPLORER,
+            "sample_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
+            "train_step_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
+            "explore_step_time_lists": [
+                [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5],
+                [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+            ],
+        },
+        {
+            "sync_method": SyncMethod.MEMORY,
+            "sync_style": SyncStyle.DYNAMIC_BY_TRAINER,
             "sample_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
             "train_step_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
             "explore_step_time_lists": [
@@ -300,22 +322,31 @@ class TestStateDictBasedSynchronizer(BaseTestSynchronizer):
         trainer_process = self.start_train_process(trainer_config)
         _ = self.wait_trainer_started(trainer_config.ray_namespace)
 
-        explorer_processes = []
+        explorer_configs, explorer_processes = [], []
         for i, explore_step_time_list in enumerate(self.explore_step_time_lists):
             explorer_config = deepcopy(self.config)
             explorer_config.mode = "explore"
             explorer_config.explorer.name = f"explorer_{i}"
+            explorer_config.explorer.rollout_model.engine_num = 1
+            explorer_config.explorer.rollout_model.tensor_parallel_size = 1
             explorer_config.check_and_update()
-            explorer_processes.append(self.start_explore_process(explorer_config, explore_step_time_list))
+            explorer_configs.append(explorer_config)
+            explorer_processes.append(
+                self.start_explore_process(explorer_config, explore_step_time_list)
+            )
 
         self.join_process(trainer_process, "trainer")
         for i, explore_process in enumerate(explorer_processes):
             self.join_process(explore_process, f"explorer_{i}")
 
         # check the tensorboard
-        self._check_metrics("trainer", ["actor"], [len(self.sample_time_list)])
-        for i, explore_step_time_list in enumerate(self.explore_step_time_lists):
-            self._check_metrics(f"explorer_{i}", ["rollout"], [len(explore_step_time_list)])
+        self._check_metrics(trainer_config, "trainer", {"actor": len(self.sample_time_list)})
+        for i, (explorer_config, explore_step_time_list) in enumerate(
+            zip(explorer_configs, self.explore_step_time_lists)
+        ):
+            self._check_metrics(
+                explorer_config, f"explorer_{i}", {"rollout": len(explore_step_time_list)}
+            )
 
 
 @parameterized_class(
@@ -332,6 +363,12 @@ class TestStateDictBasedSynchronizer(BaseTestSynchronizer):
             "train_step_time_list": [2, 2, 2, 1, 2, 1, 2, 1],
             "explore_step_time_list": [0.5, 0.5, 0.5, 0.5, 0],
         },
+        {
+            "sync_style": SyncStyle.DYNAMIC_BY_TRAINER,
+            "sample_time_list": [2, 2, 2, 1, 2, 1, 2, 1],
+            "train_step_time_list": [2, 2, 2, 1, 2, 1, 2, 1],
+            "explore_step_time_list": [0.5, 0.5, 0.5, 0.5, 0],
+        },
     ],
 )
 class TestNCCLBasedSynchronizer(BaseTestSynchronizer):
@@ -344,5 +381,5 @@ class TestNCCLBasedSynchronizer(BaseTestSynchronizer):
         self.join_process(both_process, "both")
 
         # check the tensorboard
-        self._check_metrics("trainer", ["actor"], [len(self.sample_time_list)])
-        self._check_metrics("explorer", ["rollout"], [len(self.explore_step_time_list)])
+        self._check_metrics(self.config, "trainer", {"actor": len(self.sample_time_list)})
+        self._check_metrics(self.config, "explorer", {"rollout": len(self.explore_step_time_list)})
