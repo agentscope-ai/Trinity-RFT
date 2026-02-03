@@ -1452,7 +1452,7 @@ document.write(`
 
         <span class="kn">import</span><span class="w"> </span><span class="nn">tinker</span>
 
-        <span class="n">service_client</span> <span class="o">=</span> <span class="n">tinker</span><span class="o">.</span><span class="n">ServiceClient</span><span class="p">()</span>
+        <span class="n">service_client</span> <span class="o">=</span> <span class="n">tinker</span><span class="o">.</span><span class="n">ServiceClient</span><span class="p">(</span><span class="n">base_url</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">tinker</span><span class="o">.</span><span class="n">base_url</span><span class="p">)</span>
         <span class="n">supported_models</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">item</span><span class="o">.</span><span class="n">model_name</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">service_client</span><span class="o">.</span><span class="n">get_server_capabilities</span><span class="p">()</span><span class="o">.</span><span class="n">supported_models</span>
         <span class="p">}</span>
@@ -1884,7 +1884,8 @@ document.write(`
                 <span class="n">config</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">*</span> <span class="n">config</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">repeat_times</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="p">(</span>
-            <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">}</span>
+            <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">tinker</span><span class="o">.</span><span class="n">enable</span>
+            <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">}</span>
             <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">train_batch_size</span> <span class="o">%</span> <span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">trainer_gpu_num</span> <span class="o">!=</span> <span class="mi">0</span>
         <span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>

@@ -1204,17 +1204,15 @@ document.write(`
 
         <span class="n">metrics</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">workflow_sig</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">workflow_func</span><span class="p">)</span>
+        <span class="n">workflow_input_dict</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="p">,</span>
+            <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">chat_model</span><span class="p">,</span>
+        <span class="p">}</span>
         <span class="k">if</span> <span class="s2">&quot;auxiliary_models&quot;</span> <span class="ow">in</span> <span class="n">workflow_sig</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
-            <span class="n">workflow_output</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">workflow_func</span><span class="p">(</span>
-                <span class="n">task</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="p">,</span>
-                <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">chat_model</span><span class="p">,</span>
-                <span class="n">auxiliary_models</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_chat_models</span><span class="p">,</span>
-            <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">workflow_output</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">workflow_func</span><span class="p">(</span>
-                <span class="n">task</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="p">,</span>
-                <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">chat_model</span><span class="p">,</span>
-            <span class="p">)</span>
+            <span class="n">workflow_input_dict</span><span class="p">[</span><span class="s2">&quot;auxiliary_models&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_chat_models</span>
+        <span class="k">if</span> <span class="s2">&quot;logger&quot;</span> <span class="ow">in</span> <span class="n">workflow_sig</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
+            <span class="n">workflow_input_dict</span><span class="p">[</span><span class="s2">&quot;logger&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">logger</span>
+        <span class="n">workflow_output</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">workflow_func</span><span class="p">(</span><span class="o">**</span><span class="n">workflow_input_dict</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">workflow_output</span><span class="p">,</span> <span class="n">WorkflowOutput</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                 <span class="s2">&quot;The &#39;workflow_func&#39; must return a WorkflowOutput object.&quot;</span><span class="p">,</span>
@@ -1222,17 +1220,15 @@ document.write(`
         <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">workflow_output</span><span class="o">.</span><span class="n">metrics</span> <span class="ow">or</span> <span class="p">{})</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">judge_func</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">judge_sig</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">judge_func</span><span class="p">)</span>
+            <span class="n">judge_input_dict</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="p">,</span>
+                <span class="s2">&quot;response&quot;</span><span class="p">:</span> <span class="n">workflow_output</span><span class="o">.</span><span class="n">response</span><span class="p">,</span>
+            <span class="p">}</span>
             <span class="k">if</span> <span class="s2">&quot;auxiliary_models&quot;</span> <span class="ow">in</span> <span class="n">judge_sig</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
-                <span class="n">judge_output</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">judge_func</span><span class="p">(</span>
-                    <span class="n">task</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="p">,</span>
-                    <span class="n">response</span><span class="o">=</span><span class="n">workflow_output</span><span class="o">.</span><span class="n">response</span><span class="p">,</span>
-                    <span class="n">auxiliary_models</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_chat_models</span><span class="p">,</span>
-                <span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">judge_output</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">judge_func</span><span class="p">(</span>
-                    <span class="n">task</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="p">,</span>
-                    <span class="n">response</span><span class="o">=</span><span class="n">workflow_output</span><span class="o">.</span><span class="n">response</span><span class="p">,</span>
-                <span class="p">)</span>
+                <span class="n">judge_input_dict</span><span class="p">[</span><span class="s2">&quot;auxiliary_models&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_chat_models</span>
+            <span class="k">if</span> <span class="s2">&quot;logger&quot;</span> <span class="ow">in</span> <span class="n">judge_sig</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
+                <span class="n">judge_input_dict</span><span class="p">[</span><span class="s2">&quot;logger&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">logger</span>
+            <span class="n">judge_output</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">judge_func</span><span class="p">(</span><span class="o">**</span><span class="n">judge_input_dict</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">judge_output</span><span class="p">,</span> <span class="n">JudgeOutput</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                     <span class="s2">&quot;The &#39;judge_func&#39; must return a JudgeOutput object.&quot;</span><span class="p">,</span>

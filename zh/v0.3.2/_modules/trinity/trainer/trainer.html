@@ -1102,7 +1102,7 @@ document.write(`
                     <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">sync_weight</span><span class="p">())</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">need_save</span><span class="p">():</span>
                     <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">save_checkpoint</span><span class="p">(</span><span class="n">save_as_hf</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">save_hf_checkpoint</span> <span class="o">==</span> <span class="s2">&quot;always&quot;</span><span class="p">)</span>
+                        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_checkpoint</span><span class="p">(</span><span class="n">save_as_hf</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">save_hf_checkpoint</span> <span class="o">==</span> <span class="s2">&quot;always&quot;</span><span class="p">)</span>
                     <span class="p">)</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">enable_preview</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_log_experiences</span><span class="p">(</span><span class="n">repr_samples</span><span class="p">)</span>
@@ -1114,7 +1114,9 @@ document.write(`
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error in Trainer:</span><span class="se">\n</span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="k">break</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">save_checkpoint</span><span class="p">(</span><span class="n">block_until_saved</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">save_as_hf</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">save_hf_checkpoint</span> <span class="o">!=</span> <span class="s2">&quot;never&quot;</span><span class="p">)</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_checkpoint</span><span class="p">(</span>
+            <span class="n">block_until_saved</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">save_as_hf</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">save_hf_checkpoint</span> <span class="o">!=</span> <span class="s2">&quot;never&quot;</span>
+        <span class="p">)</span>
         <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">set_trainer_status</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">STOPPED</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;--------------------</span><span class="se">\n</span><span class="s2">&gt; Trainer finished.</span><span class="se">\n</span><span class="s2">--------------------&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">name</span></div>
@@ -1199,9 +1201,9 @@ document.write(`
                 <span class="k">else</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">sync_weight</span><span class="p">()</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_method</span> <span class="o">==</span> <span class="n">SyncMethod</span><span class="o">.</span><span class="n">CHECKPOINT</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">save_state_dict</span><span class="p">()</span>
+                <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">save_state_dict</span><span class="p">()</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_method</span> <span class="o">==</span> <span class="n">SyncMethod</span><span class="o">.</span><span class="n">MEMORY</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">upload_state_dict</span><span class="p">()</span>
+                <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">upload_state_dict</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">last_sync_step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_step_num</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">last_sync_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">set_trainer_status</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">)</span>
@@ -1219,11 +1221,15 @@ document.write(`
 
 <div class="viewcode-block" id="Trainer.save_checkpoint">
 <a class="viewcode-back" href="../../../build_api/trinity.trainer.trainer.html#trinity.trainer.Trainer.save_checkpoint">[文档]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">save_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_until_saved</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">save_as_hf</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">save_checkpoint</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">block_until_saved</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">save_as_hf</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
         <span class="n">metrics</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">with</span> <span class="n">Timer</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="s2">&quot;time/save_checkpoint&quot;</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saving checkpoint at step </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">train_step_num</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">save_checkpoint</span><span class="p">(</span><span class="n">block_until_saved</span><span class="o">=</span><span class="n">block_until_saved</span><span class="p">,</span> <span class="n">save_as_hf</span><span class="o">=</span><span class="n">save_as_hf</span><span class="p">)</span>
+            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">save_checkpoint</span><span class="p">(</span>
+                <span class="n">block_until_saved</span><span class="o">=</span><span class="n">block_until_saved</span><span class="p">,</span> <span class="n">save_as_hf</span><span class="o">=</span><span class="n">save_as_hf</span>
+            <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">save_trainer</span><span class="p">(</span>
                 <span class="n">current_step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">train_step_num</span><span class="p">,</span>
                 <span class="n">sample_strategy_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_strategy</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
@@ -1297,7 +1303,9 @@ document.write(`
 <div class="viewcode-block" id="TrainEngineWrapper.save_checkpoint">
 <a class="viewcode-back" href="../../../build_api/trinity.trainer.trainer.html#trinity.trainer.TrainEngineWrapper.save_checkpoint">[文档]</a>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">save_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block_until_saved</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">save_as_hf</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">save_checkpoint</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">block_until_saved</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">save_as_hf</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the checkpoint.&quot;&quot;&quot;</span></div>
 
 
@@ -1311,14 +1319,14 @@ document.write(`
 <div class="viewcode-block" id="TrainEngineWrapper.upload_state_dict">
 <a class="viewcode-back" href="../../../build_api/trinity.trainer.trainer.html#trinity.trainer.TrainEngineWrapper.upload_state_dict">[文档]</a>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">upload_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">upload_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Upload the state dict to Synchronizer.&quot;&quot;&quot;</span></div>
 
 
 <div class="viewcode-block" id="TrainEngineWrapper.save_state_dict">
 <a class="viewcode-back" href="../../../build_api/trinity.trainer.trainer.html#trinity.trainer.TrainEngineWrapper.save_state_dict">[文档]</a>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">save_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">save_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Only save the model state dict for Synchronizer.&quot;&quot;&quot;</span></div>
 </div>
 

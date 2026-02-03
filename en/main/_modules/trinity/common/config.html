@@ -1506,11 +1506,12 @@ document.write(`
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">TinkerConfig</span><span class="p">:</span>
     <span class="n">enable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="n">rank</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span>  <span class="c1"># lora rank</span>
+    <span class="n">rank</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span>  <span class="c1"># lora rank</span>
     <span class="n">seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">train_mlp</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">train_attn</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="n">train_unembed</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span></div>
+    <span class="n">train_unembed</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">base_url</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 
@@ -2063,12 +2064,15 @@ document.write(`
 <a class="viewcode-back" href="../../../build_api/trinity.common.config.html#trinity.common.config.Config.get_envs">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_envs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the environment variables from the config.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">{</span>
+        <span class="n">envs</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">PLUGIN_DIRS_ENV_VAR</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">PLUGIN_DIRS_ENV_VAR</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
             <span class="n">LOG_LEVEL_ENV_VAR</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">level</span><span class="p">,</span>
             <span class="n">LOG_DIR_ENV_VAR</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">save_dir</span><span class="p">,</span>
             <span class="n">LOG_NODE_IP_ENV_VAR</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">group_by_node</span> <span class="k">else</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span>
-        <span class="p">}</span></div>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">tinker</span><span class="o">.</span><span class="n">base_url</span><span class="p">:</span>
+            <span class="n">envs</span><span class="p">[</span><span class="s2">&quot;TINKER_BASE_URL&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">tinker</span><span class="o">.</span><span class="n">base_url</span>
+        <span class="k">return</span> <span class="n">envs</span></div>
 </div>
 
 
