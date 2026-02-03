@@ -173,7 +173,5 @@ async def run_api_server_in_ray_actor_v13(
         cli_args.extend(["--chat-template", chat_template])
     args = parser.parse_args(cli_args)
     args.structured_outputs_config.reasoning_parser = reasoning_parser
-    if chat_template:
-        args.chat_template = chat_template
     logger.info(f"Starting vLLM OpenAI API server with args: {args}")
     await run_server_in_ray(args, async_llm, logger)
