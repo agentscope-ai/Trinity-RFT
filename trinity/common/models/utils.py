@@ -306,12 +306,18 @@ def get_megatron_converter(checkpoint_path: str):
     # modified from verl/model_merger/megatron_model_merger.py
     class MegatronStateDictConverter(MegatronModelMerger):
         def __init__(self, config: ModelMergerConfig):
+            original_init_process_group = torch.distributed.init_process_group
+            original_get_rank = torch.distributed.get_rank
+            original_get_world_size = torch.distributed.get_world_size
             torch.distributed.init_process_group = lambda *args, **kwargs: None
             torch.distributed.get_rank = lambda: 0
             torch.distributed.get_world_size = lambda: 1
             self.logger = get_logger(__name__)
             with self._redirect_print_to_logger():
                 super().__init__(config)
+            torch.distributed.init_process_group = original_init_process_group
+            torch.distributed.get_rank = original_get_rank
+            torch.distributed.get_world_size = original_get_world_size
 
         @contextmanager
         def _redirect_print_to_logger(self):
