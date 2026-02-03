@@ -97,7 +97,6 @@ class AlfworldWorkflow(MultiTurnWorkflow):
     """A workflow for alfworld task."""
 
     is_async: bool = True
-    can_repeat: bool = False
 
     def __init__(
         self,

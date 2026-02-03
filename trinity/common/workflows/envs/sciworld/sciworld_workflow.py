@@ -59,6 +59,7 @@ class SciWorldWorkflow(MultiTurnWorkflow):
     """A workflow for sciworld task."""
 
     is_async: bool = True
+    can_repeat: bool = True
 
     def __init__(
         self,

@@ -34,6 +34,8 @@ Rollout 指标跟踪模型生成响应的 rollout 阶段的性能。
 
 考虑一个包含 `batch_size` 个任务的探索步骤，其中每个任务有 `repeat_times` 次运行。Rollout 指标（例如，`rollout/`）在不同级别的计算过程如下：
 
+- 从*Experiences*到*Run 级别*（仅对 `can_repeat=False` 的 workflows 有效）：在 `calculate_run_level_metrics` 函数中，在每次 run 生成的所有 experiences 中求平均得到 run 级别指标。这通常是为了适应通用多轮场景，其中单个 run 可能产生多个 experiences。
+
 - 从*Run 级别*到*Task 级别*：在 `calculate_task_level_metrics` 函数中，指标跨同一任务的 `repeat_times` 次运行聚合。例如，`rollout/accuracy` 是该任务所有运行的平均准确率。
 
 - 从*Task 级别*到*Step 级别*：在 `gather_metrics` 函数中，指标跨步骤中所有任务聚合。例如，`rollout/accuracy/mean`、`rollout/accuracy/max`、`rollout/accuracy/min` 分别是步骤中所有任务的准确率（`rollout/accuracy`）的平均值、最大值和最小值。
@@ -86,6 +88,8 @@ graph TD
 **指标计算过程**：
 
 考虑一个包含 `len(eval_taskset)` 个任务的评估步骤，其中每个任务有 `repeat_times` 次运行。评估指标（例如，`eval/`、`bench/`）在不同级别计算和聚合：
+
+- 从*Experiences*到*Run 级别*（仅对 `can_repeat=False` 的 workflows 有效）：在 `calculate_run_level_metrics` 函数中，在每次 run 生成的所有 experiences 中求平均得到 run 级别指标。这通常是为了适应通用多轮场景，其中单个 run 可能产生多个 experiences。
 
 - 从*Run 级别*到*Task 级别*：在 `calculate_task_level_metrics` 函数中，指标跨同一任务的 `repeat_times` 次运行聚合。例如，`eval/dummy/accuracy/mean@2` 是该任务所有运行的平均准确率。
 

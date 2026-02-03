@@ -157,8 +157,6 @@ class MultiTurnWorkflow(Workflow):
     The base workflow class for concatenated multi-turn tasks.
     """
 
-    can_repeat: bool = True
-
     def __init__(
         self,
         *,

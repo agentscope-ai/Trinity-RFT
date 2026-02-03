@@ -68,7 +68,6 @@ class FrozenLakeWorkflow(MultiTurnWorkflow):
 
     can_reset: bool = False  # GymFrozenLakeEnv can only reset the player position, not the environment configuration.
     is_async: bool = True
-    can_repeat: bool = False
 
     def __init__(
         self,

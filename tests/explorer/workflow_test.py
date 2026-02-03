@@ -135,6 +135,8 @@ class DummyAsyncWorkflow(Workflow):
 
 
 class DummyMultiTurnWorkflow(MultiTurnWorkflow):
+    can_repeat: bool = True
+
     def __init__(self, model, task: Task, auxiliary_models=None):
         super().__init__(task=task, model=model, auxiliary_models=auxiliary_models)
         self.contents = task.raw_task["contents"]  # type: ignore
@@ -152,6 +154,7 @@ class DummyMultiTurnWorkflow(MultiTurnWorkflow):
 
 class DummyAsyncMultiTurnWorkflow(MultiTurnWorkflow):
     is_async: bool = True
+    can_repeat: bool = True
 
     def __init__(self, model, task: Task, auxiliary_models=None):
         super().__init__(task=task, model=model, auxiliary_models=auxiliary_models)
