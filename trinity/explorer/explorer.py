@@ -283,10 +283,7 @@ class Explorer:
         require_sync = False
         if (self.explore_step_num - self.sync_offset) % self.sync_interval == 0:
             await self.finish_current_steps()
-            if (
-                self.sync_style == SyncStyle.DYNAMIC_BY_TRAINER
-                and self.sync_method == SyncMethod.NCCL
-            ):
+            if self.sync_style == SyncStyle.TRAINER_DRIVEN and self.sync_method == SyncMethod.NCCL:
                 require_sync = await self.synchronizer.trainer_requires_sync.remote()
             else:
                 require_sync = True

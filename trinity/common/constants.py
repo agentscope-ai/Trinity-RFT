@@ -33,7 +33,10 @@ MAX_MODEL_LEN = 4096
 
 
 class CaseInsensitiveEnumMeta(EnumMeta):
+    name_aliases = {}
+
     def __getitem__(cls, name):
+        name = cls.name_aliases.get(name.lower(), name)
         return super().__getitem__(name.upper())
 
     def __getattr__(cls, name):
@@ -42,6 +45,7 @@ class CaseInsensitiveEnumMeta(EnumMeta):
         return super().__getattr__(name)
 
     def __call__(cls, value, *args, **kwargs):
+        value = cls.name_aliases.get(value.lower(), value)
         return super().__call__(value.lower(), *args, **kwargs)
 
 
@@ -65,15 +69,10 @@ class StorageType(CaseInsensitiveEnum):
 
 
 class SyncMethodEnumMeta(CaseInsensitiveEnumMeta):
-    def __call__(cls, value, *args, **kwargs):
-        if value == "online":
-            value = "nccl"
-        elif value == "offline":
-            value = "checkpoint"
-        try:
-            return super().__call__(value, *args, **kwargs)
-        except Exception:
-            raise ValueError(f"Invalid SyncMethod: {value}")
+    name_aliases = {
+        "online": "nccl",
+        "offline": "checkpoint",
+    }
 
 
 class SyncMethod(CaseInsensitiveEnum, metaclass=SyncMethodEnumMeta):
@@ -89,7 +88,6 @@ class RunningStatus(Enum):
 
     RUNNING = "running"
     REQUIRE_SYNC = "require_sync"
-    WAITING_SYNC = "waiting_sync"
     STOPPED = "stopped"
 
 
@@ -102,10 +100,17 @@ class OpType(Enum):
     DIV = "div"
 
 
-class SyncStyle(CaseInsensitiveEnum):
+class SyncStyleEnumMeta(CaseInsensitiveEnumMeta):
+    name_aliases = {
+        "dynamic_by_explorer": "explorer_driven",
+        "dynamic_by_trainer": "trainer_driven",
+    }
+
+
+class SyncStyle(CaseInsensitiveEnum, metaclass=SyncStyleEnumMeta):
     FIXED = "fixed"
-    DYNAMIC_BY_TRAINER = "dynamic_by_trainer"
-    DYNAMIC_BY_EXPLORER = "dynamic_by_explorer"
+    TRAINER_DRIVEN = "trainer_driven"
+    EXPLORER_DRIVEN = "explorer_driven"
 
 
 class SaveStrategy(CaseInsensitiveEnum):

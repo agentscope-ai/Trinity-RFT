@@ -596,7 +596,7 @@ class TestFullyAsyncMode(unittest.TestCase):
         )
         config.buffer.trainer_input.experience_buffer.replay_buffer.enable = self.use_priority_queue
         config.synchronizer.sync_method = SyncMethod.CHECKPOINT
-        config.synchronizer.sync_style = SyncStyle.DYNAMIC_BY_EXPLORER
+        config.synchronizer.sync_style = SyncStyle.EXPLORER_DRIVEN
         config.synchronizer.sync_interval = 8
         config.monitor.monitor_type = "tensorboard"
         trainer_config = deepcopy(config)
@@ -1377,7 +1377,7 @@ class TestOverRollout(BaseTrainerCase):
         self.config.algorithm.advantage_fn_args = {
             "epsilon": 1e-6,
         }
-        self.config.synchronizer.sync_style = SyncStyle.DYNAMIC_BY_EXPLORER
+        self.config.synchronizer.sync_style = SyncStyle.EXPLORER_DRIVEN
         self.config.synchronizer.sync_interval = 1
         self.config.check_and_update()
         both(self.config)

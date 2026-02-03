@@ -295,7 +295,9 @@ def set_sync_style(**kwargs):
         [sync_style.value for sync_style in SyncStyle],
         help="""`fixed`: The explorer and trainer sync model weights once every `sync_interval` steps.
 
-`dynamic_by_explorer`: The explorer decides to request a sync after `sync_interval` steps.""",
+`explorer_driven`: The explorer decides to request a sync after `sync_interval` steps.
+
+`trainer_driven`: The trainer decides to request a sync after `sync_interval` steps.""",
         disabled=disabled,
         on_change=on_change,
         **kwargs,

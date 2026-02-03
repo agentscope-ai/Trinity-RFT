@@ -80,12 +80,12 @@ data_processor:
           threshold: 0.1
 synchronizer:
   sync_method: nccl
-  sync_style: dynamic_by_explorer
+  sync_style: explorer_driven
   sync_interval: 2
 # some other configs
 ```
 
 ```{tip}
-`RewardFilter` 会减少 experience 数量，可能导致 Trainer 无法获得足够的 experience 来启动训练流程。为避免此问题，你可以使用 Trinity-RFT 提供的 {ref}`动态同步 <Synchronizer>` 功能 (`dynamic_by_explorer`)。
+`RewardFilter` 会减少 experience 数量，可能导致 Trainer 无法获得足够的 experience 来启动训练流程。为避免此问题，你可以使用 Trinity-RFT 提供的 {ref}`动态同步 <Synchronizer>` 功能 (`explorer_driven`)。
 上述设置意味着 `Explorer` 每运行 2 步就会与 `Trainer` 同步一次，且无论 `Trainer` 当前完成了多少步都会继续运行。这确保了只要 `Explorer` 在运行，`Trainer` 就总能获得足够的 experience 来启动训练步骤。
 ```

@@ -27,7 +27,7 @@ Important config parameters for experience replay include:
   * `reuse_cooldown_time`: delay time (in seconds) before putting sample back into the buffer; must be set explicitly
   * `priority_fn`: name of the priority function
   * `priority_fn_args`: additional args for the priority function
-* `synchronizer.sync_style`: set to `dynamic_by_explorer`, which allows the trainer to run more training steps as long as the priority queue buffer is non-empty
+* `synchronizer.sync_style`: set to `explorer_driven`, which allows the trainer to run more training steps as long as the priority queue buffer is non-empty
 
 The priority function used in this example is named `decay_limit_randomization`.
 The logic behind it:

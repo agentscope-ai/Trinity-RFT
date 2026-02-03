@@ -16,7 +16,7 @@ Some key configs in this example are:
 
 * `default_workflow_type`: set to `math_trainable_ruler_workflow`
 * `std_threshold` for GRPO advantage: set to small value, filter out group of experiences with same rewards (e.g., when RULER fails to return valid scores, they are set to all zero)
-* `sync_style`: use `dynamic_by_explorer`, due to filtering of experiences
+* `sync_style`: use `explorer_driven`, due to filtering of experiences
 * `train_batch_size`: set to 960; note that one explore step can generate more than 96 * 8 = 768 experiences
 * `lr`: set to small value (2e-6) for stability, as rewards can be noisy
 

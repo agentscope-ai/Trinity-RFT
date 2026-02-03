@@ -71,7 +71,7 @@ data_processor:
           threshold: 0.1
 synchronizer:
   sync_method: nccl
-  sync_style: dynamic_by_explorer
+  sync_style: explorer_driven
   sync_interval: 2
 # some other configs
 ```

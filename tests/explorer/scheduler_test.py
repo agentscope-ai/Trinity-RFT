@@ -811,7 +811,7 @@ class SchedulerTest(unittest.IsolatedAsyncioTestCase):
         self.config.explorer.over_rollout.wait_after_min = 3
         self.config.explorer.max_repeat_times_per_runner = None
         self.config.buffer.batch_size = 4
-        self.config.synchronizer.sync_style = SyncStyle.DYNAMIC_BY_EXPLORER
+        self.config.synchronizer.sync_style = SyncStyle.EXPLORER_DRIVEN
         self.config.check_and_update()
         scheduler = Scheduler(self.config, [DummyModel.remote(), DummyModel.remote()])
         await scheduler.start()

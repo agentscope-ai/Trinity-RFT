@@ -68,7 +68,7 @@ WORKFLOWS = Registry(
 
 - `buffer.trainer_input.experience_buffer.replay_buffer`：使用 `PriorityQueue` 可使模型优先使用高优先级的 experience （默认为使用更新产生的 experience）。
 
-- `synchronizer.sync_style = dynamic_by_explorer`：由 explorer 决定何时与 trainer 同步模型权重。
+- `synchronizer.sync_style = explorer_driven`：由 explorer 决定何时与 trainer 同步模型权重。
 
 示例配置如下所示：
 
@@ -129,7 +129,7 @@ explorer:
   env_vars:
     TMPDIR: ${oc.env:TMPDIR,/tmp}
 synchronizer:
-  sync_style: dynamic_by_explorer
+  sync_style: explorer_driven
   sync_method: 'nccl'
   sync_interval: 2
   sync_timeout: 3600

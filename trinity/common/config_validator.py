@@ -580,7 +580,7 @@ class ExplorerConfigValidator(ConfigValidator):
             if config.synchronizer.sync_style == SyncStyle.FIXED:
                 raise ValueError(
                     "over_rollout_ratio is not compatible with fixed sync_style, please set "
-                    "`synchronizer.sync_style` to `dynamic_by_explorer` or `dynamic_by_trainer`."
+                    "`synchronizer.sync_style` to `explorer_driven` or `trainer_driven`."
                 )
 
         self._validate_lora(config)

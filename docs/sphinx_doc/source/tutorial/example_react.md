@@ -155,7 +155,7 @@ Since agent applications may have variable interaction rounds and sample counts,
 
 ```yaml
 synchronizer:
-  sync_style: dynamic_by_explorer # Trainer starts training immediately when enough data is generated, rather than padding to a fixed size, improving efficiency
+  sync_style: explorer_driven # Trainer starts training immediately when enough data is generated, rather than padding to a fixed size, improving efficiency
   sync_interval: 2  # Check for model parameter updates after every two batches
 ```
 

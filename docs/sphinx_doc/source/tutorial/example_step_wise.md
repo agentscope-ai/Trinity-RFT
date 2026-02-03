@@ -69,7 +69,7 @@ In general multi-step scenarios, each run may generate various number of experie
 
 - `buffer.trainer_input.experience_buffer.replay_buffer`: Using `PriorityQueue` allows the model to use the experiences with higher priority, which prefers newly-generated experiences by default.
 
-- `synchronizer.sync_style = dynamic_by_explorer`: The explorer determines when to synchronize the model weights with the trainer.
+- `synchronizer.sync_style = explorer_driven`: The explorer determines when to synchronize the model weights with the trainer.
 
 
 The example configuration is shown as:
@@ -134,7 +134,7 @@ explorer:
   env_vars:
     TMPDIR: ${oc.env:TMPDIR,/tmp}
 synchronizer:
-  sync_style: dynamic_by_explorer
+  sync_style: explorer_driven
   sync_method: 'nccl'
   sync_interval: 2
   sync_timeout: 3600

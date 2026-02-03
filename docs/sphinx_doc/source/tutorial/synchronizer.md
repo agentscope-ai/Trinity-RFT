@@ -151,7 +151,7 @@ There are **two synchronization styles** that define *when* the Explorer request
 
 ---
 
-### 2. `SyncStyle.DYNAMIC_BY_EXPLORER` – Demand-Driven Sync
+### 2. `SyncStyle.EXPLORER_DRIVEN` – Demand-Driven Sync
 
 - Explorer decides to request a sync after generating a certain amount of data.
 - It tells Synchronizer: _"I’m ready for a new model!"_
@@ -240,9 +240,9 @@ These states help prevent race conditions and ensure smooth coordination.
 | Use Case | Recommended Style |
 |--------|------------------|
 | Short episodes, quick feedback (e.g., math QA) | `FIXED` |
-| Long interactions, delayed rewards (e.g., games, conversations) | `DYNAMIC_BY_EXPLORER` |
+| Long interactions, delayed rewards (e.g., games, conversations) | `EXPLORER_DRIVEN` |
 
-> 💡 `DYNAMIC_BY_EXPLORER` gives more control to the data-generating side, making it better for unbalanced or variable workloads.
+> 💡 `EXPLORER_DRIVEN` gives more control to the data-generating side, making it better for unbalanced or variable workloads.
 
 ---
 

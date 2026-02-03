@@ -13,7 +13,7 @@ Some key configs in this example are:
 * `default_workflow_type`: set to `math_ruler_workflow`
 * `auxiliary_models`: LLM-as-a-judge for RULER; need to set `max_prompt_tokens`, `max_response_tokens`, `max_model_len` appropriately
 * `std_threshold` for GRPO advantage: set to small value, filter out group of experiences with same rewards (e.g., when RULER fails to return valid scores, they are set to all zero)
-* `sync_style`: use `dynamic_by_explorer`, due to filtering of experiences
+* `sync_style`: use `explorer_driven`, due to filtering of experiences
 * `lr`: set to small value (2e-6) for stability, as rewards can be noisy
 
 

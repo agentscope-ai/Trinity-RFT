@@ -273,7 +273,7 @@ class TestSynchronizerExit(BaseTestSynchronizer):
         },
         {
             "sync_method": SyncMethod.CHECKPOINT,
-            "sync_style": SyncStyle.DYNAMIC_BY_EXPLORER,
+            "sync_style": SyncStyle.EXPLORER_DRIVEN,
             "sample_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
             "train_step_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
             "explore_step_time_lists": [
@@ -283,7 +283,7 @@ class TestSynchronizerExit(BaseTestSynchronizer):
         },
         {
             "sync_method": SyncMethod.CHECKPOINT,
-            "sync_style": SyncStyle.DYNAMIC_BY_TRAINER,
+            "sync_style": SyncStyle.TRAINER_DRIVEN,
             "sample_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
             "train_step_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
             "explore_step_time_lists": [
@@ -303,7 +303,7 @@ class TestSynchronizerExit(BaseTestSynchronizer):
         },
         {
             "sync_method": SyncMethod.MEMORY,
-            "sync_style": SyncStyle.DYNAMIC_BY_EXPLORER,
+            "sync_style": SyncStyle.EXPLORER_DRIVEN,
             "sample_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
             "train_step_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
             "explore_step_time_lists": [
@@ -313,7 +313,7 @@ class TestSynchronizerExit(BaseTestSynchronizer):
         },
         {
             "sync_method": SyncMethod.MEMORY,
-            "sync_style": SyncStyle.DYNAMIC_BY_TRAINER,
+            "sync_style": SyncStyle.TRAINER_DRIVEN,
             "sample_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
             "train_step_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
             "explore_step_time_lists": [
@@ -368,13 +368,13 @@ class TestStateDictBasedSynchronizer(BaseTestSynchronizer):
             "explore_step_time_list": [1, 1, 2, 2, 1, 1, 2, 2],
         },
         {
-            "sync_style": SyncStyle.DYNAMIC_BY_EXPLORER,
+            "sync_style": SyncStyle.EXPLORER_DRIVEN,
             "sample_time_list": [2, 2, 2, 1, 2, 1, 2, 1],
             "train_step_time_list": [2, 2, 2, 1, 2, 1, 2, 1],
             "explore_step_time_list": [0.5, 0.5, 0.5, 0.5, 0],
         },
         {
-            "sync_style": SyncStyle.DYNAMIC_BY_TRAINER,
+            "sync_style": SyncStyle.TRAINER_DRIVEN,
             "sample_time_list": [2, 2, 2, 1, 2, 1, 2, 1],
             "train_step_time_list": [2, 2, 2, 1, 2, 1, 2, 1],
             "explore_step_time_list": [0.5, 0.5, 0.5, 0.5, 0],

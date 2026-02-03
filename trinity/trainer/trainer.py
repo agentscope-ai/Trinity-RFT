@@ -140,12 +140,12 @@ class Trainer:
 
     async def need_sync(self) -> bool:
         """Whether to sync the model weight."""
-        if self.sync_style in {SyncStyle.FIXED, SyncStyle.DYNAMIC_BY_TRAINER}:
+        if self.sync_style in {SyncStyle.FIXED, SyncStyle.TRAINER_DRIVEN}:
             return (
                 self.last_sync_step != self.train_step_num
                 and self.train_step_num % self.sync_interval == 0
             )
-        else:  # dynamic by explorer
+        else:  # explorer driven
             # for memory & checkpoint; TODO: apply to nccl sync
             if self.last_sync_step == self.train_step_num and self.sync_method != SyncMethod.NCCL:
                 await self.synchronizer.notify_no_new_model_state_dict.remote()

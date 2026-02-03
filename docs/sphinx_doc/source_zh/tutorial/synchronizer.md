@@ -151,7 +151,7 @@ Explorer 会在以下时机检查是否需要同步：
 
 ---
 
-### 2. `SyncStyle.DYNAMIC_BY_EXPLORER` – 按需动态同步
+### 2. `SyncStyle.EXPLORER_DRIVEN` – 按需动态同步
 
 - Explorer 在生成一定量数据后决定请求同步。
 - 它会通知 Synchronizer：“我已经准备好获取新模型！”
@@ -239,9 +239,9 @@ Synchronizer 通过跟踪 Trainer 和 Explorer 的**状态**，确保同步过�
 | 使用场景 | 推荐模式 |
 |--------|------------------|
 | 短周期任务，反馈迅速（如数学问答） | `FIXED` |
-| 长交互任务，奖励延迟（如游戏、对话） | `DYNAMIC_BY_EXPLORER` |
+| 长交互任务，奖励延迟（如游戏、对话） | `EXPLORER_DRIVEN` |
 
-> 💡 `DYNAMIC_BY_EXPLORER` 将控制权交给数据生成方，更适合负载不均衡或变化较大的任务。
+> 💡 `EXPLORER_DRIVEN` 将控制权交给数据生成方，更适合负载不均衡或变化较大的任务。
 
 ---
 
