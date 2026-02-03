@@ -179,17 +179,15 @@ class AgentScopeWorkflowAdapterV1(Workflow):
 
         metrics = {}
         workflow_sig = inspect.signature(self.workflow_func)
+        workflow_input_dict = {
+            "task": self.task.raw_task,
+            "model": self.chat_model,
+        }
         if "auxiliary_models" in workflow_sig.parameters:
-            workflow_output = await self.workflow_func(
-                task=self.task.raw_task,
-                model=self.chat_model,
-                auxiliary_models=self.auxiliary_chat_models,
-            )
-        else:
-            workflow_output = await self.workflow_func(
-                task=self.task.raw_task,
-                model=self.chat_model,
-            )
+            workflow_input_dict["auxiliary_models"] = self.auxiliary_chat_models
+        if "logger" in workflow_sig.parameters:
+            workflow_input_dict["logger"] = self.logger
+        workflow_output = await self.workflow_func(**workflow_input_dict)
         if not isinstance(workflow_output, WorkflowOutput):
             raise ValueError(
                 "The 'workflow_func' must return a WorkflowOutput object.",
@@ -197,17 +195,15 @@ class AgentScopeWorkflowAdapterV1(Workflow):
         metrics.update(workflow_output.metrics or {})
         if self.judge_func is not None:
             judge_sig = inspect.signature(self.judge_func)
+            judge_input_dict = {
+                "task": self.task.raw_task,
+                "response": workflow_output.response,
+            }
             if "auxiliary_models" in judge_sig.parameters:
-                judge_output = await self.judge_func(
-                    task=self.task.raw_task,
-                    response=workflow_output.response,
-                    auxiliary_models=self.auxiliary_chat_models,
-                )
-            else:
-                judge_output = await self.judge_func(
-                    task=self.task.raw_task,
-                    response=workflow_output.response,
-                )
+                judge_input_dict["auxiliary_models"] = self.auxiliary_chat_models
+            if "logger" in judge_sig.parameters:
+                judge_input_dict["logger"] = self.logger
+            judge_output = await self.judge_func(**judge_input_dict)
             if not isinstance(judge_output, JudgeOutput):
                 raise ValueError(
                     "The 'judge_func' must return a JudgeOutput object.",

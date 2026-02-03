@@ -432,11 +432,12 @@ class DataProcessorConfig:
 @dataclass
 class TinkerConfig:
     enable: bool = False
-    rank: int = 32  # lora rank
+    rank: int = 16  # lora rank
     seed: Optional[int] = None
     train_mlp: bool = True
     train_attn: bool = True
     train_unembed: bool = True
+    base_url: Optional[str] = None
 
 
 @dataclass
@@ -930,12 +931,15 @@ class Config:
 
     def get_envs(self) -> Dict[str, str]:
         """Get the environment variables from the config."""
-        return {
+        envs = {
             PLUGIN_DIRS_ENV_VAR: os.getenv(PLUGIN_DIRS_ENV_VAR, ""),
             LOG_LEVEL_ENV_VAR: self.log.level,
             LOG_DIR_ENV_VAR: self.log.save_dir,
             LOG_NODE_IP_ENV_VAR: "1" if self.log.group_by_node else "0",
         }
+        if self.model.tinker.base_url:
+            envs["TINKER_BASE_URL"] = self.model.tinker.base_url
+        return envs
 
 
 def load_config(config_path: str) -> Config:

@@ -396,7 +396,7 @@ class ModelConfigValidator(ConfigValidator):
 
         import tinker
 
-        service_client = tinker.ServiceClient()
+        service_client = tinker.ServiceClient(base_url=config.model.tinker.base_url)
         supported_models = {
             item.model_name for item in service_client.get_server_capabilities().supported_models
         }
@@ -799,7 +799,8 @@ class BufferConfigValidator(ConfigValidator):
                 config.buffer.batch_size * config.algorithm.repeat_times
             )
         if (
-            config.mode in {"train", "both"}
+            not config.model.tinker.enable
+            and config.mode in {"train", "both"}
             and config.buffer.train_batch_size % config.cluster.trainer_gpu_num != 0
         ):
             raise ValueError(

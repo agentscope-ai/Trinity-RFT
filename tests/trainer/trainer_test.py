@@ -10,6 +10,7 @@ import time
 import unittest
 from copy import deepcopy
 from datetime import datetime
+from logging import Logger
 from typing import Dict
 from unittest import mock
 
@@ -1530,26 +1531,24 @@ class AgentScopeTunerTest(unittest.IsolatedAsyncioTestCase):
         ray.shutdown(_exiting_interpreter=True)
 
     def test_agentscope_tuner(self):
-        try:
-            from agentscope.agent import ReActAgent
-            from agentscope.formatter import OpenAIChatFormatter
-            from agentscope.message import Msg
-            from agentscope.model import ChatModelBase
-            from agentscope.tuner import (
-                Algorithm,
-                Dataset,
-                JudgeOutput,
-                TunerChatModel,
-                WorkflowOutput,
-                tune,
-            )
-        except ImportError:
-            self.skipTest("agentscope >= 1.0.12 is not installed")
+        from agentscope.agent import ReActAgent
+        from agentscope.formatter import OpenAIChatFormatter
+        from agentscope.message import Msg
+        from agentscope.model import ChatModelBase
+        from agentscope.tuner import (
+            AlgorithmConfig,
+            DatasetConfig,
+            JudgeOutput,
+            TunerModelConfig,
+            WorkflowOutput,
+            tune,
+        )
 
         async def workflow_func(
             task: Dict,
             model: ChatModelBase,
             auxiliary_models: Dict[str, ChatModelBase],
+            logger: Logger,
         ) -> WorkflowOutput:
             assert isinstance(model, ChatModelBase)
             assert "judge_model" in auxiliary_models
@@ -1563,10 +1562,11 @@ class AgentScopeTunerTest(unittest.IsolatedAsyncioTestCase):
             st = time.time()
             response = await agent.reply(Msg("user", task["question"], role="user"))
             et = time.time()
+            logger.info(f"Question: {task['question']}\nAnswer: {response.get_text_content()}")
             return WorkflowOutput(response=response, metrics={"workflow_time": et - st})
 
         async def judge_func(
-            task: Dict, response: Msg, auxiliary_models: Dict[str, ChatModelBase]
+            task: Dict, response: Msg, auxiliary_models: Dict[str, ChatModelBase], logger: Logger
         ) -> JudgeOutput:
             assert "judge_model" in auxiliary_models
             judge_model = auxiliary_models["judge_model"]
@@ -1587,6 +1587,7 @@ class AgentScopeTunerTest(unittest.IsolatedAsyncioTestCase):
                 )
             )
             et = time.time()
+            logger.info(f"Judge Response: {judge_response.get_text_content()}")
             judge_response = judge_response.get_text_content()
             if judge_response is not None and "yes" in judge_response.lower():
                 is_correct = True
@@ -1599,17 +1600,17 @@ class AgentScopeTunerTest(unittest.IsolatedAsyncioTestCase):
 
         gsm8k_dataset = get_unittest_dataset_config("gsm8k")
 
-        dataset = Dataset(
+        dataset = DatasetConfig(
             path=gsm8k_dataset.path,
             split="train",
             total_steps=2,
         )
-        eval_dataset = Dataset(
+        eval_dataset = DatasetConfig(
             path=gsm8k_dataset.path,
             split="test",
         )
 
-        model = TunerChatModel(
+        model = TunerModelConfig(
             model_path=get_model_path(),
             max_model_len=4096,
             max_tokens=2048,
@@ -1617,7 +1618,7 @@ class AgentScopeTunerTest(unittest.IsolatedAsyncioTestCase):
         )
 
         auxiliary_models = {
-            "judge_model": TunerChatModel(
+            "judge_model": TunerModelConfig(
                 model_path=get_model_path(),
                 max_model_len=8192,
                 max_tokens=2048,
@@ -1625,7 +1626,7 @@ class AgentScopeTunerTest(unittest.IsolatedAsyncioTestCase):
             )
         }
 
-        algorithm = Algorithm(
+        algorithm = AlgorithmConfig(
             algorithm_type="multi_step_grpo",
             batch_size=4,
             group_size=4,

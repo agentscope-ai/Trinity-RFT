@@ -345,21 +345,8 @@ class SwanlabMonitor(Monitor):
         self.console_logger = get_logger(__name__, in_ray_actor=True)
 
     def log_table(self, table_name: str, experiences_table: pd.DataFrame, step: int):
-        # Convert pandas DataFrame to SwanLab ECharts Table
-        headers: List[str] = list(experiences_table.columns)
-        # Ensure rows are native Python types
-        rows: List[List[object]] = experiences_table.astype(object).values.tolist()
-        try:
-            tbl = swanlab.echarts.Table()
-            tbl.add(headers, rows)
-            swanlab.log({table_name: tbl}, step=step)
-        except Exception as e:
-            self.console_logger.warning(
-                f"Failed to log table '{table_name}' as echarts, falling back to CSV. Error: {e}"
-            )
-            # Fallback: log as CSV string if echarts table is unavailable
-            csv_str = experiences_table.to_csv(index=False)
-            swanlab.log({table_name: csv_str}, step=step)
+        # Not support log table yet
+        pass
 
     def log(self, data: dict, step: int, commit: bool = False) -> None:
         """Log metrics."""

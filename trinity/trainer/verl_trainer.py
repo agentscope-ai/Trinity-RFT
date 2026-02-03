@@ -435,7 +435,7 @@ class VerlPPOTrainerWrapper(RayPPOTrainer, TrainEngineWrapper):
         self.config.actor_rollout_ref.actor.optim.total_training_steps = self.total_training_steps
         self.config.critic.optim.total_training_steps = self.total_training_steps
 
-    def save_state_dict(self):  # checkpoint sync
+    async def save_state_dict(self):  # checkpoint sync
         actor_local_path = os.path.join(
             self.config.trainer.default_local_dir, f"global_step_{self.global_steps}", "actor"
         )
@@ -443,9 +443,9 @@ class VerlPPOTrainerWrapper(RayPPOTrainer, TrainEngineWrapper):
             actor_local_path,
             global_step=self.global_steps,
         )
-        ray.get(self.checkpoint_monitor.monitor_step.remote(self.global_steps, is_state_dict=True))
+        await self.checkpoint_monitor.monitor_step.remote(self.global_steps, is_state_dict=True)
 
-    def upload_state_dict(self):  # state dict sync
+    async def upload_state_dict(self):  # state dict sync
         self.actor_rollout_wg.upload_state_dict(self.global_steps)
 
     async def train_step(self, batch_exps: List[Experience]) -> Dict:  # noqa C901
@@ -585,14 +585,16 @@ class VerlPPOTrainerWrapper(RayPPOTrainer, TrainEngineWrapper):
 
         return metrics
 
-    def save_checkpoint(self, block_until_saved: bool = False, save_as_hf: bool = False) -> None:
-        self._save_checkpoint(save_as_hf=save_as_hf)
+    async def save_checkpoint(
+        self, block_until_saved: bool = False, save_as_hf: bool = False
+    ) -> None:
+        await self._save_checkpoint(save_as_hf=save_as_hf)
         if block_until_saved:
             self.actor_rollout_wg.wait_on_save_thread()
             if self.algorithm and self.algorithm.use_critic:
                 self.critic_wg.wait_on_save_thread()
 
-    def _save_checkpoint(self, save_as_hf: bool = False):
+    async def _save_checkpoint(self, save_as_hf: bool = False):
         # path: given_path + `/global_step_{global_steps}` + `/actor`
         local_global_step_folder = os.path.join(
             self.config.trainer.default_local_dir, f"global_step_{self.global_steps}"
@@ -644,7 +646,7 @@ class VerlPPOTrainerWrapper(RayPPOTrainer, TrainEngineWrapper):
                 max_ckpt_to_keep=max_critic_ckpt_to_keep,
             )
 
-        ray.get(self.checkpoint_monitor.monitor_step.remote(self.global_steps))
+        await self.checkpoint_monitor.monitor_step.remote(self.global_steps)
 
     def _load_checkpoint(self):
         if self.config.trainer.resume_mode == "disable":

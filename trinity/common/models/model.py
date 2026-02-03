@@ -260,7 +260,6 @@ class ModelWrapper:
             engine_type (str): The type of the model engine. Default to "vllm".
             enable_lora (bool): Whether to enable LoRA. Default to False.
             enable_history (bool): Whether to enable history recording. Default to False.
-            enable_thinking (Optional[bool]): Whether to enable thinking mode. Default to None. Only used for Qwen3 series models.
         """
         assert (
             engine_type.startswith("vllm") or engine_type == "tinker"

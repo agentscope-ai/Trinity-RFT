@@ -94,7 +94,7 @@ class Trainer:
                     metrics.update(await self.sync_weight())
                 if self.need_save():
                     metrics.update(
-                        self.save_checkpoint(save_as_hf=self.save_hf_checkpoint == "always")
+                        await self.save_checkpoint(save_as_hf=self.save_hf_checkpoint == "always")
                     )
                 if self.config.trainer.enable_preview:
                     self._log_experiences(repr_samples)
@@ -106,7 +106,9 @@ class Trainer:
                 self.logger.error(f"Error in Trainer:\n{traceback.format_exc()}")
                 break
 
-        self.save_checkpoint(block_until_saved=True, save_as_hf=self.save_hf_checkpoint != "never")
+        await self.save_checkpoint(
+            block_until_saved=True, save_as_hf=self.save_hf_checkpoint != "never"
+        )
         await self.synchronizer.set_trainer_status.remote(RunningStatus.STOPPED)
         self.logger.info("--------------------\n> Trainer finished.\n--------------------")
         return self.config.trainer.name
@@ -172,9 +174,9 @@ class Trainer:
                 else:
                     self.engine.sync_weight()
             elif self.sync_method == SyncMethod.CHECKPOINT:
-                self.engine.save_state_dict()
+                await self.engine.save_state_dict()
             elif self.sync_method == SyncMethod.MEMORY:
-                self.engine.upload_state_dict()
+                await self.engine.upload_state_dict()
             self.last_sync_step = self.train_step_num
             self.last_sync_time = time.time()
         self.logger.info(f"Trainer sync_weights at step {self.train_step_num} finished.")
@@ -188,11 +190,15 @@ class Trainer:
             )
             self._sample_exps_to_log.clear()
 
-    def save_checkpoint(self, block_until_saved: bool = False, save_as_hf: bool = False) -> Dict:
+    async def save_checkpoint(
+        self, block_until_saved: bool = False, save_as_hf: bool = False
+    ) -> Dict:
         metrics = {}
         with Timer(metrics, "time/save_checkpoint"):
             self.logger.info(f"Saving checkpoint at step {self.train_step_num}...")
-            self.engine.save_checkpoint(block_until_saved=block_until_saved, save_as_hf=save_as_hf)
+            await self.engine.save_checkpoint(
+                block_until_saved=block_until_saved, save_as_hf=save_as_hf
+            )
             self.state.save_trainer(
                 current_step=self.train_step_num,
                 sample_strategy_state=self.sample_strategy.state_dict(),
@@ -245,7 +251,9 @@ class TrainEngineWrapper(ABC):
         """
 
     @abstractmethod
-    def save_checkpoint(self, block_until_saved: bool = False, save_as_hf: bool = False) -> None:
+    async def save_checkpoint(
+        self, block_until_saved: bool = False, save_as_hf: bool = False
+    ) -> None:
         """Save the checkpoint."""
 
     @abstractmethod
@@ -253,11 +261,11 @@ class TrainEngineWrapper(ABC):
         """Sync the model weight."""
 
     @abstractmethod
-    def upload_state_dict(self) -> None:
+    async def upload_state_dict(self) -> None:
         """Upload the state dict to Synchronizer."""
 
     @abstractmethod
-    def save_state_dict(self) -> None:
+    async def save_state_dict(self) -> None:
         """Only save the model state dict for Synchronizer."""
 
 

@@ -75,7 +75,8 @@ class TinkerTrainerWrapper(TrainEngineWrapper):
         self.min_lr_ratio = algorithm_config.optimizer.min_lr_ratio
         assert 0.0 <= self.min_lr_ratio <= 1.0
         self.logger.info(
-            f"Total steps: {self.total_steps}, num_warmup_steps: {self.num_warmup_steps}"
+            f"Total steps: {self.total_steps if self.total_steps != sys.maxsize else 'unlimited'},"
+            f" num_warmup_steps: {self.num_warmup_steps}"
         )
 
         if self.lr_scheduler_type not in {"constant", "cosine"}:
@@ -124,7 +125,7 @@ class TinkerTrainerWrapper(TrainEngineWrapper):
 
     async def prepare(self):
         self.service_client = tinker.ServiceClient()
-
+        self.checkpoint_manager = self.service_client.create_rest_client()
         name_prefix_list = [self.config.project, self.config.group, self.config.name]
         self.tinker_checkpoint_name_prefix = "-".join(
             [prefix for prefix in name_prefix_list if prefix]
@@ -165,6 +166,7 @@ class TinkerTrainerWrapper(TrainEngineWrapper):
             self.latest_remote_checkpoint_step = 0
             self.latest_remote_checkpoint_path = None
             self._train_step_num = 0
+        self.model_info = await self.actor_client.get_info_async()
 
         if os.path.exists(self.local_latest_state_dict_iteration):
             with open(self.local_latest_state_dict_iteration, "r") as f:
@@ -177,7 +179,7 @@ class TinkerTrainerWrapper(TrainEngineWrapper):
             with open(sampler_file_path, "r") as f:
                 self.latest_remote_sampler_path = f.read().strip()
         else:
-            self.latest_remote_sampler_step = 0
+            self.latest_remote_sampler_step = None
             self.latest_remote_sampler_path = None
 
         self.ref_client = await self.service_client.create_sampling_client_async(
@@ -318,15 +320,16 @@ class TinkerTrainerWrapper(TrainEngineWrapper):
 
         return metrics
 
-    def save_checkpoint(self, block_until_saved: bool = False, save_as_hf: bool = False) -> None:
+    async def save_checkpoint(
+        self, block_until_saved: bool = False, save_as_hf: bool = False
+    ) -> None:
         """Save the checkpoint."""
         if self.train_step_num == self.latest_remote_checkpoint_step:
             return
         self.latest_remote_checkpoint_step = self.train_step_num
         checkpoint_name = f"{self.tinker_checkpoint_name_prefix}-state-{self.train_step_num}"
-        self.latest_remote_checkpoint_path = (
-            self.actor_client.save_state(checkpoint_name).result().path
-        )
+        save_state_future = await self.actor_client.save_state_async(checkpoint_name)
+        self.latest_remote_checkpoint_path = (await save_state_future).path
         local_path = os.path.join(
             self.default_local_dir,
             f"global_step_{self.train_step_num}",
@@ -352,24 +355,38 @@ class TinkerTrainerWrapper(TrainEngineWrapper):
         """Sync the model weight."""
         raise NotImplementedError("Tinker trainer does not support NCCL sync")
 
-    def upload_state_dict(self) -> None:
+    async def upload_state_dict(self) -> None:
         """Upload the state dict to Synchronizer."""
-        self.save_state_dict()
+        await self.save_state_dict()
         ray.get(
             self.synchronizer.set_model_state_dict.remote(
                 self.latest_remote_sampler_path, self.train_step_num
             )
         )
 
-    def save_state_dict(self) -> None:
+    async def save_state_dict(self) -> None:
         """Only save the model state dict for Synchronizer."""
         if self.train_step_num == self.latest_remote_sampler_step:
             return
+        self.stale_remote_sampler_step = self.latest_remote_sampler_step
         self.latest_remote_sampler_step = self.train_step_num
-        checkpoint_name = f"{self.tinker_checkpoint_name_prefix}-sampler-{self.train_step_num}"
-        self.latest_remote_sampler_path = (
-            self.actor_client.save_weights_for_sampler(checkpoint_name).result().path
+        current_checkpoint_name = (
+            f"{self.tinker_checkpoint_name_prefix}-sampler-{self.train_step_num}"
         )
+        save_weights_future = await self.actor_client.save_weights_for_sampler_async(
+            current_checkpoint_name
+        )
+        self.latest_remote_sampler_path = (await save_weights_future).path
+        if self.stale_remote_sampler_step is not None:
+            stale_checkpoint_name = (
+                f"{self.tinker_checkpoint_name_prefix}-sampler-{self.stale_remote_sampler_step}"
+            )
+            try:
+                await self.checkpoint_manager.delete_checkpoint_async(
+                    self.model_info.model_id, stale_checkpoint_name
+                )
+            except Exception:
+                self.logger.warning(f"Failed to remove stale state_dict {stale_checkpoint_name}")
         local_path = os.path.join(
             self.default_local_dir,
             f"global_step_{self.train_step_num}",
