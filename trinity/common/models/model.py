@@ -104,9 +104,6 @@ class BaseInferenceModel(InferenceModel):
         messages: List[dict],
     ) -> str:
         assert tokenizer_or_processor is not None, "tokenizer_or_processor must be provided."
-        if self.chat_template is None:
-            assert self.tokenizer is not None, "self.tokenizer must be initialized."
-            self.chat_template = self.tokenizer.get_chat_template()
 
         if messages[-1]["role"] == "assistant":
             prompt = tokenizer_or_processor.apply_chat_template(
@@ -173,8 +170,6 @@ class BaseInferenceModel(InferenceModel):
         """
         if self.tokenizer is None:
             await self._initialize_tokenizer()
-        if self.chat_template is None:
-            self.chat_template = self.tokenizer.get_chat_template()
         token_ids, action_mask, prompt_length = self.action_mask_method(
             tokenizer=self.tokenizer,
             messages=messages,
@@ -549,12 +544,13 @@ class ModelWrapper:
             def record_chat_completions(*args, **kwargs):
                 logprobs = kwargs.pop("logprobs", True)
                 extra_body = kwargs.pop("extra_body", {})
-                if self.config.enable_thinking is not None:
-                    if "chat_template_kwargs" not in extra_body:
-                        extra_body["chat_template_kwargs"] = {}
-                    extra_body["chat_template_kwargs"][
-                        "enable_thinking"
-                    ] = self.config.enable_thinking
+                if "chat_template_kwargs" not in extra_body:
+                    extra_body["chat_template_kwargs"] = {}
+                extra_body["chat_template_kwargs"].update(
+                    {
+                        "enable_thinking": self.config.enable_thinking,
+                    }
+                )
                 extra_body["return_token_ids"] = True
                 response = ori_create(*args, extra_body=extra_body, logprobs=logprobs, **kwargs)
                 self.history.extend(convert_api_output_to_experience(response))
@@ -608,12 +604,13 @@ class ModelWrapper:
             async def record_chat_completions(*args, **kwargs):
                 logprobs = kwargs.pop("logprobs", True)
                 extra_body = kwargs.pop("extra_body", {})
-                if self.config.enable_thinking is not None:
-                    if "chat_template_kwargs" not in extra_body:
-                        extra_body["chat_template_kwargs"] = {}
-                    extra_body["chat_template_kwargs"][
-                        "enable_thinking"
-                    ] = self.config.enable_thinking
+                if "chat_template_kwargs" not in extra_body:
+                    extra_body["chat_template_kwargs"] = {}
+                extra_body["chat_template_kwargs"].update(
+                    {
+                        "enable_thinking": self.config.enable_thinking,
+                    }
+                )
                 extra_body["return_token_ids"] = True
                 response = await ori_create(
                     *args, extra_body=extra_body, logprobs=logprobs, **kwargs

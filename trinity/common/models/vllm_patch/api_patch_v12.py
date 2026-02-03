@@ -131,6 +131,7 @@ async def run_api_server_in_ray_actor_v12(
     tool_call_parser: Optional[str] = None,
     reasoning_parser: Optional[str] = None,
     enable_log_requests: bool = False,
+    chat_template: Optional[str] = None,
 ):
     vllm_version = get_vllm_version()
     if vllm_version <= parse_version("0.11.0"):
@@ -158,6 +159,8 @@ async def run_api_server_in_ray_actor_v12(
         cli_args.extend(["--tool-call-parser", tool_call_parser])
     if reasoning_parser:
         cli_args.extend(["--reasoning-parser", reasoning_parser])
+    if chat_template:
+        cli_args.extend(["--chat-template", chat_template])
     args = parser.parse_args(cli_args)
     if vllm_version >= parse_version("0.11.0"):
         args.structured_outputs_config.reasoning_parser = reasoning_parser

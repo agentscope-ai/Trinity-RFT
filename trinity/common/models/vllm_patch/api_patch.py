@@ -6,6 +6,7 @@
 import asyncio
 import functools
 import json
+import logging
 import time
 from typing import Optional, Union
 
@@ -37,6 +38,7 @@ from vllm.entrypoints.openai.tool_parsers.mistral_tool_parser import MistralTool
 from vllm.outputs import RequestOutput
 from vllm.transformers_utils.tokenizer import MistralTokenizer
 from vllm.utils import FlexibleArgumentParser, set_ulimit
+from vllm.version import __version__ as VLLM_VERSION
 
 from trinity.common.models.vllm_patch import get_vllm_version
 from trinity.utils.log import get_logger
@@ -269,7 +271,9 @@ async def chat_completion_full_generator(  # noqa C901
     return PatchedChatCompletionResponse(**response_args)
 
 
-async def run_server_in_ray(args, engine_client):
+async def run_server_in_ray(args, engine_client, logger):
+    logger.info("vLLM API server version %s", VLLM_VERSION)
+
     # workaround to make sure that we bind the port before the engine is set up.
     # This avoids race conditions with ray.
     # see https://github.com/vllm-project/vllm/issues/8204
@@ -335,10 +339,12 @@ async def run_api_server_in_ray_actor(
     host: str,
     port: int,
     model_path: str,
+    logger: logging.Logger,
     enable_auto_tool_choice: bool = False,
     tool_call_parser: Optional[str] = None,
     reasoning_parser: Optional[str] = None,
     enable_log_requests: bool = False,
+    chat_template: Optional[str] = None,
 ):
     vllm_version = get_vllm_version()
     if vllm_version < parse_version("0.8.5") or vllm_version > parse_version("0.11.0"):
@@ -366,7 +372,9 @@ async def run_api_server_in_ray_actor(
         cli_args.extend(["--tool-call-parser", tool_call_parser])
     if reasoning_parser:
         cli_args.extend(["--reasoning-parser", reasoning_parser])
+    if chat_template:
+        cli_args.extend(["--chat-template", chat_template])
     args = parser.parse_args(cli_args)
     if vllm_version >= parse_version("0.11.0"):
         args.structured_outputs_config.reasoning_parser = reasoning_parser
-    await run_server_in_ray(args, async_llm)
+    await run_server_in_ray(args, async_llm, logger)

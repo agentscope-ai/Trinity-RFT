@@ -31,52 +31,28 @@ def get_api_server(
             run_api_server_in_ray_actor,
         )
 
-        return asyncio.create_task(
-            run_api_server_in_ray_actor(
-                async_llm,
-                host=host,
-                port=port,
-                model_path=config.model_path,  # type: ignore [arg-type]
-                enable_auto_tool_choice=config.enable_auto_tool_choice,
-                tool_call_parser=config.tool_call_parser,
-                reasoning_parser=config.reasoning_parser,
-                enable_log_requests=config.enable_log_requests,
-            )
-        )
     elif vllm_version == parse_version("0.12.0"):
         from trinity.common.models.vllm_patch.api_patch_v12 import (
-            run_api_server_in_ray_actor_v12,
+            run_api_server_in_ray_actor_v12 as run_api_server_in_ray_actor,
         )
 
-        return asyncio.create_task(
-            run_api_server_in_ray_actor_v12(
-                async_llm,
-                host=host,
-                port=port,
-                model_path=config.model_path,  # type: ignore [arg-type]
-                logger=logger,
-                enable_auto_tool_choice=config.enable_auto_tool_choice,
-                tool_call_parser=config.tool_call_parser,
-                reasoning_parser=config.reasoning_parser,
-                enable_log_requests=config.enable_log_requests,
-            )
-        )
     else:
         from trinity.common.models.vllm_patch.api_patch_v13 import (
-            run_api_server_in_ray_actor_v13,
+            run_api_server_in_ray_actor_v13 as run_api_server_in_ray_actor,
         )
 
-        logger.info(f"Using vLLM API patch for version {vllm.__version__}")
-        return asyncio.create_task(
-            run_api_server_in_ray_actor_v13(
-                async_llm,
-                host=host,
-                port=port,
-                model_path=config.model_path,  # type: ignore [arg-type]
-                logger=logger,
-                enable_auto_tool_choice=config.enable_auto_tool_choice,
-                tool_call_parser=config.tool_call_parser,
-                reasoning_parser=config.reasoning_parser,
-                enable_log_requests=config.enable_log_requests,
-            )
+    logger.info(f"Using vLLM API patch for version {vllm.__version__}")
+    return asyncio.create_task(
+        run_api_server_in_ray_actor(
+            async_llm,
+            host=host,
+            port=port,
+            model_path=config.model_path,  # type: ignore [arg-type]
+            logger=logger,
+            enable_auto_tool_choice=config.enable_auto_tool_choice,
+            tool_call_parser=config.tool_call_parser,
+            reasoning_parser=config.reasoning_parser,
+            enable_log_requests=config.enable_log_requests,
+            chat_template=config.chat_template,
         )
+    )

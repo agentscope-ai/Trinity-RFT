@@ -634,8 +634,6 @@ class vLLMRolloutModel(BaseInferenceModel):
     async def get_message_token_len(self, messages) -> int:
         if self.tokenizer is None:
             await self._initialize_tokenizer()
-        if self.chat_template is None:
-            self.chat_template = self.tokenizer.get_chat_template()
         prompt = self.tokenizer.apply_chat_template(
             messages,
             tokenize=False,
