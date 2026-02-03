@@ -175,9 +175,9 @@ class Synchronizer:
             if status == RunningStatus.STOPPED:
                 self._ready_condition.notify_all()
 
-    def get_trainer_status(self) -> RunningStatus:
-        """Get the current status of the trainer."""
-        return self.trainer_status
+    def trainer_requires_sync(self) -> bool:
+        """Check if the trainer is require sync."""
+        return self.trainer_status == RunningStatus.REQUIRE_SYNC
 
     async def set_explorer_status(
         self, status: RunningStatus, old_status: Optional[RunningStatus] = None
@@ -202,9 +202,9 @@ class Synchronizer:
             self.explorer_status_counts[status] = 0
         self.explorer_status_counts[status] += 1
 
-    def get_explorer_status_counts(self) -> Dict[RunningStatus, int]:
-        """Return the current status counts for all explorers."""
-        return self.explorer_status_counts
+    def explorer_requires_sync(self) -> bool:
+        """Check if any explorer is require sync."""
+        return self.explorer_status_counts[RunningStatus.REQUIRE_SYNC] > 0
 
     async def set_model_state_dict_with_step_num(
         self, step_num: Optional[int] = None, world_size: Optional[int] = None

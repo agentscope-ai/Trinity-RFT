@@ -287,9 +287,7 @@ class Explorer:
                 self.sync_style == SyncStyle.DYNAMIC_BY_TRAINER
                 and self.sync_method == SyncMethod.NCCL
             ):
-                require_sync = await (
-                    self.synchronizer.get_trainer_status.remote() == RunningStatus.REQUIRE_SYNC
-                )
+                require_sync = await self.synchronizer.trainer_requires_sync.remote()
             else:
                 require_sync = True
         return require_sync

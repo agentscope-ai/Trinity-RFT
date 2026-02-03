@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
 import re
-from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 import torch
-from torch.distributed._tensor import DTensor, Placement, Shard
 
 from trinity.common.config import TrainerConfig
 from trinity.utils.log import get_logger
@@ -223,18 +221,6 @@ def load_state_dict(checkpoint_dir: str, config: TrainerConfig) -> Union[dict, T
         raise NotImplementedError(f"Unsupported trainer type {config.trainer_type}")
 
 
-# copy from verl/scripts/model_merger.py
-def merge_by_placement(tensors: List[torch.Tensor], placement: Placement):
-    if placement.is_replicate():
-        return tensors[0]
-    elif placement.is_partial():
-        raise NotImplementedError("Partial placement is not supported yet")
-    elif placement.is_shard():
-        return torch.cat(tensors, dim=placement.dim).contiguous()
-    else:
-        raise ValueError(f"Unsupported placement: {placement}")
-
-
 def get_verl_checkpoint_info(
     checkpoint_path: str, step_num: Optional[int] = None, raise_error: bool = True
 ) -> Tuple[str, int]:
@@ -271,107 +257,36 @@ def get_verl_checkpoint_info(
         return path, step_num
 
 
-# copy from verl/scripts/model_merger.py
+# modified from verl/model_merger/fsdp_model_merger.py
 def load_fsdp_state_dict_from_verl_checkpoint(checkpoint_path: str) -> dict:  # noqa: C901
     """Load state dict from a Verl checkpoint."""
+    from verl.model_merger.base_model_merger import ModelMergerConfig
+    from verl.model_merger.fsdp_model_merger import FSDPModelMerger
+
     logger = get_logger(__name__)
-    logger.info(f"Loading state dict from {checkpoint_path}")
-    assert not checkpoint_path.endswith(
-        "huggingface"
-    ), "The local_dir should not end with huggingface"
-
-    # copy rank zero to find the shape of (dp, fsdp)
-    rank = 0
-    world_size = 0
-    for filename in os.listdir(checkpoint_path):
-        match = re.match(r"model_world_size_(\d+)_rank_0\.pt", filename)
-        if match:
-            world_size = match.group(1)
-            break
-    assert world_size, "No model file with the proper format"
-
-    state_dict = torch.load(
-        os.path.join(checkpoint_path, f"model_world_size_{world_size}_rank_{rank}.pt"),
-        map_location="cpu",
+    config = ModelMergerConfig(
+        operation="merge",
+        backend="fsdp",
+        trust_remote_code=False,
+        is_value_model=False,
+        local_dir=checkpoint_path,
+        hf_model_config_path=os.path.join(checkpoint_path, "huggingface"),
     )
-    pivot_key = sorted(list(state_dict.keys()))[0]
-    weight = state_dict[pivot_key]
-    assert isinstance(weight, torch.distributed._tensor.DTensor)
-    # get sharding info
-    device_mesh = weight.device_mesh
-    mesh = device_mesh.mesh
-    mesh_dim_names = device_mesh.mesh_dim_names
+    merger = FSDPModelMerger(config)
 
+    world_size = merger._get_world_size()
+    rank_zero_state_dict = merger._load_rank_zero_state_dict(world_size)
+
+    mesh, mesh_dim_names = merger._extract_device_mesh_info(rank_zero_state_dict, world_size)
     logger.info(f"Got device mesh {mesh}, mesh_dim_names {mesh_dim_names}")
 
-    assert mesh_dim_names in (("fsdp",),), f"Unsupported mesh_dim_names {mesh_dim_names}"
-
-    if "tp" in mesh_dim_names:
-        # fsdp * tp
-        total_shards = mesh.shape[-1] * mesh.shape[-2]
-        mesh_shape = (mesh.shape[-2], mesh.shape[-1])
-    else:
-        # fsdp
-        total_shards = mesh.shape[-1]
-        mesh_shape = (mesh.shape[-1],)
-
+    total_shards, mesh_shape = merger._calculate_shard_configuration(mesh, mesh_dim_names)
     logger.info(f"Processing model shards with {total_shards} {mesh_shape} in total")
 
-    model_state_dict_lst = []
-    model_state_dict_lst.append(state_dict)
-    model_state_dict_lst.extend([""] * (total_shards - 1))
-
-    def process_one_shard(rank):
-        model_path = os.path.join(checkpoint_path, f"model_world_size_{world_size}_rank_{rank}.pt")
-        state_dict = torch.load(model_path, map_location="cpu", weights_only=False)
-        model_state_dict_lst[rank] = state_dict  # noqa: F821
-        return state_dict
-
-    with ThreadPoolExecutor(max_workers=min(32, os.cpu_count())) as executor:  # type: ignore
-        for rank in range(1, total_shards):
-            executor.submit(process_one_shard, rank)
-    state_dict = {}
-    param_placements: Dict[str, List[Placement]] = {}
-    keys = set(model_state_dict_lst[0].keys())
-    for key in keys:
-        state_dict[key] = []
-        for model_state_dict in model_state_dict_lst:
-            try:
-                tensor = model_state_dict.pop(key)
-            except:  # noqa: E722
-                logger.info("-" * 30)
-                logger.info(model_state_dict.keys())
-            if isinstance(tensor, DTensor):
-                state_dict[key].append(tensor._local_tensor.bfloat16())
-                placements = tuple(tensor.placements)
-                # replicated placement at dp dimension can be discarded
-                if mesh_dim_names[0] == "dp":
-                    placements = placements[1:]
-                if key not in param_placements:
-                    param_placements[key] = placements
-                else:
-                    assert param_placements[key] == placements
-            else:
-                state_dict[key] = tensor.bfloat16()
-
-    del model_state_dict_lst
-
-    for key in sorted(state_dict):
-        if not isinstance(state_dict[key], list):
-            logger.info(f"No need to merge key {key}")
-            continue
-        # merge shards
-        placements: Tuple[Shard] = param_placements[key]  # type: ignore
-        if len(mesh_shape) == 1:
-            # 1-D list, FSDP without TP
-            assert len(placements) == 1
-            shards = state_dict[key]
-            state_dict[key] = merge_by_placement(shards, placements[0])
-        else:
-            # 2-D list, FSDP + TP
-            raise NotImplementedError("FSDP + TP is not supported yet")
-
-    return state_dict
+    merged_state_dict = merger._load_and_merge_state_dicts(
+        world_size, total_shards, mesh_shape, mesh_dim_names
+    )
+    return merged_state_dict
 
 
 def load_huggingface_state_dict(checkpoint_path: str):
@@ -382,98 +297,45 @@ def load_huggingface_state_dict(checkpoint_path: str):
 
 
 def get_megatron_converter(checkpoint_path: str):
-    from megatron.core import mpu
-    from megatron.core.tensor_parallel.random import model_parallel_cuda_manual_seed
-    from transformers import AutoConfig
+    import builtins
+    from contextlib import contextmanager
+
     from verl.model_merger.base_model_merger import ModelMergerConfig
     from verl.model_merger.megatron_model_merger import MegatronModelMerger
-    from verl.utils.device import get_device_name, get_torch_device
 
+    # modified from verl/model_merger/megatron_model_merger.py
     class MegatronStateDictConverter(MegatronModelMerger):
         def __init__(self, config: ModelMergerConfig):
-            self.config = config
-            self.hf_model_config_path = config.hf_model_config_path
-            self.model_config = AutoConfig.from_pretrained(
-                self.hf_model_config_path, trust_remote_code=self.config.trust_remote_code
-            )
-
-            self.rank = 0
-            self.world_size = 1
-            local_rank = 0
-            get_torch_device().set_device(f"{get_device_name()}:{local_rank}")
-
-            mpu.initialize_model_parallel(
-                tensor_model_parallel_size=1,
-                pipeline_model_parallel_size=self.world_size,
-                virtual_pipeline_model_parallel_size=None,
-                context_parallel_size=1,
-                expert_model_parallel_size=1,
-            )
-            model_parallel_cuda_manual_seed(0)
-            self.hf_config = AutoConfig.from_pretrained(
-                self.config.hf_model_config_path, trust_remote_code=self.config.trust_remote_code
-            )
+            torch.distributed.init_process_group = lambda *args, **kwargs: None
+            torch.distributed.get_rank = lambda: 0
+            torch.distributed.get_world_size = lambda: 1
             self.logger = get_logger(__name__)
-            self.logger.debug(self.hf_config)
+            with self._redirect_print_to_logger():
+                super().__init__(config)
 
-            self.params_mapping = {
-                # megatron core gpt model name, huggingface model name
-                # NOTICE: It's a little bit tricky, when 2 keys have the same prefix, we need to make sure the
-                # longer key within the containing relationship is processed first.
-                "embedding.word_embeddings": "model.embed_tokens",
-                # input layer norm for dpskv3
-                "input_layernorm.weight": "input_layernorm.weight",
-                "input_layernorm.bias": "input_layernorm.bias",
-                # attn
-                "self_attention.linear_qkv.layer_norm_weight": "input_layernorm.weight",
-                "self_attention.linear_qkv.layer_norm_bias": "input_layernorm.bias",
-                "self_attention.linear_qkv": "self_attn.qkv_proj",
-                "self_attention.q_layernorm": "self_attn.q_norm",
-                "self_attention.k_layernorm": "self_attn.k_norm",
-                "self_attention.linear_proj": "self_attn.o_proj",
-                # mla
-                "self_attention.linear_q_proj": "self_attn.q_proj",
-                "self_attention.linear_q_down_proj": "self_attn.q_a_proj",
-                "self_attention.linear_q_up_proj.layer_norm_weight": "self_attn.q_a_layernorm.weight",
-                "self_attention.linear_q_up_proj": "self_attn.q_b_proj",
-                "self_attention.linear_kv_down_proj": "self_attn.kv_a_proj_with_mqa",
-                "self_attention.linear_kv_up_proj.layer_norm_weight": "self_attn.kv_a_layernorm.weight",
-                "self_attention.linear_kv_up_proj": "self_attn.kv_b_proj",
-                # mlp
-                "pre_mlp_layernorm": "post_attention_layernorm",
-                "mlp.linear_fc1.layer_norm_weight": "post_attention_layernorm.weight",
-                "mlp.linear_fc1.layer_norm_bias": "post_attention_layernorm.bias",
-                "mlp.linear_fc1": "mlp.gate_up_proj",
-                "mlp.linear_fc2": "mlp.down_proj",
-                # moe
-                "mlp.router.expert_bias": "mlp.gate.e_score_correction_bias",
-                "mlp.router": "mlp.gate",
-                "mlp.shared_experts.linear_fc1": "mlp.shared_experts.gate_up_proj",
-                "mlp.shared_experts.linear_fc2": "mlp.shared_experts.down_proj",
-                "linear_fc1": "gate_up_proj",
-                "linear_fc2": "down_proj",
-                # output
-                "final_layernorm": "norm",
-                "output_layer": "lm_head",
-            }
+        @contextmanager
+        def _redirect_print_to_logger(self):
+            original_print = builtins.print
 
-            if "Qwen2MoeForCausalLM" in self.hf_config.architectures:
-                self.params_mapping[
-                    "mlp.shared_experts.linear_fc1"
-                ] = "mlp.shared_expert.gate_up_proj"
-                self.params_mapping["mlp.shared_experts.linear_fc2"] = "mlp.shared_expert.down_proj"
-                self.params_mapping[
-                    "mlp.shared_experts.gate_weight"
-                ] = "mlp.shared_expert_gate.weight"
+            def logger_print(*args, **kwargs):
+                message = " ".join(str(arg) for arg in args)
+                self.logger.debug(message)
+
+            builtins.print = logger_print
+            try:
+                yield
+            finally:
+                builtins.print = original_print
 
         def get_state_dict(self, checkpoint_path):
             self.config.local_dir = checkpoint_path
             from verl.utils.megatron_utils import get_dist_checkpoint_path
 
-            model_ckpt_path = get_dist_checkpoint_path(self.config.local_dir)
+            with self._redirect_print_to_logger():
+                model_ckpt_path = get_dist_checkpoint_path(self.config.local_dir)
 
-            model_state_dict = self._load_state_dicts(model_ckpt_path)
-            merged_state_dict = self._merge_state_dicts(model_state_dict)
+                model_state_dict = self._load_state_dicts(model_ckpt_path)
+                merged_state_dict = self._merge_state_dicts(model_state_dict)
             del model_state_dict
             return merged_state_dict
 

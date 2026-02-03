@@ -204,6 +204,16 @@ class BaseTestSynchronizer(unittest.TestCase):
                     process.join()
 
 
+@parameterized_class(
+    [
+        {
+            "sync_method": SyncMethod.NCCL,  # will be converted to CHECKPOINT
+        },
+        {
+            "sync_method": SyncMethod.MEMORY,
+        },
+    ]
+)
 class TestSynchronizerExit(BaseTestSynchronizer):
     def setUp(self):
         self.sync_style = SyncStyle.FIXED
@@ -218,24 +228,24 @@ class TestSynchronizerExit(BaseTestSynchronizer):
         trainer_config.mode = "train"
         trainer_config.check_and_update()
 
-        explorer1_config = deepcopy(self.config)
-        explorer1_config.mode = "explore"
-        explorer1_config.check_and_update()
+        explorer_config = deepcopy(self.config)
+        explorer_config.mode = "explore"
+        explorer_config.check_and_update()
 
         trainer_process = self.start_train_process(trainer_config)
         synchronizer = self.wait_trainer_started(trainer_config.ray_namespace)
 
-        explorer_process = self.start_explore_process(explorer1_config, self.explore_step_time_list)
+        explorer_process = self.start_explore_process(explorer_config, self.explore_step_time_list)
         self.assertEqual(
             synchronizer, ray.get_actor("synchronizer", namespace=trainer_config.ray_namespace)
         )
         for _ in range(12):  # Wait for up to 60 seconds
             try:
-                explorer1 = ray.get_actor("explorer1", namespace=trainer_config.ray_namespace)
-                ray.get(explorer1.is_alive.remote())
+                explorer = ray.get_actor("explorer", namespace=trainer_config.ray_namespace)
+                ray.get(explorer.is_alive.remote())
                 break
             except ValueError:
-                print("waiting for explorer1 to start.")
+                print("waiting for explorer to start.")
                 time.sleep(5)
 
         self.join_process(trainer_process, "trainer")

@@ -146,16 +146,11 @@ class Trainer:
                 and self.train_step_num % self.sync_interval == 0
             )
         else:  # dynamic by explorer
-            explorer_status_counts = await self.synchronizer.get_explorer_status_counts.remote()
-            if self.sync_method == SyncMethod.NCCL:
-                return explorer_status_counts[RunningStatus.REQUIRE_SYNC] > 0
-            else:  # memory & checkpoint
-                if self.last_sync_step == self.train_step_num:
-                    await self.synchronizer.notify_no_new_model_state_dict.remote()
-                return (
-                    self.last_sync_step != self.train_step_num
-                    and explorer_status_counts[RunningStatus.REQUIRE_SYNC] > 0
-                )
+            # for memory & checkpoint; TODO: apply to nccl sync
+            if self.last_sync_step == self.train_step_num and self.sync_method != SyncMethod.NCCL:
+                await self.synchronizer.notify_no_new_model_state_dict.remote()
+                return False
+            return await self.synchronizer.explorer_requires_sync.remote()
 
     def need_save(self) -> bool:
         """Whether to save the checkpoint."""
