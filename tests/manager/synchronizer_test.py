@@ -13,6 +13,7 @@ from multiprocessing import Process
 from typing import Dict, List
 
 import ray
+import torch
 from parameterized import parameterized_class
 
 from tests.tools import (
@@ -25,6 +26,7 @@ from tests.tools import (
 from trinity.cli.launcher import both, explore, train
 from trinity.common.config import Config, ExperienceBufferConfig
 from trinity.common.constants import RunningStatus, StorageType, SyncMethod, SyncStyle
+from trinity.common.experience import Experience
 from trinity.explorer.explorer import Explorer
 from trinity.trainer.trainer import Trainer
 from trinity.utils.log import get_logger
@@ -32,13 +34,7 @@ from trinity.utils.log import get_logger
 logger = get_logger(__name__)
 
 
-def trainer_monkey_patch(sample_time_list: List[int], train_step_time_list: List[int]):
-    async def new_sample_data(self: Trainer):
-        self.logger.info(f"Sample data for step {self.train_step_num + 1} started.")
-        await asyncio.sleep(sample_time_list[self.engine.global_steps - 1])
-        self.logger.info(f"Sample data for step {self.train_step_num + 1} finished.")
-        return [], {}, []
-
+def trainer_monkey_patch(train_step_time_list: List[int]):
     async def new_train_step(self: Trainer, exps) -> Dict:
         self.engine.global_steps += 1
         self.logger.info(f"Training at step {self.engine.global_steps} started.")
@@ -48,7 +44,6 @@ def trainer_monkey_patch(sample_time_list: List[int], train_step_time_list: List
         return metrics
 
     Trainer.train_step = new_train_step
-    Trainer._sample_data = new_sample_data
 
 
 def explorer_monkey_patch(explore_step_time_list: List[int]):
@@ -68,17 +63,23 @@ def explorer_monkey_patch(explore_step_time_list: List[int]):
     async def new_finish_explore_step(self: Explorer, step: int, model_version: int) -> None:
         metric = {"rollout/model_version": model_version}
         await asyncio.sleep(explore_step_time_list[step - 1])
+        dummy_exps = [
+            Experience(
+                tokens=torch.tensor([0, 0, 0]),
+                info={"model_version": model_version},
+            )
+            for _ in range(self.config.buffer.train_batch_size)
+        ]
+        await self.experience_pipeline.process.remote(dummy_exps)
         self.monitor.log(metric, step=step)
 
     Explorer.explore_step = new_explore_step
     Explorer._finish_explore_step = new_finish_explore_step
 
 
-def run_trainer(
-    config: Config, sample_time_list: List[int], train_step_time_list: List[int]
-) -> None:
+def run_trainer(config: Config, train_step_time_list: List[int]) -> None:
     ray.init(ignore_reinit_error=True, namespace=config.ray_namespace)
-    trainer_monkey_patch(sample_time_list, train_step_time_list)
+    trainer_monkey_patch(train_step_time_list)
     train(config)
     ray.shutdown()
 
@@ -92,12 +93,11 @@ def run_explorer(config: Config, explore_step_time_list: List[int]) -> None:
 
 def run_both(
     config: Config,
-    sample_time_list: List[int],
     train_step_time_list: List[int],
     explore_step_time_list: List[int],
 ) -> None:
     ray.init(ignore_reinit_error=True, namespace=config.ray_namespace)
-    trainer_monkey_patch(sample_time_list, train_step_time_list)
+    trainer_monkey_patch(train_step_time_list)
     explorer_monkey_patch(explore_step_time_list)
     both(config)
     ray.shutdown()
@@ -115,6 +115,7 @@ class BaseTestSynchronizer(unittest.TestCase):
         self.config.checkpoint_root_dir = get_checkpoint_path()
         self.config.buffer.total_epochs = 1
         self.config.buffer.batch_size = 4
+        self.config.algorithm.repeat_times = 8
         self.config.cluster.gpu_per_node = 2
         self.config.cluster.node_num = 1
         self.config.model.model_path = get_model_path()
@@ -129,13 +130,11 @@ class BaseTestSynchronizer(unittest.TestCase):
         self.config.synchronizer.sync_interval = 2
         self.config.monitor.monitor_type = "tensorboard"
 
-        assert len(self.sample_time_list) == len(self.train_step_time_list), (
-            f"sample_time_list and train_step_time_list must have equal lengths, "
-            f"but got {len(self.sample_time_list)} and {len(self.train_step_time_list)}"
-        )
-        self.config.trainer.total_steps = len(self.sample_time_list)
+        self.config.trainer.total_steps = len(self.train_step_time_list)
         self.config.trainer.save_interval = 100
-        self.config.buffer.train_batch_size = 4
+        self.config.buffer.train_batch_size = (
+            self.config.buffer.batch_size * self.config.algorithm.repeat_times
+        )
 
         self.config.explorer.rollout_model.engine_num = 1
         self.config.explorer.rollout_model.tensor_parallel_size = 1
@@ -148,9 +147,7 @@ class BaseTestSynchronizer(unittest.TestCase):
         return process
 
     def start_train_process(self, config: Config) -> Process:
-        return self._start_process(
-            run_trainer, config, self.sample_time_list, self.train_step_time_list
-        )
+        return self._start_process(run_trainer, config, self.train_step_time_list)
 
     def start_explore_process(self, config: Config, explore_step_time_list: List[int]) -> Process:
         return self._start_process(run_explorer, config, explore_step_time_list)
@@ -159,12 +156,11 @@ class BaseTestSynchronizer(unittest.TestCase):
         return self._start_process(
             run_both,
             config,
-            self.sample_time_list,
             self.train_step_time_list,
             explore_step_time_list,
         )
 
-    def join_process(self, process: Process, process_name: str, timeout: int = 200):
+    def join_process(self, process: Process, process_name: str, timeout: int = 300):
         process.join(timeout=timeout)
         if process.is_alive():
             self.fail(f"Process [{process_name}] is still alive after timeout")
@@ -173,12 +169,12 @@ class BaseTestSynchronizer(unittest.TestCase):
         ray.init(ignore_reinit_error=True)
         while True:
             try:
-                synchronizer = ray.get_actor("synchronizer", namespace=ray_namespace)
+                ray.get_actor("queue-exp_buffer", namespace=ray_namespace)
                 break
             except ValueError:
                 print("waiting for trainer to start.")
                 time.sleep(5)
-        return synchronizer
+        return ray.get_actor("synchronizer", namespace=ray_namespace)
 
     def _check_metrics(
         self,
@@ -217,7 +213,6 @@ class BaseTestSynchronizer(unittest.TestCase):
 class TestSynchronizerExit(BaseTestSynchronizer):
     def setUp(self):
         self.sync_style = SyncStyle.FIXED
-        self.sample_time_list = [2, 1, 2, 1, 2, 1, 2, 1]
         self.train_step_time_list = [2, 1, 2, 1, 2, 1, 2, 1]
         self.explore_step_time_list = [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5]
         super().setUp()
@@ -262,65 +257,17 @@ class TestSynchronizerExit(BaseTestSynchronizer):
 @parameterized_class(
     [
         {
-            "sync_method": SyncMethod.CHECKPOINT,
-            "sync_style": SyncStyle.FIXED,
-            "sample_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
+            "sync_method": sync_method,
+            "sync_style": sync_style,
             "train_step_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
             "explore_step_time_lists": [
                 [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5],
                 [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
             ],
-        },
-        {
-            "sync_method": SyncMethod.CHECKPOINT,
-            "sync_style": SyncStyle.EXPLORER_DRIVEN,
-            "sample_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
-            "train_step_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
-            "explore_step_time_lists": [
-                [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5],
-                [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
-            ],
-        },
-        {
-            "sync_method": SyncMethod.CHECKPOINT,
-            "sync_style": SyncStyle.TRAINER_DRIVEN,
-            "sample_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
-            "train_step_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
-            "explore_step_time_lists": [
-                [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5],
-                [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
-            ],
-        },
-        {
-            "sync_method": SyncMethod.MEMORY,
-            "sync_style": SyncStyle.FIXED,
-            "sample_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
-            "train_step_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
-            "explore_step_time_lists": [
-                [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5],
-                [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
-            ],
-        },
-        {
-            "sync_method": SyncMethod.MEMORY,
-            "sync_style": SyncStyle.EXPLORER_DRIVEN,
-            "sample_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
-            "train_step_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
-            "explore_step_time_lists": [
-                [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5],
-                [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
-            ],
-        },
-        {
-            "sync_method": SyncMethod.MEMORY,
-            "sync_style": SyncStyle.TRAINER_DRIVEN,
-            "sample_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
-            "train_step_time_list": [2, 1, 2, 1, 2, 1, 2, 1],
-            "explore_step_time_lists": [
-                [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5],
-                [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
-            ],
-        },
+            "batch_size_list": [20, 12],
+        }
+        for sync_method in [SyncMethod.CHECKPOINT, SyncMethod.MEMORY]
+        for sync_style in [SyncStyle.FIXED, SyncStyle.EXPLORER_DRIVEN, SyncStyle.TRAINER_DRIVEN]
     ]
 )
 class TestStateDictBasedSynchronizer(BaseTestSynchronizer):
@@ -332,13 +279,24 @@ class TestStateDictBasedSynchronizer(BaseTestSynchronizer):
         trainer_process = self.start_train_process(trainer_config)
         _ = self.wait_trainer_started(trainer_config.ray_namespace)
 
+        assert len(self.batch_size_list) == len(self.explore_step_time_lists), (
+            f"{len(self.batch_size_list)=} not equal to {len(self.explore_step_time_lists)=}, "
+            "please check the test case"
+        )
+        assert sum(self.batch_size_list) == trainer_config.buffer.train_batch_size, (
+            f"{sum(self.batch_size_list)=} not equal to {trainer_config.buffer.train_batch_size}, "
+            "please check the test case"
+        )
         explorer_configs, explorer_processes = [], []
-        for i, explore_step_time_list in enumerate(self.explore_step_time_lists):
+        for i, (explore_step_time_list, batch_size) in enumerate(
+            zip(self.explore_step_time_lists, self.batch_size_list)
+        ):
             explorer_config = deepcopy(self.config)
             explorer_config.mode = "explore"
             explorer_config.explorer.name = f"explorer_{i}"
             explorer_config.explorer.rollout_model.engine_num = 1
             explorer_config.explorer.rollout_model.tensor_parallel_size = 1
+            explorer_config.buffer.train_batch_size = batch_size
             explorer_config.check_and_update()
             explorer_configs.append(explorer_config)
             explorer_processes.append(
@@ -350,7 +308,7 @@ class TestStateDictBasedSynchronizer(BaseTestSynchronizer):
             self.join_process(explore_process, f"explorer_{i}")
 
         # check the tensorboard
-        self._check_metrics(trainer_config, "trainer", {"actor": len(self.sample_time_list)})
+        self._check_metrics(trainer_config, "trainer", {"actor": len(self.train_step_time_list)})
         for i, (explorer_config, explore_step_time_list) in enumerate(
             zip(explorer_configs, self.explore_step_time_lists)
         ):
@@ -362,23 +320,11 @@ class TestStateDictBasedSynchronizer(BaseTestSynchronizer):
 @parameterized_class(
     [
         {
-            "sync_style": SyncStyle.FIXED,
-            "sample_time_list": [2, 2, 1, 1, 2, 2, 1, 1],
+            "sync_style": sync_style,
             "train_step_time_list": [2, 2, 1, 1, 2, 2, 1, 1],
             "explore_step_time_list": [1, 1, 2, 2, 1, 1, 2, 2],
-        },
-        {
-            "sync_style": SyncStyle.EXPLORER_DRIVEN,
-            "sample_time_list": [2, 2, 2, 1, 2, 1, 2, 1],
-            "train_step_time_list": [2, 2, 2, 1, 2, 1, 2, 1],
-            "explore_step_time_list": [0.5, 0.5, 0.5, 0.5, 0],
-        },
-        {
-            "sync_style": SyncStyle.TRAINER_DRIVEN,
-            "sample_time_list": [2, 2, 2, 1, 2, 1, 2, 1],
-            "train_step_time_list": [2, 2, 2, 1, 2, 1, 2, 1],
-            "explore_step_time_list": [0.5, 0.5, 0.5, 0.5, 0],
-        },
+        }
+        for sync_style in [SyncStyle.FIXED, SyncStyle.EXPLORER_DRIVEN, SyncStyle.TRAINER_DRIVEN]
     ],
 )
 class TestNCCLBasedSynchronizer(BaseTestSynchronizer):
@@ -391,5 +337,5 @@ class TestNCCLBasedSynchronizer(BaseTestSynchronizer):
         self.join_process(both_process, "both")
 
         # check the tensorboard
-        self._check_metrics(self.config, "trainer", {"actor": len(self.sample_time_list)})
+        self._check_metrics(self.config, "trainer", {"actor": len(self.train_step_time_list)})
         self._check_metrics(self.config, "explorer", {"rollout": len(self.explore_step_time_list)})
