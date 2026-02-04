@@ -543,13 +543,12 @@ class ModelWrapper:
             def record_chat_completions(*args, **kwargs):
                 logprobs = kwargs.pop("logprobs", True)
                 extra_body = kwargs.pop("extra_body", {})
-                if "chat_template_kwargs" not in extra_body:
-                    extra_body["chat_template_kwargs"] = {}
-                extra_body["chat_template_kwargs"].update(
-                    {
-                        "enable_thinking": self.config.enable_thinking,
-                    }
-                )
+                if self.config.enable_thinking is not None:
+                    if "chat_template_kwargs" not in extra_body:
+                        extra_body["chat_template_kwargs"] = {}
+                    extra_body["chat_template_kwargs"][
+                        "enable_thinking"
+                    ] = self.config.enable_thinking
                 extra_body["return_token_ids"] = True
                 response = ori_create(*args, extra_body=extra_body, logprobs=logprobs, **kwargs)
                 self.history.extend(convert_api_output_to_experience(response))
@@ -603,13 +602,12 @@ class ModelWrapper:
             async def record_chat_completions(*args, **kwargs):
                 logprobs = kwargs.pop("logprobs", True)
                 extra_body = kwargs.pop("extra_body", {})
-                if "chat_template_kwargs" not in extra_body:
-                    extra_body["chat_template_kwargs"] = {}
-                extra_body["chat_template_kwargs"].update(
-                    {
-                        "enable_thinking": self.config.enable_thinking,
-                    }
-                )
+                if self.config.enable_thinking is not None:
+                    if "chat_template_kwargs" not in extra_body:
+                        extra_body["chat_template_kwargs"] = {}
+                    extra_body["chat_template_kwargs"][
+                        "enable_thinking"
+                    ] = self.config.enable_thinking
                 extra_body["return_token_ids"] = True
                 response = await ori_create(
                     *args, extra_body=extra_body, logprobs=logprobs, **kwargs

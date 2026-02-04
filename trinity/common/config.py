@@ -530,7 +530,7 @@ class InferenceModelConfig:
     chat_template: Optional[str] = None
 
     # For Qwen3
-    enable_thinking: bool = False
+    enable_thinking: Optional[bool] = None
 
     # For history recording
     enable_history: bool = False

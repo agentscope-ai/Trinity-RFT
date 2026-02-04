@@ -462,6 +462,7 @@ synchronizer:
 - `sync_style`: 同步风格。选项：
   - `fixed`: explorer 和 trainer 每隔 `sync_interval` 步同步一次权重。
   - `explorer_driven`: explorer 在完成 `sync_interval` 步后通知 trainer 同步权重，而不管此时 trainer 已完成多少步。
+  - `trainer_driven`: trainer 在完成 `sync_interval` 步后通知 explorer 同步权重，而不管此时 explorer 已完成多少步。
 
 ---
 

@@ -465,6 +465,7 @@ synchronizer:
 - `sync_style`: Style of synchronization. Options:
   - `fixed`: The explorer and trainer synchronize weights every `sync_interval` steps.
   - `explorer_driven`: The explorer notifies the trainer to synchronize weights after completing `sync_interval` steps, regardless of how many steps the trainer has completed at this point.
+  - `trainer_driven`: The trainer notifies the explorer to synchronize weights after completing `sync_interval` steps, regardless of how many steps the explorer has completed at this point.
 
 ---
 

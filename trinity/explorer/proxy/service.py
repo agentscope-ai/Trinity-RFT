@@ -92,7 +92,6 @@ class ExplorerService:
         while time.time() - start_time < self.max_timeout:
             current_load = await self.models[index].get_current_load()
             if current_load == 0:
-                self.models[index].status = RunningStatus.WAITING_SYNC
                 self.logger.info(f"Model {index} begins synchronization.")
                 timeout_flag = False
                 break

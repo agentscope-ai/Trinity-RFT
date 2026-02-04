@@ -29,21 +29,27 @@ To achieve this, the Synchronizer:
 async def train(self) -> str:
     while self.train_step_num < self.total_steps:
         try:
+            metrics = {}
             # sample may be blocked due to explorer does not generate enough data
             self.logger.info(f"Sample data for step {self.train_step_num + 1} started.")
             sample_task = asyncio.create_task(self._sample_data())
             while not sample_task.done():
                 # sync weight to make sure the explorer can continue to explore and generate enough data
                 if await self.need_sync():
-                    # Currently, we do not record the metrics of sync_weight here
-                    await self.sync_weight()
+                    metrics.update(await self.sync_weight())
                 await asyncio.sleep(1)
-            exps, metrics, repr_samples = await sample_task
+            exps, sample_metrics, repr_samples = await sample_task
+            metrics.update(sample_metrics)
             self.logger.info(f"Sample data for step {self.train_step_num + 1} finished.")
             metrics.update(await self.train_step(exps))
             if await self.need_sync():
                 metrics.update(await self.sync_weight())
-            # ...
+            if self.need_save():
+                metrics.update(
+                    await self.save_checkpoint(save_as_hf=self.save_hf_checkpoint == "always")
+                )
+            if self.config.trainer.enable_preview:
+                self._log_experiences(repr_samples)
             self.monitor.log(metrics, self.train_step_num)
         except StopAsyncIteration:
             self.logger.info("No more samples to train. Stopping training.")
@@ -145,27 +151,32 @@ There are **two synchronization styles** that define *when* the Explorer request
 | `interval=10, offset=0` | Sync every 10 steps (both start together) |
 | `interval=10, offset=5` | Explorer runs 5 steps first, then sync every 10 steps |
 
-✅ **Best for**: Simple, predictable environments where exploration steps are short and rewards are frequent (e.g., mathematical reasoning tasks).
-
-> 🔁 Think of it as a metronome — steady and regular.
+🎯 **Best for**: Simple, predictable environments with short exploration episodes and frequent rewards (e.g., mathematical reasoning tasks).
 
 ---
 
-### 2. `SyncStyle.EXPLORER_DRIVEN` – Demand-Driven Sync
+### 2. `SyncStyle.EXPLORER_DRIVEN` – Explorer-Driven Synchronization
 
-- Explorer decides to request a sync after generating a certain amount of data.
-- It tells Synchronizer: _"I’m ready for a new model!"_
-- Trainer checks this request during its normal loop and responds accordingly.
+- The Explorer itself decides when it needs a new model.
+- Workflow:
+  1. After completing `sync_interval` steps, the Explorer sends a request to the Synchronizer to update its parameters.
+  2. The Trainer detects this request in its next loop iteration and performs the synchronization.
+  3. Once synchronization completes, both the Explorer and Trainer continue running.
+  4. If a timeout occurs, the Explorer retries in the next cycle.
 
-📌 **Process Flow**:
-1. Explorer finishes `N` steps → sets state to `REQUIRE_SYNC`.
-2. Waits for Trainer to acknowledge and perform sync.
-3. Once synced, returns to `RUNNING`.
-4. If timeout occurs, retries on next step.
+🎯 **Best for**: Scenarios where the Explorer’s pace is irregular or when on-demand model updates are preferred.
 
-✅ **Best for**: Complex, long-horizon tasks where data generation is expensive or variable (e.g., multi-turn dialogue, game playing).
+---
 
-> 🔄 More flexible — adapts to actual data throughput.
+### 3. `SyncStyle.TRAINER_DRIVEN` – Trainer-Driven Synchronization
+
+- The Trainer determines when to release a new model.
+- Workflow:
+  1. Every `sync_interval` steps, the Trainer decides to request synchronization.
+  2. It notifies the Synchronizer to prepare pushing the new model.
+  3. The Explorer detects this request during its normal loop and responds by performing synchronization.
+
+🎯 **Best for**: Cases where the Trainer has a clear, consistent training rhythm, and the Explorer passively receives updates.
 
 ---
 
@@ -173,49 +184,33 @@ There are **two synchronization styles** that define *when* the Explorer request
 
 The Synchronizer tracks the **state** of both Trainer and Explorer to manage synchronization safely.
 
-### Four Key States
+### Three Key States
 
 | State | Meaning |
 |------|--------|
 | `STOPPED` | Component has stopped working |
 | `RUNNING` | Actively training or exploring |
-| `REQUIRE_SYNC` | Explorer wants new weights |
-| `WAITING_SYNC` | Explorer or Trainer is waiting synchronization (used in NCCL mode) |
+| `REQUIRE_SYNC` | Explorer / Trainer requests new weights |
 
 These states help prevent race conditions and ensure smooth coordination.
 
 ---
 
-### State Transitions by Style & Method
+### State Transitions Across Different Modes and Methods
 
-#### 🔹 Fixed Style + NCCL Sync
-- Synchronizer schedules sync every `N` steps.
-- Both sides pause briefly for direct GPU sync.
-- The state of the trainer toggles predictably between `RUNNING` ↔ `WAITING_SYNC`, and the state of the explorer toggles among `RUNNING` → `REQUIRE_SYNC` → `WAITING_SYNC`.
+#### 🔹 NCCL Synchronization
+- Both Trainer and Explorer toggle states (`RUNNING` ↔ `REQUIRE_SYNC`).
+- Synchronization uses a "two-way handshake": data transfer only begins once both sides are ready.
+- After synchronization completes, both return to `RUNNING`.
 
-![FIXED_STYLE_NCCL_SYNC](../../assets/FIXED-NCCL.png)
+![NCCL Synchronization](../../assets/NCCL-en.png)
 
-#### 🔹 Fixed Style + CHECKPOINT/MEMORY
-- Trainer saves or sends weights periodically.
-- Explorer checks at each interval and pulls updates.
-- The state of the trainer remains at `RUNNING`, and the state of the explorer toggles between `RUNNING` ↔ `REQUIRE_SYNC`.
+#### 🔹 CHECKPOINT/MEMORY Synchronization
+- The Trainer typically remains in `RUNNING` state (it only saves weights).
+- The Explorer initiates the sync request (switches to `REQUIRE_SYNC`), pulls the weights, then returns to `RUNNING`.
+- The Synchronizer acts as an intermediary, delivering model weights to the Explorer.
 
-![FIXED_STYLE_STATEDICT_SYNC](../../assets/FIXED-STATEDICT.png)
-
-
-#### 🔹 Dynamic Style + NCCL
-- Explorer signals `REQUIRE_SYNC` after enough data.
-- Trainer sees the signal and initiates NCCL sync.
-- The state of the trainer toggles predictably between `RUNNING` ↔ `WAITING_SYNC`, and the state of the explorer toggles between `RUNNING` → `REQUIRE_SYNC` → `WAITING_SYNC`.
-
-![DYN_STYLE_NCCL_SYNC](../../assets/DYN-NCCL.png)
-
-#### 🔹 Dynamic Style + CHECKPOINT/MEMORY
-- Explorer signals `REQUIRE_SYNC` after enough data.
-- Trainer sees the signal and pushes weights to synchronizer.
-- The state of the trainer remains at `RUNNING`, and the state of the explorer toggles between `RUNNING` ↔ `REQUIRE_SYNC`.
-
-![DYN_STYLE_STATEDICT_SYNC](../../assets/DYN-STATEDICT.png)
+![CHECKPOINT/MEMORY Synchronization](../../assets/STATEDICT-en.png)
 
 ---
 
@@ -240,9 +235,7 @@ These states help prevent race conditions and ensure smooth coordination.
 | Use Case | Recommended Style |
 |--------|------------------|
 | Short episodes, quick feedback (e.g., math QA) | `FIXED` |
-| Long interactions, delayed rewards (e.g., games, conversations) | `EXPLORER_DRIVEN` |
-
-> 💡 `EXPLORER_DRIVEN` gives more control to the data-generating side, making it better for unbalanced or variable workloads.
+| Multi-turn interactive tasks, such as multi-round dialogues, tool usage, or multi-step games | `EXPLORER_DRIVEN` or `TRAINER_DRIVEN` |
 
 ---
 
