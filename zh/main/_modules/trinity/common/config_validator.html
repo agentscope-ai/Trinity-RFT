@@ -1130,7 +1130,7 @@ document.write(`
 <span class="sd">            ValueError: If an invalid mode is specified.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># check mode</span>
-        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;explore&quot;</span><span class="p">,</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="s2">&quot;bench&quot;</span><span class="p">,</span> <span class="s2">&quot;serve&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;explore&quot;</span><span class="p">,</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="s2">&quot;bench&quot;</span><span class="p">,</span> <span class="s2">&quot;serve&quot;</span><span class="p">,</span> <span class="s2">&quot;colocate&quot;</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid mode: </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
         <span class="c1"># prepare for the checkpoint directory</span>
@@ -1248,6 +1248,16 @@ document.write(`
             <span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">gpu_per_node</span> <span class="o">=</span> <span class="n">gpu_per_node</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Auto-detected and set gpu_per_node: </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">gpu_per_node</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">gpu_per_node</span> <span class="o">==</span> <span class="mi">1</span>
+            <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">node_num</span> <span class="o">==</span> <span class="mi">1</span>
+            <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">!=</span> <span class="s2">&quot;colocate&quot;</span>
+        <span class="p">):</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="s2">&quot;colocate&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;Detected single-node single-GPU Ray cluster, setting mode to `colocate`.&quot;</span>
+            <span class="p">)</span>
+
         <span class="k">if</span> <span class="ow">not</span> <span class="n">was_initialized</span><span class="p">:</span>
             <span class="n">ray</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
 
@@ -1282,6 +1292,30 @@ document.write(`
                     <span class="sa">f</span><span class="s2">&quot;Total GPU number (</span><span class="si">{</span><span class="n">cluster</span><span class="o">.</span><span class="n">total_gpu_num</span><span class="si">}</span><span class="s2">) is less than &quot;</span>
                     <span class="sa">f</span><span class="s2">&quot;the number of GPUs required for rollout (</span><span class="si">{</span><span class="n">cluster</span><span class="o">.</span><span class="n">explorer_gpu_num</span><span class="si">}</span><span class="s2">).&quot;</span>
                 <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;colocate&quot;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;`colocate` is only for single GPU scenario.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">cluster</span><span class="o">.</span><span class="n">total_gpu_num</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Colocate mode requires exactly 1 GPU, but got </span><span class="si">{</span><span class="n">cluster</span><span class="o">.</span><span class="n">total_gpu_num</span><span class="si">}</span><span class="s2"> GPUs. Please use `both` mode instead.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">engine_num</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;In colocate mode, `explorer.rollout_model.engine_num` must be set to 1.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">tensor_parallel_size</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;In colocate mode, `explorer.rollout_model.tensor_parallel_size` must be set to 1.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;In colocate mode, auxiliary models are not supported.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">ulysses_sequence_parallel_size</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;In colocate mode, `trainer.ulysses_sequence_parallel_size` must be set to 1.&quot;</span>
+                <span class="p">)</span>
+            <span class="n">cluster</span><span class="o">.</span><span class="n">explorer_gpu_num</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">cluster</span><span class="o">.</span><span class="n">trainer_gpu_num</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">cluster</span><span class="o">.</span><span class="n">trainer_node_num</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">cluster</span><span class="o">.</span><span class="n">trainer_gpu_num_per_node</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">cluster</span><span class="o">.</span><span class="n">explorer_gpu_num</span> <span class="o">&gt;=</span> <span class="n">cluster</span><span class="o">.</span><span class="n">total_gpu_num</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -1631,11 +1665,27 @@ document.write(`
         <span class="n">set_if_none</span><span class="p">(</span>
             <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="p">,</span> <span class="s2">&quot;chat_template&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">custom_chat_template</span>
         <span class="p">)</span>
-
+        <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">ray_namespace</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">ray_namespace</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;colocate&quot;</span>
+            <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">gpu_memory_utilization</span> <span class="o">&gt;</span> <span class="mf">0.25</span>
+        <span class="p">):</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">gpu_memory_utilization</span> <span class="o">=</span> <span class="mf">0.25</span>
+            <span class="c1"># hardcode to use GPU 0 in colocate mode</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">cuda_visible_devices</span> <span class="o">=</span> <span class="s2">&quot;0&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">&quot;In `colocate` mode, `explorer.rollout_model.gpu_memory_utilization` is set to 0.25.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;serve&quot;</span><span class="p">:</span>
+            <span class="c1"># in &#39;serve&#39; mode, we always enable openai api for rollout model</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">enable_openai_api</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="c1"># auxiliary models</span>
         <span class="k">for</span> <span class="n">aux_model</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">aux_model</span><span class="o">.</span><span class="n">model_path</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;auxiliary model&#39;s model_path is required.&quot;</span><span class="p">)</span>
+            <span class="n">aux_model</span><span class="o">.</span><span class="n">ray_namespace</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">ray_namespace</span>
+            <span class="n">aux_model</span><span class="o">.</span><span class="n">enable_history</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">aux_model</span><span class="o">.</span><span class="n">enable_openai_api</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">for</span> <span class="n">args</span> <span class="ow">in</span> <span class="n">model_args</span><span class="p">:</span>
                 <span class="n">set_if_none</span><span class="p">(</span><span class="n">aux_model</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">args</span><span class="p">))</span>
 
@@ -1759,6 +1809,12 @@ document.write(`
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                     <span class="s2">&quot;LoRA is not supported with NCCL synchronization, &quot;</span>
                     <span class="s2">&quot;set `synchronizer.sync_method` to `checkpoint`.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;colocate&quot;</span><span class="p">:</span>
+                <span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_method</span> <span class="o">=</span> <span class="n">SyncMethod</span><span class="o">.</span><span class="n">MEMORY</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;Colocate mode can&#39;t use NCCL synchronization. &quot;</span>
+                    <span class="s2">&quot;Set `synchronizer.sync_method` to `memory` instead.&quot;</span>
                 <span class="p">)</span></div>
 </div>
 
@@ -2034,7 +2090,10 @@ document.write(`
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Auto set `buffer.trainer_input.experience_buffer` to </span><span class="si">{</span><span class="n">experience_buffer</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
-        <span class="k">elif</span> <span class="n">experience_buffer</span><span class="o">.</span><span class="n">storage_type</span> <span class="o">==</span> <span class="n">StorageType</span><span class="o">.</span><span class="n">FILE</span><span class="o">.</span><span class="n">value</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;both&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">experience_buffer</span><span class="o">.</span><span class="n">storage_type</span> <span class="o">==</span> <span class="n">StorageType</span><span class="o">.</span><span class="n">FILE</span><span class="o">.</span><span class="n">value</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="ow">in</span> <span class="p">{</span>
+            <span class="s2">&quot;both&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;colocate&quot;</span><span class="p">,</span>
+        <span class="p">}:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                 <span class="s2">&quot;`FILE` storage is not supported to use as experience_buffer &quot;</span>
                 <span class="s2">&quot;in `both` mode, use `QUEUE` instead.&quot;</span>
@@ -2107,7 +2166,12 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># check input/output buffers in pipelines</span>
         <span class="n">experience_pipeline</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">data_processor</span><span class="o">.</span><span class="n">experience_pipeline</span>
-        <span class="k">if</span> <span class="n">experience_pipeline</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;explore&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="s2">&quot;serve&quot;</span><span class="p">}:</span>
+        <span class="k">if</span> <span class="n">experience_pipeline</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="ow">in</span> <span class="p">{</span>
+            <span class="s2">&quot;explore&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;both&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;serve&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;colocate&quot;</span><span class="p">,</span>
+        <span class="p">}:</span>
             <span class="k">if</span> <span class="n">experience_pipeline</span><span class="o">.</span><span class="n">save_input</span> <span class="ow">and</span> <span class="n">experience_pipeline</span><span class="o">.</span><span class="n">input_save_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">experience_pipeline</span><span class="o">.</span><span class="n">input_save_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_storage_path</span><span class="p">(</span>
                     <span class="n">config</span><span class="p">,</span> <span class="n">StorageType</span><span class="o">.</span><span class="n">SQL</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;explorer_output&quot;</span>
@@ -2123,7 +2187,7 @@ document.write(`
                         <span class="n">operator</span><span class="o">.</span><span class="n">args</span><span class="p">[</span><span class="s2">&quot;service_config&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">service</span><span class="o">.</span><span class="n">data_juicer</span>
 
         <span class="n">task_pipeline</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">data_processor</span><span class="o">.</span><span class="n">task_pipeline</span>
-        <span class="k">if</span> <span class="n">task_pipeline</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;explore&quot;</span><span class="p">,</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">}:</span>
+        <span class="k">if</span> <span class="n">task_pipeline</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;explore&quot;</span><span class="p">,</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="s2">&quot;colocate&quot;</span><span class="p">}:</span>
             <span class="k">if</span> <span class="n">task_pipeline</span><span class="o">.</span><span class="n">output</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">!=</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
                     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">explorer_input</span><span class="o">.</span><span class="n">tasksets</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -2174,7 +2238,7 @@ document.write(`
 <span class="sd">                       or save checkpoint strategy is invalid.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="p">(</span>
-            <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="s2">&quot;bench&quot;</span><span class="p">]</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="s2">&quot;bench&quot;</span><span class="p">,</span> <span class="s2">&quot;colocate&quot;</span><span class="p">]</span>
             <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">trainer_strategy</span> <span class="o">!=</span> <span class="s2">&quot;megatron&quot;</span>
         <span class="p">):</span>
             <span class="k">return</span>

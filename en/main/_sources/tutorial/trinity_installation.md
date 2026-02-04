@@ -112,7 +112,7 @@ You can download the Trinity-RFT Docker image from Github Container Registry or 
 git clone https://github.com/agentscope-ai/Trinity-RFT
 cd Trinity-RFT
 
-docker pull ghcr.io/modelscope/trinity-rft:latest
+docker pull ghcr.io/agentscope-ai/trinity-rft:latest
 
 docker run -it \
   --gpus all \
@@ -120,7 +120,7 @@ docker run -it \
   --rm \
   -v $PWD:/workspace \
   -v <path_to_your_data_and_checkpoints>:/data \
-  ghcr.io/modelscope/trinity-rft:latest
+  ghcr.io/agentscope-ai/trinity-rft:latest
 ```
 
 ```{note}

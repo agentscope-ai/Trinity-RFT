@@ -82,6 +82,7 @@ ignore_validator_suggestions: false
   - `train`: 仅启动 trainer。
   - `explore`: 仅启动 explorer。
   - `bench`: 用于 benchmark 测试。
+  - `colocate`: 仅适用于单 GPU 场景，在同一 GPU 上启动 trainer 和 explorer。
 - `checkpoint_root_dir`: 所有检查点和日志的根目录。该实验的检查点将存储在 `<checkpoint_root_dir>/<project>/<name>/` 路径下。
 - `continue_from_checkpoint`: 若设置为 `true`，实验将从检查点路径中的最新检查点继续；否则，会将当前实验重命名为 `<name>_<timestamp>` 并启动新实验。由于我们的分离式设计，从检查点恢复的时候，我们只能保证Trainer的模型参数以及其使用的可选缓冲区（`auxiliary_buffers`）可以恢复到最新检查点的状态，而Explorer和Experience Buffer不能保证恢复到同一时点。
 - `ray_namespace`: 当前实验中启动模块的命名空间。若未指定，则默认为 `<project>/<name>`。
