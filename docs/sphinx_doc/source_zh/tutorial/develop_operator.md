@@ -4,7 +4,7 @@
 
 ### 步骤 0：Operator 模块基本概念
 
-Operator 模块负责处理由 Explorer 所生成的轨迹数据（我们称之为 `Experience`）。它原生支持来自 [Data-Juicer](https://github.com/modelscope/data-juicer) 的数据处理功能，也允许开发者实现自己的算子。
+Operator 模块负责处理由 Explorer 所生成的轨迹数据（我们称之为 `Experience`）。它原生支持来自 [Data-Juicer](https://github.com/datajuicer/data-juicer) 的数据处理功能，也允许开发者实现自己的算子。
 通过自定义数据处理算子，开发者可以实现各种数据处理功能，如数据增强、过滤和转换。你甚至可以将优势值/回报值计算实现为 Operator，如 {ref}`算法 <Algorithms>` 部分所示。
 
 - **DataJuicerOperator** ({class}`trinity.buffer.operators.DataJuicerOperator`)：封装后的 Data-Juicer 算子，使用时只需在配置文件中标明想要使用的 Data-Juicer 算子列表即可。完整的 Data-Juicer 算子列表请见 [此处](https://agentscope-ai.github.io/data-juicer/en/main/docs/Operators.html)。

@@ -97,7 +97,7 @@ This project is built upon many excellent open-source projects, including:
 
 + [verl](https://github.com/volcengine/verl) and [PyTorch's FSDP](https://pytorch.org/docs/stable/fsdp.html) for LLM training;
 + [vLLM](https://github.com/vllm-project/vllm) for LLM inference;
-+ [Data-Juicer](https://github.com/modelscope/data-juicer?tab=readme-ov-file) for data processing pipelines;
++ [Data-Juicer](https://github.com/datajuicer/data-juicer) for data processing pipelines;
 + [AgentScope](https://github.com/agentscope-ai/agentscope) for agentic workflow;
 + [Ray](https://github.com/ray-project/ray) for distributed systems;
 + we have also drawn inspirations from RL frameworks like [OpenRLHF](https://github.com/OpenRLHF/OpenRLHF), [TRL](https://github.com/huggingface/trl) and [ChatLearn](https://github.com/alibaba/ChatLearn);

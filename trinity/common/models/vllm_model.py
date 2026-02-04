@@ -34,7 +34,9 @@ class vLLMRolloutModel(BaseInferenceModel):
         config: InferenceModelConfig,
     ) -> None:
         super().__init__(config)
-
+        if config.cuda_visible_devices:
+            # only for colocate mode
+            os.environ["CUDA_VISIBLE_DEVICES"] = config.cuda_visible_devices
         import vllm
         from vllm.sampling_params import RequestOutputKind
 
@@ -400,9 +402,11 @@ class vLLMRolloutModel(BaseInferenceModel):
         from tinker.types import SampledSequence, SampleResponse
 
         params = {
-            "max_tokens": sampling_params.max_tokens
-            if sampling_params.max_tokens is not None
-            else self.config.max_response_tokens,
+            "max_tokens": (
+                sampling_params.max_tokens
+                if sampling_params.max_tokens is not None
+                else self.config.max_response_tokens
+            ),
             "seed": sampling_params.seed if sampling_params.seed is not None else self.config.seed,
             "top_k": sampling_params.top_k,
             "top_p": sampling_params.top_p,
@@ -651,3 +655,17 @@ class vLLMRolloutModel(BaseInferenceModel):
 
     async def wake_up(self) -> None:
         await self.async_llm.wake_up()
+
+    def __del__(self):
+        """Ensure the vLLM engine is shutdown properly."""
+        try:
+            if (
+                hasattr(self, "async_llm")
+                and hasattr(self.async_llm, "engine_core")
+                and hasattr(self.async_llm.engine_core, "shutdown")
+            ):
+                self.async_llm.engine_core.shutdown()
+        except Exception as e:
+            self.logger.warning(
+                f"Failed to shutdown vLLM engine, you may need to clear resources manually: {e}"
+            )

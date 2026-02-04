@@ -189,7 +189,7 @@ Then, set up environment via one of the following options:
 **Using Pre-built Docker Image (Recommended for Beginners)**
 
 ```bash
-docker pull ghcr.io/modelscope/trinity-rft:latest
+docker pull ghcr.io/agentscope-ai/trinity-rft:latest
 
 # Run the container, replacing <path_to_your_data_and_checkpoints> with your actual path
 docker run -it \
@@ -198,7 +198,7 @@ docker run -it \
   --rm \
   -v $PWD:/workspace \
   -v <path_to_your_data_and_checkpoints>:/data \
-  ghcr.io/modelscope/trinity-rft:latest
+  ghcr.io/agentscope-ai/trinity-rft:latest
 ```
 > This image has used `uv` to install all GPU-related dependencies of Trinity-RFT. The virtual environment will be automatically activated upon entering the container (you can also manually activate it via `source /opt/venv/bin/activate` if needed). You can use `uv pip install` to add extra packages as necessary.
 
@@ -378,7 +378,7 @@ This project is built upon many excellent open-source projects, including:
 
 + [verl](https://github.com/volcengine/verl), [FSDP](https://pytorch.org/docs/stable/fsdp.html) and [Megatron-LM](https://github.com/NVIDIA/Megatron-LM) for LLM training;
 + [vLLM](https://github.com/vllm-project/vllm) for LLM inference;
-+ [Data-Juicer](https://github.com/modelscope/data-juicer?tab=readme-ov-file) for data processing pipelines;
++ [Data-Juicer](https://github.com/datajuicer/data-juicer?tab=readme-ov-file) for data processing pipelines;
 + [AgentScope](https://github.com/agentscope-ai/agentscope) for agentic workflow;
 + [Ray](https://github.com/ray-project/ray) for distributed systems;
 + we have also drawn inspirations from RL frameworks like [OpenRLHF](https://github.com/OpenRLHF/OpenRLHF), [TRL](https://github.com/huggingface/trl), [ChatLearn](https://github.com/alibaba/ChatLearn) and [rLLM](https://github.com/rllm-org/rllm);

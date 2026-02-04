@@ -549,6 +549,7 @@ class InferenceModelConfig:
     # ! DO NOT SET
     bundle_indices: str = ""
     ray_namespace: Optional[str] = None
+    cuda_visible_devices: Optional[str] = None
 
     # ! DO NOT SET, automatically set from model.lora_configs
     enable_lora: bool = False
@@ -843,7 +844,7 @@ class StageConfig:
 class Config:
     """Global Configuration"""
 
-    mode: str = "both"  # `explore`, `train`, `both` or `bench`
+    mode: str = "both"  # `explore`, `train`, `both`, `bench`, `serve` or `colocate`
     project: str = "Trinity-RFT"
     group: str = ""
     name: str = "rft"

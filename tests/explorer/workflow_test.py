@@ -23,7 +23,7 @@ from tests.tools import (
 )
 from trinity.common.config import InferenceModelConfig
 from trinity.common.experience import EID, Experience
-from trinity.common.models import create_inference_models
+from trinity.common.models import create_explorer_models
 from trinity.common.models.model import ModelWrapper
 from trinity.common.workflows import WORKFLOWS, Workflow
 from trinity.common.workflows.customized_math_workflows import MathBoxedWorkflow
@@ -462,7 +462,7 @@ class MultiTurnWorkflowTest(unittest.IsolatedAsyncioTestCase):
         self.config.algorithm.repeat_times = 2  # self.repeat_times
         self.config.explorer.rollout_model.enable_history = True  # self.enable_history
         self.config.check_and_update()
-        self.engines, self.auxiliary_engines = create_inference_models(self.config)
+        self.engines, self.auxiliary_engines = create_explorer_models(self.config)
         self.model_wrapper = ModelWrapper(self.engines[0], engine_type="vllm", enable_history=True)
 
     async def test_multi_turn_workflow(self):
@@ -761,7 +761,7 @@ class TestWorkflowRunner(unittest.IsolatedAsyncioTestCase):
         config.explorer.rollout_model.enable_openai_api = True
         config.explorer.rollout_model.enable_history = True
         config.check_and_update()
-        engines, auxiliary_engines = create_inference_models(config)
+        engines, auxiliary_engines = create_explorer_models(config)
         await asyncio.gather(*[engine.prepare.remote() for engine in engines])
         runner = WorkflowRunner(
             config,
@@ -835,7 +835,7 @@ class TestConcurrentWorkflowRunner(RayUnittestBaseAsync):
         config.explorer.rollout_model.enable_history = True
         config.explorer.rollout_model.enable_openai_api = True
         config.check_and_update()
-        engines, auxiliary_engines = create_inference_models(config)
+        engines, auxiliary_engines = create_explorer_models(config)
         await asyncio.gather(*[engine.prepare.remote() for engine in engines])
 
         config.explorer.concurrent_mode = "sequential"

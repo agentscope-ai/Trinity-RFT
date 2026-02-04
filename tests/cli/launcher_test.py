@@ -25,7 +25,7 @@ from trinity.common.constants import (
     LOG_LEVEL_ENV_VAR,
     LOG_NODE_IP_ENV_VAR,
 )
-from trinity.common.models import get_debug_inference_model
+from trinity.common.models import get_debug_explorer_model
 
 
 class TestLauncherMain(unittest.TestCase):
@@ -260,7 +260,7 @@ class TestLauncherMain(unittest.TestCase):
             time.sleep(15)  # wait for the model to be created
             for _ in range(10):
                 try:
-                    get_debug_inference_model(self.config)
+                    get_debug_explorer_model(self.config)
                     break
                 except Exception:
                     time.sleep(3)

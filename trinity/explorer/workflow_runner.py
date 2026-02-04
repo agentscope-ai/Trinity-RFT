@@ -11,7 +11,7 @@ from typing import Dict, List, Optional, Tuple
 from trinity.buffer import get_buffer_reader, get_buffer_writer
 from trinity.common.config import Config, StorageConfig
 from trinity.common.experience import Experience
-from trinity.common.models import get_debug_inference_model
+from trinity.common.models import get_debug_explorer_model
 from trinity.common.models.model import InferenceModel, ModelWrapper
 from trinity.common.workflows import Task, Workflow
 from trinity.utils.log import get_logger
@@ -318,7 +318,7 @@ class DebugWorkflowRunner(WorkflowRunner):
         enable_profiling: bool = False,
         disable_overwrite: bool = False,
     ) -> None:
-        model, auxiliary_models = get_debug_inference_model(config)
+        model, auxiliary_models = get_debug_explorer_model(config)
         super().__init__(config, model, auxiliary_models, 0)
         self.taskset = get_buffer_reader(config.buffer.explorer_input.tasksets[0])
         self.output_dir = output_dir

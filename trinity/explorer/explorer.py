@@ -24,7 +24,7 @@ from trinity.common.constants import (
     SyncMethod,
     SyncStyle,
 )
-from trinity.common.models import create_inference_models
+from trinity.common.models import create_explorer_models
 from trinity.explorer.scheduler import Scheduler
 from trinity.manager.state_manager import StateManager
 from trinity.manager.synchronizer import Synchronizer
@@ -50,7 +50,7 @@ class Explorer:
         self.synchronizer = Synchronizer.get_actor(config)
         self.config = config
         self.model_type = config.explorer.rollout_model.engine_type
-        self.models, self.auxiliary_models = create_inference_models(config)
+        self.models, self.auxiliary_models = create_explorer_models(config)
         self.experience_pipeline = self._init_experience_pipeline()
         self.taskset = (
             get_taskset_scheduler(explorer_state=explorer_state, config=config)

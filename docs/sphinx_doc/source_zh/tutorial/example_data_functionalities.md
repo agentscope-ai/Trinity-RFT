@@ -4,7 +4,7 @@
 ## 概述
 
 Trinity-RFT 提供了一个统一的数据处理器，用于处理 task 流水线和 experience 流水线中的原始数据集及 experience 数据。
-- 对于任务，数据处理能力来源于 [Data-Juicer](https://github.com/modelscope/data-juicer)。你可以使用 Data-Juicer 提供的数据处理算子。完整的 Data-Juicer 算子列表可在 [此处](https://agentscope-ai.github.io/data-juicer/en/main/docs/Operators.html) 查看。
+- 对于任务，数据处理能力来源于 [Data-Juicer](https://github.com/datajuicer/data-juicer)。你可以使用 Data-Juicer 提供的数据处理算子。完整的 Data-Juicer 算子列表可在 [此处](https://agentscope-ai.github.io/data-juicer/en/main/docs/Operators.html) 查看。
 - 对于 experience 数据，除了 Data-Juicer 算子外，Trinity-RFT 还提供了若干与 RFT 相关的算子，并允许开发者实现自定义算子。
 
 如需实现自己的数据处理器，可参考[开发者指南](trinity_programming_guide.md#operators-for-data-developers)。
@@ -189,7 +189,7 @@ trinity run --config <Trinity-RFT_config_path>
 
 有时你可能需要对原始数据引入人工反馈。本示例将介绍如何标注原始数据，以在训练前获得更高质量的数据集。本示例使用一个示例问答数据集，尝试为 DPO 方法选择“chosen”和“rejected”的回复。
 
-开始前，请根据 README 文件中的安装部分配置 Trinity-RFT 主环境，并从 Data-Juicer 源码 [启动 label-studio 服务](https://github.com/modelscope/data-juicer/tree/main/tools/humanops)。
+开始前，请根据 README 文件中的安装部分配置 Trinity-RFT 主环境，并从 Data-Juicer 源码 [启动 label-studio 服务](https://github.com/datajuicer/data-juicer/tree/main/tools/humanops)。
 
 本示例中，我们手动启动数据处理器服务，因此需安装 `data` 分支的依赖项：
 
@@ -243,7 +243,7 @@ service:
 
 区别在于本例使用了 Data-Juicer 的 `human_preference_annotation_mapper` 算子。该算子帮助你在 UI 界面上进行基于人类偏好的数据标注。
 
-你还可以为此算子设置更多配置项（例如标注完成时的通知）。更多细节请参考 [此文档](https://github.com/modelscope/data-juicer/tree/main/configs/annotation)。
+你还可以为此算子设置更多配置项（例如标注完成时的通知）。更多细节请参考 [此文档](https://github.com/datajuicer/data-juicer/tree/main/configs/annotation)。
 
 `data_processor` 部分的所有配置项详见 [此处](trinity_configs.md)。本示例的配置文件可在 [该配置文件](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/dpo_human_in_the_loop/dpo.yaml) 中找到。
 

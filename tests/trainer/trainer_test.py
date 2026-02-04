@@ -1666,3 +1666,52 @@ class AgentScopeTunerTest(unittest.IsolatedAsyncioTestCase):
         actor_metrics = parser.metric_list("actor")
         self.assertGreater(len(actor_metrics), 0)
         self.assertEqual(parser.metric_max_step(actor_metrics[0]), 2)
+
+
+class ColocateModeTest(RayUnittestBase):
+    def setUp(self) -> None:
+        ray.init(ignore_reinit_error=True)
+        self.config = get_template_config()
+        self.config.mode = "colocate"
+        self.config.cluster.node_num = 1
+        self.config.cluster.gpu_per_node = 1
+        self.config.project = "Trainer-unittest"
+        self.config.name = f"trainer-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        self.config.model.model_path = get_model_path()
+        self.config.checkpoint_root_dir = get_checkpoint_path()
+        self.config.explorer.rollout_model.engine_num = 1
+        self.config.trainer.ulysses_sequence_parallel_size = 1
+        self.config.synchronizer.sync_method = SyncMethod.MEMORY
+
+    def test_trainer(self):
+        """Test colocate mode with both trainer and explorer."""
+        self.config.buffer.explorer_input.taskset = get_unittest_dataset_config("gsm8k")
+        self.config.buffer.explorer_input.eval_tasksets.append(
+            get_unittest_dataset_config("gsm8k", "test")
+        )
+        self.config.buffer.explorer_input.eval_tasksets[0].repeat_times = 4
+        self.config.algorithm.algorithm_type = "grpo"
+        self.config.algorithm.advantage_fn = "grpo"
+        self.config.algorithm.repeat_times = 4
+        self.config.buffer.batch_size = 8
+        self.config.explorer.eval_interval = 2
+        self.config.buffer.total_steps = 2
+        self.config.trainer.save_interval = 2
+        self.config.synchronizer.sync_interval = 1
+        self.config.check_and_update()
+        both(self.config)
+        parser = TensorBoardParser(os.path.join(self.config.monitor.cache_dir, "tensorboard"))
+        rollout_metrics = parser.metric_list("rollout")
+        self.assertGreater(len(rollout_metrics), 0)
+        pipeline_metrics = parser.metric_list("experience_pipeline")
+        self.assertGreater(len(pipeline_metrics), 0)
+        self.assertEqual(parser.metric_max_step(rollout_metrics[0]), 2)
+        actor_metrics = parser.metric_list("actor")
+        self.assertGreater(len(actor_metrics), 0)
+        self.assertEqual(parser.metric_max_step(actor_metrics[0]), 2)
+        response_metrics = parser.metric_list("response_length")
+        self.assertGreater(len(response_metrics), 0)
+        self.assertEqual(parser.metric_max_step(response_metrics[0]), 2)
+        eval_metrics = parser.metric_list("eval")
+        self.assertGreater(len(eval_metrics), 0)
+        self.assertEqual(parser.metric_max_step(eval_metrics[0]), 2)

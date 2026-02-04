@@ -4,7 +4,7 @@
 ## Overview
 
 Trinity-RFT provides a unified data processor to process the raw dataset and experiences for the task pipeline and the experience pipeline.
-- For tasks, the data processing capabilities come from [Data-Juicer](https://github.com/modelscope/data-juicer). You can use data processing operators from Data-Juicer. The full list of Data-Juicer operators can be found [here](https://agentscope-ai.github.io/data-juicer/en/main/docs/Operators.html)
+- For tasks, the data processing capabilities come from [Data-Juicer](https://github.com/datajuicer/data-juicer). You can use data processing operators from Data-Juicer. The full list of Data-Juicer operators can be found [here](https://agentscope-ai.github.io/data-juicer/en/main/docs/Operators.html)
 - For experiences, in addition to Data-Juicer operators, Trinity-RFT provides several RFT-related operators and allows developers to implement their own operators.
 
 For implementing your own data processor, you can refer to this [document](trinity_programming_guide.md#operators-for-data-developers).
@@ -197,7 +197,7 @@ It will watch the explorer output buffer. Once there is a new batch of experienc
 ## Example: Human in the Loop
 Sometimes, you might need to involve human feedbacks for some raw data. In this example, you will learn how to annotate raw data to get a better dataset before training. This example takes an example Q&A dataset and tries to select the chosen and rejected ones for DPO method.
 
-Before getting started, you need to prepare the main environment of Trinity-RFT according to the installation section of the README file, and [start a label-studio server](https://github.com/modelscope/data-juicer/tree/main/tools/humanops) from Data-Juicer from source.
+Before getting started, you need to prepare the main environment of Trinity-RFT according to the installation section of the README file, and [start a label-studio server](https://github.com/datajuicer/data-juicer/tree/main/tools/humanops) from Data-Juicer from source.
 
 In this example, we start the data processor server manually. Thus, you need to install the dependencies in the `data` split.
 
@@ -251,7 +251,7 @@ Here you can set the basic information for the example dataset and some other it
 
 The difference is that we use the data-juicer OP `human_preference_annotation_mapper` here. This OP helps you to annotate the data with human preference on a UI.
 
-You can set more config items for this OP (e.g. notification when annotation is finished). For more details, please refer to this [doc](https://github.com/modelscope/data-juicer/tree/main/configs/annotation).
+You can set more config items for this OP (e.g. notification when annotation is finished). For more details, please refer to this [doc](https://github.com/datajuicer/data-juicer/tree/main/configs/annotation).
 
 All config items in the `data_processor` section can be found [here](trinity_configs.md). A prepared config file for this example can be found in [the config file](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/dpo_human_in_the_loop/dpo.yaml).
 

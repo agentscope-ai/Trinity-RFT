@@ -141,6 +141,7 @@ MODE_MAP = {
     "both": both,
     "bench": bench,
     "serve": serve,
+    "colocate": both,
 }
 
 
@@ -261,10 +262,10 @@ def debug(
         runtime_env={"env_vars": config.get_envs()},
         ignore_reinit_error=True,
     )
-    from trinity.common.models import create_debug_inference_model
+    from trinity.common.models import create_debug_explorer_model
 
     if module == "inference_model":
-        asyncio.run(create_debug_inference_model(config))
+        asyncio.run(create_debug_explorer_model(config))
 
     elif module == "workflow":
         from trinity.explorer.workflow_runner import DebugWorkflowRunner

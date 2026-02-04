@@ -192,7 +192,7 @@ cd Trinity-RFT
 
 
 ```bash
-docker pull ghcr.io/modelscope/trinity-rft:latest
+docker pull ghcr.io/agentscope-ai/trinity-rft:latest
 
 # 将 <path_to_your_data_and_checkpoints> 替换为实际需要挂载的路径
 docker run -it \
@@ -201,7 +201,7 @@ docker run -it \
   --rm \
   -v $PWD:/workspace \
   -v <path_to_your_data_and_checkpoints>:/data \
-  ghcr.io/modelscope/trinity-rft:latest
+  ghcr.io/agentscope-ai/trinity-rft:latest
 ```
 
 > 该镜像已经通过 `uv` 安装了 Trinity-RFT 以及所有 GPU 相关依赖，且会自动激活虚拟环境（也可通过 `source /opt/venv/bin/activate` 手动激活）。必要时可使用 `uv pip install` 添加额外的包。
@@ -391,7 +391,7 @@ trinity run --config examples/grpo_gsm8k/gsm8k.yaml
 
 + [verl](https://github.com/volcengine/verl)，[FSDP](https://pytorch.org/docs/stable/fsdp.html) 和 [Megatron-LM](https://github.com/NVIDIA/Megatron-LM) 用于大模型训练；
 + [vLLM](https://github.com/vllm-project/vllm) 用于大模型推理；
-+ [Data-Juicer](https://github.com/modelscope/data-juicer?tab=readme-ov-file) 用于数据处理流水线；
++ [Data-Juicer](https://github.com/datajuicer/data-juicer) 用于数据处理流水线；
 + [AgentScope](https://github.com/agentscope-ai/agentscope) 用于智能体工作流；
 + [Ray](https://github.com/ray-project/ray) 用于分布式系统；
 + 我们也从 [OpenRLHF](https://github.com/OpenRLHF/OpenRLHF)、[TRL](https://github.com/huggingface/trl) 和 [ChatLearn](https://github.com/alibaba/ChatLearn) 等框架中汲取了灵感；

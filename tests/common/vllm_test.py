@@ -15,7 +15,7 @@ from tests.tools import (
     get_template_config,
 )
 from trinity.common.config import Config
-from trinity.common.models import create_inference_models
+from trinity.common.models import create_explorer_models
 from trinity.common.models.model import ModelWrapper
 from trinity.common.models.utils import (
     tokenize_and_mask_messages_default,
@@ -129,7 +129,7 @@ class ModelWrapperTest(RayUnittestBaseAsync):
         self.config.explorer.rollout_model.enable_history = self.enable_history
         self.config.check_and_update()
 
-        self.engines, self.auxiliary_engines = create_inference_models(self.config)
+        self.engines, self.auxiliary_engines = create_explorer_models(self.config)
         self.model_wrapper = ModelWrapper(
             self.engines[0], engine_type="vllm", enable_history=self.enable_history
         )
@@ -247,7 +247,7 @@ class TestModelLen(RayUnittestBaseAsync):
         self.config.explorer.rollout_model.enable_openai_api = True
         self.config.check_and_update()
 
-        self.engines, self.auxiliary_engines = create_inference_models(self.config)
+        self.engines, self.auxiliary_engines = create_explorer_models(self.config)
         self.model_wrapper = ModelWrapper(self.engines[0], engine_type="vllm", enable_history=True)
         self.tokenizer = AutoTokenizer.from_pretrained(self.config.model.model_path)
 
@@ -316,7 +316,7 @@ class TestModelLenWithoutPromptTruncation(RayUnittestBaseAsync):
         self.config.explorer.rollout_model.enable_openai_api = True
         self.config.check_and_update()
 
-        self.engines, self.auxiliary_engines = create_inference_models(self.config)
+        self.engines, self.auxiliary_engines = create_explorer_models(self.config)
         self.model_wrapper = ModelWrapper(self.engines[0], engine_type="vllm", enable_history=True)
 
     async def test_model_len(self):
@@ -364,7 +364,7 @@ class TestMessageProcess(RayUnittestBaseAsync):
         self.config.model.enable_prompt_truncation = True
         self.config.explorer.rollout_model.enable_openai_api = True
         self.config.check_and_update()
-        self.engines, self.auxiliary_engines = create_inference_models(self.config)
+        self.engines, self.auxiliary_engines = create_explorer_models(self.config)
         self.model_wrapper = ModelWrapper(self.engines[0], engine_type="vllm", enable_history=True)
 
     async def test_truncation_status(self):
@@ -439,7 +439,7 @@ class TestAPIServer(RayUnittestBaseAsync):
         self.config.explorer.rollout_model.enable_openai_api = True
 
         self.config.check_and_update()
-        self.engines, self.auxiliary_engines = create_inference_models(self.config)
+        self.engines, self.auxiliary_engines = create_explorer_models(self.config)
         self.model_wrapper = ModelWrapper(self.engines[0], engine_type="vllm", enable_history=True)
         self.model_wrapper_no_history = ModelWrapper(
             self.engines[0], engine_type="vllm", enable_history=False
@@ -571,7 +571,7 @@ class TestLogprobs(RayUnittestBaseAsync):
         self.config.explorer.rollout_model.enable_log_requests = True
 
         self.config.check_and_update()
-        self.engines, self.auxiliary_engines = create_inference_models(self.config)
+        self.engines, self.auxiliary_engines = create_explorer_models(self.config)
         self.model_wrapper = ModelWrapper(self.engines[0], engine_type="vllm", enable_history=True)
 
     async def test_logprobs_api(self):
@@ -766,7 +766,7 @@ class TestAsyncAPIServer(RayUnittestBaseAsync):
         self.config.check_and_update()
 
     async def _setup_engines(self):
-        self.engines, self.auxiliary_engines = create_inference_models(self.config)
+        self.engines, self.auxiliary_engines = create_explorer_models(self.config)
         self.model_wrapper = ModelWrapper(
             self.engines[0], engine_type=self.engine_type, enable_history=True
         )
@@ -1014,7 +1014,7 @@ class TestAPIServerToolCall(RayUnittestBaseAsync):
         self.config.explorer.rollout_model.reasoning_parser = self.reasoning_parser
 
         self.config.check_and_update()
-        self.engines, self.auxiliary_engines = create_inference_models(self.config)
+        self.engines, self.auxiliary_engines = create_explorer_models(self.config)
         self.model_wrapper = ModelWrapper(self.engines[0], engine_type="vllm", enable_history=True)
         self.model_wrapper_no_history = ModelWrapper(
             self.engines[0], engine_type="vllm", enable_history=False
@@ -1297,7 +1297,7 @@ class TestSuperLongGeneration(RayUnittestBaseAsync):
         self.config.explorer.rollout_model.chat_template = CHAT_TEMPLATE
 
         self.config.check_and_update()
-        self.engines, self.auxiliary_engines = create_inference_models(self.config)
+        self.engines, self.auxiliary_engines = create_explorer_models(self.config)
         self.model_wrapper = ModelWrapper(self.engines[0], engine_type="vllm", enable_history=True)
 
     async def test_generate(self):
@@ -1349,7 +1349,7 @@ class TestTinkerAPI(RayUnittestBaseAsync):
         self.config.explorer.rollout_model.enable_lora = True
 
         self.config.check_and_update()
-        self.engines, self.auxiliary_engines = create_inference_models(self.config)
+        self.engines, self.auxiliary_engines = create_explorer_models(self.config)
         self.model_wrapper = ModelWrapper(self.engines[0], engine_type="vllm", enable_history=True)
 
     async def test_tinker_api(self):
