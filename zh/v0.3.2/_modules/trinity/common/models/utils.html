@@ -1002,11 +1002,9 @@ document.write(`
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">concurrent.futures</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThreadPoolExecutor</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">torch.distributed._tensor</span><span class="w"> </span><span class="kn">import</span> <span class="n">DTensor</span><span class="p">,</span> <span class="n">Placement</span><span class="p">,</span> <span class="n">Shard</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">TrainerConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
@@ -1242,21 +1240,6 @@ document.write(`
 
 
 
-<span class="c1"># copy from verl/scripts/model_merger.py</span>
-<div class="viewcode-block" id="merge_by_placement">
-<a class="viewcode-back" href="../../../../build_api/trinity.common.models.utils.html#trinity.common.models.utils.merge_by_placement">[文档]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">merge_by_placement</span><span class="p">(</span><span class="n">tensors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">placement</span><span class="p">:</span> <span class="n">Placement</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">placement</span><span class="o">.</span><span class="n">is_replicate</span><span class="p">():</span>
-        <span class="k">return</span> <span class="n">tensors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">elif</span> <span class="n">placement</span><span class="o">.</span><span class="n">is_partial</span><span class="p">():</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Partial placement is not supported yet&quot;</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">placement</span><span class="o">.</span><span class="n">is_shard</span><span class="p">():</span>
-        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">tensors</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">placement</span><span class="o">.</span><span class="n">dim</span><span class="p">)</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported placement: </span><span class="si">{</span><span class="n">placement</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
-
-
-
 <div class="viewcode-block" id="get_verl_checkpoint_info">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.models.utils.html#trinity.common.models.utils.get_verl_checkpoint_info">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_verl_checkpoint_info</span><span class="p">(</span>
@@ -1296,109 +1279,38 @@ document.write(`
 
 
 
-<span class="c1"># copy from verl/scripts/model_merger.py</span>
+<span class="c1"># modified from verl/model_merger/fsdp_model_merger.py</span>
 <div class="viewcode-block" id="load_fsdp_state_dict_from_verl_checkpoint">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.models.utils.html#trinity.common.models.utils.load_fsdp_state_dict_from_verl_checkpoint">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_fsdp_state_dict_from_verl_checkpoint</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>  <span class="c1"># noqa: C901</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Load state dict from a Verl checkpoint.&quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">verl.model_merger.base_model_merger</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelMergerConfig</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">verl.model_merger.fsdp_model_merger</span><span class="w"> </span><span class="kn">import</span> <span class="n">FSDPModelMerger</span>
+
     <span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading state dict from </span><span class="si">{</span><span class="n">checkpoint_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="ow">not</span> <span class="n">checkpoint_path</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span>
-        <span class="s2">&quot;huggingface&quot;</span>
-    <span class="p">),</span> <span class="s2">&quot;The local_dir should not end with huggingface&quot;</span>
-
-    <span class="c1"># copy rank zero to find the shape of (dp, fsdp)</span>
-    <span class="n">rank</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="n">world_size</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">):</span>
-        <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;model_world_size_(\d+)_rank_0\.pt&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">match</span><span class="p">:</span>
-            <span class="n">world_size</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-            <span class="k">break</span>
-    <span class="k">assert</span> <span class="n">world_size</span><span class="p">,</span> <span class="s2">&quot;No model file with the proper format&quot;</span>
-
-    <span class="n">state_dict</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span>
-        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;model_world_size_</span><span class="si">{</span><span class="n">world_size</span><span class="si">}</span><span class="s2">_rank_</span><span class="si">{</span><span class="n">rank</span><span class="si">}</span><span class="s2">.pt&quot;</span><span class="p">),</span>
-        <span class="n">map_location</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">ModelMergerConfig</span><span class="p">(</span>
+        <span class="n">operation</span><span class="o">=</span><span class="s2">&quot;merge&quot;</span><span class="p">,</span>
+        <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;fsdp&quot;</span><span class="p">,</span>
+        <span class="n">trust_remote_code</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">is_value_model</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">local_dir</span><span class="o">=</span><span class="n">checkpoint_path</span><span class="p">,</span>
+        <span class="n">hf_model_config_path</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">,</span> <span class="s2">&quot;huggingface&quot;</span><span class="p">),</span>
     <span class="p">)</span>
-    <span class="n">pivot_key</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">state_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()))[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">weight</span> <span class="o">=</span> <span class="n">state_dict</span><span class="p">[</span><span class="n">pivot_key</span><span class="p">]</span>
-    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weight</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">_tensor</span><span class="o">.</span><span class="n">DTensor</span><span class="p">)</span>
-    <span class="c1"># get sharding info</span>
-    <span class="n">device_mesh</span> <span class="o">=</span> <span class="n">weight</span><span class="o">.</span><span class="n">device_mesh</span>
-    <span class="n">mesh</span> <span class="o">=</span> <span class="n">device_mesh</span><span class="o">.</span><span class="n">mesh</span>
-    <span class="n">mesh_dim_names</span> <span class="o">=</span> <span class="n">device_mesh</span><span class="o">.</span><span class="n">mesh_dim_names</span>
+    <span class="n">merger</span> <span class="o">=</span> <span class="n">FSDPModelMerger</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
 
+    <span class="n">world_size</span> <span class="o">=</span> <span class="n">merger</span><span class="o">.</span><span class="n">_get_world_size</span><span class="p">()</span>
+    <span class="n">rank_zero_state_dict</span> <span class="o">=</span> <span class="n">merger</span><span class="o">.</span><span class="n">_load_rank_zero_state_dict</span><span class="p">(</span><span class="n">world_size</span><span class="p">)</span>
+
+    <span class="n">mesh</span><span class="p">,</span> <span class="n">mesh_dim_names</span> <span class="o">=</span> <span class="n">merger</span><span class="o">.</span><span class="n">_extract_device_mesh_info</span><span class="p">(</span><span class="n">rank_zero_state_dict</span><span class="p">,</span> <span class="n">world_size</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got device mesh </span><span class="si">{</span><span class="n">mesh</span><span class="si">}</span><span class="s2">, mesh_dim_names </span><span class="si">{</span><span class="n">mesh_dim_names</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-    <span class="k">assert</span> <span class="n">mesh_dim_names</span> <span class="ow">in</span> <span class="p">((</span><span class="s2">&quot;fsdp&quot;</span><span class="p">,),),</span> <span class="sa">f</span><span class="s2">&quot;Unsupported mesh_dim_names </span><span class="si">{</span><span class="n">mesh_dim_names</span><span class="si">}</span><span class="s2">&quot;</span>
-
-    <span class="k">if</span> <span class="s2">&quot;tp&quot;</span> <span class="ow">in</span> <span class="n">mesh_dim_names</span><span class="p">:</span>
-        <span class="c1"># fsdp * tp</span>
-        <span class="n">total_shards</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">mesh</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span>
-        <span class="n">mesh_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">mesh</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="c1"># fsdp</span>
-        <span class="n">total_shards</span> <span class="o">=</span> <span class="n">mesh</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">mesh_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">mesh</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],)</span>
-
+    <span class="n">total_shards</span><span class="p">,</span> <span class="n">mesh_shape</span> <span class="o">=</span> <span class="n">merger</span><span class="o">.</span><span class="n">_calculate_shard_configuration</span><span class="p">(</span><span class="n">mesh</span><span class="p">,</span> <span class="n">mesh_dim_names</span><span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processing model shards with </span><span class="si">{</span><span class="n">total_shards</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">mesh_shape</span><span class="si">}</span><span class="s2"> in total&quot;</span><span class="p">)</span>
 
-    <span class="n">model_state_dict_lst</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">model_state_dict_lst</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span>
-    <span class="n">model_state_dict_lst</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="s2">&quot;&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">total_shards</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">process_one_shard</span><span class="p">(</span><span class="n">rank</span><span class="p">):</span>
-        <span class="n">model_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;model_world_size_</span><span class="si">{</span><span class="n">world_size</span><span class="si">}</span><span class="s2">_rank_</span><span class="si">{</span><span class="n">rank</span><span class="si">}</span><span class="s2">.pt&quot;</span><span class="p">)</span>
-        <span class="n">state_dict</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="n">map_location</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span> <span class="n">weights_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="n">model_state_dict_lst</span><span class="p">[</span><span class="n">rank</span><span class="p">]</span> <span class="o">=</span> <span class="n">state_dict</span>  <span class="c1"># noqa: F821</span>
-        <span class="k">return</span> <span class="n">state_dict</span>
-
-    <span class="k">with</span> <span class="n">ThreadPoolExecutor</span><span class="p">(</span><span class="n">max_workers</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()))</span> <span class="k">as</span> <span class="n">executor</span><span class="p">:</span>  <span class="c1"># type: ignore</span>
-        <span class="k">for</span> <span class="n">rank</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">total_shards</span><span class="p">):</span>
-            <span class="n">executor</span><span class="o">.</span><span class="n">submit</span><span class="p">(</span><span class="n">process_one_shard</span><span class="p">,</span> <span class="n">rank</span><span class="p">)</span>
-    <span class="n">state_dict</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">param_placements</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Placement</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">model_state_dict_lst</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
-        <span class="n">state_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">model_state_dict</span> <span class="ow">in</span> <span class="n">model_state_dict_lst</span><span class="p">:</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">tensor</span> <span class="o">=</span> <span class="n">model_state_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-            <span class="k">except</span><span class="p">:</span>  <span class="c1"># noqa: E722</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="mi">30</span><span class="p">)</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">model_state_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">DTensor</span><span class="p">):</span>
-                <span class="n">state_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">_local_tensor</span><span class="o">.</span><span class="n">bfloat16</span><span class="p">())</span>
-                <span class="n">placements</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">placements</span><span class="p">)</span>
-                <span class="c1"># replicated placement at dp dimension can be discarded</span>
-                <span class="k">if</span> <span class="n">mesh_dim_names</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;dp&quot;</span><span class="p">:</span>
-                    <span class="n">placements</span> <span class="o">=</span> <span class="n">placements</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
-                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">param_placements</span><span class="p">:</span>
-                    <span class="n">param_placements</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">placements</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="k">assert</span> <span class="n">param_placements</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">==</span> <span class="n">placements</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">state_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">bfloat16</span><span class="p">()</span>
-
-    <span class="k">del</span> <span class="n">model_state_dict_lst</span>
-
-    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">state_dict</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">state_dict</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No need to merge key </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">continue</span>
-        <span class="c1"># merge shards</span>
-        <span class="n">placements</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Shard</span><span class="p">]</span> <span class="o">=</span> <span class="n">param_placements</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>  <span class="c1"># type: ignore</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mesh_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="c1"># 1-D list, FSDP without TP</span>
-            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">placements</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
-            <span class="n">shards</span> <span class="o">=</span> <span class="n">state_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-            <span class="n">state_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">merge_by_placement</span><span class="p">(</span><span class="n">shards</span><span class="p">,</span> <span class="n">placements</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># 2-D list, FSDP + TP</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;FSDP + TP is not supported yet&quot;</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">state_dict</span></div>
+    <span class="n">merged_state_dict</span> <span class="o">=</span> <span class="n">merger</span><span class="o">.</span><span class="n">_load_and_merge_state_dicts</span><span class="p">(</span>
+        <span class="n">world_size</span><span class="p">,</span> <span class="n">total_shards</span><span class="p">,</span> <span class="n">mesh_shape</span><span class="p">,</span> <span class="n">mesh_dim_names</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">merged_state_dict</span></div>
 
 
 
@@ -1415,98 +1327,51 @@ document.write(`
 <div class="viewcode-block" id="get_megatron_converter">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.models.utils.html#trinity.common.models.utils.get_megatron_converter">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_megatron_converter</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">megatron.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">mpu</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">megatron.core.tensor_parallel.random</span><span class="w"> </span><span class="kn">import</span> <span class="n">model_parallel_cuda_manual_seed</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoConfig</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">builtins</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">contextlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">contextmanager</span>
+
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.model_merger.base_model_merger</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelMergerConfig</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.model_merger.megatron_model_merger</span><span class="w"> </span><span class="kn">import</span> <span class="n">MegatronModelMerger</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.device</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_device_name</span><span class="p">,</span> <span class="n">get_torch_device</span>
 
+    <span class="c1"># modified from verl/model_merger/megatron_model_merger.py</span>
     <span class="k">class</span><span class="w"> </span><span class="nc">MegatronStateDictConverter</span><span class="p">(</span><span class="n">MegatronModelMerger</span><span class="p">):</span>
         <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">ModelMergerConfig</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">hf_model_config_path</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">hf_model_config_path</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">model_config</span> <span class="o">=</span> <span class="n">AutoConfig</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">hf_model_config_path</span><span class="p">,</span> <span class="n">trust_remote_code</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">trust_remote_code</span>
-            <span class="p">)</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">world_size</span> <span class="o">=</span> <span class="mi">1</span>
-            <span class="n">local_rank</span> <span class="o">=</span> <span class="mi">0</span>
-            <span class="n">get_torch_device</span><span class="p">()</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">get_device_name</span><span class="p">()</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">local_rank</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-            <span class="n">mpu</span><span class="o">.</span><span class="n">initialize_model_parallel</span><span class="p">(</span>
-                <span class="n">tensor_model_parallel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                <span class="n">pipeline_model_parallel_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">world_size</span><span class="p">,</span>
-                <span class="n">virtual_pipeline_model_parallel_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-                <span class="n">context_parallel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                <span class="n">expert_model_parallel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="n">model_parallel_cuda_manual_seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">hf_config</span> <span class="o">=</span> <span class="n">AutoConfig</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">hf_model_config_path</span><span class="p">,</span> <span class="n">trust_remote_code</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">trust_remote_code</span>
-            <span class="p">)</span>
+            <span class="n">original_init_process_group</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">init_process_group</span>
+            <span class="n">original_get_rank</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">get_rank</span>
+            <span class="n">original_get_world_size</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">get_world_size</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">init_process_group</span> <span class="o">=</span> <span class="k">lambda</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="kc">None</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">get_rank</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="mi">0</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">get_world_size</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="mi">1</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hf_config</span><span class="p">)</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_redirect_print_to_logger</span><span class="p">():</span>
+                <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">init_process_group</span> <span class="o">=</span> <span class="n">original_init_process_group</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">get_rank</span> <span class="o">=</span> <span class="n">original_get_rank</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">get_world_size</span> <span class="o">=</span> <span class="n">original_get_world_size</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">params_mapping</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="c1"># megatron core gpt model name, huggingface model name</span>
-                <span class="c1"># NOTICE: It&#39;s a little bit tricky, when 2 keys have the same prefix, we need to make sure the</span>
-                <span class="c1"># longer key within the containing relationship is processed first.</span>
-                <span class="s2">&quot;embedding.word_embeddings&quot;</span><span class="p">:</span> <span class="s2">&quot;model.embed_tokens&quot;</span><span class="p">,</span>
-                <span class="c1"># input layer norm for dpskv3</span>
-                <span class="s2">&quot;input_layernorm.weight&quot;</span><span class="p">:</span> <span class="s2">&quot;input_layernorm.weight&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;input_layernorm.bias&quot;</span><span class="p">:</span> <span class="s2">&quot;input_layernorm.bias&quot;</span><span class="p">,</span>
-                <span class="c1"># attn</span>
-                <span class="s2">&quot;self_attention.linear_qkv.layer_norm_weight&quot;</span><span class="p">:</span> <span class="s2">&quot;input_layernorm.weight&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;self_attention.linear_qkv.layer_norm_bias&quot;</span><span class="p">:</span> <span class="s2">&quot;input_layernorm.bias&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;self_attention.linear_qkv&quot;</span><span class="p">:</span> <span class="s2">&quot;self_attn.qkv_proj&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;self_attention.q_layernorm&quot;</span><span class="p">:</span> <span class="s2">&quot;self_attn.q_norm&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;self_attention.k_layernorm&quot;</span><span class="p">:</span> <span class="s2">&quot;self_attn.k_norm&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;self_attention.linear_proj&quot;</span><span class="p">:</span> <span class="s2">&quot;self_attn.o_proj&quot;</span><span class="p">,</span>
-                <span class="c1"># mla</span>
-                <span class="s2">&quot;self_attention.linear_q_proj&quot;</span><span class="p">:</span> <span class="s2">&quot;self_attn.q_proj&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;self_attention.linear_q_down_proj&quot;</span><span class="p">:</span> <span class="s2">&quot;self_attn.q_a_proj&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;self_attention.linear_q_up_proj.layer_norm_weight&quot;</span><span class="p">:</span> <span class="s2">&quot;self_attn.q_a_layernorm.weight&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;self_attention.linear_q_up_proj&quot;</span><span class="p">:</span> <span class="s2">&quot;self_attn.q_b_proj&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;self_attention.linear_kv_down_proj&quot;</span><span class="p">:</span> <span class="s2">&quot;self_attn.kv_a_proj_with_mqa&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;self_attention.linear_kv_up_proj.layer_norm_weight&quot;</span><span class="p">:</span> <span class="s2">&quot;self_attn.kv_a_layernorm.weight&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;self_attention.linear_kv_up_proj&quot;</span><span class="p">:</span> <span class="s2">&quot;self_attn.kv_b_proj&quot;</span><span class="p">,</span>
-                <span class="c1"># mlp</span>
-                <span class="s2">&quot;pre_mlp_layernorm&quot;</span><span class="p">:</span> <span class="s2">&quot;post_attention_layernorm&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;mlp.linear_fc1.layer_norm_weight&quot;</span><span class="p">:</span> <span class="s2">&quot;post_attention_layernorm.weight&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;mlp.linear_fc1.layer_norm_bias&quot;</span><span class="p">:</span> <span class="s2">&quot;post_attention_layernorm.bias&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;mlp.linear_fc1&quot;</span><span class="p">:</span> <span class="s2">&quot;mlp.gate_up_proj&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;mlp.linear_fc2&quot;</span><span class="p">:</span> <span class="s2">&quot;mlp.down_proj&quot;</span><span class="p">,</span>
-                <span class="c1"># moe</span>
-                <span class="s2">&quot;mlp.router.expert_bias&quot;</span><span class="p">:</span> <span class="s2">&quot;mlp.gate.e_score_correction_bias&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;mlp.router&quot;</span><span class="p">:</span> <span class="s2">&quot;mlp.gate&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;mlp.shared_experts.linear_fc1&quot;</span><span class="p">:</span> <span class="s2">&quot;mlp.shared_experts.gate_up_proj&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;mlp.shared_experts.linear_fc2&quot;</span><span class="p">:</span> <span class="s2">&quot;mlp.shared_experts.down_proj&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;linear_fc1&quot;</span><span class="p">:</span> <span class="s2">&quot;gate_up_proj&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;linear_fc2&quot;</span><span class="p">:</span> <span class="s2">&quot;down_proj&quot;</span><span class="p">,</span>
-                <span class="c1"># output</span>
-                <span class="s2">&quot;final_layernorm&quot;</span><span class="p">:</span> <span class="s2">&quot;norm&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;output_layer&quot;</span><span class="p">:</span> <span class="s2">&quot;lm_head&quot;</span><span class="p">,</span>
-            <span class="p">}</span>
+        <span class="nd">@contextmanager</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">_redirect_print_to_logger</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="n">original_print</span> <span class="o">=</span> <span class="n">builtins</span><span class="o">.</span><span class="n">print</span>
 
-            <span class="k">if</span> <span class="s2">&quot;Qwen2MoeForCausalLM&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hf_config</span><span class="o">.</span><span class="n">architectures</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">params_mapping</span><span class="p">[</span>
-                    <span class="s2">&quot;mlp.shared_experts.linear_fc1&quot;</span>
-                <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mlp.shared_expert.gate_up_proj&quot;</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">params_mapping</span><span class="p">[</span><span class="s2">&quot;mlp.shared_experts.linear_fc2&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mlp.shared_expert.down_proj&quot;</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">params_mapping</span><span class="p">[</span>
-                    <span class="s2">&quot;mlp.shared_experts.gate_weight&quot;</span>
-                <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mlp.shared_expert_gate.weight&quot;</span>
+            <span class="k">def</span><span class="w"> </span><span class="nf">logger_print</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">args</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+
+            <span class="n">builtins</span><span class="o">.</span><span class="n">print</span> <span class="o">=</span> <span class="n">logger_print</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">yield</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="n">builtins</span><span class="o">.</span><span class="n">print</span> <span class="o">=</span> <span class="n">original_print</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">get_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">checkpoint_path</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">local_dir</span> <span class="o">=</span> <span class="n">checkpoint_path</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.megatron_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_dist_checkpoint_path</span>
 
-            <span class="n">model_ckpt_path</span> <span class="o">=</span> <span class="n">get_dist_checkpoint_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">local_dir</span><span class="p">)</span>
+            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_redirect_print_to_logger</span><span class="p">():</span>
+                <span class="n">model_ckpt_path</span> <span class="o">=</span> <span class="n">get_dist_checkpoint_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">local_dir</span><span class="p">)</span>
 
-            <span class="n">model_state_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_state_dicts</span><span class="p">(</span><span class="n">model_ckpt_path</span><span class="p">)</span>
-            <span class="n">merged_state_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_state_dicts</span><span class="p">(</span><span class="n">model_state_dict</span><span class="p">)</span>
+                <span class="n">model_state_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_state_dicts</span><span class="p">(</span><span class="n">model_ckpt_path</span><span class="p">)</span>
+                <span class="n">merged_state_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_state_dicts</span><span class="p">(</span><span class="n">model_state_dict</span><span class="p">)</span>
             <span class="k">del</span> <span class="n">model_state_dict</span>
             <span class="k">return</span> <span class="n">merged_state_dict</span>
 

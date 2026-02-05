@@ -1180,11 +1180,11 @@ document.write(`
                 <span class="bp">self</span><span class="o">.</span><span class="n">_ready_condition</span><span class="o">.</span><span class="n">notify_all</span><span class="p">()</span></div>
 
 
-<div class="viewcode-block" id="Synchronizer.get_trainer_status">
-<a class="viewcode-back" href="../../../build_api/trinity.manager.synchronizer.html#trinity.manager.Synchronizer.get_trainer_status">[文档]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_trainer_status</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RunningStatus</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the current status of the trainer.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer_status</span></div>
+<div class="viewcode-block" id="Synchronizer.trainer_requires_sync">
+<a class="viewcode-back" href="../../../build_api/trinity.manager.synchronizer.html#trinity.manager.Synchronizer.trainer_requires_sync">[文档]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">trainer_requires_sync</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if the trainer is require sync.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer_status</span> <span class="o">==</span> <span class="n">RunningStatus</span><span class="o">.</span><span class="n">REQUIRE_SYNC</span></div>
 
 
 <div class="viewcode-block" id="Synchronizer.set_explorer_status">
@@ -1213,11 +1213,11 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">explorer_status_counts</span><span class="p">[</span><span class="n">status</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span></div>
 
 
-<div class="viewcode-block" id="Synchronizer.get_explorer_status_counts">
-<a class="viewcode-back" href="../../../build_api/trinity.manager.synchronizer.html#trinity.manager.Synchronizer.get_explorer_status_counts">[文档]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_explorer_status_counts</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="n">RunningStatus</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the current status counts for all explorers.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">explorer_status_counts</span></div>
+<div class="viewcode-block" id="Synchronizer.explorer_requires_sync">
+<a class="viewcode-back" href="../../../build_api/trinity.manager.synchronizer.html#trinity.manager.Synchronizer.explorer_requires_sync">[文档]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">explorer_requires_sync</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if any explorer is require sync.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">explorer_status_counts</span><span class="p">[</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">REQUIRE_SYNC</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span></div>
 
 
 <div class="viewcode-block" id="Synchronizer.set_model_state_dict_with_step_num">
@@ -1333,7 +1333,7 @@ document.write(`
 
 <div class="viewcode-block" id="Synchronizer.wait_new_model_state_dict">
 <a class="viewcode-back" href="../../../build_api/trinity.manager.synchronizer.html#trinity.manager.Synchronizer.wait_new_model_state_dict">[文档]</a>
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">wait_new_model_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_version</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">no_wait</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">wait_new_model_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_version</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Wait until a new model state is available.</span>
 
@@ -1347,19 +1347,30 @@ document.write(`
             <span class="k">assert</span> <span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">model_version</span> <span class="o">&gt;=</span> <span class="n">current_version</span>
             <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;The model version in Synchronizer (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_version</span><span class="si">}</span><span class="s2">) should be no smaller than that in Explorer (</span><span class="si">{</span><span class="n">current_version</span><span class="si">}</span><span class="s2">)!&quot;</span>
+            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_explorer_status</span><span class="p">(</span>
+                <span class="n">RunningStatus</span><span class="o">.</span><span class="n">REQUIRE_SYNC</span><span class="p">,</span> <span class="n">old_status</span><span class="o">=</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">RUNNING</span>
+            <span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_version</span> <span class="o">==</span> <span class="n">current_version</span><span class="p">:</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">no_wait</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer_status</span> <span class="o">!=</span> <span class="n">RunningStatus</span><span class="o">.</span><span class="n">STOPPED</span><span class="p">:</span>
-                    <span class="c1"># TODO: explorer need support no wait</span>
-                    <span class="c1"># TODO: handle timeout</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer_status</span> <span class="o">!=</span> <span class="n">RunningStatus</span><span class="o">.</span><span class="n">STOPPED</span><span class="p">:</span>
                     <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">wait_for</span><span class="p">(</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_ready_condition</span><span class="o">.</span><span class="n">wait</span><span class="p">(),</span>
                         <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_timeout</span><span class="p">,</span>
                     <span class="p">)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_version</span> <span class="o">&gt;</span> <span class="n">current_version</span><span class="p">:</span>
-                <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_explorer_status</span><span class="p">(</span>
-                    <span class="n">RunningStatus</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">,</span> <span class="n">old_status</span><span class="o">=</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">REQUIRE_SYNC</span>
-                <span class="p">)</span>
+            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_explorer_status</span><span class="p">(</span>
+                <span class="n">RunningStatus</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">,</span> <span class="n">old_status</span><span class="o">=</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">REQUIRE_SYNC</span>
+            <span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_version</span></div>
+
+
+<div class="viewcode-block" id="Synchronizer.notify_no_new_model_state_dict">
+<a class="viewcode-back" href="../../../build_api/trinity.manager.synchronizer.html#trinity.manager.Synchronizer.notify_no_new_model_state_dict">[文档]</a>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">notify_no_new_model_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Notify the explorer that there is no new model state.</span>
+<span class="sd">        Used for `wait_new_model_state_dict`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">async</span> <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ready_condition</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_ready_condition</span><span class="o">.</span><span class="n">notify_all</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="Synchronizer.get_latest_model_version">
@@ -1398,11 +1409,11 @@ document.write(`
             <span class="k">if</span> <span class="n">module</span> <span class="o">==</span> <span class="s2">&quot;explorer&quot;</span><span class="p">:</span>
                 <span class="n">another_module</span> <span class="o">=</span> <span class="s2">&quot;Trainer&quot;</span>
                 <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_explorer_status</span><span class="p">(</span>
-                    <span class="n">RunningStatus</span><span class="o">.</span><span class="n">REQUIRE_SYNC</span><span class="p">,</span> <span class="n">old_status</span><span class="o">=</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">WAITING_SYNC</span>
+                    <span class="n">RunningStatus</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">,</span> <span class="n">old_status</span><span class="o">=</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">REQUIRE_SYNC</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">another_module</span> <span class="o">=</span> <span class="s2">&quot;Explorer&quot;</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">trainer_status</span> <span class="o">=</span> <span class="n">RunningStatus</span><span class="o">.</span><span class="n">REQUIRE_SYNC</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">trainer_status</span> <span class="o">=</span> <span class="n">RunningStatus</span><span class="o">.</span><span class="n">RUNNING</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">another_module</span><span class="si">}</span><span class="s2"> is not ready for model weight sync.&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">None</span>
 
@@ -1418,12 +1429,12 @@ document.write(`
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">module</span> <span class="o">==</span> <span class="s2">&quot;trainer&quot;</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">model_version</span> <span class="o">=</span> <span class="n">trainer_step</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">trainer_status</span> <span class="o">=</span> <span class="n">RunningStatus</span><span class="o">.</span><span class="n">WAITING_SYNC</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">trainer_status</span> <span class="o">=</span> <span class="n">RunningStatus</span><span class="o">.</span><span class="n">REQUIRE_SYNC</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_ready_condition</span><span class="o">.</span><span class="n">notify_all</span><span class="p">()</span>
-                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">explorer_status_counts</span><span class="p">[</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">WAITING_SYNC</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">explorer_status_counts</span><span class="p">[</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">REQUIRE_SYNC</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
                         <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">wait_for</span><span class="p">(</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">_ready_condition</span><span class="o">.</span><span class="n">wait_for</span><span class="p">(</span>
-                                <span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">explorer_status_counts</span><span class="p">[</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">WAITING_SYNC</span><span class="p">]</span>
+                                <span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">explorer_status_counts</span><span class="p">[</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">REQUIRE_SYNC</span><span class="p">]</span>
                                 <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">explorer_status_counts</span><span class="p">[</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">STOPPED</span><span class="p">]</span>
                                 <span class="o">==</span> <span class="mi">1</span><span class="p">,</span>
                             <span class="p">),</span>
@@ -1433,18 +1444,18 @@ document.write(`
                             <span class="k">return</span> <span class="k">await</span> <span class="n">sync_failed</span><span class="p">()</span>
                     <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_explorer_status</span><span class="p">(</span>
                         <span class="n">RunningStatus</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">,</span>
-                        <span class="n">old_status</span><span class="o">=</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">WAITING_SYNC</span><span class="p">,</span>
+                        <span class="n">old_status</span><span class="o">=</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">REQUIRE_SYNC</span><span class="p">,</span>
                     <span class="p">)</span>
                 <span class="k">elif</span> <span class="n">module</span> <span class="o">==</span> <span class="s2">&quot;explorer&quot;</span><span class="p">:</span>
                     <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_explorer_status</span><span class="p">(</span>
-                        <span class="n">RunningStatus</span><span class="o">.</span><span class="n">WAITING_SYNC</span><span class="p">,</span> <span class="n">old_status</span><span class="o">=</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">REQUIRE_SYNC</span>
+                        <span class="n">RunningStatus</span><span class="o">.</span><span class="n">REQUIRE_SYNC</span><span class="p">,</span> <span class="n">old_status</span><span class="o">=</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">RUNNING</span>
                     <span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_ready_condition</span><span class="o">.</span><span class="n">notify_all</span><span class="p">()</span>
-                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer_status</span> <span class="o">!=</span> <span class="n">RunningStatus</span><span class="o">.</span><span class="n">WAITING_SYNC</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer_status</span> <span class="o">!=</span> <span class="n">RunningStatus</span><span class="o">.</span><span class="n">REQUIRE_SYNC</span><span class="p">:</span>
                         <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">wait_for</span><span class="p">(</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">_ready_condition</span><span class="o">.</span><span class="n">wait_for</span><span class="p">(</span>
                                 <span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer_status</span>
-                                <span class="ow">in</span> <span class="p">{</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">WAITING_SYNC</span><span class="p">,</span> <span class="n">RunningStatus</span><span class="o">.</span><span class="n">STOPPED</span><span class="p">},</span>
+                                <span class="ow">in</span> <span class="p">{</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">REQUIRE_SYNC</span><span class="p">,</span> <span class="n">RunningStatus</span><span class="o">.</span><span class="n">STOPPED</span><span class="p">},</span>
                             <span class="p">),</span>
                             <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_timeout</span><span class="p">,</span>
                         <span class="p">)</span>

@@ -1057,7 +1057,10 @@ document.write(`
 <div class="viewcode-block" id="CaseInsensitiveEnumMeta">
 <a class="viewcode-back" href="../../../build_api/trinity.common.constants.html#trinity.common.constants.CaseInsensitiveEnumMeta">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CaseInsensitiveEnumMeta</span><span class="p">(</span><span class="n">EnumMeta</span><span class="p">):</span>
+    <span class="n">name_aliases</span> <span class="o">=</span> <span class="p">{}</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">name_aliases</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">name</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
@@ -1066,6 +1069,7 @@ document.write(`
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getattr__</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">name_aliases</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">value</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
@@ -1101,15 +1105,10 @@ document.write(`
 <div class="viewcode-block" id="SyncMethodEnumMeta">
 <a class="viewcode-back" href="../../../build_api/trinity.common.constants.html#trinity.common.constants.SyncMethodEnumMeta">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SyncMethodEnumMeta</span><span class="p">(</span><span class="n">CaseInsensitiveEnumMeta</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">value</span> <span class="o">==</span> <span class="s2">&quot;online&quot;</span><span class="p">:</span>
-            <span class="n">value</span> <span class="o">=</span> <span class="s2">&quot;nccl&quot;</span>
-        <span class="k">elif</span> <span class="n">value</span> <span class="o">==</span> <span class="s2">&quot;offline&quot;</span><span class="p">:</span>
-            <span class="n">value</span> <span class="o">=</span> <span class="s2">&quot;checkpoint&quot;</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid SyncMethod: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+    <span class="n">name_aliases</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;online&quot;</span><span class="p">:</span> <span class="s2">&quot;nccl&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;offline&quot;</span><span class="p">:</span> <span class="s2">&quot;checkpoint&quot;</span><span class="p">,</span>
+    <span class="p">}</span></div>
 
 
 
@@ -1131,7 +1130,6 @@ document.write(`
 
     <span class="n">RUNNING</span> <span class="o">=</span> <span class="s2">&quot;running&quot;</span>
     <span class="n">REQUIRE_SYNC</span> <span class="o">=</span> <span class="s2">&quot;require_sync&quot;</span>
-    <span class="n">WAITING_SYNC</span> <span class="o">=</span> <span class="s2">&quot;waiting_sync&quot;</span>
     <span class="n">STOPPED</span> <span class="o">=</span> <span class="s2">&quot;stopped&quot;</span></div>
 
 
@@ -1148,12 +1146,22 @@ document.write(`
 
 
 
+<div class="viewcode-block" id="SyncStyleEnumMeta">
+<a class="viewcode-back" href="../../../build_api/trinity.common.constants.html#trinity.common.constants.SyncStyleEnumMeta">[文档]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SyncStyleEnumMeta</span><span class="p">(</span><span class="n">CaseInsensitiveEnumMeta</span><span class="p">):</span>
+    <span class="n">name_aliases</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;dynamic_by_explorer&quot;</span><span class="p">:</span> <span class="s2">&quot;explorer_driven&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;dynamic_by_trainer&quot;</span><span class="p">:</span> <span class="s2">&quot;trainer_driven&quot;</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+
+
 <div class="viewcode-block" id="SyncStyle">
 <a class="viewcode-back" href="../../../build_api/trinity.common.constants.html#trinity.common.constants.SyncStyle">[文档]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">SyncStyle</span><span class="p">(</span><span class="n">CaseInsensitiveEnum</span><span class="p">):</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SyncStyle</span><span class="p">(</span><span class="n">CaseInsensitiveEnum</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">SyncStyleEnumMeta</span><span class="p">):</span>
     <span class="n">FIXED</span> <span class="o">=</span> <span class="s2">&quot;fixed&quot;</span>
-    <span class="n">DYNAMIC_BY_TRAINER</span> <span class="o">=</span> <span class="s2">&quot;dynamic_by_trainer&quot;</span>
-    <span class="n">DYNAMIC_BY_EXPLORER</span> <span class="o">=</span> <span class="s2">&quot;dynamic_by_explorer&quot;</span></div>
+    <span class="n">TRAINER_DRIVEN</span> <span class="o">=</span> <span class="s2">&quot;trainer_driven&quot;</span>
+    <span class="n">EXPLORER_DRIVEN</span> <span class="o">=</span> <span class="s2">&quot;explorer_driven&quot;</span></div>
 
 
 

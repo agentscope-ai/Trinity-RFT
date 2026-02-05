@@ -1069,7 +1069,6 @@ document.write(`
         <span class="p">)</span>
         <span class="n">explorer_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">load_explorer</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span> <span class="o">=</span> <span class="n">explorer_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;latest_iteration&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">last_sync_step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">last_monitored_step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">synchronizer</span> <span class="o">=</span> <span class="n">Synchronizer</span><span class="o">.</span><span class="n">get_actor</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
@@ -1107,7 +1106,10 @@ document.write(`
         <span class="c1"># boradcast to all rollout models</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">enable_lora</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">enable_lora</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model_version</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">last_sync_successful</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sync_offset</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_offset</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sync_interval</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sync_method</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_method</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sync_style</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_style</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">eval_start_time</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">explore_start_time</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Finished initializing Explorer.&quot;</span><span class="p">)</span></div>
@@ -1183,7 +1185,6 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Start to pull latest model weights.&quot;</span><span class="p">)</span>
         <span class="n">new_version</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">wait_new_model_state_dict</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span>
             <span class="n">current_version</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_version</span><span class="p">,</span>
-            <span class="n">no_wait</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_style</span> <span class="o">!=</span> <span class="n">SyncStyle</span><span class="o">.</span><span class="n">FIXED</span><span class="p">),</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">new_version</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_version</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_version</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
@@ -1192,13 +1193,10 @@ document.write(`
                     <span class="o">*</span><span class="p">[</span><span class="n">model</span><span class="o">.</span><span class="n">sync_model</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">new_version</span><span class="p">)</span> <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">]</span>
                 <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model_version</span> <span class="o">=</span> <span class="n">new_version</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">last_sync_step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">last_sync_successful</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;No new model weights found, current version: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_version</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">last_sync_successful</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_nccl_weights_update</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">new_version</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">ready_to_nccl_sync</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span>
@@ -1206,14 +1204,11 @@ document.write(`
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">new_version</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Trainer is not ready to sync weight. Skipping sync weight.&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">last_sync_successful</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="k">return</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model_version</span> <span class="o">=</span> <span class="n">new_version</span>
         <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span>
             <span class="o">*</span><span class="p">[</span><span class="n">model</span><span class="o">.</span><span class="n">sync_model</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_version</span><span class="p">)</span> <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">]</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">last_sync_step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">last_sync_successful</span> <span class="o">=</span> <span class="kc">True</span>
 
 <div class="viewcode-block" id="Explorer.prepare">
 <a class="viewcode-back" href="../../../build_api/trinity.explorer.explorer.html#trinity.explorer.Explorer.prepare">[文档]</a>
@@ -1247,7 +1242,7 @@ document.write(`
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">eval_on_startup</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 
-            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">set_explorer_status</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">REQUIRE_SYNC</span><span class="p">)</span>
+            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">set_explorer_status</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error during explorer preparation: </span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
@@ -1304,45 +1299,41 @@ document.write(`
             <span class="n">tasks</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">taskset</span><span class="o">.</span><span class="n">read_async</span><span class="p">()</span>
         <span class="k">except</span> <span class="ne">StopAsyncIteration</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No more tasks to explore. Stop exploring.&quot;</span><span class="p">)</span>
-            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_checkpoint</span><span class="p">(</span><span class="n">sync_weight</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">finish_current_steps</span><span class="p">()</span>
+            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_checkpoint</span><span class="p">()</span>
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">set_explorer_status</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span>
                 <span class="n">RunningStatus</span><span class="o">.</span><span class="n">STOPPED</span><span class="p">,</span>
-                <span class="n">old_status</span><span class="o">=</span><span class="p">(</span>
-                    <span class="n">RunningStatus</span><span class="o">.</span><span class="n">RUNNING</span>
-                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_sync_successful</span>
-                    <span class="k">else</span> <span class="n">RunningStatus</span><span class="o">.</span><span class="n">REQUIRE_SYNC</span>
-                <span class="p">),</span>
+                <span class="n">old_status</span><span class="o">=</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
             <span class="k">return</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">scheduler</span><span class="o">.</span><span class="n">schedule</span><span class="p">(</span><span class="n">tasks</span><span class="p">,</span> <span class="n">batch_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scheduler</span><span class="o">.</span><span class="n">schedule</span><span class="p">(</span><span class="n">tasks</span><span class="p">,</span> <span class="n">batch_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="Explorer.finish_current_steps">
+<a class="viewcode-back" href="../../../build_api/trinity.explorer.explorer.html#trinity.explorer.Explorer.finish_current_steps">[文档]</a>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">finish_current_steps</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scheduler</span><span class="p">:</span>
+            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_finish_steps</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">last_monitored_step</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_version</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_monitored_step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span></div>
 
 
 <div class="viewcode-block" id="Explorer.need_sync">
 <a class="viewcode-back" href="../../../build_api/trinity.explorer.explorer.html#trinity.explorer.Explorer.need_sync">[文档]</a>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">need_sync</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_style</span> <span class="o">==</span> <span class="n">SyncStyle</span><span class="o">.</span><span class="n">FIXED</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_offset</span><span class="p">:</span>
-                <span class="k">return</span> <span class="kc">False</span>
-            <span class="n">require_sync</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_offset</span>
-            <span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_interval</span> <span class="o">==</span> <span class="mi">0</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">require_sync</span> <span class="o">=</span> <span class="kc">False</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_style</span> <span class="o">==</span> <span class="n">SyncStyle</span><span class="o">.</span><span class="n">DYNAMIC_BY_EXPLORER</span><span class="p">:</span>
-                <span class="n">delta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_sync_step</span>
-                <span class="k">if</span> <span class="n">delta</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_interval</span><span class="p">:</span>
-                    <span class="n">require_sync</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sync_offset</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="n">require_sync</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">sync_offset</span><span class="p">)</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">sync_interval</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">finish_current_steps</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sync_style</span> <span class="o">==</span> <span class="n">SyncStyle</span><span class="o">.</span><span class="n">TRAINER_DRIVEN</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">sync_method</span> <span class="o">==</span> <span class="n">SyncMethod</span><span class="o">.</span><span class="n">NCCL</span><span class="p">:</span>
+                <span class="n">require_sync</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">trainer_requires_sync</span><span class="o">.</span><span class="n">remote</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">require_sync</span> <span class="o">=</span> <span class="k">await</span> <span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">get_trainer_status</span><span class="o">.</span><span class="n">remote</span><span class="p">()</span> <span class="o">==</span> <span class="n">RunningStatus</span><span class="o">.</span><span class="n">REQUIRE_SYNC</span>
-                <span class="p">)</span>
-        <span class="k">if</span> <span class="n">require_sync</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_sync_successful</span><span class="p">:</span>
-            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">set_explorer_status</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span>
-                <span class="n">RunningStatus</span><span class="o">.</span><span class="n">REQUIRE_SYNC</span><span class="p">,</span> <span class="n">old_status</span><span class="o">=</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">RUNNING</span>
-            <span class="p">)</span>
+                <span class="n">require_sync</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">return</span> <span class="n">require_sync</span></div>
 
 
@@ -1417,27 +1408,7 @@ document.write(`
 
 <div class="viewcode-block" id="Explorer.save_checkpoint">
 <a class="viewcode-back" href="../../../build_api/trinity.explorer.explorer.html#trinity.explorer.Explorer.save_checkpoint">[文档]</a>
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">save_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sync_weight</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scheduler</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_finish_eval_step</span><span class="p">(</span><span class="n">step</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_finish_steps</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">last_monitored_step</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_version</span>
-                <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">last_monitored_step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span>
-
-        <span class="k">if</span> <span class="n">sync_weight</span><span class="p">:</span>
-            <span class="c1"># sync weights</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Explorer sync_weights at step </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span><span class="si">}</span><span class="s2"> started.&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_nccl_sync</span><span class="p">:</span>
-                <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nccl_weights_update</span><span class="p">()</span>
-            <span class="k">else</span><span class="p">:</span>  <span class="c1"># pull weights from Synchronizer</span>
-                <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pull_latest_weights</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Explorer sync_weights at step </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span><span class="si">}</span><span class="s2"> finished, model version = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_version</span><span class="si">}</span><span class="s2">.&quot;</span>
-            <span class="p">)</span>
-
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">save_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># save explore checkpoint</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">save_explorer</span><span class="p">(</span>
             <span class="n">current_step</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span><span class="p">,</span>
@@ -1450,7 +1421,19 @@ document.write(`
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">sync_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Synchronize model weights.&quot;&quot;&quot;</span>
         <span class="c1"># call this method before training start to load the latest model weights</span>
-        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_checkpoint</span><span class="p">(</span><span class="n">sync_weight</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scheduler</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_finish_eval_step</span><span class="p">(</span><span class="n">step</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Explorer sync_weights at step </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span><span class="si">}</span><span class="s2"> started.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_nccl_sync</span><span class="p">:</span>
+            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nccl_weights_update</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># pull weights from Synchronizer</span>
+            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pull_latest_weights</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Explorer sync_weights at step </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span><span class="si">}</span><span class="s2"> finished, model version = </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_version</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_checkpoint</span><span class="p">()</span></div>
 
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_finish_steps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_step</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">end_step</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">model_version</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>

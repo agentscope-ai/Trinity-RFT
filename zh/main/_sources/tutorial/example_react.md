@@ -162,7 +162,7 @@ algorithm:
 
 ```yaml
 synchronizer:
-  sync_style: dynamic_by_explorer # 当产生足够训练数据时，trainer 立即启动训练任务，而不是将生成的数据补齐到一个固定规模，能够有效提升训练效率
+  sync_style: explorer_driven # 当产生足够训练数据时，trainer 立即启动训练任务，而不是将生成的数据补齐到一个固定规模，能够有效提升训练效率
   sync_interval: 2  # 每执行两个批次的任务后检查是否需要同步更新模型参数
 ```
 

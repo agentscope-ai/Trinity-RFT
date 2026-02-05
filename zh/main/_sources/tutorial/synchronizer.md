@@ -28,21 +28,27 @@
 async def train(self) -> str:
     while self.train_step_num < self.total_steps:
         try:
+            metrics = {}
             # sample may be blocked due to explorer does not generate enough data
             self.logger.info(f"Sample data for step {self.train_step_num + 1} started.")
             sample_task = asyncio.create_task(self._sample_data())
             while not sample_task.done():
                 # sync weight to make sure the explorer can continue to explore and generate enough data
                 if await self.need_sync():
-                    # Currently, we do not record the metrics of sync_weight here
-                    await self.sync_weight()
+                    metrics.update(await self.sync_weight())
                 await asyncio.sleep(1)
-            exps, metrics, repr_samples = await sample_task
+            exps, sample_metrics, repr_samples = await sample_task
+            metrics.update(sample_metrics)
             self.logger.info(f"Sample data for step {self.train_step_num + 1} finished.")
             metrics.update(await self.train_step(exps))
             if await self.need_sync():
                 metrics.update(await self.sync_weight())
-            # ...
+            if self.need_save():
+                metrics.update(
+                    await self.save_checkpoint(save_as_hf=self.save_hf_checkpoint == "always")
+                )
+            if self.config.trainer.enable_preview:
+                self._log_experiences(repr_samples)
             self.monitor.log(metrics, self.train_step_num)
         except StopAsyncIteration:
             self.logger.info("No more samples to train. Stopping training.")
@@ -145,27 +151,30 @@ Explorer 会在以下时机检查是否需要同步：
 | `interval=10, offset=0` | 每 10 步同步一次（两者同时开始） |
 | `interval=10, offset=5` | Explorer 先运行 5 步，之后每 10 步同步一次 |
 
-✅ **最适合**：简单、可预测的环境，探索步骤较短且奖励频繁（例如数学推理任务）。
-
-> 🔁 可将其类比为节拍器 —— 稳定且规律。
+🎯 **适合**：简单、可预测的环境，探索步骤较短且奖励频繁（例如数学推理任务）。
 
 ---
 
-### 2. `SyncStyle.DYNAMIC_BY_EXPLORER` – 按需动态同步
+### 2. `SyncStyle.EXPLORER_DRIVEN` – Explorer 驱动同步
+- Explorer 自己决定何时需要新模型。
+- 流程：
+  1. Explorer 完成 `sync_interval` 步后，向 Synchronizer 发出更新参数的请求。
+  2. Trainer 在下一次循环中发现这个请求，并完成同步。
+  3. 同步完成后，Explorer 和 Trainer 继续运行。
+  4. 若超时，Explorer 会在下一个周期重试。
 
-- Explorer 在生成一定量数据后决定请求同步。
-- 它会通知 Synchronizer：“我已经准备好获取新模型！”
-- Trainer 在正常循环中检测该请求并响应。
+🎯 **适合**：Explorer 节奏不固定，或希望按需更新模型。
 
-📌 **流程说明**：
-1. Explorer 完成 `N` 步后 → 将状态设为 `REQUIRE_SYNC`。
-2. 等待 Trainer 确认并完成同步。
-3. 同步完成后，状态恢复为 `RUNNING`。
-4. 若超时，则在下一步重试。
+---
 
-✅ **最适合**：复杂、长周期任务，其中数据生成成本高或不规律（例如多轮对话、游戏对战）。
+### 3. `SyncStyle.TRAINER_DRIVEN` – Trainer 驱动同步
+- Trainer 决定何时发布新模型。
+- 流程：
+  1. Trainer 每隔 `sync_interval` 步数后决定请求同步。
+  2. 它会通知 Synchronizer 准备推送新模型。
+  3. Explorer 在正常循环中检测该请求并响应同步。
 
-> 🔄 更加灵活 —— 能根据实际数据产出动态调整。
+🎯 **适合**：Trainer 训练节奏明确，Explorer 被动接收更新。
 
 ---
 
@@ -173,14 +182,13 @@ Explorer 会在以下时机检查是否需要同步：
 
 Synchronizer 通过跟踪 Trainer 和 Explorer 的**状态**，确保同步过程安全可控。
 
-### 四个关键状态
+### 三个关键状态
 
 | 状态 | 含义 |
 |------|--------|
 | `STOPPED` | 组件已停止运行 |
 | `RUNNING` | 正在训练或探索中 |
-| `REQUIRE_SYNC` | Explorer 请求新权重 |
-| `WAITING_SYNC` | Explorer 或 Trainer 正在等待同步（NCCL 模式下使用） |
+| `REQUIRE_SYNC` | Explorer / Trainer 请求新权重 |
 
 这些状态有助于避免竞态条件，保证协调过程平稳。
 
@@ -188,33 +196,19 @@ Synchronizer 通过跟踪 Trainer 和 Explorer 的**状态**，确保同步过�
 
 ### 不同模式与方法下的状态转换
 
-#### 🔹 固定模式 + NCCL 同步
-- Synchronizer 每 `N` 步安排一次同步。
-- 双方短暂暂停，进行 GPU 直连同步。
-- Trainer 状态在 `RUNNING` ↔ `WAITING_SYNC` 间规律切换，Explorer 状态在 `RUNNING` → `REQUIRE_SYNC` → `WAITING_SYNC` 间切换。
+#### 🔹 NCCL 同步
+- Trainer 和 Explorer 都会切换状态（`RUNNING` ↔ `REQUIRE_SYNC`）。
+- 同步是“双向握手”：双方都准备好才开始传数据。
+- 同步完成后，双方都回到 `RUNNING`。
 
-![FIXED_STYLE_NCCL_SYNC](../../assets/FIXED-NCCL.png)
+![NCCL 同步](../../assets/NCCL-zh.png)
 
-#### 🔹 固定模式 + CHECKPOINT/MEMORY
-- Trainer 定期保存或发送权重。
-- Explorer 在每个间隔检查并拉取更新。
-- Trainer 状态保持 `RUNNING`，Explorer 状态在 `RUNNING` ↔ `REQUIRE_SYNC` 间切换。
+#### 🔹 CHECKPOINT/MEMORY 同步
+- Trainer 通常一直保持 `RUNNING`（它只负责存权重）。
+- Explorer 负责发起同步请求（切换到 `REQUIRE_SYNC`），拉取完权重后回到 `RUNNING`。
+- Synchronizer 作为“中介”，负责传递模型权重给 Explorer。
 
-![FIXED_STYLE_STATEDICT_SYNC](../../assets/FIXED-STATEDICT.png)
-
-#### 🔹 动态模式 + NCCL
-- Explorer 在积累足够数据后发出 `REQUIRE_SYNC` 信号。
-- Trainer 检测到信号后启动 NCCL 同步。
-- Trainer 状态在 `RUNNING` ↔ `WAITING_SYNC` 间切换，Explorer 状态在 `RUNNING` → `REQUIRE_SYNC` → `WAITING_SYNC` 间切换。
-
-![DYN_STYLE_NCCL_SYNC](../../assets/DYN-NCCL.png)
-
-#### 🔹 动态模式 + CHECKPOINT/MEMORY
-- Explorer 在积累足够数据后发出 `REQUIRE_SYNC` 信号。
-- Trainer 检测到信号后将权重推送给 Synchronizer。
-- Trainer 状态保持 `RUNNING`，Explorer 状态在 `RUNNING` ↔ `REQUIRE_SYNC` 间切换。
-
-![DYN_STYLE_STATEDICT_SYNC](../../assets/DYN-STATEDICT.png)
+![CHECKPOINT/MEMORY 同步](../../assets/STATEDICT-zh.png)
 
 ---
 
@@ -239,9 +233,7 @@ Synchronizer 通过跟踪 Trainer 和 Explorer 的**状态**，确保同步过�
 | 使用场景 | 推荐模式 |
 |--------|------------------|
 | 短周期任务，反馈迅速（如数学问答） | `FIXED` |
-| 长交互任务，奖励延迟（如游戏、对话） | `DYNAMIC_BY_EXPLORER` |
-
-> 💡 `DYNAMIC_BY_EXPLORER` 将控制权交给数据生成方，更适合负载不均衡或变化较大的任务。
+| 多轮交互任务，例如多轮对话、工具调用、多步骤游戏 | `EXPLORER_DRIVEN` 或 `TRAINER_DRIVEN` |
 
 ---
 

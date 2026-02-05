@@ -640,16 +640,15 @@ document.write(`
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#synchronization-styles-when-does-sync-happen">Synchronization Styles: When Does Sync Happen?</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#syncstyle-fixed-regular-intervals">1. <code class="docutils literal notranslate"><span class="pre">SyncStyle.FIXED</span></code> – Regular Intervals</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#syncstyle-dynamic-by-explorer-demand-driven-sync">2. <code class="docutils literal notranslate"><span class="pre">SyncStyle.DYNAMIC_BY_EXPLORER</span></code> – Demand-Driven Sync</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#syncstyle-explorer-driven-explorer-driven-synchronization">2. <code class="docutils literal notranslate"><span class="pre">SyncStyle.EXPLORER_DRIVEN</span></code> – Explorer-Driven Synchronization</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#syncstyle-trainer-driven-trainer-driven-synchronization">3. <code class="docutils literal notranslate"><span class="pre">SyncStyle.TRAINER_DRIVEN</span></code> – Trainer-Driven Synchronization</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#state-management-whats-going-on-behind-the-scenes">State Management: What’s Going On Behind the Scenes?</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#four-key-states">Four Key States</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#state-transitions-by-style-method">State Transitions by Style &amp; Method</a><ul class="nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#fixed-style-nccl-sync">🔹 Fixed Style + NCCL Sync</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#fixed-style-checkpoint-memory">🔹 Fixed Style + CHECKPOINT/MEMORY</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#dynamic-style-nccl">🔹 Dynamic Style + NCCL</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#dynamic-style-checkpoint-memory">🔹 Dynamic Style + CHECKPOINT/MEMORY</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#three-key-states">Three Key States</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#state-transitions-across-different-modes-and-methods">State Transitions Across Different Modes and Methods</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#nccl-synchronization">🔹 NCCL Synchronization</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#checkpoint-memory-synchronization">🔹 CHECKPOINT/MEMORY Synchronization</a></li>
 </ul>
 </li>
 </ul>
@@ -696,21 +695,27 @@ document.write(`
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_step_num</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_steps</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
+            <span class="n">metrics</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="c1"># sample may be blocked due to explorer does not generate enough data</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sample data for step </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">train_step_num</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> started.&quot;</span><span class="p">)</span>
             <span class="n">sample_task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sample_data</span><span class="p">())</span>
             <span class="k">while</span> <span class="ow">not</span> <span class="n">sample_task</span><span class="o">.</span><span class="n">done</span><span class="p">():</span>
                 <span class="c1"># sync weight to make sure the explorer can continue to explore and generate enough data</span>
                 <span class="k">if</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">need_sync</span><span class="p">():</span>
-                    <span class="c1"># Currently, we do not record the metrics of sync_weight here</span>
-                    <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">sync_weight</span><span class="p">()</span>
+                    <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">sync_weight</span><span class="p">())</span>
                 <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">exps</span><span class="p">,</span> <span class="n">metrics</span><span class="p">,</span> <span class="n">repr_samples</span> <span class="o">=</span> <span class="k">await</span> <span class="n">sample_task</span>
+            <span class="n">exps</span><span class="p">,</span> <span class="n">sample_metrics</span><span class="p">,</span> <span class="n">repr_samples</span> <span class="o">=</span> <span class="k">await</span> <span class="n">sample_task</span>
+            <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">sample_metrics</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sample data for step </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">train_step_num</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> finished.&quot;</span><span class="p">)</span>
             <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_step</span><span class="p">(</span><span class="n">exps</span><span class="p">))</span>
             <span class="k">if</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">need_sync</span><span class="p">():</span>
                 <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">sync_weight</span><span class="p">())</span>
-            <span class="c1"># ...</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">need_save</span><span class="p">():</span>
+                <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                    <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_checkpoint</span><span class="p">(</span><span class="n">save_as_hf</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">save_hf_checkpoint</span> <span class="o">==</span> <span class="s2">&quot;always&quot;</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">enable_preview</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_log_experiences</span><span class="p">(</span><span class="n">repr_samples</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">monitor</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_step_num</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">StopAsyncIteration</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No more samples to train. Stopping training.&quot;</span><span class="p">)</span>
@@ -854,38 +859,46 @@ Both Trainer and Explorer consult the Synchronizer regularly. This forms a <stro
 </tbody>
 </table>
 </div>
-<p>✅ <strong>Best for</strong>: Simple, predictable environments where exploration steps are short and rewards are frequent (e.g., mathematical reasoning tasks).</p>
-<blockquote>
-<div><p>🔁 Think of it as a metronome — steady and regular.</p>
-</div></blockquote>
+<p>🎯 <strong>Best for</strong>: Simple, predictable environments with short exploration episodes and frequent rewards (e.g., mathematical reasoning tasks).</p>
 </section>
 <hr class="docutils" />
-<section id="syncstyle-dynamic-by-explorer-demand-driven-sync">
-<h3>2. <code class="docutils literal notranslate"><span class="pre">SyncStyle.DYNAMIC_BY_EXPLORER</span></code> – Demand-Driven Sync<a class="headerlink" href="#syncstyle-dynamic-by-explorer-demand-driven-sync" title="Link to this heading">#</a></h3>
+<section id="syncstyle-explorer-driven-explorer-driven-synchronization">
+<h3>2. <code class="docutils literal notranslate"><span class="pre">SyncStyle.EXPLORER_DRIVEN</span></code> – Explorer-Driven Synchronization<a class="headerlink" href="#syncstyle-explorer-driven-explorer-driven-synchronization" title="Link to this heading">#</a></h3>
 <ul class="simple">
-<li><p>Explorer decides to request a sync after generating a certain amount of data.</p></li>
-<li><p>It tells Synchronizer: <em>“I’m ready for a new model!”</em></p></li>
-<li><p>Trainer checks this request during its normal loop and responds accordingly.</p></li>
-</ul>
-<p>📌 <strong>Process Flow</strong>:</p>
+<li><p>The Explorer itself decides when it needs a new model.</p></li>
+<li><p>Workflow:</p>
 <ol class="arabic simple">
-<li><p>Explorer finishes <code class="docutils literal notranslate"><span class="pre">N</span></code> steps → sets state to <code class="docutils literal notranslate"><span class="pre">REQUIRE_SYNC</span></code>.</p></li>
-<li><p>Waits for Trainer to acknowledge and perform sync.</p></li>
-<li><p>Once synced, returns to <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code>.</p></li>
-<li><p>If timeout occurs, retries on next step.</p></li>
+<li><p>After completing <code class="docutils literal notranslate"><span class="pre">sync_interval</span></code> steps, the Explorer sends a request to the Synchronizer to update its parameters.</p></li>
+<li><p>The Trainer detects this request in its next loop iteration and performs the synchronization.</p></li>
+<li><p>Once synchronization completes, both the Explorer and Trainer continue running.</p></li>
+<li><p>If a timeout occurs, the Explorer retries in the next cycle.</p></li>
 </ol>
-<p>✅ <strong>Best for</strong>: Complex, long-horizon tasks where data generation is expensive or variable (e.g., multi-turn dialogue, game playing).</p>
-<blockquote>
-<div><p>🔄 More flexible — adapts to actual data throughput.</p>
-</div></blockquote>
+</li>
+</ul>
+<p>🎯 <strong>Best for</strong>: Scenarios where the Explorer’s pace is irregular or when on-demand model updates are preferred.</p>
+</section>
+<hr class="docutils" />
+<section id="syncstyle-trainer-driven-trainer-driven-synchronization">
+<h3>3. <code class="docutils literal notranslate"><span class="pre">SyncStyle.TRAINER_DRIVEN</span></code> – Trainer-Driven Synchronization<a class="headerlink" href="#syncstyle-trainer-driven-trainer-driven-synchronization" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>The Trainer determines when to release a new model.</p></li>
+<li><p>Workflow:</p>
+<ol class="arabic simple">
+<li><p>Every <code class="docutils literal notranslate"><span class="pre">sync_interval</span></code> steps, the Trainer decides to request synchronization.</p></li>
+<li><p>It notifies the Synchronizer to prepare pushing the new model.</p></li>
+<li><p>The Explorer detects this request during its normal loop and responds by performing synchronization.</p></li>
+</ol>
+</li>
+</ul>
+<p>🎯 <strong>Best for</strong>: Cases where the Trainer has a clear, consistent training rhythm, and the Explorer passively receives updates.</p>
 </section>
 </section>
 <hr class="docutils" />
 <section id="state-management-whats-going-on-behind-the-scenes">
 <h2>State Management: What’s Going On Behind the Scenes?<a class="headerlink" href="#state-management-whats-going-on-behind-the-scenes" title="Link to this heading">#</a></h2>
 <p>The Synchronizer tracks the <strong>state</strong> of both Trainer and Explorer to manage synchronization safely.</p>
-<section id="four-key-states">
-<h3>Four Key States<a class="headerlink" href="#four-key-states" title="Link to this heading">#</a></h3>
+<section id="three-key-states">
+<h3>Three Key States<a class="headerlink" href="#three-key-states" title="Link to this heading">#</a></h3>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>State</p></th>
@@ -900,10 +913,7 @@ Both Trainer and Explorer consult the Synchronizer regularly. This forms a <stro
 <td><p>Actively training or exploring</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">REQUIRE_SYNC</span></code></p></td>
-<td><p>Explorer wants new weights</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">WAITING_SYNC</span></code></p></td>
-<td><p>Explorer or Trainer is waiting synchronization (used in NCCL mode)</p></td>
+<td><p>Explorer / Trainer requests new weights</p></td>
 </tr>
 </tbody>
 </table>
@@ -911,43 +921,25 @@ Both Trainer and Explorer consult the Synchronizer regularly. This forms a <stro
 <p>These states help prevent race conditions and ensure smooth coordination.</p>
 </section>
 <hr class="docutils" />
-<section id="state-transitions-by-style-method">
-<h3>State Transitions by Style &amp; Method<a class="headerlink" href="#state-transitions-by-style-method" title="Link to this heading">#</a></h3>
-<section id="fixed-style-nccl-sync">
-<h4>🔹 Fixed Style + NCCL Sync<a class="headerlink" href="#fixed-style-nccl-sync" title="Link to this heading">#</a></h4>
+<section id="state-transitions-across-different-modes-and-methods">
+<h3>State Transitions Across Different Modes and Methods<a class="headerlink" href="#state-transitions-across-different-modes-and-methods" title="Link to this heading">#</a></h3>
+<section id="nccl-synchronization">
+<h4>🔹 NCCL Synchronization<a class="headerlink" href="#nccl-synchronization" title="Link to this heading">#</a></h4>
 <ul class="simple">
-<li><p>Synchronizer schedules sync every <code class="docutils literal notranslate"><span class="pre">N</span></code> steps.</p></li>
-<li><p>Both sides pause briefly for direct GPU sync.</p></li>
-<li><p>The state of the trainer toggles predictably between <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code> ↔ <code class="docutils literal notranslate"><span class="pre">WAITING_SYNC</span></code>, and the state of the explorer toggles among <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code> → <code class="docutils literal notranslate"><span class="pre">REQUIRE_SYNC</span></code> → <code class="docutils literal notranslate"><span class="pre">WAITING_SYNC</span></code>.</p></li>
+<li><p>Both Trainer and Explorer toggle states (<code class="docutils literal notranslate"><span class="pre">RUNNING</span></code> ↔ <code class="docutils literal notranslate"><span class="pre">REQUIRE_SYNC</span></code>).</p></li>
+<li><p>Synchronization uses a “two-way handshake”: data transfer only begins once both sides are ready.</p></li>
+<li><p>After synchronization completes, both return to <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code>.</p></li>
 </ul>
-<p><img alt="FIXED_STYLE_NCCL_SYNC" src="../_images/FIXED-NCCL.png" /></p>
+<p><img alt="NCCL Synchronization" src="../_images/NCCL-en.png" /></p>
 </section>
-<section id="fixed-style-checkpoint-memory">
-<h4>🔹 Fixed Style + CHECKPOINT/MEMORY<a class="headerlink" href="#fixed-style-checkpoint-memory" title="Link to this heading">#</a></h4>
+<section id="checkpoint-memory-synchronization">
+<h4>🔹 CHECKPOINT/MEMORY Synchronization<a class="headerlink" href="#checkpoint-memory-synchronization" title="Link to this heading">#</a></h4>
 <ul class="simple">
-<li><p>Trainer saves or sends weights periodically.</p></li>
-<li><p>Explorer checks at each interval and pulls updates.</p></li>
-<li><p>The state of the trainer remains at <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code>, and the state of the explorer toggles between <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code> ↔ <code class="docutils literal notranslate"><span class="pre">REQUIRE_SYNC</span></code>.</p></li>
+<li><p>The Trainer typically remains in <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code> state (it only saves weights).</p></li>
+<li><p>The Explorer initiates the sync request (switches to <code class="docutils literal notranslate"><span class="pre">REQUIRE_SYNC</span></code>), pulls the weights, then returns to <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code>.</p></li>
+<li><p>The Synchronizer acts as an intermediary, delivering model weights to the Explorer.</p></li>
 </ul>
-<p><img alt="FIXED_STYLE_STATEDICT_SYNC" src="../_images/FIXED-STATEDICT.png" /></p>
-</section>
-<section id="dynamic-style-nccl">
-<h4>🔹 Dynamic Style + NCCL<a class="headerlink" href="#dynamic-style-nccl" title="Link to this heading">#</a></h4>
-<ul class="simple">
-<li><p>Explorer signals <code class="docutils literal notranslate"><span class="pre">REQUIRE_SYNC</span></code> after enough data.</p></li>
-<li><p>Trainer sees the signal and initiates NCCL sync.</p></li>
-<li><p>The state of the trainer toggles predictably between <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code> ↔ <code class="docutils literal notranslate"><span class="pre">WAITING_SYNC</span></code>, and the state of the explorer toggles between <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code> → <code class="docutils literal notranslate"><span class="pre">REQUIRE_SYNC</span></code> → <code class="docutils literal notranslate"><span class="pre">WAITING_SYNC</span></code>.</p></li>
-</ul>
-<p><img alt="DYN_STYLE_NCCL_SYNC" src="../_images/DYN-NCCL.png" /></p>
-</section>
-<section id="dynamic-style-checkpoint-memory">
-<h4>🔹 Dynamic Style + CHECKPOINT/MEMORY<a class="headerlink" href="#dynamic-style-checkpoint-memory" title="Link to this heading">#</a></h4>
-<ul class="simple">
-<li><p>Explorer signals <code class="docutils literal notranslate"><span class="pre">REQUIRE_SYNC</span></code> after enough data.</p></li>
-<li><p>Trainer sees the signal and pushes weights to synchronizer.</p></li>
-<li><p>The state of the trainer remains at <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code>, and the state of the explorer toggles between <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code> ↔ <code class="docutils literal notranslate"><span class="pre">REQUIRE_SYNC</span></code>.</p></li>
-</ul>
-<p><img alt="DYN_STYLE_STATEDICT_SYNC" src="../_images/DYN-STATEDICT.png" /></p>
+<p><img alt="CHECKPOINT/MEMORY Synchronization" src="../_images/STATEDICT-en.png" /></p>
 </section>
 </section>
 </section>
@@ -996,15 +988,12 @@ Use <code class="docutils literal notranslate"><span class="pre">NCCL</span></co
 <tr class="row-even"><td><p>Short episodes, quick feedback (e.g., math QA)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">FIXED</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p>Long interactions, delayed rewards (e.g., games, conversations)</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">DYNAMIC_BY_EXPLORER</span></code></p></td>
+<tr class="row-odd"><td><p>Multi-turn interactive tasks, such as multi-round dialogues, tool usage, or multi-step games</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">EXPLORER_DRIVEN</span></code> or <code class="docutils literal notranslate"><span class="pre">TRAINER_DRIVEN</span></code></p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<blockquote>
-<div><p>💡 <code class="docutils literal notranslate"><span class="pre">DYNAMIC_BY_EXPLORER</span></code> gives more control to the data-generating side, making it better for unbalanced or variable workloads.</p>
-</div></blockquote>
 </section>
 </section>
 <hr class="docutils" />
@@ -1099,16 +1088,15 @@ The Synchronizer makes distributed reinforcement learning <strong>scalable, effi
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#synchronization-styles-when-does-sync-happen">Synchronization Styles: When Does Sync Happen?</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#syncstyle-fixed-regular-intervals">1. <code class="docutils literal notranslate"><span class="pre">SyncStyle.FIXED</span></code> – Regular Intervals</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#syncstyle-dynamic-by-explorer-demand-driven-sync">2. <code class="docutils literal notranslate"><span class="pre">SyncStyle.DYNAMIC_BY_EXPLORER</span></code> – Demand-Driven Sync</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#syncstyle-explorer-driven-explorer-driven-synchronization">2. <code class="docutils literal notranslate"><span class="pre">SyncStyle.EXPLORER_DRIVEN</span></code> – Explorer-Driven Synchronization</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#syncstyle-trainer-driven-trainer-driven-synchronization">3. <code class="docutils literal notranslate"><span class="pre">SyncStyle.TRAINER_DRIVEN</span></code> – Trainer-Driven Synchronization</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#state-management-whats-going-on-behind-the-scenes">State Management: What’s Going On Behind the Scenes?</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#four-key-states">Four Key States</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#state-transitions-by-style-method">State Transitions by Style &amp; Method</a><ul class="nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#fixed-style-nccl-sync">🔹 Fixed Style + NCCL Sync</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#fixed-style-checkpoint-memory">🔹 Fixed Style + CHECKPOINT/MEMORY</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#dynamic-style-nccl">🔹 Dynamic Style + NCCL</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#dynamic-style-checkpoint-memory">🔹 Dynamic Style + CHECKPOINT/MEMORY</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#three-key-states">Three Key States</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#state-transitions-across-different-modes-and-methods">State Transitions Across Different Modes and Methods</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#nccl-synchronization">🔹 NCCL Synchronization</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#checkpoint-memory-synchronization">🔹 CHECKPOINT/MEMORY Synchronization</a></li>
 </ul>
 </li>
 </ul>

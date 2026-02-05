@@ -644,16 +644,15 @@ document.write(`
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">同步模式：何时触发同步？</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#syncstyle-fixed">1. <code class="docutils literal notranslate"><span class="pre">SyncStyle.FIXED</span></code> – 固定间隔同步</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#syncstyle-dynamic-by-explorer">2. <code class="docutils literal notranslate"><span class="pre">SyncStyle.DYNAMIC_BY_EXPLORER</span></code> – 按需动态同步</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#syncstyle-explorer-driven-explorer">2. <code class="docutils literal notranslate"><span class="pre">SyncStyle.EXPLORER_DRIVEN</span></code> – Explorer 驱动同步</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#syncstyle-trainer-driven-trainer">3. <code class="docutils literal notranslate"><span class="pre">SyncStyle.TRAINER_DRIVEN</span></code> – Trainer 驱动同步</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">状态管理：背后发生了什么？</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">四个关键状态</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">三个关键状态</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">不同模式与方法下的状态转换</a><ul class="nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#nccl">🔹 固定模式 + NCCL 同步</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#checkpoint-memory">🔹 固定模式 + CHECKPOINT/MEMORY</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">🔹 动态模式 + NCCL</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id9">🔹 动态模式 + CHECKPOINT/MEMORY</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#nccl">🔹 NCCL 同步</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#checkpoint-memory">🔹 CHECKPOINT/MEMORY 同步</a></li>
 </ul>
 </li>
 </ul>
@@ -663,7 +662,7 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#q2">Q2: 哪种同步模式更好？</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id10">总结：核心要点</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">总结：核心要点</a></li>
 </ul>
             </nav>
         </div>
@@ -700,21 +699,27 @@ document.write(`
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_step_num</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_steps</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
+            <span class="n">metrics</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="c1"># sample may be blocked due to explorer does not generate enough data</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sample data for step </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">train_step_num</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> started.&quot;</span><span class="p">)</span>
             <span class="n">sample_task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_sample_data</span><span class="p">())</span>
             <span class="k">while</span> <span class="ow">not</span> <span class="n">sample_task</span><span class="o">.</span><span class="n">done</span><span class="p">():</span>
                 <span class="c1"># sync weight to make sure the explorer can continue to explore and generate enough data</span>
                 <span class="k">if</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">need_sync</span><span class="p">():</span>
-                    <span class="c1"># Currently, we do not record the metrics of sync_weight here</span>
-                    <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">sync_weight</span><span class="p">()</span>
+                    <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">sync_weight</span><span class="p">())</span>
                 <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-            <span class="n">exps</span><span class="p">,</span> <span class="n">metrics</span><span class="p">,</span> <span class="n">repr_samples</span> <span class="o">=</span> <span class="k">await</span> <span class="n">sample_task</span>
+            <span class="n">exps</span><span class="p">,</span> <span class="n">sample_metrics</span><span class="p">,</span> <span class="n">repr_samples</span> <span class="o">=</span> <span class="k">await</span> <span class="n">sample_task</span>
+            <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">sample_metrics</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sample data for step </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">train_step_num</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> finished.&quot;</span><span class="p">)</span>
             <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_step</span><span class="p">(</span><span class="n">exps</span><span class="p">))</span>
             <span class="k">if</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">need_sync</span><span class="p">():</span>
                 <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">sync_weight</span><span class="p">())</span>
-            <span class="c1"># ...</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">need_save</span><span class="p">():</span>
+                <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                    <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_checkpoint</span><span class="p">(</span><span class="n">save_as_hf</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">save_hf_checkpoint</span> <span class="o">==</span> <span class="s2">&quot;always&quot;</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">enable_preview</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_log_experiences</span><span class="p">(</span><span class="n">repr_samples</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">monitor</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_step_num</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">StopAsyncIteration</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No more samples to train. Stopping training.&quot;</span><span class="p">)</span>
@@ -858,30 +863,38 @@ Trainer 和 Explorer 都会定期向 Synchronizer 查询状态，形成一个<st
 </tbody>
 </table>
 </div>
-<p>✅ <strong>最适合</strong>：简单、可预测的环境，探索步骤较短且奖励频繁（例如数学推理任务）。</p>
-<blockquote>
-<div><p>🔁 可将其类比为节拍器 —— 稳定且规律。</p>
-</div></blockquote>
+<p>🎯 <strong>适合</strong>：简单、可预测的环境，探索步骤较短且奖励频繁（例如数学推理任务）。</p>
 </section>
 <hr class="docutils" />
-<section id="syncstyle-dynamic-by-explorer">
-<h3>2. <code class="docutils literal notranslate"><span class="pre">SyncStyle.DYNAMIC_BY_EXPLORER</span></code> – 按需动态同步<a class="headerlink" href="#syncstyle-dynamic-by-explorer" title="Link to this heading">#</a></h3>
+<section id="syncstyle-explorer-driven-explorer">
+<h3>2. <code class="docutils literal notranslate"><span class="pre">SyncStyle.EXPLORER_DRIVEN</span></code> – Explorer 驱动同步<a class="headerlink" href="#syncstyle-explorer-driven-explorer" title="Link to this heading">#</a></h3>
 <ul class="simple">
-<li><p>Explorer 在生成一定量数据后决定请求同步。</p></li>
-<li><p>它会通知 Synchronizer：“我已经准备好获取新模型！”</p></li>
-<li><p>Trainer 在正常循环中检测该请求并响应。</p></li>
-</ul>
-<p>📌 <strong>流程说明</strong>：</p>
+<li><p>Explorer 自己决定何时需要新模型。</p></li>
+<li><p>流程：</p>
 <ol class="arabic simple">
-<li><p>Explorer 完成 <code class="docutils literal notranslate"><span class="pre">N</span></code> 步后 → 将状态设为 <code class="docutils literal notranslate"><span class="pre">REQUIRE_SYNC</span></code>。</p></li>
-<li><p>等待 Trainer 确认并完成同步。</p></li>
-<li><p>同步完成后，状态恢复为 <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code>。</p></li>
-<li><p>若超时，则在下一步重试。</p></li>
+<li><p>Explorer 完成 <code class="docutils literal notranslate"><span class="pre">sync_interval</span></code> 步后，向 Synchronizer 发出更新参数的请求。</p></li>
+<li><p>Trainer 在下一次循环中发现这个请求，并完成同步。</p></li>
+<li><p>同步完成后，Explorer 和 Trainer 继续运行。</p></li>
+<li><p>若超时，Explorer 会在下一个周期重试。</p></li>
 </ol>
-<p>✅ <strong>最适合</strong>：复杂、长周期任务，其中数据生成成本高或不规律（例如多轮对话、游戏对战）。</p>
-<blockquote>
-<div><p>🔄 更加灵活 —— 能根据实际数据产出动态调整。</p>
-</div></blockquote>
+</li>
+</ul>
+<p>🎯 <strong>适合</strong>：Explorer 节奏不固定，或希望按需更新模型。</p>
+</section>
+<hr class="docutils" />
+<section id="syncstyle-trainer-driven-trainer">
+<h3>3. <code class="docutils literal notranslate"><span class="pre">SyncStyle.TRAINER_DRIVEN</span></code> – Trainer 驱动同步<a class="headerlink" href="#syncstyle-trainer-driven-trainer" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Trainer 决定何时发布新模型。</p></li>
+<li><p>流程：</p>
+<ol class="arabic simple">
+<li><p>Trainer 每隔 <code class="docutils literal notranslate"><span class="pre">sync_interval</span></code> 步数后决定请求同步。</p></li>
+<li><p>它会通知 Synchronizer 准备推送新模型。</p></li>
+<li><p>Explorer 在正常循环中检测该请求并响应同步。</p></li>
+</ol>
+</li>
+</ul>
+<p>🎯 <strong>适合</strong>：Trainer 训练节奏明确，Explorer 被动接收更新。</p>
 </section>
 </section>
 <hr class="docutils" />
@@ -889,7 +902,7 @@ Trainer 和 Explorer 都会定期向 Synchronizer 查询状态，形成一个<st
 <h2>状态管理：背后发生了什么？<a class="headerlink" href="#id5" title="Link to this heading">#</a></h2>
 <p>Synchronizer 通过跟踪 Trainer 和 Explorer 的<strong>状态</strong>，确保同步过程安全可控。</p>
 <section id="id6">
-<h3>四个关键状态<a class="headerlink" href="#id6" title="Link to this heading">#</a></h3>
+<h3>三个关键状态<a class="headerlink" href="#id6" title="Link to this heading">#</a></h3>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>状态</p></th>
@@ -904,10 +917,7 @@ Trainer 和 Explorer 都会定期向 Synchronizer 查询状态，形成一个<st
 <td><p>正在训练或探索中</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">REQUIRE_SYNC</span></code></p></td>
-<td><p>Explorer 请求新权重</p></td>
-</tr>
-<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">WAITING_SYNC</span></code></p></td>
-<td><p>Explorer 或 Trainer 正在等待同步（NCCL 模式下使用）</p></td>
+<td><p>Explorer / Trainer 请求新权重</p></td>
 </tr>
 </tbody>
 </table>
@@ -918,40 +928,22 @@ Trainer 和 Explorer 都会定期向 Synchronizer 查询状态，形成一个<st
 <section id="id7">
 <h3>不同模式与方法下的状态转换<a class="headerlink" href="#id7" title="Link to this heading">#</a></h3>
 <section id="nccl">
-<h4>🔹 固定模式 + NCCL 同步<a class="headerlink" href="#nccl" title="Link to this heading">#</a></h4>
+<h4>🔹 NCCL 同步<a class="headerlink" href="#nccl" title="Link to this heading">#</a></h4>
 <ul class="simple">
-<li><p>Synchronizer 每 <code class="docutils literal notranslate"><span class="pre">N</span></code> 步安排一次同步。</p></li>
-<li><p>双方短暂暂停，进行 GPU 直连同步。</p></li>
-<li><p>Trainer 状态在 <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code> ↔ <code class="docutils literal notranslate"><span class="pre">WAITING_SYNC</span></code> 间规律切换，Explorer 状态在 <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code> → <code class="docutils literal notranslate"><span class="pre">REQUIRE_SYNC</span></code> → <code class="docutils literal notranslate"><span class="pre">WAITING_SYNC</span></code> 间切换。</p></li>
+<li><p>Trainer 和 Explorer 都会切换状态（<code class="docutils literal notranslate"><span class="pre">RUNNING</span></code> ↔ <code class="docutils literal notranslate"><span class="pre">REQUIRE_SYNC</span></code>）。</p></li>
+<li><p>同步是“双向握手”：双方都准备好才开始传数据。</p></li>
+<li><p>同步完成后，双方都回到 <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code>。</p></li>
 </ul>
-<p><img alt="FIXED_STYLE_NCCL_SYNC" src="../_images/FIXED-NCCL.png" /></p>
+<p><img alt="NCCL 同步" src="../_images/NCCL-zh.png" /></p>
 </section>
 <section id="checkpoint-memory">
-<h4>🔹 固定模式 + CHECKPOINT/MEMORY<a class="headerlink" href="#checkpoint-memory" title="Link to this heading">#</a></h4>
+<h4>🔹 CHECKPOINT/MEMORY 同步<a class="headerlink" href="#checkpoint-memory" title="Link to this heading">#</a></h4>
 <ul class="simple">
-<li><p>Trainer 定期保存或发送权重。</p></li>
-<li><p>Explorer 在每个间隔检查并拉取更新。</p></li>
-<li><p>Trainer 状态保持 <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code>，Explorer 状态在 <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code> ↔ <code class="docutils literal notranslate"><span class="pre">REQUIRE_SYNC</span></code> 间切换。</p></li>
+<li><p>Trainer 通常一直保持 <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code>（它只负责存权重）。</p></li>
+<li><p>Explorer 负责发起同步请求（切换到 <code class="docutils literal notranslate"><span class="pre">REQUIRE_SYNC</span></code>），拉取完权重后回到 <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code>。</p></li>
+<li><p>Synchronizer 作为“中介”，负责传递模型权重给 Explorer。</p></li>
 </ul>
-<p><img alt="FIXED_STYLE_STATEDICT_SYNC" src="../_images/FIXED-STATEDICT.png" /></p>
-</section>
-<section id="id8">
-<h4>🔹 动态模式 + NCCL<a class="headerlink" href="#id8" title="Link to this heading">#</a></h4>
-<ul class="simple">
-<li><p>Explorer 在积累足够数据后发出 <code class="docutils literal notranslate"><span class="pre">REQUIRE_SYNC</span></code> 信号。</p></li>
-<li><p>Trainer 检测到信号后启动 NCCL 同步。</p></li>
-<li><p>Trainer 状态在 <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code> ↔ <code class="docutils literal notranslate"><span class="pre">WAITING_SYNC</span></code> 间切换，Explorer 状态在 <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code> → <code class="docutils literal notranslate"><span class="pre">REQUIRE_SYNC</span></code> → <code class="docutils literal notranslate"><span class="pre">WAITING_SYNC</span></code> 间切换。</p></li>
-</ul>
-<p><img alt="DYN_STYLE_NCCL_SYNC" src="../_images/DYN-NCCL.png" /></p>
-</section>
-<section id="id9">
-<h4>🔹 动态模式 + CHECKPOINT/MEMORY<a class="headerlink" href="#id9" title="Link to this heading">#</a></h4>
-<ul class="simple">
-<li><p>Explorer 在积累足够数据后发出 <code class="docutils literal notranslate"><span class="pre">REQUIRE_SYNC</span></code> 信号。</p></li>
-<li><p>Trainer 检测到信号后将权重推送给 Synchronizer。</p></li>
-<li><p>Trainer 状态保持 <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code>，Explorer 状态在 <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code> ↔ <code class="docutils literal notranslate"><span class="pre">REQUIRE_SYNC</span></code> 间切换。</p></li>
-</ul>
-<p><img alt="DYN_STYLE_STATEDICT_SYNC" src="../_images/DYN-STATEDICT.png" /></p>
+<p><img alt="CHECKPOINT/MEMORY 同步" src="../_images/STATEDICT-zh.png" /></p>
 </section>
 </section>
 </section>
@@ -1000,20 +992,17 @@ Trainer 和 Explorer 都会定期向 Synchronizer 查询状态，形成一个<st
 <tr class="row-even"><td><p>短周期任务，反馈迅速（如数学问答）</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">FIXED</span></code></p></td>
 </tr>
-<tr class="row-odd"><td><p>长交互任务，奖励延迟（如游戏、对话）</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">DYNAMIC_BY_EXPLORER</span></code></p></td>
+<tr class="row-odd"><td><p>多轮交互任务，例如多轮对话、工具调用、多步骤游戏</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">EXPLORER_DRIVEN</span></code> 或 <code class="docutils literal notranslate"><span class="pre">TRAINER_DRIVEN</span></code></p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<blockquote>
-<div><p>💡 <code class="docutils literal notranslate"><span class="pre">DYNAMIC_BY_EXPLORER</span></code> 将控制权交给数据生成方，更适合负载不均衡或变化较大的任务。</p>
-</div></blockquote>
 </section>
 </section>
 <hr class="docutils" />
-<section id="id10">
-<h2>总结：核心要点<a class="headerlink" href="#id10" title="Link to this heading">#</a></h2>
+<section id="id8">
+<h2>总结：核心要点<a class="headerlink" href="#id8" title="Link to this heading">#</a></h2>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>特性</p></th>
@@ -1103,16 +1092,15 @@ Synchronizer 通过智能管理模型更新在训练与探索之间的传递时�
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">同步模式：何时触发同步？</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#syncstyle-fixed">1. <code class="docutils literal notranslate"><span class="pre">SyncStyle.FIXED</span></code> – 固定间隔同步</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#syncstyle-dynamic-by-explorer">2. <code class="docutils literal notranslate"><span class="pre">SyncStyle.DYNAMIC_BY_EXPLORER</span></code> – 按需动态同步</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#syncstyle-explorer-driven-explorer">2. <code class="docutils literal notranslate"><span class="pre">SyncStyle.EXPLORER_DRIVEN</span></code> – Explorer 驱动同步</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#syncstyle-trainer-driven-trainer">3. <code class="docutils literal notranslate"><span class="pre">SyncStyle.TRAINER_DRIVEN</span></code> – Trainer 驱动同步</a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">状态管理：背后发生了什么？</a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">四个关键状态</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">三个关键状态</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">不同模式与方法下的状态转换</a><ul class="nav section-nav flex-column">
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#nccl">🔹 固定模式 + NCCL 同步</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#checkpoint-memory">🔹 固定模式 + CHECKPOINT/MEMORY</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">🔹 动态模式 + NCCL</a></li>
-<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id9">🔹 动态模式 + CHECKPOINT/MEMORY</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#nccl">🔹 NCCL 同步</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#checkpoint-memory">🔹 CHECKPOINT/MEMORY 同步</a></li>
 </ul>
 </li>
 </ul>
@@ -1122,7 +1110,7 @@ Synchronizer 通过智能管理模型更新在训练与探索之间的传递时�
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#q2">Q2: 哪种同步模式更好？</a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id10">总结：核心要点</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">总结：核心要点</a></li>
 </ul>
   </nav></div>
 
