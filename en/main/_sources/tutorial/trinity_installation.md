@@ -11,7 +11,7 @@ Make sure your system meets these requirements:
 
 - **Python**: 3.10 – 3.12
 - **CUDA**: 12.8 or higher
-- **GPUs**: At least 2 available
+- **GPUs**: At least one NVIDIA GPU with [compute capability](https://developer.nvidia.com/cuda/gpus) 8.0 or higher (e.g., RTX 30 series, A100, H100)
 
 ### If you don’t have GPUs or prefer not to use them
 
@@ -84,24 +84,6 @@ uv sync --extra vllm --extra dev --extra flash_attn
 
 ---
 
-## Via PyPI
-
-If you just want to use the package without modifying the code:
-
-```bash
-pip install trinity-rft
-pip install flash-attn==2.8.1
-```
-
-Or with `uv`:
-
-```bash
-uv pip install trinity-rft
-uv pip install flash-attn==2.8.1
-```
-
----
-
 ## Using Docker
 
 You can download the Trinity-RFT Docker image from Github Container Registry or build it locally.
@@ -146,6 +128,24 @@ docker run -it \
   -v $PWD:/workspace \
   -v <path_to_your_data_and_checkpoints>:/data \
   trinity-rft:latest
+```
+
+---
+
+## Via PyPI
+
+If you just want to use the package without modifying the code:
+
+```bash
+pip install trinity-rft
+pip install flash-attn==2.8.1  --no-build-isolation
+```
+
+Or with `uv`:
+
+```bash
+uv pip install trinity-rft
+uv pip install flash-attn==2.8.1  --no-build-isolation
 ```
 
 ---
