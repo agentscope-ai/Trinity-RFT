@@ -254,9 +254,9 @@ def debug(
     load_plugins()
     config = load_config(config_path)
     config.mode = "explore"
+    config.ray_namespace = DEBUG_NAMESPACE
     config.check_and_update()
     sys.path.insert(0, os.getcwd())
-    config.ray_namespace = DEBUG_NAMESPACE
     ray.init(
         namespace=config.ray_namespace,
         runtime_env={"env_vars": config.get_envs()},
