@@ -1,0 +1,1810 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>GPU Configuration Guide &#8212; Trinity-RFT 0.5.0 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=e4e9a439"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorial/trinity_gpu_configs';</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Synchronizer in Trinity-RFT" href="synchronizer.html" />
+    <link rel="prev" title="Configuration Guide" href="trinity_configs.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/logo.svg" class="logo__image only-light" alt="Trinity-RFT 0.5.0 documentation - Home"/>
+    <script>document.write(`<img src="../_static/logo.svg" class="logo__image only-dark" alt="Trinity-RFT 0.5.0 documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+<nav class="bd-links bd-docs-nav">
+    <div class="bd-toc-item navbar-nav">
+        <ul class="nav bd-sidenav">
+      <li class="toctree-l1 has-children">
+        <details>
+          <summary>
+            <p class="caption" aria-level="2" role="heading" style="text-align: center;">
+              <span class="fa fa-book"></span>
+             <b>v0.5.0</b>
+            </p>
+          </summary>
+          <ul>
+            <li class="toctree-l2  "><a class="reference" href="../../main/tutorial/trinity_gpu_configs.html">latest</a></li>
+            <li class="toctree-l2 current "><a class="reference" href="trinity_gpu_configs.html">v0.5.0</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../v0.4.1/tutorial/trinity_gpu_configs.html">v0.4.1</a></li>
+          </ul>
+        </details>
+      </li>
+    </ul>
+    </div>
+</nav>
+</div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Guidelines</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="trinity_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="develop_overview.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="develop_workflow.html">Workflow Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="develop_algorithm.html">Algorithms Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_mix_algo.html">Advanced Algorithm Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="develop_operator.html">Operator Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="develop_selector.html">🧪 Experimental: Task Selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trinity_configs.html">Configuration Guide</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">GPU Configuration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="synchronizer.html">Synchronizer in Trinity-RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="align_with_verl.html">Align configuration with veRL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metrics_reference.html">Monitor Metrics Reference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="example_reasoning_basic.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_reasoning_advanced.html">Off-Policy RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_async_mode.html">Asynchronous RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_multi_turn.html">Concatenated Multi-Turn RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_step_wise.html">General Multi-Step RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_react.html">ReAct Agent Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_search_email.html">Email Search Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_dpo.html">Offline DPO and SFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_tinker_backend.html">Tinker Backend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_megatron.html">Megatron-LM Backend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_data_functionalities.html">Data Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_dataset_perspective.html">Example Summary</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">FAQ</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="faq.html">FAQ</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api_reference.html">API Reference</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.buffer.html">trinity.buffer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.operators.html">trinity.buffer.operators package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.operators.filters.html">trinity.buffer.operators.filters package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.operators.mappers.html">trinity.buffer.operators.mappers package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.operators.data_juicer_operator.html">trinity.buffer.operators.data_juicer_operator module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.operators.experience_operator.html">trinity.buffer.operators.experience_operator module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.pipelines.html">trinity.buffer.pipelines package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.pipelines.experience_pipeline.html">trinity.buffer.pipelines.experience_pipeline module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.pipelines.task_pipeline.html">trinity.buffer.pipelines.task_pipeline module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.reader.html">trinity.buffer.reader package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.reader.file_reader.html">trinity.buffer.reader.file_reader module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.reader.queue_reader.html">trinity.buffer.reader.queue_reader module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.reader.sql_reader.html">trinity.buffer.reader.sql_reader module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.schema.html">trinity.buffer.schema package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.schema.formatter.html">trinity.buffer.schema.formatter module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.schema.sql_schema.html">trinity.buffer.schema.sql_schema module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.selector.html">trinity.buffer.selector package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.selector.difficulty_estimator.html">trinity.buffer.selector.difficulty_estimator module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.selector.selector.html">trinity.buffer.selector.selector module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.storage.html">trinity.buffer.storage package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.storage.file.html">trinity.buffer.storage.file module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.storage.queue.html">trinity.buffer.storage.queue module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.storage.sql.html">trinity.buffer.storage.sql module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.writer.html">trinity.buffer.writer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.writer.file_writer.html">trinity.buffer.writer.file_writer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.writer.queue_writer.html">trinity.buffer.writer.queue_writer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.writer.sql_writer.html">trinity.buffer.writer.sql_writer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.buffer.html">trinity.buffer.buffer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.buffer_reader.html">trinity.buffer.buffer_reader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.buffer_writer.html">trinity.buffer.buffer_writer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.task_scheduler.html">trinity.buffer.task_scheduler module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.utils.html">trinity.buffer.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.viewer.html">trinity.buffer.viewer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.explorer.html">trinity.explorer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.explorer.proxy.html">trinity.explorer.proxy package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.explorer.proxy.app.html">trinity.explorer.proxy.app module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.explorer.proxy.client.html">trinity.explorer.proxy.client module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.explorer.proxy.recorder.html">trinity.explorer.proxy.recorder module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.explorer.proxy.service.html">trinity.explorer.proxy.service module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.explorer.explorer.html">trinity.explorer.explorer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.explorer.scheduler.html">trinity.explorer.scheduler module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.explorer.workflow_runner.html">trinity.explorer.workflow_runner module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.trainer.html">trinity.trainer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.trainer.tinker.html">trinity.trainer.tinker package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.tinker.utils.html">trinity.trainer.tinker.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.trainer.verl.html">trinity.trainer.verl package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.dp_actor.html">trinity.trainer.verl.dp_actor module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.fsdp_checkpoint_manager.html">trinity.trainer.verl.fsdp_checkpoint_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.fsdp_workers.html">trinity.trainer.verl.fsdp_workers module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.megatron_actor.html">trinity.trainer.verl.megatron_actor module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.megatron_checkpoint_manager.html">trinity.trainer.verl.megatron_checkpoint_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.megatron_workers.html">trinity.trainer.verl.megatron_workers module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.utils.html">trinity.trainer.verl.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.trainer.tinker_trainer.html">trinity.trainer.tinker_trainer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.trainer.trainer.html">trinity.trainer.trainer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.trainer.verl_trainer.html">trinity.trainer.verl_trainer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.html">trinity.algorithm package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.html">trinity.algorithm.advantage_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.advantage_fn.html">trinity.algorithm.advantage_fn.advantage_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.asymre_advantage.html">trinity.algorithm.advantage_fn.asymre_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.grpo_advantage.html">trinity.algorithm.advantage_fn.grpo_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.multi_step_grpo_advantage.html">trinity.algorithm.advantage_fn.multi_step_grpo_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.on_policy_distill_advantage.html">trinity.algorithm.advantage_fn.on_policy_distill_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.opmd_advantage.html">trinity.algorithm.advantage_fn.opmd_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.ppo_advantage.html">trinity.algorithm.advantage_fn.ppo_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.rec_advantage.html">trinity.algorithm.advantage_fn.rec_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.reinforce_advantage.html">trinity.algorithm.advantage_fn.reinforce_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.reinforce_plus_plus_advantage.html">trinity.algorithm.advantage_fn.reinforce_plus_plus_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.remax_advantage.html">trinity.algorithm.advantage_fn.remax_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.rloo_advantage.html">trinity.algorithm.advantage_fn.rloo_advantage module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.entropy_loss_fn.html">trinity.algorithm.entropy_loss_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.entropy_loss_fn.entropy_loss_fn.html">trinity.algorithm.entropy_loss_fn.entropy_loss_fn module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.kl_fn.html">trinity.algorithm.kl_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.kl_fn.kl_fn.html">trinity.algorithm.kl_fn.kl_fn module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.html">trinity.algorithm.policy_loss_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.chord_policy_loss.html">trinity.algorithm.policy_loss_fn.chord_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.cispo_policy_loss.html">trinity.algorithm.policy_loss_fn.cispo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.dpo_loss.html">trinity.algorithm.policy_loss_fn.dpo_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.gspo_policy_loss.html">trinity.algorithm.policy_loss_fn.gspo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.importance_sampling_policy_loss.html">trinity.algorithm.policy_loss_fn.importance_sampling_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.mix_policy_loss.html">trinity.algorithm.policy_loss_fn.mix_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.opmd_policy_loss.html">trinity.algorithm.policy_loss_fn.opmd_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.policy_loss_fn.html">trinity.algorithm.policy_loss_fn.policy_loss_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.ppo_policy_loss.html">trinity.algorithm.policy_loss_fn.ppo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.rec_policy_loss.html">trinity.algorithm.policy_loss_fn.rec_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.sapo_policy_loss.html">trinity.algorithm.policy_loss_fn.sapo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.sft_loss.html">trinity.algorithm.policy_loss_fn.sft_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.sppo_loss_fn.html">trinity.algorithm.policy_loss_fn.sppo_loss_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.topr_policy_loss.html">trinity.algorithm.policy_loss_fn.topr_policy_loss module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.sample_strategy.html">trinity.algorithm.sample_strategy package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.sample_strategy.mix_sample_strategy.html">trinity.algorithm.sample_strategy.mix_sample_strategy module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.sample_strategy.sample_strategy.html">trinity.algorithm.sample_strategy.sample_strategy module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.sample_strategy.utils.html">trinity.algorithm.sample_strategy.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.algorithm.algorithm.html">trinity.algorithm.algorithm module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.algorithm.key_mapper.html">trinity.algorithm.key_mapper module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.algorithm.utils.html">trinity.algorithm.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.manager.html">trinity.manager package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.manager.config_registry.html">trinity.manager.config_registry package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.algorithm_config_manager.html">trinity.manager.config_registry.algorithm_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.buffer_config_manager.html">trinity.manager.config_registry.buffer_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.config_registry.html">trinity.manager.config_registry.config_registry module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.explorer_config_manager.html">trinity.manager.config_registry.explorer_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.model_config_manager.html">trinity.manager.config_registry.model_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.trainer_config_manager.html">trinity.manager.config_registry.trainer_config_manager module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.manager.checkpoint_converter.html">trinity.manager.checkpoint_converter module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.manager.config_manager.html">trinity.manager.config_manager module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.manager.state_manager.html">trinity.manager.state_manager module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.manager.synchronizer.html">trinity.manager.synchronizer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.common.html">trinity.common package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.common.models.html">trinity.common.models package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.vllm_patch.html">trinity.common.models.vllm_patch package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.mm_utils.html">trinity.common.models.mm_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.model.html">trinity.common.models.model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.tinker_model.html">trinity.common.models.tinker_model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.utils.html">trinity.common.models.utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.vllm_model.html">trinity.common.models.vllm_model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.vllm_worker.html">trinity.common.models.vllm_worker module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.common.rewards.html">trinity.common.rewards package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.accuracy_reward.html">trinity.common.rewards.accuracy_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.agents_reward.html">trinity.common.rewards.agents_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.countdown_reward.html">trinity.common.rewards.countdown_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.dapo_reward.html">trinity.common.rewards.dapo_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.eval_utils.html">trinity.common.rewards.eval_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.format_reward.html">trinity.common.rewards.format_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.human_reward.html">trinity.common.rewards.human_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.math_reward.html">trinity.common.rewards.math_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.naive_dapo_score.html">trinity.common.rewards.naive_dapo_score module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.qwen25_eval.html">trinity.common.rewards.qwen25_eval module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.reward_fn.html">trinity.common.rewards.reward_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.tool_reward.html">trinity.common.rewards.tool_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.utils.html">trinity.common.rewards.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.common.workflows.html">trinity.common.workflows package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.agentscope.html">trinity.common.workflows.agentscope package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.agentscope_workflow.html">trinity.common.workflows.agentscope_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.customized_math_workflows.html">trinity.common.workflows.customized_math_workflows module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.customized_toolcall_workflows.html">trinity.common.workflows.customized_toolcall_workflows module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.eval_workflow.html">trinity.common.workflows.eval_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.math_rm_workflow.html">trinity.common.workflows.math_rm_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.math_ruler_workflow.html">trinity.common.workflows.math_ruler_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.math_trainable_ruler_workflow.html">trinity.common.workflows.math_trainable_ruler_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.on_policy_distill_workflow.html">trinity.common.workflows.on_policy_distill_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.rubric_judge_workflow.html">trinity.common.workflows.rubric_judge_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.simple_mm_workflow.html">trinity.common.workflows.simple_mm_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.step_wise_workflow.html">trinity.common.workflows.step_wise_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.workflow.html">trinity.common.workflows.workflow module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.common.config.html">trinity.common.config module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.common.config_validator.html">trinity.common.config_validator module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.common.constants.html">trinity.common.constants module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.common.experience.html">trinity.common.experience module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.common.verl_config.html">trinity.common.verl_config module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.utils.html">trinity.utils package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.annotations.html">trinity.utils.annotations module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.distributed.html">trinity.utils.distributed module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.dlc_utils.html">trinity.utils.dlc_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.log.html">trinity.utils.log module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.lora_utils.html">trinity.utils.lora_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.monitor.html">trinity.utils.monitor module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.plugin_loader.html">trinity.utils.plugin_loader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.registry.html">trinity.utils.registry module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.timer.html">trinity.utils.timer module</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+<div class="header-extra-switchers" style="display:inline-flex; gap:.25rem; margin-left:.5rem; align-items:center;">
+  <button id="lang-toggle-btn" class="btn btn-sm btn-outline-secondary" title="">
+  <span id="lang-toggle-label"></span>
+</button>
+<script>
+(function () {
+  const btn = document.getElementById('lang-toggle-btn');
+  const lab = document.getElementById('lang-toggle-label');
+  if (!btn || !lab) return;
+
+  const m = location.pathname.match(/^(.*\/)(en|zh)(\/.*)$/);
+
+  const cur = m ? m[2] : 'en';
+  if (cur === 'en') {
+    lab.textContent = '中';
+    btn.title = '切换到中文';
+  } else {
+    lab.textContent = 'EN';
+    btn.title = 'Switch to English';
+  }
+
+  const targetHref = (function () {
+    if (!m) return location.href;
+    const other = cur === 'en' ? 'zh' : 'en';
+    const suffix = m[3] || '/';
+    return m[1] + other + suffix + location.search + location.hash;
+  })();
+
+  btn.addEventListener('click', function () {
+    location.href = targetHref;
+  });
+})();
+</script>
+</div>
+
+
+
+<div class="article-header-buttons">
+
+
+<a href="https://github.com/agentscope-ai/Trinity-RFT" target="_blank"
+   class="btn btn-sm btn-source-repository-button"
+   title="Source repository"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/tutorial/trinity_gpu_configs.md" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.md</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>GPU Configuration Guide</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#long-context-support">Long Context Support</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#relationship-between-gpu-memory-usage-and-max-token-len-per-gpu">💡 Relationship Between GPU Memory Usage and <code class="docutils literal notranslate"><span class="pre">max_token_len_per_gpu</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#a100-80gb-gpu-configuration-recommendations">A100 80GB GPU Configuration Recommendations</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gpu">1 GPU</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gpus">2 GPUs</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">4 GPUs</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">6 GPUs</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#h20-96gb-gpu-configuration-recommendations">H20 96GB GPU Configuration Recommendations</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">1 GPU</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">2 GPUs</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">4 GPUs</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">6 GPUs</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#best-practices">✅ Best Practices</a></li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="gpu-configuration-guide">
+<h1>GPU Configuration Guide<a class="headerlink" href="#gpu-configuration-guide" title="Link to this heading">#</a></h1>
+<p>This document provides recommended training configurations for Qwen3 series models on <strong>NVIDIA A100 80GB</strong> and <strong>H20 96GB</strong> GPUs.
+Based on model size (0.6B ~ 14B) and context length (<code class="docutils literal notranslate"><span class="pre">model.max_model_len</span></code>), we present feasible Trainer module setups across varying numbers of GPUs.</p>
+<blockquote>
+<div><p>⚠️ <strong>Note</strong>:
+Due to the sparation design of rollout and training with Trinity. The following description of the number of GPUs refers to the number available for <code class="docutils literal notranslate"><span class="pre">Trainer</span></code>, not the total number of GPUs used by Trinity.</p>
+</div></blockquote>
+<blockquote>
+<div><p>💡 <strong>Terminology</strong></p>
+<ul>
+<li><p><strong>vanilla</strong>: No special configuration required; default settings suffice.</p></li>
+<li><p><strong>Env</strong>: Set the following environment variable <strong>before launching training (before starting Ray)</strong>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span class="nb">export</span><span class="w"> </span><span class="nv">PYTORCH_CUDA_ALLOC_CONF</span><span class="o">=</span>expandable_segments:True
+</pre></div>
+</div>
+</li>
+<li><p><strong>Offload</strong>: Enable <strong>FSDP v2 + CPU Offload</strong> to reduce GPU memory usage.</p></li>
+<li><p><strong>SP=N</strong>: Use <strong>Sequence Parallelism</strong> with parallelism degree N (typically N ≤ number of GPUs).</p></li>
+<li><p><strong>Combined entries (e.g., <code class="docutils literal notranslate"><span class="pre">Env</span> <span class="pre">+</span> <span class="pre">SP=2</span></code>)</strong>: All listed conditions must be satisfied simultaneously.</p></li>
+<li><p><strong>“-”</strong>: The combination of current hardware and configuration <strong>cannot support training</strong> for this model under the given sequence length.</p></li>
+</ul>
+</div></blockquote>
+<hr class="docutils" />
+<section id="long-context-support">
+<h2>Long Context Support<a class="headerlink" href="#long-context-support" title="Link to this heading">#</a></h2>
+<p>Qwen3 series models natively support a maximum context length of <strong>40,960 tokens</strong>.
+For training beyond this length (e.g., 51,200, 81,920 tokens), we use <strong>YaRN RoPE extension</strong>. The relevant configuration is as follows:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">model</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">model_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${oc.env:MODEL_PATH,Qwen/Qwen3-0.6B}</span>
+<span class="w">  </span><span class="nt">max_prompt_tokens</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2048</span>
+<span class="w">  </span><span class="nt">max_model_len</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${oc.env:MAX_MODEL_LEN,4096}</span>
+<span class="w">  </span><span class="nt">rope_scaling</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">rope_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">yarn</span>
+<span class="w">    </span><span class="nt">factor</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${oc.decode:${oc.env:FACTOR}}</span><span class="w">  </span><span class="c1"># Recommended value = MAX_MODEL_LEN / 40960</span>
+<span class="w">    </span><span class="nt">original_max_position_embeddings</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">40960</span>
+</pre></div>
+</div>
+<blockquote>
+<div><p>✅ When using YaRN, ensure <code class="docutils literal notranslate"><span class="pre">factor</span></code> is set reasonably to avoid numerical instability.</p>
+</div></blockquote>
+</section>
+<hr class="docutils" />
+<section id="relationship-between-gpu-memory-usage-and-max-token-len-per-gpu">
+<h2>💡 Relationship Between GPU Memory Usage and <code class="docutils literal notranslate"><span class="pre">max_token_len_per_gpu</span></code><a class="headerlink" href="#relationship-between-gpu-memory-usage-and-max-token-len-per-gpu" title="Link to this heading">#</a></h2>
+<p>Trinity Trainer enables dynamic batch sizing by default (<code class="docutils literal notranslate"><span class="pre">trainer.use_dynamic_bsz=True</span></code>). With a fixed model, actual GPU memory consumption is primarily determined by the following two parameters:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">trainer.trainer_config.actor_rollout_ref.actor.ppo_max_token_len_per_gpu</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trainer.trainer_config.actor_rollout_ref.ref.log_prob_max_token_len_per_gpu</span></code></p></li>
+</ul>
+<p>If these parameters are not manually configured, Trinity automatically uses the following default value:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">trainer</span><span class="o">.</span><span class="n">max_token_len_per_gpu</span> <span class="o">=</span> <span class="n">ceil</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">model</span><span class="o">.</span><span class="n">max_model_len</span> <span class="o">/</span> <span class="n">trainer</span><span class="o">.</span><span class="n">ulysses_sequence_parallel_size</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>📌 <strong>This implies that</strong>:</p>
+<ul class="simple">
+<li><p>The longer the context length, the more tokens each GPU must process, resulting in higher memory pressure.</p></li>
+<li><p>To support <strong>longer context lengths</strong>, you can manually adjust the parameters above (though this may impact training efficiency).</p></li>
+</ul>
+<blockquote>
+<div><p>All experimental results presented in this guide are based on the aforementioned default settings. For extreme optimization, please fine-tune these parameters according to your specific requirements.</p>
+</div></blockquote>
+</section>
+<hr class="docutils" />
+<section id="a100-80gb-gpu-configuration-recommendations">
+<h2>A100 80GB GPU Configuration Recommendations<a class="headerlink" href="#a100-80gb-gpu-configuration-recommendations" title="Link to this heading">#</a></h2>
+<blockquote>
+<div><p>⚠️ <strong>Single-GPU Limitation</strong>: Training models ≥4B or with context lengths &gt;20K on a single A100 GPU places extreme pressure on VRAM. <strong>Multi-GPU setups are strongly recommended</strong>.</p>
+</div></blockquote>
+<section id="gpu">
+<h3>1 GPU<a class="headerlink" href="#gpu" title="Link to this heading">#</a></h3>
+<details><summary>Click to view detailed configurations</summary>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head text-right"><p><code class="docutils literal notranslate"><span class="pre">max_model_len</span></code></p></th>
+<th class="head text-left"><p>Qwen3-0.6B</p></th>
+<th class="head text-left"><p>Qwen3-1.7B</p></th>
+<th class="head text-left"><p>Qwen3-4B</p></th>
+<th class="head text-left"><p>Qwen3-8B</p></th>
+<th class="head text-left"><p>Qwen3-14B</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td class="text-right"><p>4096</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>8192</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>12288</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>16384</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>20480</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>24576</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>28672</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>32768</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</details>
+</section>
+<hr class="docutils" />
+<section id="gpus">
+<h3>2 GPUs<a class="headerlink" href="#gpus" title="Link to this heading">#</a></h3>
+<details><summary>✅ Recommended: 2 GPUs significantly improve long-context training capability for 4B~14B models. Enable SP=2 when using longer contexts.</summary>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head text-right"><p><code class="docutils literal notranslate"><span class="pre">max_model_len</span></code></p></th>
+<th class="head text-left"><p>Qwen3-0.6B</p></th>
+<th class="head text-left"><p>Qwen3-1.7B</p></th>
+<th class="head text-left"><p>Qwen3-4B</p></th>
+<th class="head text-left"><p>Qwen3-8B</p></th>
+<th class="head text-left"><p>Qwen3-14B</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td class="text-right"><p>4096</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>8192</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>12288</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>16384</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>20480</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>24576</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>28672</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>32768</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>36864</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>40960</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>51200</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>61440</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>71680</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</details>
+</section>
+<hr class="docutils" />
+<section id="id1">
+<h3>4 GPUs<a class="headerlink" href="#id1" title="Link to this heading">#</a></h3>
+<details><summary>✅ Recommended: Ideal setup for training 8B/14B models with ultra-long contexts (>60K)</summary>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head text-right"><p><code class="docutils literal notranslate"><span class="pre">max_model_len</span></code></p></th>
+<th class="head text-left"><p>Qwen3-0.6B</p></th>
+<th class="head text-left"><p>Qwen3-1.7B</p></th>
+<th class="head text-left"><p>Qwen3-4B</p></th>
+<th class="head text-left"><p>Qwen3-8B</p></th>
+<th class="head text-left"><p>Qwen3-14B</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td class="text-right"><p>4096</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>8192</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>12288</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>Env + SP=4</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>16384</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + SP=4</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>20480</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + SP=4</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>24576</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>28672</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>32768</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>36864</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>40960</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>51200</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>Env + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>61440</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>71680</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>81920</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>Env + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>92160</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>Env + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>102400</p></td>
+<td class="text-left"><p>Env + SP=4</p></td>
+<td class="text-left"><p>Env + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>112640</p></td>
+<td class="text-left"><p>Env + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>122880</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>133120</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</details>
+</section>
+<hr class="docutils" />
+<section id="id2">
+<h3>6 GPUs<a class="headerlink" href="#id2" title="Link to this heading">#</a></h3>
+<details><summary>✅ Good support for small-to-medium models (≤4B), but still limited for 14B models with ultra-long contexts</summary>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head text-right"><p><code class="docutils literal notranslate"><span class="pre">max_model_len</span></code></p></th>
+<th class="head text-left"><p>Qwen3-0.6B</p></th>
+<th class="head text-left"><p>Qwen3-1.7B</p></th>
+<th class="head text-left"><p>Qwen3-4B</p></th>
+<th class="head text-left"><p>Qwen3-8B</p></th>
+<th class="head text-left"><p>Qwen3-14B</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td class="text-right"><p>4096</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>8192</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>12288</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>SP=2</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>16384</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>SP=2</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>20480</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>24576</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>28672</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>32768</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>36864</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>40960</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>51200</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>61440</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>71680</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</details>
+</section>
+</section>
+<hr class="docutils" />
+<section id="h20-96gb-gpu-configuration-recommendations">
+<h2>H20 96GB GPU Configuration Recommendations<a class="headerlink" href="#h20-96gb-gpu-configuration-recommendations" title="Link to this heading">#</a></h2>
+<p>The H20 has larger VRAM (96GB) but lower compute performance compared to the A100.</p>
+<section id="id3">
+<h3>1 GPU<a class="headerlink" href="#id3" title="Link to this heading">#</a></h3>
+<details><summary>Single GPU supports 4B models up to ~32K context length</summary>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head text-right"><p><code class="docutils literal notranslate"><span class="pre">max_model_len</span></code></p></th>
+<th class="head text-left"><p>Qwen3-0.6B</p></th>
+<th class="head text-left"><p>Qwen3-1.7B</p></th>
+<th class="head text-left"><p>Qwen3-4B</p></th>
+<th class="head text-left"><p>Qwen3-8B</p></th>
+<th class="head text-left"><p>Qwen3-14B</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td class="text-right"><p>4096</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>8192</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>12288</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>16384</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>20480</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>24576</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>28672</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>32768</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>36864</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>40960</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</details>
+</section>
+<hr class="docutils" />
+<section id="id4">
+<h3>2 GPUs<a class="headerlink" href="#id4" title="Link to this heading">#</a></h3>
+<details><summary>Supports 14B models up to 50K context length</summary>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head text-right"><p><code class="docutils literal notranslate"><span class="pre">max_model_len</span></code></p></th>
+<th class="head text-left"><p>Qwen3-0.6B</p></th>
+<th class="head text-left"><p>Qwen3-1.7B</p></th>
+<th class="head text-left"><p>Qwen3-4B</p></th>
+<th class="head text-left"><p>Qwen3-8B</p></th>
+<th class="head text-left"><p>Qwen3-14B</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td class="text-right"><p>4096</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>8192</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>12288</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>16384</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>20480</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>24576</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>28672</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+<td class="text-left"><p>Env + Offload</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>32768</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>36864</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>40960</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>51200</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>61440</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>71680</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>81920</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</details>
+</section>
+<hr class="docutils" />
+<section id="id5">
+<h3>4 GPUs<a class="headerlink" href="#id5" title="Link to this heading">#</a></h3>
+<details><summary>✅ Supports training 14B models up to 100K context length</summary>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head text-right"><p><code class="docutils literal notranslate"><span class="pre">max_model_len</span></code></p></th>
+<th class="head text-left"><p>Qwen3-0.6B</p></th>
+<th class="head text-left"><p>Qwen3-1.7B</p></th>
+<th class="head text-left"><p>Qwen3-4B</p></th>
+<th class="head text-left"><p>Qwen3-8B</p></th>
+<th class="head text-left"><p>Qwen3-14B</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td class="text-right"><p>4096</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>8192</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>12288</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>SP=2</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>16384</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>SP=2</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>20480</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>24576</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=4</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>28672</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=4</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>32768</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>SP=4</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>36864</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>Env + SP=4</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>40960</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>51200</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>61440</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>Env + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>71680</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>Env + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>81920</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>92160</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>102400</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>Env + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>112640</p></td>
+<td class="text-left"><p>SP=4</p></td>
+<td class="text-left"><p>Env + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>122880</p></td>
+<td class="text-left"><p>Env + SP=4</p></td>
+<td class="text-left"><p>Env + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>133120</p></td>
+<td class="text-left"><p>Env + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+<td class="text-left"><p>Env + Offload + SP=4</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>143360</p></td>
+<td class="text-left"><p>Env + SP=4</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>153600</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</details>
+</section>
+<hr class="docutils" />
+<section id="id6">
+<h3>6 GPUs<a class="headerlink" href="#id6" title="Link to this heading">#</a></h3>
+<details><summary>Good support for small-to-medium models (≤4B), but still limited for 14B models with ultra-long contexts</summary>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head text-right"><p><code class="docutils literal notranslate"><span class="pre">max_model_len</span></code></p></th>
+<th class="head text-left"><p>Qwen3-0.6B</p></th>
+<th class="head text-left"><p>Qwen3-1.7B</p></th>
+<th class="head text-left"><p>Qwen3-4B</p></th>
+<th class="head text-left"><p>Qwen3-8B</p></th>
+<th class="head text-left"><p>Qwen3-14B</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td class="text-right"><p>4096</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>8192</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>12288</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>16384</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>20480</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>SP=2</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>24576</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>28672</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>vanilla</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>32768</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>36864</p></td>
+<td class="text-left"><p>Env</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>40960</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>51200</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>61440</p></td>
+<td class="text-left"><p>SP=2</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+<tr class="row-even"><td class="text-right"><p>71680</p></td>
+<td class="text-left"><p>Env + SP=2</p></td>
+<td class="text-left"><p>Env + Offload + SP=2</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+<tr class="row-odd"><td class="text-right"><p>81920</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+<td class="text-left"><p>-</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</details>
+</section>
+</section>
+<hr class="docutils" />
+<section id="best-practices">
+<h2>✅ Best Practices<a class="headerlink" href="#best-practices" title="Link to this heading">#</a></h2>
+<ol class="arabic simple">
+<li><p><strong>Start with the simplest configuration</strong>: Try <code class="docutils literal notranslate"><span class="pre">vanilla</span></code> first, and incrementally enable advanced features only when encountering OOM errors.</p></li>
+<li><p><strong>Always use YaRN for long contexts</strong>: For contexts exceeding 40,960 tokens, configure <code class="docutils literal notranslate"><span class="pre">rope_scaling</span></code> and set <code class="docutils literal notranslate"><span class="pre">factor</span></code> appropriately.</p></li>
+<li><p><strong>OOM troubleshooting sequence</strong>:</p>
+<ul class="simple">
+<li><p>Step 1: Set <code class="docutils literal notranslate"><span class="pre">export</span> <span class="pre">PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True</span></code></p></li>
+<li><p>Step 2: Increase <strong>Sequence Parallelism (SP)</strong></p></li>
+<li><p>Step 3: Enable <strong>FSDP v2 + CPU Offload</strong></p></li>
+</ul>
+</li>
+<li><p><strong>Choosing SP parallelism degree</strong>: Prefer values that are <strong>common divisors of both GPU count and attention head count</strong> (e.g., 2, 4).</p></li>
+<li><p><strong>Prefer multi-GPU over single-GPU</strong>: Even when VRAM appears sufficient, multi-GPU setups improve training efficiency and stability through parallelization.</p></li>
+</ol>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="trinity_configs.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Configuration Guide</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="synchronizer.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Synchronizer in Trinity-RFT</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#long-context-support">Long Context Support</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#relationship-between-gpu-memory-usage-and-max-token-len-per-gpu">💡 Relationship Between GPU Memory Usage and <code class="docutils literal notranslate"><span class="pre">max_token_len_per_gpu</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#a100-80gb-gpu-configuration-recommendations">A100 80GB GPU Configuration Recommendations</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gpu">1 GPU</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#gpus">2 GPUs</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">4 GPUs</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">6 GPUs</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#h20-96gb-gpu-configuration-recommendations">H20 96GB GPU Configuration Recommendations</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">1 GPU</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">2 GPUs</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">4 GPUs</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">6 GPUs</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#best-practices">✅ Best Practices</a></li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Trinity-RFT Team
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2025, Trinity-RFT Team.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

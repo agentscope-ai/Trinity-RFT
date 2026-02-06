@@ -1,0 +1,1021 @@
+
+<!DOCTYPE html>
+
+
+<html lang="zh-CN" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>数据处理 &#8212; Trinity-RFT 0.5.0 文档</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=6edd33ca"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="../_static/translations.js?v=beaddf03"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorial/example_data_functionalities';</script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+    <link rel="next" title="样例总览" href="example_dataset_perspective.html" />
+    <link rel="prev" title="Megatron-LM 支持" href="example_megatron.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="zh-CN"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/logo.svg" class="logo__image only-light" alt="Trinity-RFT 0.5.0 文档 - Home"/>
+    <script>document.write(`<img src="../_static/logo.svg" class="logo__image only-dark" alt="Trinity-RFT 0.5.0 文档 - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+<nav class="bd-links bd-docs-nav">
+    <div class="bd-toc-item navbar-nav">
+        <ul class="nav bd-sidenav">
+      <li class="toctree-l1 has-children">
+        <details>
+          <summary>
+            <p class="caption" aria-level="2" role="heading" style="text-align: center;">
+              <span class="fa fa-book"></span>
+             <b>v0.5.0</b>
+            </p>
+          </summary>
+          <ul>
+            <li class="toctree-l2  "><a class="reference" href="../../main/tutorial/example_data_functionalities.html">latest</a></li>
+            <li class="toctree-l2 current "><a class="reference" href="example_data_functionalities.html">v0.5.0</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../v0.4.1/tutorial/example_data_functionalities.html">v0.4.1</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../v0.4.0/tutorial/example_data_functionalities.html">v0.4.0</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../v0.3.3/tutorial/example_data_functionalities.html">v0.3.3</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../v0.3.2/tutorial/example_data_functionalities.html">v0.3.2</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../v0.3.1/tutorial/example_data_functionalities.html">v0.3.1</a></li>
+          </ul>
+        </details>
+      </li>
+    </ul>
+    </div>
+</nav>
+</div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="搜索" aria-label="搜索" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">搜索</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">教程</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="trinity_installation.html">安装指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="develop_overview.html">开发者指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="develop_workflow.html">Workflow 开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="develop_algorithm.html">Algorithm 开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_mix_algo.html">Algorithm 进阶开发</a></li>
+<li class="toctree-l1"><a class="reference internal" href="develop_operator.html">Operator 开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="develop_selector.html">🧪 实验性功能：任务选择器</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trinity_configs.html">参数配置指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trinity_gpu_configs.html">GPU 资源相关配置指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="synchronizer.html">Synchronizer 介绍</a></li>
+<li class="toctree-l1"><a class="reference internal" href="align_with_verl.html">与 veRL 对齐训练配置</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metrics_reference.html">监控指标解释</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">样例</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="example_reasoning_basic.html">快速上手</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_reasoning_advanced.html">Off-Policy RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_async_mode.html">异步 RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_multi_turn.html">多轮对话拼接任务</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_step_wise.html">通用多轮 RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_react.html">ReAct Agent 训练</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_search_email.html">邮件搜索例子</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_dpo.html">离线 DPO 和 SFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_tinker_backend.html">Tinker 后端</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_megatron.html">Megatron-LM 支持</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">数据处理</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_dataset_perspective.html">样例总览</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">常见问题</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="faq.html">常见问题（FAQ）</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api_reference.html">API Reference</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.buffer.html">trinity.buffer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.operators.html">trinity.buffer.operators package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.operators.filters.html">trinity.buffer.operators.filters package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.operators.mappers.html">trinity.buffer.operators.mappers package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.operators.data_juicer_operator.html">trinity.buffer.operators.data_juicer_operator module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.operators.experience_operator.html">trinity.buffer.operators.experience_operator module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.pipelines.html">trinity.buffer.pipelines package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.pipelines.experience_pipeline.html">trinity.buffer.pipelines.experience_pipeline module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.pipelines.task_pipeline.html">trinity.buffer.pipelines.task_pipeline module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.reader.html">trinity.buffer.reader package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.reader.file_reader.html">trinity.buffer.reader.file_reader module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.reader.queue_reader.html">trinity.buffer.reader.queue_reader module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.reader.sql_reader.html">trinity.buffer.reader.sql_reader module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.schema.html">trinity.buffer.schema package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.schema.formatter.html">trinity.buffer.schema.formatter module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.schema.sql_schema.html">trinity.buffer.schema.sql_schema module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.selector.html">trinity.buffer.selector package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.selector.difficulty_estimator.html">trinity.buffer.selector.difficulty_estimator module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.selector.selector.html">trinity.buffer.selector.selector module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.storage.html">trinity.buffer.storage package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.storage.file.html">trinity.buffer.storage.file module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.storage.queue.html">trinity.buffer.storage.queue module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.storage.sql.html">trinity.buffer.storage.sql module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.writer.html">trinity.buffer.writer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.writer.file_writer.html">trinity.buffer.writer.file_writer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.writer.queue_writer.html">trinity.buffer.writer.queue_writer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.writer.sql_writer.html">trinity.buffer.writer.sql_writer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.buffer.html">trinity.buffer.buffer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.buffer_reader.html">trinity.buffer.buffer_reader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.buffer_writer.html">trinity.buffer.buffer_writer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.task_scheduler.html">trinity.buffer.task_scheduler module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.utils.html">trinity.buffer.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.viewer.html">trinity.buffer.viewer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.explorer.html">trinity.explorer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.explorer.proxy.html">trinity.explorer.proxy package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.explorer.proxy.app.html">trinity.explorer.proxy.app module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.explorer.proxy.client.html">trinity.explorer.proxy.client module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.explorer.proxy.recorder.html">trinity.explorer.proxy.recorder module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.explorer.proxy.service.html">trinity.explorer.proxy.service module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.explorer.explorer.html">trinity.explorer.explorer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.explorer.scheduler.html">trinity.explorer.scheduler module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.explorer.workflow_runner.html">trinity.explorer.workflow_runner module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.trainer.html">trinity.trainer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.trainer.tinker.html">trinity.trainer.tinker package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.tinker.utils.html">trinity.trainer.tinker.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.trainer.verl.html">trinity.trainer.verl package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.dp_actor.html">trinity.trainer.verl.dp_actor module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.fsdp_checkpoint_manager.html">trinity.trainer.verl.fsdp_checkpoint_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.fsdp_workers.html">trinity.trainer.verl.fsdp_workers module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.megatron_actor.html">trinity.trainer.verl.megatron_actor module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.megatron_checkpoint_manager.html">trinity.trainer.verl.megatron_checkpoint_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.megatron_workers.html">trinity.trainer.verl.megatron_workers module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.utils.html">trinity.trainer.verl.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.trainer.tinker_trainer.html">trinity.trainer.tinker_trainer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.trainer.trainer.html">trinity.trainer.trainer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.trainer.verl_trainer.html">trinity.trainer.verl_trainer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.html">trinity.algorithm package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.html">trinity.algorithm.advantage_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.advantage_fn.html">trinity.algorithm.advantage_fn.advantage_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.asymre_advantage.html">trinity.algorithm.advantage_fn.asymre_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.grpo_advantage.html">trinity.algorithm.advantage_fn.grpo_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.multi_step_grpo_advantage.html">trinity.algorithm.advantage_fn.multi_step_grpo_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.on_policy_distill_advantage.html">trinity.algorithm.advantage_fn.on_policy_distill_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.opmd_advantage.html">trinity.algorithm.advantage_fn.opmd_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.ppo_advantage.html">trinity.algorithm.advantage_fn.ppo_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.rec_advantage.html">trinity.algorithm.advantage_fn.rec_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.reinforce_advantage.html">trinity.algorithm.advantage_fn.reinforce_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.reinforce_plus_plus_advantage.html">trinity.algorithm.advantage_fn.reinforce_plus_plus_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.remax_advantage.html">trinity.algorithm.advantage_fn.remax_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.rloo_advantage.html">trinity.algorithm.advantage_fn.rloo_advantage module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.entropy_loss_fn.html">trinity.algorithm.entropy_loss_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.entropy_loss_fn.entropy_loss_fn.html">trinity.algorithm.entropy_loss_fn.entropy_loss_fn module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.kl_fn.html">trinity.algorithm.kl_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.kl_fn.kl_fn.html">trinity.algorithm.kl_fn.kl_fn module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.html">trinity.algorithm.policy_loss_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.chord_policy_loss.html">trinity.algorithm.policy_loss_fn.chord_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.cispo_policy_loss.html">trinity.algorithm.policy_loss_fn.cispo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.dpo_loss.html">trinity.algorithm.policy_loss_fn.dpo_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.gspo_policy_loss.html">trinity.algorithm.policy_loss_fn.gspo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.importance_sampling_policy_loss.html">trinity.algorithm.policy_loss_fn.importance_sampling_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.mix_policy_loss.html">trinity.algorithm.policy_loss_fn.mix_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.opmd_policy_loss.html">trinity.algorithm.policy_loss_fn.opmd_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.policy_loss_fn.html">trinity.algorithm.policy_loss_fn.policy_loss_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.ppo_policy_loss.html">trinity.algorithm.policy_loss_fn.ppo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.rec_policy_loss.html">trinity.algorithm.policy_loss_fn.rec_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.sapo_policy_loss.html">trinity.algorithm.policy_loss_fn.sapo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.sft_loss.html">trinity.algorithm.policy_loss_fn.sft_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.sppo_loss_fn.html">trinity.algorithm.policy_loss_fn.sppo_loss_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.topr_policy_loss.html">trinity.algorithm.policy_loss_fn.topr_policy_loss module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.sample_strategy.html">trinity.algorithm.sample_strategy package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.sample_strategy.mix_sample_strategy.html">trinity.algorithm.sample_strategy.mix_sample_strategy module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.sample_strategy.sample_strategy.html">trinity.algorithm.sample_strategy.sample_strategy module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.sample_strategy.utils.html">trinity.algorithm.sample_strategy.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.algorithm.algorithm.html">trinity.algorithm.algorithm module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.algorithm.key_mapper.html">trinity.algorithm.key_mapper module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.algorithm.utils.html">trinity.algorithm.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.manager.html">trinity.manager package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.manager.config_registry.html">trinity.manager.config_registry package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.algorithm_config_manager.html">trinity.manager.config_registry.algorithm_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.buffer_config_manager.html">trinity.manager.config_registry.buffer_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.config_registry.html">trinity.manager.config_registry.config_registry module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.explorer_config_manager.html">trinity.manager.config_registry.explorer_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.model_config_manager.html">trinity.manager.config_registry.model_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.trainer_config_manager.html">trinity.manager.config_registry.trainer_config_manager module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.manager.checkpoint_converter.html">trinity.manager.checkpoint_converter module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.manager.config_manager.html">trinity.manager.config_manager module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.manager.state_manager.html">trinity.manager.state_manager module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.manager.synchronizer.html">trinity.manager.synchronizer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.common.html">trinity.common package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.common.models.html">trinity.common.models package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.vllm_patch.html">trinity.common.models.vllm_patch package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.mm_utils.html">trinity.common.models.mm_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.model.html">trinity.common.models.model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.tinker_model.html">trinity.common.models.tinker_model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.utils.html">trinity.common.models.utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.vllm_model.html">trinity.common.models.vllm_model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.vllm_worker.html">trinity.common.models.vllm_worker module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.common.rewards.html">trinity.common.rewards package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.accuracy_reward.html">trinity.common.rewards.accuracy_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.agents_reward.html">trinity.common.rewards.agents_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.countdown_reward.html">trinity.common.rewards.countdown_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.dapo_reward.html">trinity.common.rewards.dapo_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.eval_utils.html">trinity.common.rewards.eval_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.format_reward.html">trinity.common.rewards.format_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.human_reward.html">trinity.common.rewards.human_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.math_reward.html">trinity.common.rewards.math_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.naive_dapo_score.html">trinity.common.rewards.naive_dapo_score module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.qwen25_eval.html">trinity.common.rewards.qwen25_eval module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.reward_fn.html">trinity.common.rewards.reward_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.tool_reward.html">trinity.common.rewards.tool_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.utils.html">trinity.common.rewards.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.common.workflows.html">trinity.common.workflows package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.agentscope.html">trinity.common.workflows.agentscope package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.agentscope_workflow.html">trinity.common.workflows.agentscope_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.customized_math_workflows.html">trinity.common.workflows.customized_math_workflows module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.customized_toolcall_workflows.html">trinity.common.workflows.customized_toolcall_workflows module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.eval_workflow.html">trinity.common.workflows.eval_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.math_rm_workflow.html">trinity.common.workflows.math_rm_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.math_ruler_workflow.html">trinity.common.workflows.math_ruler_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.math_trainable_ruler_workflow.html">trinity.common.workflows.math_trainable_ruler_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.on_policy_distill_workflow.html">trinity.common.workflows.on_policy_distill_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.rubric_judge_workflow.html">trinity.common.workflows.rubric_judge_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.simple_mm_workflow.html">trinity.common.workflows.simple_mm_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.step_wise_workflow.html">trinity.common.workflows.step_wise_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.workflow.html">trinity.common.workflows.workflow module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.common.config.html">trinity.common.config module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.common.config_validator.html">trinity.common.config_validator module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.common.constants.html">trinity.common.constants module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.common.experience.html">trinity.common.experience module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.common.verl_config.html">trinity.common.verl_config module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.utils.html">trinity.utils package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.annotations.html">trinity.utils.annotations module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.distributed.html">trinity.utils.distributed module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.dlc_utils.html">trinity.utils.dlc_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.log.html">trinity.utils.log module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.lora_utils.html">trinity.utils.lora_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.monitor.html">trinity.utils.monitor module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.plugin_loader.html">trinity.utils.plugin_loader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.registry.html">trinity.utils.registry module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.timer.html">trinity.utils.timer module</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+<div class="header-extra-switchers" style="display:inline-flex; gap:.25rem; margin-left:.5rem; align-items:center;">
+  <button id="lang-toggle-btn" class="btn btn-sm btn-outline-secondary" title="">
+  <span id="lang-toggle-label"></span>
+</button>
+<script>
+(function () {
+  const btn = document.getElementById('lang-toggle-btn');
+  const lab = document.getElementById('lang-toggle-label');
+  if (!btn || !lab) return;
+
+  const m = location.pathname.match(/^(.*\/)(en|zh)(\/.*)$/);
+
+  const cur = m ? m[2] : 'en';
+  if (cur === 'en') {
+    lab.textContent = '中';
+    btn.title = '切换到中文';
+  } else {
+    lab.textContent = 'EN';
+    btn.title = 'Switch to English';
+  }
+
+  const targetHref = (function () {
+    if (!m) return location.href;
+    const other = cur === 'en' ? 'zh' : 'en';
+    const suffix = m[3] || '/';
+    return m[1] + other + suffix + location.search + location.hash;
+  })();
+
+  btn.addEventListener('click', function () {
+    location.href = targetHref;
+  });
+})();
+</script>
+</div>
+
+
+
+<div class="article-header-buttons">
+
+
+<a href="https://github.com/agentscope-ai/Trinity-RFT" target="_blank"
+   class="btn btn-sm btn-source-repository-button"
+   title="源码库"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="下载此页面">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/tutorial/example_data_functionalities.md" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="下载源文件"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.md</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="列印成 PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="全屏模式"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="搜索" aria-label="搜索" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>数据处理</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> 目录 </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">概述</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#task">示例：Task 流水线的数据处理器</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">配置数据处理器</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">探索与训练</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#experience">示例：Experience 流水线的数据处理器</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">数据处理器服务准备</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">配置数据处理器</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">探索与训练</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#human-in-the-loop">示例：人工参与（Human in the Loop）</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">配置数据处理器</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id9">开始运行</a></li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="data-processing">
+<span id="id1"></span><h1>数据处理<a class="headerlink" href="#data-processing" title="Link to this heading">#</a></h1>
+<section id="id2">
+<h2>概述<a class="headerlink" href="#id2" title="Link to this heading">#</a></h2>
+<p>Trinity-RFT 提供了一个统一的数据处理器，用于处理 task 流水线和 experience 流水线中的原始数据集及 experience 数据。</p>
+<ul class="simple">
+<li><p>对于任务，数据处理能力来源于 <a class="reference external" href="https://github.com/datajuicer/data-juicer">Data-Juicer</a>。你可以使用 Data-Juicer 提供的数据处理算子。完整的 Data-Juicer 算子列表可在 <a class="reference external" href="https://agentscope-ai.github.io/data-juicer/en/main/docs/Operators.html">此处</a> 查看。</p></li>
+<li><p>对于 experience 数据，除了 Data-Juicer 算子外，Trinity-RFT 还提供了若干与 RFT 相关的算子，并允许开发者实现自定义算子。</p></li>
+</ul>
+<p>如需实现自己的数据处理器，可参考<a class="reference internal" href="#trinity_programming_guide.md#operators-for-data-developers"><span class="xref myst">开发者指南</span></a>。</p>
+<p>为了支持 Data-Juicer 和 RFT 相关算子的数据处理功能，Trinity-RFT 将 Data-Juicer 算子封装为一个统一的服务，该服务可以自动启动。<code class="docutils literal notranslate"><span class="pre">DataJuicerOperator</span></code> 使用客户端向服务器发送任务或 experience 数据处理请求。</p>
+<p>数据处理器的整体架构如下图所示：</p>
+<div align="center">
+  <img src="https://img.alicdn.com/imgextra/i2/O1CN01Gk9CRw28NsL09nbOj_!!6000000007921-2-tps-2530-660.png" alt="Trinity-RFT Data Processor">
+</div>
+</section>
+<section id="task">
+<h2>示例：Task 流水线的数据处理器<a class="headerlink" href="#task" title="Link to this heading">#</a></h2>
+<p>本示例将介绍如何使用 Trinity-RFT 的数据处理器，在任务探索和训练前对数据集进行准备和优先级排序。本示例以 GSM8K 数据集为例，说明以下内容：</p>
+<ol class="arabic simple">
+<li><p>如何准备数据处理器</p></li>
+<li><p>如何配置数据处理器</p></li>
+<li><p>数据处理器的功能</p></li>
+</ol>
+<p>开始之前，请根据 <a class="reference internal" href="example_reasoning_basic.html#step-0-environment-preparation"><span class="std std-ref">快速入门中的安装部分</span></a> 配置 Trinity-RFT 的主环境，并在环境变量 <code class="docutils literal notranslate"><span class="pre">OPENAI_BASE_URL</span></code> 和 <code class="docutils literal notranslate"><span class="pre">OPENAI_API_KEY</span></code> 中设置基础 URL 和 API 密钥，以便在需要时支持智能体或 API 模型调用。</p>
+<p>此外，为了能够自动启动数据处理器服务，你还需要安装 <code class="docutils literal notranslate"><span class="pre">data</span></code> 分支的依赖项：</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[data]&quot;</span>
+</pre></div>
+</div>
+<section id="id3">
+<h3>配置数据处理器<a class="headerlink" href="#id3" title="Link to this heading">#</a></h3>
+<p>Trinity-RFT 使用统一的配置文件管理所有配置项。对于数据处理器，你需要关注配置文件中的 <code class="docutils literal notranslate"><span class="pre">data_processor</span></code> 部分。</p>
+<p>在本示例中，假设你需要根据数学问题及其答案的难度对它们进行排序。你可以按如下方式设置配置项：</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">data_processor</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># task pipeline related</span>
+<span class="w">  </span><span class="nt">task_pipeline</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">num_process</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32</span>
+<span class="w">    </span><span class="nt">operators</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;llm_difficulty_score_filter&quot;</span>
+<span class="w">        </span><span class="nt">args</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">api_or_hf_model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;qwen2.5-7b-instruct&quot;</span>
+<span class="w">          </span><span class="nt">min_score</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0</span>
+<span class="w">          </span><span class="nt">input_keys</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;question&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;answer&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">          </span><span class="nt">field_names</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;Question&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Answer&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">inputs</span><span class="p">:</span><span class="w">  </span><span class="c1"># the output will be set to the explorer input automatically</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${oc.env:TRINITY_TASKSET_PATH}</span>
+<span class="w">    </span><span class="nt">target_fields</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;question&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;answer&quot;</span><span class="p p-Indicator">]</span>
+<span class="nt">service</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">data_juicer</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">auto_start</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+<p>你可以在此设置 GSM8K 数据集的输入文件以及 task 流水线相关的其他配置项：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">task_pipeline</span></code>： task 流水线的配置。 task 流水线用于处理原始数据集，包含以下子配置：</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">num_process</span></code>： task 流水线使用的进程数。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">operators</span></code>： task 流水线中使用的算子。这些均为 Data-Juicer 算子。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">inputs</span></code>： task 流水线的输入文件。通常在此流程中加载原始数据集文件，支持多个输入。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">target_fields</span></code>：数据集中需要处理并输出到结果数据集文件的目标字段。</p></li>
+</ul>
+</li>
+</ul>
+<p>通常无需显式设置输出路径，因为系统会自动将其设为 explorer 输入路径。</p>
+<p>Data-Juicer 的数据处理以服务形式运行，因此需要配置 data-juicer 服务。幸运的是，Trinity-RFT 提供了自动启动方式，只需在 <code class="docutils literal notranslate"><span class="pre">service</span></code> 部分将 <code class="docutils literal notranslate"><span class="pre">data-juicer</span></code> 服务的 <code class="docutils literal notranslate"><span class="pre">auto_start</span></code> 设为 <code class="docutils literal notranslate"><span class="pre">true</span></code> 即可自动启动数据处理器服务。</p>
+<p><code class="docutils literal notranslate"><span class="pre">data_processor</span></code> 部分的所有配置项详见 <a class="reference internal" href="trinity_configs.html"><span class="std std-doc">此处</span></a>。本示例对应的 GSM8K 配置文件可在 <a class="reference external" href="https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/grpo_gsm8k_task_pipeline/gsm8k.yaml">该配置文件</a> 中找到。</p>
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p>只有当提供了任一 <code class="docutils literal notranslate"><span class="pre">xxx_pipeline</span></code>，且 pipeline 配置中提供了 <code class="docutils literal notranslate"><span class="pre">dj_process_desc</span></code> 或 <code class="docutils literal notranslate"><span class="pre">dj_config_path</span></code> 之一时，数据处理器和数据主动迭代器才会被激活。否则该部分将被跳过，直接进入探索阶段。</p>
+</div>
+</section>
+<section id="id4">
+<h3>探索与训练<a class="headerlink" href="#id4" title="Link to this heading">#</a></h3>
+<p>完成 Trinity-RFT 配置文件准备后，你可以启动 Ray 集群并运行包含数据主动迭代器部分的 RFT 流程，命令如下：</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># 启动 ray 集群</span>
+<span class="c1"># 在主节点上执行</span>
+ray<span class="w"> </span>start<span class="w"> </span>--head
+<span class="c1"># 在工作节点上执行</span>
+ray<span class="w"> </span>start<span class="w"> </span>--address<span class="o">=</span>&lt;master_address&gt;
+
+<span class="c1"># 运行 RFT</span>
+trinity<span class="w"> </span>run<span class="w"> </span>--config<span class="w"> </span>&lt;Trinity-RFT_config_path&gt;
+</pre></div>
+</div>
+<p>若按照上述步骤操作，Trinity-RFT 将向数据处理器服务发送请求，激活数据主动迭代器，为原始数据集中的每个样本计算难度得分，并按得分对数据集进行排序。完成后，数据处理器服务将结果数据集存储到输出缓冲区；当探索阶段开始时，系统将加载已准备好的数据集并继续后续步骤。</p>
+</section>
+</section>
+<section id="experience">
+<h2>示例：Experience 流水线的数据处理器<a class="headerlink" href="#experience" title="Link to this heading">#</a></h2>
+<p>本示例将介绍如何使用 Trinity-RFT 的数据处理器，在探索后重塑来自 explorer 的 experience 奖励。仍以 GSM8K 数据集为例，说明如何从生成回答质量的角度，重塑从 explorer 输出、送往 trainer 的 experience 奖励。</p>
+<p>除了上一示例中自动启动数据处理器服务的方式外，你也可以手动启动服务。</p>
+<p>开始前，请根据 <a class="reference internal" href="example_reasoning_basic.html"><span class="std std-doc">快速入门中的安装部分</span></a> 配置 Trinity-RFT 主环境，并在环境变量 <code class="docutils literal notranslate"><span class="pre">OPENAI_BASE_URL</span></code> 和 <code class="docutils literal notranslate"><span class="pre">OPENAI_API_KEY</span></code> 中设置基础 URL 和 API 密钥（如有需要）。</p>
+<section id="id5">
+<h3>数据处理器服务准备<a class="headerlink" href="#id5" title="Link to this heading">#</a></h3>
+<p>如 Trinity-RFT 整体架构所示，数据处理器是高级功能之一。Trinity-RFT 将其封装为独立服务，以避免隐式依赖冲突问题。因此，你可以为其准备独立环境，并使用预置脚本手动启动服务。</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># 准备独立环境，包括数据处理器环境</span>
+python<span class="w"> </span>scripts/data/install.py
+
+<span class="c1"># 启动所有独立服务</span>
+python<span class="w"> </span>scripts/data/start_servers.py
+</pre></div>
+</div>
+<p>这些脚本将为 Trinity-RFT 和基于 Data-Juicer 的数据处理器创建独立环境，并在 Data-Juicer 环境中自动启动数据处理器服务。</p>
+</section>
+<section id="id6">
+<h3>配置数据处理器<a class="headerlink" href="#id6" title="Link to this heading">#</a></h3>
+<p>在本示例中，假设你需要为 explorer 输出的 experience 数据添加额外的奖励项，以评估其质量得分。可将 <code class="docutils literal notranslate"><span class="pre">experience_pipeline</span></code> 配置设置如下：</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">service</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">data_juicer</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">server_url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;http://127.0.0.1:5005&#39;</span>
+<span class="w">    </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5005</span>
+<span class="nt">data_processor</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># experience pipeline related</span>
+<span class="w">  </span><span class="nt">experience_pipeline</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">operators</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data_juicer</span>
+<span class="w">        </span><span class="nt">args</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">config_path</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;examples/grpo_gsm8k_experience_pipeline/dj_scoring_exp.yaml&#39;</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reward_shaping_mapper</span>
+<span class="w">        </span><span class="nt">args</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">reward_shaping_configs</span><span class="p">:</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">stats_key</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;llm_quality_score&#39;</span>
+<span class="w">              </span><span class="nt">op_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ADD</span>
+<span class="w">              </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+<span class="w">    </span><span class="nt">save_input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</pre></div>
+</div>
+<p>你需要在此设置已启动的数据处理器服务信息。与前一示例不同（自动启动服务），此处需根据上一步启动的服务手动设置 <code class="docutils literal notranslate"><span class="pre">server_url</span></code> 和 <code class="docutils literal notranslate"><span class="pre">port</span></code>。</p>
+<p>对于数据处理器部分，需配置 experience 流水线及奖励重塑相关参数：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">experience_pipeline</span></code>： experience 流水线的配置。 experience 流水线用于处理 explorer 输出的 experience 数据，例如奖励重塑、数据过滤和增强。包含以下子配置：</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">operators</span></code>： experience 流水线中使用的算子。</p>
+<ul>
+<li><p>此处使用 &quot;data_juicer&quot; 算子计算额外统计量，再使用 &quot;reward_shaping_mapper&quot; 算子根据统计量重塑奖励。</p></li>
+<li><p>&quot;data_juicer&quot; 算子的实际配置存储在另一文件 <code class="docutils literal notranslate"><span class="pre">examples/grpo_gsm8k_experience_pipeline/dj_scoring_exp.yaml</span></code> 中，稍后介绍。</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">save_input</span></code>：是否将输入 experience 保存至磁盘。此处为简化设为 <code class="docutils literal notranslate"><span class="pre">false</span></code>。</p></li>
+</ul>
+</li>
+</ul>
+<p>默认情况下， experience 由 explorer 生成并送入 experience 流水线，处理后输出至 trainer。因此通常无需设置 experience 流水线的输入输出缓冲区。</p>
+<p>此外，<code class="docutils literal notranslate"><span class="pre">experience_pipeline</span></code> 中还包含若干针对 data-juicer 算子的配置项，用于计算奖励重塑所用的统计量。此处使用的 data-juicer 配置如下：</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># This is a Data-Juicer data processing recipe</span>
+<span class="nt">project_name</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;gsm-8k-experience-quality&#39;</span>
+
+<span class="nt">np</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32</span>
+
+<span class="nt">process</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">llm_quality_score_filter</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">api_or_hf_model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;qwen2.5-32b-instruct&quot;</span><span class="w">  </span><span class="c1"># use &quot;qwen2.5-32b-instruct&quot; to calculate the quality scores.</span>
+<span class="w">      </span><span class="nt">min_score</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0</span>
+<span class="w">      </span><span class="nt">input_keys</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;prompt_text&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;response_text&quot;</span><span class="p p-Indicator">]</span><span class="w">  </span><span class="c1"># set input_keys and field_names to the existing key names in gsm-8k. Here calculating the difficulty scores according to both questions and answers.</span>
+<span class="w">      </span><span class="nt">field_names</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;prompt&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;response&quot;</span><span class="p p-Indicator">]</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">data_processor</span></code> 部分的所有配置项详见 <a class="reference internal" href="trinity_configs.html"><span class="std std-doc">此处</span></a>。本示例对应的 GSM8K 配置文件可在 <a class="reference external" href="https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/grpo_gsm8k_experience_pipeline/gsm8k.yaml">该配置文件</a> 中找到。</p>
+</section>
+<section id="id7">
+<h3>探索与训练<a class="headerlink" href="#id7" title="Link to this heading">#</a></h3>
+<p>完成 Trinity-RFT 配置文件准备后，可启动 Ray 集群并运行包含数据主动迭代器部分的 RFT 流程：</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># 启动 ray 集群</span>
+<span class="c1"># 在主节点上执行</span>
+ray<span class="w"> </span>start<span class="w"> </span>--head
+<span class="c1"># 在工作节点上执行</span>
+ray<span class="w"> </span>start<span class="w"> </span>--address<span class="o">=</span>&lt;master_address&gt;
+
+<span class="c1"># 运行 RFT</span>
+trinity<span class="w"> </span>run<span class="w"> </span>--config<span class="w"> </span>&lt;Trinity-RFT_config_path&gt;
+</pre></div>
+</div>
+<p>若按上述步骤操作，Trinity-RFT 将向数据处理器服务发送请求并准备 experience 流水线。它将监听 explorer 的输出缓冲区，一旦有新一批 experience 数据到达，数据处理器将计算其统计量并重塑奖励，随后将重塑后的 experience 写入 trainer 的输入缓冲区用于训练。</p>
+</section>
+</section>
+<section id="human-in-the-loop">
+<h2>示例：人工参与（Human in the Loop）<a class="headerlink" href="#human-in-the-loop" title="Link to this heading">#</a></h2>
+<p>有时你可能需要对原始数据引入人工反馈。本示例将介绍如何标注原始数据，以在训练前获得更高质量的数据集。本示例使用一个示例问答数据集，尝试为 DPO 方法选择“chosen”和“rejected”的回复。</p>
+<p>开始前，请根据 README 文件中的安装部分配置 Trinity-RFT 主环境，并从 Data-Juicer 源码 <a class="reference external" href="https://github.com/datajuicer/data-juicer/tree/main/tools/humanops">启动 label-studio 服务</a>。</p>
+<p>本示例中，我们手动启动数据处理器服务，因此需安装 <code class="docutils literal notranslate"><span class="pre">data</span></code> 分支的依赖项：</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span><span class="s2">&quot;.[data]&quot;</span>
+</pre></div>
+</div>
+<section id="id8">
+<h3>配置数据处理器<a class="headerlink" href="#id8" title="Link to this heading">#</a></h3>
+<p>Trinity-RFT 使用统一配置文件管理所有配置项。对于数据处理器，需关注配置文件中的 <code class="docutils literal notranslate"><span class="pre">data_processor</span></code> 部分。</p>
+<p>在本示例中，假设你需要为 DPO 方法选择 chosen 和 rejected 的回答。可设置如下配置项：</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># using task pipeline to decide the chosen and rejected from human preference</span>
+<span class="nt">data_processor</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># task pipeline related</span>
+<span class="w">  </span><span class="nt">task_pipeline</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">num_process</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">    </span><span class="nt">operators</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;human_preference_annotation_mapper&quot;</span>
+<span class="w">        </span><span class="nt">args</span><span class="p">:</span>
+<span class="w">          </span><span class="c1"># general annotation project settings</span>
+<span class="w">          </span><span class="nt">project_name_prefix</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Human_Preference_Annotation_Demo&quot;</span>
+<span class="w">          </span><span class="nt">wait_for_annotations</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">  </span><span class="c1"># Whether to wait for annotations to complete</span>
+<span class="w">          </span><span class="nt">timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3600</span><span class="w">  </span><span class="c1"># Maximum time to wait for annotations in seconds (1 hour)</span>
+<span class="w">          </span><span class="nt">poll_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span><span class="w">  </span><span class="c1"># Time between annotation status checks in seconds</span>
+<span class="w">          </span><span class="nt">max_tasks_per_batch</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span><span class="w">  </span><span class="c1"># Maximum number of tasks in a single batch</span>
+<span class="w">          </span><span class="nt">notification_config</span><span class="p">:</span>
+<span class="w">            </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+
+<span class="w">          </span><span class="c1"># label studio connection settings</span>
+<span class="w">          </span><span class="nt">api_url</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;http://localhost:7070&quot;</span><span class="w">  </span><span class="c1"># Default Label Studio URL</span>
+<span class="w">          </span><span class="nt">api_key</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;YOUR_API_KEY&quot;</span><span class="w">  </span><span class="c1"># Your API key for label studuio authentication, which can be set when starting the label-studio service</span>
+
+<span class="w">          </span><span class="c1"># human preference annotation settings</span>
+<span class="w">          </span><span class="nt">prompt_key</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;prompt&quot;</span><span class="w">  </span><span class="c1"># Prompt field</span>
+<span class="w">          </span><span class="nt">answer1_key</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;answer1&quot;</span><span class="w">  </span><span class="c1"># First answer option</span>
+<span class="w">          </span><span class="nt">answer2_key</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;answer2&quot;</span><span class="w">  </span><span class="c1"># Second answer option</span>
+<span class="w">          </span><span class="nt">chosen_key</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;chosen&quot;</span><span class="w">  </span><span class="c1"># Chosen field</span>
+<span class="w">          </span><span class="nt">rejected_key</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;rejected&quot;</span><span class="w">  </span><span class="c1"># Rejected field</span>
+<span class="w">    </span><span class="nt">inputs</span><span class="p">:</span><span class="w">  </span><span class="c1"># the output will be set to the explorer input automatically</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&#39;examples/dpo_human_in_the_loop/demo-data.jsonl&#39;</span>
+<span class="w">    </span><span class="nt">target_fields</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;prompt&quot;</span><span class="p p-Indicator">]</span>
+<span class="nt">service</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">data_juicer</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">auto_start</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+<p>你可以在此设置示例数据集的基本信息及其他输入数据集相关项，与前述示例类似。</p>
+<p>区别在于本例使用了 Data-Juicer 的 <code class="docutils literal notranslate"><span class="pre">human_preference_annotation_mapper</span></code> 算子。该算子帮助你在 UI 界面上进行基于人类偏好的数据标注。</p>
+<p>你还可以为此算子设置更多配置项（例如标注完成时的通知）。更多细节请参考 <a class="reference external" href="https://github.com/datajuicer/data-juicer/tree/main/configs/annotation">此文档</a>。</p>
+<p><code class="docutils literal notranslate"><span class="pre">data_processor</span></code> 部分的所有配置项详见 <a class="reference internal" href="trinity_configs.html"><span class="std std-doc">此处</span></a>。本示例的配置文件可在 <a class="reference external" href="https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/dpo_human_in_the_loop/dpo.yaml">该配置文件</a> 中找到。</p>
+</section>
+<section id="id9">
+<h3>开始运行<a class="headerlink" href="#id9" title="Link to this heading">#</a></h3>
+<p>当你使用 RFT 配置启动运行时，数据处理器将启动 <code class="docutils literal notranslate"><span class="pre">human_preference_annotation_mapper</span></code> 算子，随后你可在 label-studio 服务的“Projects”页面看到一个新项目。</p>
+<p><img alt="" src="../_images/data-projects.png" /></p>
+<p>点击进入该项目，所有待标注的样本将列在页面上。</p>
+<p><img alt="" src="../_images/data-in-projects.png" /></p>
+<p>点击任意样本即可进入标注页面。</p>
+<p><img alt="" src="../_images/data-in-labelling-page.png" /></p>
+<p>对于偏好标注场景，你可以选择更倾向/合适/正确的回答，然后点击“Submit”按钮提交标注结果。之后可继续选择其他样本重复此过程。</p>
+<p><img alt="" src="../_images/data-labelling.png" /></p>
+<p>所有样本标注完成后，该算子将自动结束，并将结果数据集存储至配置文件指定的目标数据库中。训练开始时，系统将加载已准备好的数据集并继续后续步骤。</p>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="example_megatron.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">上一页</p>
+        <p class="prev-next-title">Megatron-LM 支持</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="example_dataset_perspective.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">下一页</p>
+        <p class="prev-next-title">样例总览</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> 目录
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">概述</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#task">示例：Task 流水线的数据处理器</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">配置数据处理器</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">探索与训练</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#experience">示例：Experience 流水线的数据处理器</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">数据处理器服务准备</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">配置数据处理器</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">探索与训练</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#human-in-the-loop">示例：人工参与（Human in the Loop）</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">配置数据处理器</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id9">开始运行</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+作者： Trinity-RFT Team
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2025, Trinity-RFT Team.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

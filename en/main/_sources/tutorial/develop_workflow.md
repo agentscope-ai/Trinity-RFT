@@ -99,6 +99,7 @@ class Workflow(ABC):
         self.model = model
         self.auxiliary_model_wrappers = auxiliary_models
         self.auxiliary_models = ...  # OpenAI clients auto-derived from ModelWrapper
+        self.logger = get_logger(__name__)  # built-in logger for runtime monitoring
 
     @abstractmethod
     def run(self) -> List[Experience]:
@@ -517,3 +518,48 @@ This command launches the Experience Viewer at `http://localhost:8502` to visual
 Note that the viewer reads experiences from the `experiences.db` file in the specified output directory, so ensure that you have successfully run the workflow debug command beforehand and use the same output directory.
 
 When debugging is complete, you can terminate the inference model by pressing `Ctrl+C` in its terminal.
+
+
+#### Runtime Monitoring
+
+The debug mode above provides the ability to quickly test and validate workflow implementations. However, during actual training, you may want to monitor the workflow's runtime behavior in real-time to ensure it operates as expected. To facilitate this, Trinity-RFT offers monitoring capabilities based on the logger system. The base `Workflow` class includes a built-in `logger` that you can use to log important runtime information.
+
+```python
+class Workflow(ABC):
+
+    def __init__(
+        self,
+        *,
+        task: Task,
+        model: ModelWrapper,
+        auxiliary_models: Optional[List[ModelWrapper]] = None,
+    ):
+        # ...
+        self.logger = get_logger(__name__)  # built-in logger for runtime monitoring
+```
+
+Different from standard Python loggers, this built-in logger is configured to output logs to both the console and a file under the `<checkpoint_root_dir>/<project>/<name>/log` directory. This allows you to monitor the workflow's runtime status during training conveniently. All workflow subclasses inherit this logger, so you can directly use it in your custom workflow implementations with `self.logger`.
+
+```python
+class ExampleWorkflow(Workflow):
+    def run(self) -> List[Experience]:
+        self.logger.info(f"Starting workflow for task: {self.task}")
+        # your workflow logic
+        if some_error_condition:
+            self.logger.error("An error occurred during workflow execution.")
+        self.logger.info(f"Completed workflow for task: {self.task}")
+        return experiences
+```
+
+Trinity-RFT will automatically create a group of workflow runners to execute the workflows in parallel during training.
+Each runner will log its output to a separate log file. The log file naming convention is `explorer_runner_<runner_id>.log`, where `<runner_id>` is the unique identifier of the workflow runner. Such design allows you to trace the execution of each workflow runner independently. And the log files are organized as follows:
+
+```
+<checkpoint_root_dir>/<project>/<name>/log/
+    ├── explorer_runner_0.log
+    ├── explorer_runner_1.log
+    ├── explorer_runner_2.log
+    └── ...
+```
+
+If you found errors or blocking issues during training, you can check the corresponding log files for detailed information to help diagnose and fix problems.

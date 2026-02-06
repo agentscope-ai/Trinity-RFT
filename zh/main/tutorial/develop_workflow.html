@@ -591,6 +591,7 @@ window.addEventListener("load", load);</script>
           </summary>
           <ul>
             <li class="toctree-l2 current "><a class="reference" href="develop_workflow.html">latest</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../v0.5.0/tutorial/develop_workflow.html">v0.5.0</a></li>
             <li class="toctree-l2  "><a class="reference" href="../../v0.4.1/tutorial/develop_workflow.html">v0.4.1</a></li>
             <li class="toctree-l2  "><a class="reference" href="../../v0.4.0/tutorial/develop_workflow.html">v0.4.0</a></li>
             <li class="toctree-l2  "><a class="reference" href="../../v0.3.3/tutorial/develop_workflow.html">v0.3.3</a></li>
@@ -1086,6 +1087,7 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#openai-api">使用 OpenAI API</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#llm-as-a-judge">LLM-as-a-judge 支持</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#debug-mode">调试模式（Debug Mode）</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id12">运行时监控</a></li>
 </ul>
 </li>
 </ul>
@@ -1191,6 +1193,7 @@ document.write(`
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="o">=</span> <span class="n">model</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_model_wrappers</span> <span class="o">=</span> <span class="n">auxiliary_models</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_models</span> <span class="o">=</span> <span class="o">...</span>  <span class="c1"># 从 ModelWrapper 自动派生的 OpenAI client</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>  <span class="c1"># 用于运行时监控的内置 logger</span>
 
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
@@ -1571,6 +1574,43 @@ document.write(`
 <p>该命令会在 <code class="docutils literal notranslate"><span class="pre">http://localhost:8502</span></code> 启动 Experience Viewer，用于可视化调试过程中生成的 Experience。你可以在用户友好的界面中检查生成的 Experience。需注意，Viewer 会从指定输出目录下的 <code class="docutils literal notranslate"><span class="pre">experiences.db</span></code> 文件中读取 Experience，因此请确保你已成功运行过 Workflow 调试命令，且替换 <code class="docutils literal notranslate"><span class="pre">&lt;output_dir&gt;</span></code> 为实际的输出目录。</p>
 <p>调试完成后，可在推理模型终端输入 <code class="docutils literal notranslate"><span class="pre">Ctrl+C</span></code> 以终止模型运行。</p>
 </section>
+<section id="id12">
+<h3>运行时监控<a class="headerlink" href="#id12" title="Link to this heading">#</a></h3>
+<p>在上述调试模式中，你可以快速测试和验证工作流的实现。然而，在实际训练过程中，你可能希望实时监控工作流的运行状态，以确保其按预期工作。为此，Trinity-RFT 提供了基于日志系统的监控功能。<code class="docutils literal notranslate"><span class="pre">Workflow</span></code> 基类内置了一个日志记录器（logger），你可以使用它来记录重要的运行时信息。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">Workflow</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">ModelWrapper</span><span class="p">,</span>
+        <span class="n">auxiliary_models</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">ModelWrapper</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="c1"># ...</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>  <span class="c1"># 用于运行时监控的内置 logger</span>
+</pre></div>
+</div>
+<p>该内置的 logger 会将日志输出到控制台和 <code class="docutils literal notranslate"><span class="pre">&lt;checkpoint_root_dir&gt;/&lt;project&gt;/&lt;name&gt;/log</span></code> 目录下的文件中。这样就可以方便地在训练过程中监控工作流的运行状态。由于所有 Workflow 子类均继承该 logger，因此你可以直接在自定义工作流中使用它来记录关键信息。</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">ExampleWorkflow</span><span class="p">(</span><span class="n">Workflow</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Starting workflow for task: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># your workflow logic</span>
+        <span class="k">if</span> <span class="n">some_error_condition</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;An error occurred during workflow execution.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Completed workflow for task: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">experiences</span>
+</pre></div>
+</div>
+<p>由于 Trinity-RFT 会自动创建一组 Workflow Runners 来并行执行 Workflow。每个运行器会将其日志输出到一个单独的日志文件中。日志文件的命名规则为 <code class="docutils literal notranslate"><span class="pre">explorer_runner_&lt;runner_id&gt;.log</span></code>，其中 <code class="docutils literal notranslate"><span class="pre">&lt;runner_id&gt;</span></code> 是工作流运行器的唯一标识符。通过这种设计，你可以独立地追踪正在并行执行的每个工作流实例的运行情况。日志文件的具体组织结构如下：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>&lt;checkpoint_root_dir&gt;/&lt;project&gt;/&lt;name&gt;/log/
+    ├── explorer_runner_0.log
+    ├── explorer_runner_1.log
+    ├── explorer_runner_2.log
+    └── ...
+</pre></div>
+</div>
+<p>如果训练过程中出现报错或阻塞等异常情况，可通过查看对应日志文件快速定位问题，从而高效调试和优化工作流实现。</p>
+</section>
 </section>
 </section>
 
@@ -1639,6 +1679,7 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#openai-api">使用 OpenAI API</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#llm-as-a-judge">LLM-as-a-judge 支持</a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#debug-mode">调试模式（Debug Mode）</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id12">运行时监控</a></li>
 </ul>
 </li>
 </ul>
