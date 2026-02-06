@@ -1,0 +1,75 @@
+project: "Trinity-RFT-gsm8k-opd"
+name: "qwen2.5-1.5B-distill-from-math-7B-lr1e-5"
+checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
+algorithm:
+  algorithm_type: jsd
+  repeat_times: 8
+  optimizer:
+    lr: 1e-5
+  advantage_fn_args:
+    kl_coef: 1.0
+    lambda_coef: 0.5
+model:
+  # Student model
+  model_path: ${oc.env:TRINITY_MODEL_PATH,Qwen/Qwen2.5-1.5B-Instruct}
+  max_response_tokens: 1024
+  max_model_len: 2048
+cluster:
+  node_num: 1
+  gpu_per_node: 8
+buffer:
+  total_epochs: 1
+  batch_size: 96
+  explorer_input:
+    taskset:
+      name: gsm8k
+      storage_type: file
+      path: ${oc.env:TRINITY_TASKSET_PATH,openai/gsm8k}
+      subset_name: main
+      split: train
+      format:
+        prompt_key: 'question'
+        response_key: 'answer'
+      rollout_args:
+        temperature: 1.0
+    # Use on_policy_distill_math_workflow for Qwen2.5-Math style format with accuracy reward
+    default_workflow_type: 'on_policy_distill_math_workflow'
+  trainer_input:
+    experience_buffer:
+      name: gsm8k_opd_buffer
+      storage_type: queue
+explorer:
+  eval_interval: 50
+  runner_per_model: 8
+  rollout_model:
+    # Student model for rollout
+    engine_num: 4
+    tensor_parallel_size: 1
+    enable_prefix_caching: false
+    enforce_eager: true
+    dtype: bfloat16
+    seed: 42
+  auxiliary_models:
+    # Teacher model for distillation
+    - model_path: ${oc.env:TRINITY_MODEL_PATH,Qwen/Qwen2.5-Math-7B-Instruct}
+      engine_num: 1
+      tensor_parallel_size: 2
+      enable_prefix_caching: false
+      enforce_eager: true
+      dtype: bfloat16
+      seed: 42
+      max_model_len: 4096
+      max_prompt_tokens: 2048
+      max_response_tokens: 1024
+synchronizer:
+  sync_method: 'nccl'
+  sync_interval: 1
+  sync_timeout: 1200
+trainer:
+  save_interval: 100
+  grad_clip: 1.0
+  use_dynamic_bsz: true
+  max_token_len_per_gpu: 16384
+  ulysses_sequence_parallel_size: 1
+monitor:
+  monitor_type: wandb
