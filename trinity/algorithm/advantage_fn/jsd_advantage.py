@@ -46,32 +46,43 @@ class JSDAdvantage(AdvantageFn):
     def _js_divergence_per_token(
         self, student_logprobs: torch.Tensor, teacher_logprobs: torch.Tensor
     ) -> torch.Tensor:
-        """Compute JSD per token: JSD(P||Q) = lambda * KL(P||M) + (1-lambda) * KL(Q||M), M = (P+Q)/2.
-
-        This follows the reference implementation:
-        JSD(P||Q) = lambda * KL(P||M) + (1-lambda) * KL(Q||M), where M = (P+Q)/2
-        When lambda=0.5, this gives the standard symmetric JSD.
-
-        Args:
-            student_logprobs: Student log probabilities [batch, seq]
-            teacher_logprobs: Teacher log probabilities [batch, seq]
-
-        Returns:
-            JSD per token [batch, seq]
         """
-        # M = (P+Q)/2, so log(M) = logsumexp([student_logprobs, teacher_logprobs]) - log(2)
-        m = torch.logsumexp(torch.stack([student_logprobs, teacher_logprobs]), dim=0) - torch.log(
-            torch.tensor(2.0, device=student_logprobs.device)
+        Compute JSD per token.
+        JSD = beta * KL(teacher || mixture) + (1-beta) * KL(student || mixture)
+        """
+        beta = self.lambda_coef
+        
+        # Ensure probabilities for the KL weighting
+        # We use teacher/student logprobs to scale the log-difference
+        p_teacher = torch.exp(teacher_logprobs)
+        p_student = torch.exp(student_logprobs)
+
+        if beta <= 0:
+            # If no teacher influence, divergence is 0 (distributions are the same mixture)
+            return torch.zeros_like(student_logprobs)
+        
+        if beta >= 1:
+            # If no student influence, divergence is 0
+            return torch.zeros_like(student_logprobs)
+
+        # Compute mixture log probabilities: m = beta * teacher + (1-beta) * student
+        log_beta = torch.log(torch.tensor(beta, device=student_logprobs.device))
+        log_1_minus_beta = torch.log(torch.tensor(1 - beta, device=student_logprobs.device))
+        
+        # log(m)
+        mixture_log_probs = torch.logsumexp(
+            torch.stack([student_logprobs + log_1_minus_beta, teacher_logprobs + log_beta]),
+            dim=0,
         )
-
-        # KL(P||M) per token: (p/m) * log(p/m) = exp(student_logprobs - logm) * (student_logprobs - logm)
-        kl_p_m = torch.exp(student_logprobs - m) * (student_logprobs - m)
-
-        # KL(Q||M) per token: (q/m) * log(q/m) = exp(teacher_logprobs - logm) * (teacher_logprobs - logm)
-        kl_q_m = torch.exp(teacher_logprobs - m) * (teacher_logprobs - m)
-
-        # JSD = lambda * KL(P||M) + (1-lambda) * KL(Q||M)
-        jsd = self.lambda_coef * kl_p_m + (1.0 - self.lambda_coef) * kl_q_m
+        
+        # KL(teacher || mixture) = P_t * (log P_t - log M)
+        kl_teacher = p_teacher * (teacher_logprobs - mixture_log_probs)
+        
+        # KL(student || mixture) = P_s * (log P_s - log M)
+        kl_student = p_student * (student_logprobs - mixture_log_probs)
+        
+        # Weighted JSD
+        jsd = beta * kl_teacher + (1 - beta) * kl_student
 
         return jsd
 
