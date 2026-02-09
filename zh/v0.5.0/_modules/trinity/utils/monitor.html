@@ -1371,22 +1371,12 @@ document.write(`
 <div class="viewcode-block" id="SwanlabMonitor">
 <a class="viewcode-back" href="../../../build_api/trinity.utils.monitor.html#trinity.utils.monitor.SwanlabMonitor">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SwanlabMonitor</span><span class="p">(</span><span class="n">Monitor</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Monitor with SwanLab.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Monitor with SwanLab (https://swanlab.cn/).</span>
 
-<span class="sd">    This monitor integrates with SwanLab (https://swanlab.cn/) to track experiments.</span>
-
-<span class="sd">    Supported monitor_args in config.monitor.monitor_args:</span>
-<span class="sd">                - api_key (Optional[str]): API key for swanlab.login(). If omitted, will read from env</span>
-<span class="sd">                    (SWANLAB_API_KEY, SWANLAB_APIKEY, SWANLAB_KEY, SWANLAB_TOKEN) or assume prior CLI login.</span>
-<span class="sd">        - workspace (Optional[str]): Organization/username workspace.</span>
-<span class="sd">        - mode (Optional[str]): &quot;cloud&quot; | &quot;local&quot; | &quot;offline&quot; | &quot;disabled&quot;.</span>
-<span class="sd">        - logdir (Optional[str]): Local log directory when in local/offline modes.</span>
-<span class="sd">        - experiment_name (Optional[str]): Explicit experiment name. Defaults to &quot;{name}_{role}&quot;.</span>
-<span class="sd">        - description (Optional[str]): Experiment description.</span>
-<span class="sd">        - tags (Optional[List[str]]): Tags to attach. Role and group are appended automatically.</span>
-<span class="sd">        - id (Optional[str]): Resume target run id (21 chars) when using resume modes.</span>
-<span class="sd">        - resume (Optional[Literal[&#39;must&#39;,&#39;allow&#39;,&#39;never&#39;]|bool]): Resume policy.</span>
-<span class="sd">        - reinit (Optional[bool]): Whether to re-init on repeated init() calls.</span>
+<span class="sd">    Set `SWANLAB_API_KEY` environment variable with your SwanLab API key before using this monitor.</span>
+<span class="sd">    If you&#39;re using local deployment of Swanlab, also set `SWANLAB_API_HOST` environment variable.</span>
+<span class="sd">    Pass additional SwanLab initialization arguments via `config.monitor.monitor_args` in the Config,</span>
+<span class="sd">    such as `tags`, `description`, `logdir`, etc. See SwanLab documentation for details.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="SwanlabMonitor.__init__">
@@ -1398,11 +1388,7 @@ document.write(`
             <span class="n">swanlab</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="p">),</span> <span class="s2">&quot;swanlab is not installed. Please install it to use SwanlabMonitor.&quot;</span>
 
-        <span class="n">monitor_args</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">monitor</span><span class="o">.</span><span class="n">monitor_args</span> <span class="ow">or</span> <span class="p">{})</span>
-            <span class="k">if</span> <span class="n">config</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;monitor&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-            <span class="k">else</span> <span class="p">{}</span>
-        <span class="p">)</span>
+        <span class="n">monitor_args</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">monitor</span><span class="o">.</span><span class="n">monitor_args</span> <span class="ow">or</span> <span class="p">{}</span>
 
         <span class="c1"># Optional API login via code if provided; otherwise try environment, then rely on prior `swanlab login`.</span>
         <span class="n">api_key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;SWANLAB_API_KEY&quot;</span><span class="p">)</span>
@@ -1413,7 +1399,7 @@ document.write(`
                 <span class="c1"># Best-effort login; continue to init which may still work if already logged in</span>
                 <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Swanlab API key not found in environment variable SWANLAB_API_KEY.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;SWANLAB_API_KEY environment variable not set.&quot;</span><span class="p">)</span>
 
         <span class="c1"># Compose tags (ensure list and include role/group markers)</span>
         <span class="n">tags</span> <span class="o">=</span> <span class="n">monitor_args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tags&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]</span>
