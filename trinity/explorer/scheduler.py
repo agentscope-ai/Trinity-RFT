@@ -559,7 +559,9 @@ class Scheduler:
             completed_count = len(self.completed_tasks.get(batch_id, []))
             if completed_count >= min_num:
                 min_threshold_reached_time = min_threshold_reached_time or time.time()
-                if (completed_count >= scheduled_num) or (
+                if completed_count >= scheduled_num:
+                    break
+                if (
                     time.time() - min_threshold_reached_time
                     >= self.config.explorer.over_rollout.wait_after_min
                 ):
