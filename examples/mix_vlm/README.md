@@ -8,8 +8,8 @@ This is an example of using the [MIX](../../docs/sphinx_doc/source/tutorial/exam
 The specific requirements are:
 
 ```yaml
-vllm>=0.9.1,<0.10.0
-transformers<4.53.0
+vllm>=0.10.2
+transformers>=4.54.0
 qwen_vl_utils
 ```
 

@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 from trinity.common.experience import Experience
+from trinity.common.models.mm_utils import build_mm_message
 from trinity.common.models.model import ModelWrapper
 from trinity.common.rewards.reward_fn import RewardFn
 from trinity.common.workflows.workflow import SimpleWorkflow, Task
@@ -23,9 +24,19 @@ class SimpleMMWorkflow(SimpleWorkflow):
             auxiliary_models=auxiliary_models,
         )
 
-    def reset(self, task: Task):
-        from verl.utils.dataset.vision_utils import process_image, process_video
+    def format_messages(self):
+        """Format messages for the instruct model."""
+        messages = []
+        if self.system_prompt:
+            messages.append({"role": "system", "content": self.system_prompt})
 
+        messages.append(build_mm_message(self.task_desc, self.images, self.videos))
+
+        if self.reply_prefix:
+            messages.append({"role": "assistant", "content": self.reply_prefix})
+        return messages
+
+    def reset(self, task: Task):
         self.format_args = task.format_args
         self.system_prompt = """You are a helpful assistant that solves MATH problems. You should first thinks about the reasoning process in mind and then provides the user with the answer. You should present your reasoning process using the format: <think>\n ...your reasoning process here... </think>\n first. You should always include your final answer in \\boxed{} as closed-form results."""  # TODO: check
         self.reply_prefix = task.format_args.reply_prefix
@@ -41,25 +52,14 @@ class SimpleMMWorkflow(SimpleWorkflow):
         else:
             raise ValueError("`reward_fn` must be a subclass of `RewardFn`")
 
-        self.image_key = task.format_args.image_key
-        self.video_key = task.format_args.video_key
-        self.images = []
-        self.videos = []
-        if self.image_key and self.raw_task.get(self.image_key) is not None:
-            self.images = [process_image(img) for img in self.raw_task[self.image_key]]  # type: ignore [index]
-        if self.video_key and self.raw_task.get(self.video_key) is not None:
-            self.videos = [process_video(vid).numpy() for vid in self.raw_task[self.video_key]]  # type: ignore [index]
+        self.images = self.raw_task.get(task.format_args.image_key, [])
+        self.videos = self.raw_task.get(task.format_args.video_key, [])
         self.messages = self.format_messages()
 
     def run(self) -> List[Experience]:
         # TODO: test generate_mm
         self.logger.debug("start chat")
-        if self.images or self.videos:
-            responses = self.model.chat_mm(
-                messages=self.messages, images=self.images, videos=self.videos, **self.rollout_args
-            )
-        else:
-            responses = self.model.chat(messages=self.messages, **self.rollout_args)
+        responses = self.model.chat(messages=self.messages, **self.rollout_args)
         for i, response in enumerate(responses):
             reward_dict = self.reward_fn(  # type: ignore [misc]
                 response=response.response_text,  # type: ignore [arg-type]
@@ -83,12 +83,7 @@ class AsyncSimpleMMWorkflow(SimpleMMWorkflow):
     async def run_async(self) -> List[Experience]:
         # TODO: test generate_mm
         self.logger.debug("start chat")
-        if self.images or self.videos:
-            responses = await self.model.chat_mm_async(
-                messages=self.messages, images=self.images, videos=self.videos, **self.rollout_args
-            )
-        else:
-            responses = await self.model.chat_async(messages=self.messages, **self.rollout_args)
+        responses = await self.model.chat_async(messages=self.messages, **self.rollout_args)
         for i, response in enumerate(responses):
             reward_dict = self.reward_fn(  # type: ignore [misc]
                 response=response.response_text,  # type: ignore [arg-type]

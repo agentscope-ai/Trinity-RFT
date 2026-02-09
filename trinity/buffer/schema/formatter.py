@@ -109,7 +109,7 @@ class SFTFormatter(ExperienceFormatter):
         else:
             self.processor = None
             self.tokenizer = transformers.AutoTokenizer.from_pretrained(tokenizer_path)
-        self.chat_template = format_config.chat_template or self.tokenizer.chat_template
+        self.chat_template = format_config.chat_template
         # For messages type
         if self.prompt_type == PromptType.MESSAGES:
             self.messages_key = format_config.messages_key
@@ -129,7 +129,6 @@ class SFTFormatter(ExperienceFormatter):
         self,
         messages: List[Dict],
         tools: Optional[List[Dict] | str] = None,
-        mm_data: Optional[Dict] = None,
     ) -> Experience:
         """Convert messages and tools into an Experience object.
 
@@ -170,89 +169,63 @@ class SFTFormatter(ExperienceFormatter):
                 prompt_length=prompt_length,
                 messages=messages,
             )
-        if mm_data:
-            return self.convert_mm_data_to_experiences(messages=messages, mm_data=mm_data)
-        token_ids = self.tokenizer.apply_chat_template(
-            messages,
-            tools=tools,
-            add_generation_prompt=False,
-            return_tensors="pt",
-            chat_template=self.chat_template,
-        )[0]
-        prompt_tokens_ids = self.tokenizer.apply_chat_template(
-            messages[:-1],
-            tools=tools,
-            add_generation_prompt=True,
-            return_tensors="pt",
-            chat_template=self.chat_template,
-        )[0]
-        return Experience(
-            tokens=token_ids,
-            prompt_length=len(prompt_tokens_ids),
-            messages=messages,
-        )
+        if self.image_key or self.video_key:
+            from trinity.common.models.mm_utils import (
+                build_mm_input_for_training,
+                build_multi_modal_data,
+            )
 
-    def load_mm_data(self, sample: Dict) -> Dict:
-        """Load multi-modal data such as images or videos.
-
-        NOTE: You can override this method for custom data loading.
-
-        Args:
-            sample (Dict): The raw sample dictionary containing multi-modal data.
-
-        Returns:
-            Dict: A dictionary containing multi-modal data. Specifically, it may contain:
-                - images: A list of `PIL.Image.Image` if `self.image_key` is set
-                - videos: A list of `numpy.ndarray` if `self.video_key` is set
-        """
-        from verl.utils.dataset.vision_utils import process_image, process_video
-
-        mm_data = {}
-        if self.image_key:
-            mm_data["images"] = [process_image(img) for img in sample[self.image_key]]
-        if self.video_key:
-            mm_data["videos"] = [process_video(vid).numpy() for vid in sample[self.video_key]]
-        return mm_data
-
-    def convert_mm_data_to_experiences(
-        self,
-        messages: List[Dict],
-        mm_data: Dict,
-    ) -> Experience:
-        from trinity.common.models.mm_utils import (
-            build_multi_modal_inputs,
-            convert_messages_to_mm_format,
-        )
-
-        messages = convert_messages_to_mm_format(messages)
-        sequence: str = self.processor.apply_chat_template(
-            messages,
-            add_generation_prompt=False,
-            chat_template=self.chat_template,
-        )
-        prompt: str = self.processor.apply_chat_template(
-            messages[:-1],
-            add_generation_prompt=True,
-            chat_template=self.chat_template,
-        )
-        sequence_data = build_multi_modal_inputs(
-            prompt=sequence,
-            images=mm_data.get("images", None),
-            videos=mm_data.get("videos", None),
-            processor=self.processor,
-        )
-        prompt_data = build_multi_modal_inputs(
-            prompt=prompt,
-            images=mm_data.get("images", None),
-            videos=mm_data.get("videos", None),
-            processor=self.processor,
-        )
-        return Experience(
-            tokens=sequence_data["prompt_token_ids"],
-            prompt_length=len(prompt_data["prompt_token_ids"]),
-            messages=messages,
-            multi_modal_inputs=sequence_data["multi_modal_inputs"],
-        )
+            full_text = self.processor.apply_chat_template(
+                messages,
+                tokenize=False,
+                add_generation_prompt=True,
+                chat_template=self.chat_template,
+            )
+            prompt = self.processor.apply_chat_template(
+                messages[:-1],
+                tokenize=False,
+                add_generation_prompt=True,
+                chat_template=self.chat_template,
+            )
+            multi_modal_data = build_multi_modal_data(self.processor, messages)
+            full_text_inputs = build_mm_input_for_training(
+                self.processor,
+                full_text,
+                multi_modal_data,
+            )
+            tokens = full_text_inputs.pop("input_ids")[0]
+            full_text_inputs.pop("attention_mask")
+            prompt_text_inputs = build_mm_input_for_training(
+                self.processor,
+                prompt,
+                multi_modal_data,
+            )
+            return Experience(
+                tokens=tokens,
+                prompt_length=len(prompt_text_inputs["input_ids"][0]),
+                messages=messages,
+                multi_modal_inputs=full_text_inputs,
+            )
+        else:
+            token_ids = self.tokenizer.apply_chat_template(
+                messages,
+                tools=tools,
+                add_generation_prompt=False,
+                return_tensors="pt",
+                chat_template=self.chat_template,
+            )[0]
+            prompt_tokens_ids = self.tokenizer.apply_chat_template(
+                messages[:-1],
+                tools=tools,
+                add_generation_prompt=True,
+                return_tensors="pt",
+                chat_template=self.chat_template,
+            )[0]
+            return Experience(
+                tokens=token_ids,
+                prompt_length=len(prompt_tokens_ids),
+                messages=messages,
+            )
 
     def format(self, sample: Dict) -> Experience:
         if self.prompt_type == PromptType.MESSAGES:
@@ -274,13 +247,18 @@ class SFTFormatter(ExperienceFormatter):
             elif self.system_prompt is not None:
                 system_message = {"role": "system", "content": self.system_prompt}
                 messages.append(system_message)
-            messages.append({"role": "user", "content": sample[self.prompt_key]})
+            prompt = sample[self.prompt_key]
+            images = sample[self.image_key] if self.image_key else []
+            videos = sample[self.video_key] if self.video_key else []
+
+            from trinity.common.models.mm_utils import build_mm_message
+
+            messages.append(build_mm_message(prompt, images, videos))
             messages.append({"role": "assistant", "content": sample[self.response_key]})
         else:
             raise ValueError(f"Unsupported prompt_type: {self.prompt_type}")
         tools = sample.get(self.tools_key, None)
-        mm_data = self.load_mm_data(sample) if self.image_key or self.video_key else None
-        return self._messages_to_experience(messages, tools, mm_data)
+        return self._messages_to_experience(messages, tools)
 
 
 class DPOFormatter(ExperienceFormatter):

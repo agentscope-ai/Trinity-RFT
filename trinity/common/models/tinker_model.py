@@ -27,10 +27,7 @@ class TinkerModel(BaseInferenceModel):
 
     async def _initialize_tokenizer(self) -> None:
         """Initialize the tokenizer."""
-        self.trainer_client = await self.service_client.create_lora_training_client_async(
-            base_model=self.config.model_path
-        )
-        self.tokenizer = self.trainer_client.get_tokenizer()
+        self.tokenizer = self.model.get_tokenizer()
 
     async def _generate_internal(self, prompt: dict, **kwargs) -> types.SampleResponse:
         assert self.model is not None

@@ -12,7 +12,6 @@ from typing import Dict, List, Optional
 import ray
 import torch
 from omegaconf import OmegaConf
-from verl import DataProto
 from verl.trainer.ppo.core_algos import agg_loss
 from verl.trainer.ppo.metric_utils import (
     compute_throughout_metrics,
@@ -189,7 +188,6 @@ class VerlPPOTrainerWrapper(RayPPOTrainer, TrainEngineWrapper):
         global_config: Config,
     ):
         self.logger = get_logger(__name__, in_ray_actor=True)
-        self.pad_token_id = global_config.buffer.pad_token_id
         train_config = global_config.trainer
         config = OmegaConf.structured(train_config.trainer_config)
         # download the checkpoint from hdfs
@@ -449,8 +447,7 @@ class VerlPPOTrainerWrapper(RayPPOTrainer, TrainEngineWrapper):
         self.actor_rollout_wg.upload_state_dict(self.global_steps)
 
     async def train_step(self, batch_exps: List[Experience]) -> Dict:  # noqa C901
-        batch = to_data_proto(batch_exps, self.pad_token_id, self.logger)  # type: ignore
-        batch = self.post_process_batch(batch)
+        batch = to_data_proto(batch_exps, self.tokenizer.pad_token_id, self.processor, self.logger)
         metrics = {}
         self.global_steps += 1
         timing_raw = {}
@@ -696,32 +693,3 @@ class VerlPPOTrainerWrapper(RayPPOTrainer, TrainEngineWrapper):
 
     def sync_weight(self) -> None:
         self.actor_rollout_wg.sync_weight()
-
-    def post_process_batch(self, batch: DataProto) -> DataProto:
-        """Adapted from verl/utils/dataset/rl_dataset.py"""
-        if (
-            self.processor is not None
-            and "Qwen2VLImageProcessor" in self.processor.image_processor.__class__.__name__
-        ):
-            from verl.models.transformers.qwen2_vl import get_rope_index
-
-            position_ids = []
-            multi_modal_inputs = batch.non_tensor_batch["multi_modal_inputs"]
-            for idx, mm_inputs in enumerate(multi_modal_inputs):
-                input_ids = batch.batch["input_ids"][idx]
-                attention_mask = batch.batch["attention_mask"][idx]
-
-                position_ids.append(
-                    get_rope_index(
-                        self.processor,
-                        input_ids=input_ids,
-                        image_grid_thw=mm_inputs.get("image_grid_thw"),
-                        video_grid_thw=mm_inputs.get("video_grid_thw"),
-                        second_per_grid_ts=mm_inputs.get("second_per_grid_ts"),
-                        attention_mask=attention_mask,
-                    )  # (3, seq_len)
-                )
-                mm_inputs.pop("second_per_grid_ts", None)
-
-            batch.batch["position_ids"] = torch.stack(position_ids, dim=0).long()
-        return batch

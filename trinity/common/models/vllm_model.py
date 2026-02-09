@@ -3,7 +3,7 @@
 import asyncio
 import os
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import torch
@@ -14,11 +14,15 @@ from transformers import AutoProcessor
 from trinity.common.config import InferenceModelConfig
 from trinity.common.experience import Experience
 from trinity.common.models.mm_utils import (
+    build_mm_input_for_training,
+    build_multi_modal_data,
     build_multi_modal_inputs,
     convert_messages_to_mm_format,
+    has_multi_modal_content,
 )
 from trinity.common.models.model import BaseInferenceModel
 from trinity.common.models.vllm_patch import get_vllm_version
+from trinity.utils.annotations import Deprecated
 
 
 # V0 engine is deprecated since vLLM v0.10.2, related code will be removed in the future.
@@ -155,11 +159,11 @@ class vLLMRolloutModel(BaseInferenceModel):
                 self.tokenizer = await self.async_llm.get_tokenizer()
         self.tokenizer.truncation_side = "left"
 
-    def _initialize_processor(self):
+    async def _initialize_processor(self):
         self.processor = AutoProcessor.from_pretrained(
             self.config.model_path, trust_remote_code=True
         )
-        self.tokenizer = self.processor.tokenizer
+        await self._initialize_tokenizer()
 
     async def prepare(
         self,
@@ -182,13 +186,28 @@ class vLLMRolloutModel(BaseInferenceModel):
         Returns:
             A list of experiences.
         """
-        if self.tokenizer is None:
-            await self._initialize_tokenizer()
+        is_mm_message = has_multi_modal_content(messages)
+        if is_mm_message:
+            if self.processor is None:
+                await self._initialize_processor()
+            tokenizer_or_processor = self.processor
+        else:
+            if self.tokenizer is None:
+                await self._initialize_tokenizer()
+            tokenizer_or_processor = self.tokenizer
 
-        prompt = self.apply_chat_template(self.tokenizer, messages)
+        prompt = self.apply_chat_template(tokenizer_or_processor, messages)
+        if is_mm_message:
+            multi_modal_data = build_multi_modal_data(self.processor, messages)
+            prompt = {
+                "prompt": prompt,
+                "multi_modal_data": multi_modal_data,
+            }
         return await self.generate(prompt=prompt, lora_request=lora_request, **kwargs)
 
-    async def generate(self, prompt: str, lora_request=None, **kwargs) -> Sequence[Experience]:
+    async def generate(
+        self, prompt: Union[str, Dict], lora_request=None, **kwargs
+    ) -> Sequence[Experience]:
         """Generate a response from the provided prompt in async.
 
         Args:
@@ -198,16 +217,21 @@ class vLLMRolloutModel(BaseInferenceModel):
         Returns:
             A list of experiences.
         """
-        if self.tokenizer is None:
-            await self._initialize_tokenizer()
+        if isinstance(prompt, str):  # pure text
+            if self.tokenizer is None:
+                await self._initialize_tokenizer()
 
-        token_ids, is_valid = self._handle_prompt_truncation(prompt, **kwargs)
-        if not is_valid:
-            return token_ids
+            token_ids, is_valid = self._handle_prompt_truncation(prompt, **kwargs)
+            if not is_valid:
+                return token_ids
+            prompt = {"prompt_token_ids": token_ids}
+            multi_modal_inputs = None
+        else:  # multi modal
+            multi_modal_inputs = build_mm_input_for_training(self.processor, **prompt)
+            multi_modal_inputs.pop("input_ids")
+            multi_modal_inputs.pop("attention_mask")
 
-        output = await self._generate_internal(
-            prompt={"prompt_token_ids": token_ids}, lora_request=lora_request, **kwargs
-        )
+        output = await self._generate_internal(prompt=prompt, lora_request=lora_request, **kwargs)
         experiences = [
             Experience(
                 tokens=torch.cat(
@@ -230,11 +254,13 @@ class vLLMRolloutModel(BaseInferenceModel):
                 prompt_length=len(output.prompt_token_ids),
                 prompt_text=self.tokenizer.decode(output.prompt_token_ids),
                 response_text=output.outputs[i].text,
+                multi_modal_inputs=multi_modal_inputs,
             )
             for i in range(len(output.outputs))
         ]
         return experiences
 
+    @Deprecated
     async def chat_mm(
         self, messages: List[Dict], images: List[Image.Image], videos: List[np.ndarray], **kwargs
     ) -> Sequence[Experience]:
@@ -249,11 +275,12 @@ class vLLMRolloutModel(BaseInferenceModel):
             A list of experiences.
         """
         if self.processor is None:
-            self._initialize_processor()
+            await self._initialize_processor()
         messages = convert_messages_to_mm_format(messages)
         prompt = self.apply_chat_template(self.processor, messages)
         return await self.generate_mm(prompt=prompt, images=images, videos=videos, **kwargs)
 
+    @Deprecated
     async def generate_mm(
         self,
         prompt: str = None,
