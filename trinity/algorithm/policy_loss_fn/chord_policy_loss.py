@@ -199,35 +199,27 @@ class MIXCHORDPolicyLossFn(PolicyLossFn):
             per_micro_batch_weight_usual = self.gradient_accumulation / self.train_batch_size_usual  # type: ignore
             per_micro_batch_weight_expert = self.gradient_accumulation / self.train_batch_size_expert  # type: ignore
 
-        if n_usual_exp > 0:
-            grpo_loss, grpo_metrics = self.grpo_loss_fn(
-                logprob[~expert_mask],
-                old_logprob[~expert_mask],
-                action_mask[~expert_mask],
-                advantages[~expert_mask],
-                **kwargs,
-            )
-            grpo_loss = grpo_loss * n_usual_exp * per_micro_batch_weight_usual
-            grpo_metrics = {
-                k: v * n_usual_exp * per_micro_batch_weight_usual for k, v in grpo_metrics.items()
-            }
-        else:
-            grpo_loss = torch.tensor(0.0, device=logprob.device)
-            grpo_metrics = {}
+        grpo_loss, grpo_metrics = self.grpo_loss_fn(
+            logprob[~expert_mask],
+            old_logprob[~expert_mask],
+            action_mask[~expert_mask],
+            advantages[~expert_mask],
+            **kwargs,
+        )
+        grpo_loss = grpo_loss * n_usual_exp * per_micro_batch_weight_usual
+        grpo_metrics = {
+            k: v * n_usual_exp * per_micro_batch_weight_usual for k, v in grpo_metrics.items()
+        }
 
         # SFT Loss (expert)
-        if n_expert_exp > 0:
-            sft_loss, sft_metrics = self.sft_loss_fn(
-                logprob[expert_mask],
-                action_mask[expert_mask],
-            )
-            sft_loss = sft_loss * n_expert_exp * per_micro_batch_weight_expert
-            sft_metrics = {
-                k: v * n_expert_exp * per_micro_batch_weight_expert for k, v in sft_metrics.items()
-            }
-        else:
-            sft_loss = torch.tensor(0.0, device=logprob.device)
-            sft_metrics = {}
+        sft_loss, sft_metrics = self.sft_loss_fn(
+            logprob[expert_mask],
+            action_mask[expert_mask],
+        )
+        sft_loss = sft_loss * n_expert_exp * per_micro_batch_weight_expert
+        sft_metrics = {
+            k: v * n_expert_exp * per_micro_batch_weight_expert for k, v in sft_metrics.items()
+        }
 
         mu = mu_schedule_function(
             current_step, self.mu_warmup_steps, self.mu_decay_steps, self.mu_peak, self.mu_valley

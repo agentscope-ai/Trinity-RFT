@@ -1547,6 +1547,10 @@ class GPUMemoryValidator(ConfigValidator):
             params_memory (float): Estimated parameter + optimizer memory (bytes).
             optim_step_memory (float): Estimated optimizer step memory (bytes).
         """
+        is_vl_model = False
+        if 'VL' in hf_config.__class__.__name__:
+            hf_config = hf_config.text_config
+            is_vl_model = True
         max_activation_memory = self._calc_fsdp_activation_memory(
             hf_config, num_tokens, logits_memory_type, dtype_coeff
         )
@@ -1557,6 +1561,12 @@ class GPUMemoryValidator(ConfigValidator):
         optim_step_mb = optim_step_memory / (1024**2)
         gpu_capacity_mb = self.memory_capacity / (1024**2)
 
+        if is_vl_model:
+            self.logger.info(
+                "Note: This is a vision-language (VL) model. "
+                "The memory estimate below only covers the text encoder portion. "
+                "Actual GPU memory usage will be higher due to the vision components."
+            )
         self.logger.info(
             f"Estimated GPU memory usage for {module_name} model '{model_path}': "
             f"{total_mb:.2f} MB ({params_mb:.2f} MB params + "
