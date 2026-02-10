@@ -516,7 +516,7 @@ class Scheduler:
             avg_time_per_task * self.config.explorer.dynamic_timeout.ratio,
         )
 
-    def _cleanup_batch_and_restart_runners(self, batch_id: Union[int, str]) -> None:
+    async def _cleanup_batch_and_restart_runners(self, batch_id: Union[int, str]) -> None:
         """Clear timeout tasks for a batch and restart associated runners."""
         self._clear_timeout_tasks(batch_id=batch_id)
         runners_to_restart = [
@@ -524,8 +524,8 @@ class Scheduler:
             for runner_id, task in list(self.busy_runners.items())
             if task.batch_id == batch_id
         ]
-        for runner_id in runners_to_restart:
-            asyncio.create_task(self._restart_runner(runner_id))
+        if runners_to_restart:
+            await asyncio.gather(*[self._restart_runner(rid) for rid in runners_to_restart])
 
     async def get_results(
         self,
@@ -565,8 +565,9 @@ class Scheduler:
                     time.time() - min_threshold_reached_time
                     >= self.config.explorer.over_rollout.wait_after_min
                 ):
-                    self._cleanup_batch_and_restart_runners(batch_id)
-                    break
+                    if clear_timeout_tasks:
+                        await self._cleanup_batch_and_restart_runners(batch_id)
+                        break
             await asyncio.sleep(0.1)
 
         if time.time() - start_time > timeout:
@@ -574,7 +575,7 @@ class Scheduler:
                 f"Timed out waiting for tasks at batch {batch_id} to complete after {timeout} seconds"
             )
             if clear_timeout_tasks:
-                self._cleanup_batch_and_restart_runners(batch_id)
+                await self._cleanup_batch_and_restart_runners(batch_id)
 
         statuses = []
         experiences = []
