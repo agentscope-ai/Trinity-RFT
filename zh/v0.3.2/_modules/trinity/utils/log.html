@@ -1045,6 +1045,9 @@ document.write(`
 
 
 
+<span class="c1"># Process global logger for Ray actors, since Ray may create multiple processes and we want to reuse the logger instance within the same process.</span>
+<span class="n">_ray_logger</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">logging</span><span class="o">.</span><span class="n">Logger</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="c1"># Contextvars to support async tasks within the same Ray actor to reuse the same logger instance.</span>
 <span class="n">_ray_logger_ctx</span><span class="p">:</span> <span class="n">contextvars</span><span class="o">.</span><span class="n">ContextVar</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">logging</span><span class="o">.</span><span class="n">Logger</span><span class="p">]]</span> <span class="o">=</span> <span class="n">contextvars</span><span class="o">.</span><span class="n">ContextVar</span><span class="p">(</span>
     <span class="s2">&quot;ray_logger&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span>
 <span class="p">)</span>
@@ -1071,8 +1074,12 @@ document.write(`
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Reuse logger created by the actor if exists (Ray context)</span>
     <span class="n">logger</span> <span class="o">=</span> <span class="n">_ray_logger_ctx</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="k">global</span> <span class="n">_ray_logger</span>
+
     <span class="k">if</span> <span class="n">logger</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">logger</span>
+    <span class="k">if</span> <span class="n">_ray_logger</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_ray_logger</span>
 
     <span class="n">resolved_level</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">level</span>
@@ -1111,6 +1118,7 @@ document.write(`
             <span class="n">file_handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">file_handler</span><span class="p">)</span>
             <span class="n">_ray_logger_ctx</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">logger</span><span class="p">)</span>
+            <span class="n">_ray_logger</span> <span class="o">=</span> <span class="n">logger</span>
         <span class="c1"># If LOG_DIR_ENV_VAR is not set, file logging is disabled</span>
 
     <span class="k">return</span> <span class="n">logger</span></div>
