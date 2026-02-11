@@ -341,9 +341,11 @@ class TestLauncherMain(unittest.TestCase):
             self.assertTrue(new_db_size > origin_db_size)
 
             # Third run: workflow without profiling, overwrite disabled
-            from trinity.utils.log import _ray_logger_ctx
+            import trinity.utils.log as log
 
-            _ray_logger_ctx.set(None)
+            log._ray_logger_ctx.set(None)
+            log._ray_logger = None
+
             result = runner.invoke(
                 launcher.app,
                 [

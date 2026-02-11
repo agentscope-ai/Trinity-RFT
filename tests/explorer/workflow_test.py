@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 """Test for the workflow module"""
 import asyncio
+import os
+import shutil
 import time
 import unittest
 from collections import defaultdict
@@ -14,14 +16,15 @@ import ray
 from parameterized import parameterized, parameterized_class
 from torch import Tensor
 
-from tests.common.vllm_test import CHAT_TEMPLATE
 from tests.tools import (
+    CHAT_TEMPLATE,
     RayUnittestBaseAsync,
     get_model_path,
     get_template_config,
     get_unittest_dataset_config,
 )
 from trinity.common.config import InferenceModelConfig
+from trinity.common.constants import LOG_DIR_ENV_VAR, LOG_LEVEL_ENV_VAR
 from trinity.common.experience import EID, Experience
 from trinity.common.models import create_explorer_models
 from trinity.common.models.model import ModelWrapper
@@ -832,11 +835,14 @@ class ConcurrentTestWorkflow(Workflow):
             history_exps[0].tokens[:prompt_length].shape
             == history_exps[1].tokens[:prompt_length].shape
         )
+        self.logger.debug("[DEBUG MESSAGE]")
+        self.logger.info("[INFO MESSAGE]")
+        self.logger.warning("[WARNING MESSAGE]")
         return history_exps
 
 
 class TestConcurrentWorkflowRunner(RayUnittestBaseAsync):
-    async def test_concurrent_workflow_runner(self):
+    def setUp(self) -> None:
         config = get_template_config()
         config.mode = "explore"
         config.model.model_path = get_model_path()
@@ -844,33 +850,70 @@ class TestConcurrentWorkflowRunner(RayUnittestBaseAsync):
         config.explorer.rollout_model.enable_history = True
         config.explorer.rollout_model.enable_openai_api = True
         config.check_and_update()
-        engines, auxiliary_engines = create_explorer_models(config)
+        self.config = config
+        os.makedirs(self.config.log.save_dir, exist_ok=True)
+
+    async def test_concurrent_workflow_runner(self):
+        engines, auxiliary_engines = create_explorer_models(self.config)
         await asyncio.gather(*[engine.prepare.remote() for engine in engines])
 
-        config.explorer.concurrent_mode = "sequential"
-        sequential_runner = WorkflowRunner(
-            config,
-            model=engines[0],
-            auxiliary_models=[],
-            runner_id=0,
+        self.config.explorer.concurrent_mode = "sequential"
+        sequential_runner = (
+            ray.remote(WorkflowRunner)
+            .options(
+                runtime_env={
+                    "env_vars": {
+                        LOG_DIR_ENV_VAR: os.path.join(self.config.log.save_dir),
+                        LOG_LEVEL_ENV_VAR: "DEBUG",
+                    },
+                }
+            )
+            .remote(
+                self.config,
+                model=engines[0],
+                auxiliary_models=[],
+                runner_id=0,
+            )
         )
-        config.explorer.concurrent_mode = "asynchronous"
-        async_runner = WorkflowRunner(
-            config,
-            model=engines[0],
-            auxiliary_models=[],
-            runner_id=1,
+        self.config.explorer.concurrent_mode = "asynchronous"
+        async_runner = (
+            ray.remote(WorkflowRunner)
+            .options(
+                runtime_env={
+                    "env_vars": {
+                        LOG_DIR_ENV_VAR: os.path.join(self.config.log.save_dir),
+                        LOG_LEVEL_ENV_VAR: "INFO",
+                    },
+                }
+            )
+            .remote(
+                self.config,
+                model=engines[0],
+                auxiliary_models=[],
+                runner_id=1,
+            )
         )
-        thread_runner = WorkflowRunner(
-            config,
-            model=engines[0],
-            auxiliary_models=[],
-            runner_id=2,
+        thread_runner = (
+            ray.remote(WorkflowRunner)
+            .options(
+                runtime_env={
+                    "env_vars": {
+                        LOG_DIR_ENV_VAR: os.path.join(self.config.log.save_dir),
+                        LOG_LEVEL_ENV_VAR: "WARNING",
+                    },
+                }
+            )
+            .remote(
+                self.config,
+                model=engines[0],
+                auxiliary_models=[],
+                runner_id=2,
+            )
         )
         await asyncio.gather(
-            sequential_runner.prepare(),
-            async_runner.prepare(),
-            thread_runner.prepare(),
+            sequential_runner.prepare.remote(),
+            async_runner.prepare.remote(),
+            thread_runner.prepare.remote(),
         )
 
         task = Task(
@@ -878,23 +921,30 @@ class TestConcurrentWorkflowRunner(RayUnittestBaseAsync):
             repeat_times=4,
             raw_task={"text": "Hello, world!"},
         )
+
         # warmup
-        async_status, async_exps = await async_runner.run_task(
+        async_status, async_exps = await async_runner.run_task.remote(
             task, batch_id="test", repeat_times=2, run_id_base=0
         )
 
         st = time.time()
-        async_status, async_exps = await async_runner.run_task(
+        async_status, async_exps = await async_runner.run_task.remote(
             task, batch_id="test", repeat_times=4, run_id_base=0
         )
         async_runtime = time.time() - st
+
+        # warmup
+        thread_status, thread_exps = await thread_runner.run_task.remote(
+            task, batch_id="test", repeat_times=1, run_id_base=0
+        )
+
         st = time.time()
-        thread_status, thread_exps = await thread_runner.run_task(
+        thread_status, thread_exps = await thread_runner.run_task.remote(
             task, batch_id="test", repeat_times=4, run_id_base=0
         )
         thread_runtime = time.time() - st
         st = time.time()
-        sequential_status, sequential_exps = await sequential_runner.run_task(
+        sequential_status, sequential_exps = await sequential_runner.run_task.remote(
             task, batch_id="test", repeat_times=4, run_id_base=0
         )
         sequential_runtime = time.time() - st
@@ -909,3 +959,39 @@ class TestConcurrentWorkflowRunner(RayUnittestBaseAsync):
 
         self.assertLessEqual(async_runtime * 2, sequential_runtime)
         self.assertLessEqual(thread_runtime * 2, sequential_runtime)
+
+        # check log files
+        sequential_log_path = os.path.join(self.config.log.save_dir, "explorer_runner_0.log")
+        async_log_path = os.path.join(self.config.log.save_dir, "explorer_runner_1.log")
+        thread_log_path = os.path.join(self.config.log.save_dir, "explorer_runner_2.log")
+        with open(sequential_log_path, "r") as f:
+            sequential_logs = f.read()
+            assert "[DEBUG MESSAGE]" in sequential_logs
+            assert "[INFO MESSAGE]" in sequential_logs
+            assert "[WARNING MESSAGE]" in sequential_logs
+            # count the occurrences of each log level
+            debug_count = sequential_logs.count("[DEBUG MESSAGE]")
+            info_count = sequential_logs.count("[INFO MESSAGE]")
+            warning_count = sequential_logs.count("[WARNING MESSAGE]")
+            assert debug_count == 4
+            assert info_count == 4
+            assert warning_count == 4
+        with open(async_log_path, "r") as f:
+            async_logs = f.read()
+            assert "[DEBUG MESSAGE]" not in async_logs
+            assert "[INFO MESSAGE]" in async_logs
+            assert "[WARNING MESSAGE]" in async_logs
+            info_count = async_logs.count("[INFO MESSAGE]")
+            warning_count = async_logs.count("[WARNING MESSAGE]")
+            assert info_count == 6
+            assert warning_count == 6
+        with open(thread_log_path, "r") as f:
+            thread_logs = f.read()
+            assert "[DEBUG MESSAGE]" not in thread_logs
+            assert "[INFO MESSAGE]" not in thread_logs
+            assert "[WARNING MESSAGE]" in thread_logs
+            warning_count = thread_logs.count("[WARNING MESSAGE]")
+            assert warning_count == 5
+
+    def tearDown(self):
+        shutil.rmtree(self.config.log.save_dir, ignore_errors=True)

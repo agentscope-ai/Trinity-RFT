@@ -34,6 +34,9 @@ class NewLineFormatter(logging.Formatter):
         return msg
 
 
+# Process global logger for Ray actors, since Ray may create multiple processes and we want to reuse the logger instance within the same process.
+_ray_logger: Optional[logging.Logger] = None
+# Contextvars to support async tasks within the same Ray actor to reuse the same logger instance.
 _ray_logger_ctx: contextvars.ContextVar[Optional[logging.Logger]] = contextvars.ContextVar(
     "ray_logger", default=None
 )
@@ -58,8 +61,12 @@ def get_logger(
     """
     # Reuse logger created by the actor if exists (Ray context)
     logger = _ray_logger_ctx.get()
+    global _ray_logger
+
     if logger is not None:
         return logger
+    if _ray_logger is not None:
+        return _ray_logger
 
     resolved_level = (
         level
@@ -98,6 +105,7 @@ def get_logger(
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
             _ray_logger_ctx.set(logger)
+            _ray_logger = logger
         # If LOG_DIR_ENV_VAR is not set, file logging is disabled
 
     return logger
