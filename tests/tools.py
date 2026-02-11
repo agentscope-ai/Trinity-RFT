@@ -24,6 +24,7 @@ from trinity.common.constants import (
 
 API_MODEL_PATH_ENV_VAR = "TRINITY_API_MODEL_PATH"
 VLM_MODEL_PATH_ENV_VAR = "TRINITY_VLM_MODEL_PATH"
+ALTERNATIVE_VLM_MODEL_PATH_ENV_VAR = "TRINITY_ALTERNATIVE_VLM_MODEL_PATH"
 SFT_DATASET_PATH_ENV_VAR = "TRINITY_SFT_DATASET_PATH"
 
 
@@ -130,6 +131,15 @@ def get_vision_language_model_path() -> str:
     if not path:
         raise EnvironmentError(
             f"Please set `export {VLM_MODEL_PATH_ENV_VAR}=<your_model_dir>` before running this test."
+        )
+    return path
+
+
+def get_alternative_vision_language_model_path() -> str:
+    path = os.environ.get(ALTERNATIVE_VLM_MODEL_PATH_ENV_VAR)
+    if not path:
+        raise EnvironmentError(
+            f"Please set `export {ALTERNATIVE_VLM_MODEL_PATH_ENV_VAR}=<your_model_dir>` before running this test."
         )
     return path
 

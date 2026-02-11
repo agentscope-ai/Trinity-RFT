@@ -8,7 +8,7 @@ This example shows the usage of GRPO with Qwen2.5-VL-3B-Instruct on the [geometr
 The specific requirements are:
 
 ```yaml
-vllm>=0.10.2
+vllm>=0.10.2  # Qwen3 VL requires vllm>=0.11.0
 transformers>=4.54.0
 qwen_vl_utils
 ```

@@ -21,6 +21,7 @@ from tests.tools import (
     RayUnittestBase,
     RayUnittestBaseAsync,
     TensorBoardParser,
+    get_alternative_vision_language_model_path,
     get_checkpoint_path,
     get_lora_config,
     get_model_path,
@@ -1210,7 +1211,7 @@ class TestMultiModalGRPO(BaseTrainerCase):
         self.config.buffer.explorer_input.taskset = get_unittest_dataset_config(
             "geometry"
         )  # Total 8 tasks
-        self.config.model.model_path = get_vision_language_model_path()
+        self.config.model.model_path = get_alternative_vision_language_model_path()
         self.config.algorithm.algorithm_type = "grpo"
         self.config.algorithm.advantage_fn = "grpo"
         self.config.algorithm.kl_loss_fn = "none"
