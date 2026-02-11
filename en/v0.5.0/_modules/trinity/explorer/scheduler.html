@@ -1586,6 +1586,17 @@ document.write(`
         <span class="p">)</span></div>
 
 
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_cleanup_batch_and_restart_runners</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clear timeout tasks for a batch and restart associated runners.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_clear_timeout_tasks</span><span class="p">(</span><span class="n">batch_id</span><span class="o">=</span><span class="n">batch_id</span><span class="p">)</span>
+        <span class="n">runners_to_restart</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">runner_id</span>
+            <span class="k">for</span> <span class="n">runner_id</span><span class="p">,</span> <span class="n">task</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">busy_runners</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">task</span><span class="o">.</span><span class="n">batch_id</span> <span class="o">==</span> <span class="n">batch_id</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">runners_to_restart</span><span class="p">:</span>
+            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_restart_runner</span><span class="p">(</span><span class="n">rid</span><span class="p">)</span> <span class="k">for</span> <span class="n">rid</span> <span class="ow">in</span> <span class="n">runners_to_restart</span><span class="p">])</span>
+
 <div class="viewcode-block" id="Scheduler.get_results">
 <a class="viewcode-back" href="../../../build_api/trinity.explorer.scheduler.html#trinity.explorer.scheduler.Scheduler.get_results">[docs]</a>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_results</span><span class="p">(</span>
@@ -1620,11 +1631,15 @@ document.write(`
             <span class="n">completed_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">completed_tasks</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">batch_id</span><span class="p">,</span> <span class="p">[]))</span>
             <span class="k">if</span> <span class="n">completed_count</span> <span class="o">&gt;=</span> <span class="n">min_num</span><span class="p">:</span>
                 <span class="n">min_threshold_reached_time</span> <span class="o">=</span> <span class="n">min_threshold_reached_time</span> <span class="ow">or</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-                <span class="k">if</span> <span class="p">(</span><span class="n">completed_count</span> <span class="o">&gt;=</span> <span class="n">scheduled_num</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
+                <span class="k">if</span> <span class="n">completed_count</span> <span class="o">&gt;=</span> <span class="n">scheduled_num</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="k">if</span> <span class="p">(</span>
                     <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">min_threshold_reached_time</span>
                     <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">over_rollout</span><span class="o">.</span><span class="n">wait_after_min</span>
                 <span class="p">):</span>
-                    <span class="k">break</span>
+                    <span class="k">if</span> <span class="n">clear_timeout_tasks</span><span class="p">:</span>
+                        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_batch_and_restart_runners</span><span class="p">(</span><span class="n">batch_id</span><span class="p">)</span>
+                        <span class="k">break</span>
             <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span> <span class="o">&gt;</span> <span class="n">timeout</span><span class="p">:</span>
@@ -1632,14 +1647,7 @@ document.write(`
                 <span class="sa">f</span><span class="s2">&quot;Timed out waiting for tasks at batch </span><span class="si">{</span><span class="n">batch_id</span><span class="si">}</span><span class="s2"> to complete after </span><span class="si">{</span><span class="n">timeout</span><span class="si">}</span><span class="s2"> seconds&quot;</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="n">clear_timeout_tasks</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_clear_timeout_tasks</span><span class="p">(</span><span class="n">batch_id</span><span class="o">=</span><span class="n">batch_id</span><span class="p">)</span>
-                <span class="n">runners_to_restart</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="k">for</span> <span class="n">runner_id</span><span class="p">,</span> <span class="n">task</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">busy_runners</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
-                    <span class="k">if</span> <span class="n">task</span><span class="o">.</span><span class="n">batch_id</span> <span class="o">==</span> <span class="n">batch_id</span><span class="p">:</span>
-                        <span class="n">runners_to_restart</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">runner_id</span><span class="p">)</span>
-                <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span>
-                    <span class="o">*</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_restart_runner</span><span class="p">(</span><span class="n">runner_id</span><span class="p">)</span> <span class="k">for</span> <span class="n">runner_id</span> <span class="ow">in</span> <span class="n">runners_to_restart</span><span class="p">]</span>
-                <span class="p">)</span>
+                <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_batch_and_restart_runners</span><span class="p">(</span><span class="n">batch_id</span><span class="p">)</span>
 
         <span class="n">statuses</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">experiences</span> <span class="o">=</span> <span class="p">[]</span>
