@@ -4,11 +4,10 @@ import asyncio
 import copy
 import socket
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
 
 import httpx
 import numpy as np
-import openai
 import ray
 import torch
 from PIL import Image
@@ -20,6 +19,9 @@ from trinity.common.experience import Experience
 from trinity.common.models.utils import get_action_mask_method
 from trinity.utils.annotations import Deprecated
 from trinity.utils.log import get_logger
+
+if TYPE_CHECKING:
+    import openai
 
 
 class InferenceModel(ABC):
@@ -504,12 +506,14 @@ class ModelWrapper:
     async def get_message_token_len(self, messages: List[dict]) -> int:
         return await self.model.get_message_token_len.remote(messages)
 
-    def get_openai_client(self) -> openai.OpenAI:
+    def get_openai_client(self) -> "openai.OpenAI":
         """Get the openai client.
 
         Returns:
             openai.OpenAI: The openai client. And `model_path` is added to the client which refers to the model path.
         """
+        import openai
+
         if self.openai_client is not None:
             setattr(self.openai_client, "model_path", self.model_path)
             return self.openai_client
@@ -563,12 +567,14 @@ class ModelWrapper:
         setattr(self.openai_client, "model_path", self.model_path)
         return self.openai_client
 
-    def get_openai_async_client(self) -> openai.AsyncOpenAI:
+    def get_openai_async_client(self) -> "openai.AsyncOpenAI":
         """Get the async openai client.
 
         Returns:
             openai.AsyncOpenAI: The async openai client. And `model_path` is added to the client which refers to the model path.
         """
+        import openai
+
         if self.openai_async_client is not None:
             setattr(self.openai_async_client, "model_path", self.model_path)
             return self.openai_async_client

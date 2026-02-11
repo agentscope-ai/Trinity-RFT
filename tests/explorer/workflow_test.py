@@ -680,7 +680,9 @@ class TestWorkflowRunner(unittest.IsolatedAsyncioTestCase):
                 workflow_args={"output_format": "json"},
             )
 
-            status, exps = await runner.run_task(task, repeat_times=3, run_id_base=0)
+            status, exps = await runner.run_task(
+                task, batch_id="test", repeat_times=3, run_id_base=0
+            )
 
             self.assertTrue(status.ok)
             self.assertIsInstance(exps, list)
@@ -693,7 +695,9 @@ class TestWorkflowRunner(unittest.IsolatedAsyncioTestCase):
                 workflow_args={"output_format": "yaml"},
             )
 
-            status, exps = await runner.run_task(task, repeat_times=2, run_id_base=0)
+            status, exps = await runner.run_task(
+                task, batch_id="test", repeat_times=2, run_id_base=0
+            )
             self.assertTrue(status.ok)
             self.assertIsInstance(exps, list)
             self.assertEqual(len(exps), 2)
@@ -750,7 +754,10 @@ class TestWorkflowRunner(unittest.IsolatedAsyncioTestCase):
             return count
 
         await asyncio.gather(
-            *[monitor_routine(), runner.run_task(task, repeat_times=3, run_id_base=0)]
+            *[
+                monitor_routine(),
+                runner.run_task(task, batch_id="test", repeat_times=3, run_id_base=0),
+            ]
         )
 
     async def test_workflow_with_openai(self):
@@ -784,13 +791,15 @@ class TestWorkflowRunner(unittest.IsolatedAsyncioTestCase):
         ]
 
         status, exps = await runner.run_task(
-            tasks[0], repeat_times=2, run_id_base=0
+            tasks[0], batch_id="test", repeat_times=2, run_id_base=0
         )  # test exception handling
         self.assertEqual(status.ok, False)
         self.assertEqual(len(exps), 0)
         exps = runner.model_wrapper.extract_experience_from_history(clear_history=False)
         self.assertEqual(len(exps), 1)
-        status, exps = await runner.run_task(tasks[1], repeat_times=2, run_id_base=0)  # normal run
+        status, exps = await runner.run_task(
+            tasks[1], batch_id="test", repeat_times=2, run_id_base=0
+        )  # normal run
         self.assertEqual(status.ok, True)
         self.assertEqual(len(exps), 2)
         exps = runner.model_wrapper.extract_experience_from_history(clear_history=False)
@@ -870,19 +879,23 @@ class TestConcurrentWorkflowRunner(RayUnittestBaseAsync):
             raw_task={"text": "Hello, world!"},
         )
         # warmup
-        async_status, async_exps = await async_runner.run_task(task, repeat_times=2, run_id_base=0)
+        async_status, async_exps = await async_runner.run_task(
+            task, batch_id="test", repeat_times=2, run_id_base=0
+        )
 
         st = time.time()
-        async_status, async_exps = await async_runner.run_task(task, repeat_times=4, run_id_base=0)
+        async_status, async_exps = await async_runner.run_task(
+            task, batch_id="test", repeat_times=4, run_id_base=0
+        )
         async_runtime = time.time() - st
         st = time.time()
         thread_status, thread_exps = await thread_runner.run_task(
-            task, repeat_times=4, run_id_base=0
+            task, batch_id="test", repeat_times=4, run_id_base=0
         )
         thread_runtime = time.time() - st
         st = time.time()
         sequential_status, sequential_exps = await sequential_runner.run_task(
-            task, repeat_times=4, run_id_base=0
+            task, batch_id="test", repeat_times=4, run_id_base=0
         )
         sequential_runtime = time.time() - st
 

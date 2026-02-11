@@ -200,6 +200,7 @@ class RunnerWrapper:
                     status, exps = await asyncio.wait_for(
                         self.runner.run_task.remote(
                             task=task2run,
+                            batch_id=str(task.batch_id),
                             repeat_times=repeat_times,
                             run_id_base=run_id_base,
                         ),
@@ -477,8 +478,9 @@ class Scheduler:
 
         Args:
             tasks (`List[Task]`): The tasks to schedule.
-            batch_id (`Union[int, str]`): The id of provided tasks. It should be an integer or a string
-                starting with an integer (e.g., 123, "123/my_task")
+            batch_id (`Union[int, str]`):
+                The id of provided tasks. In most cases, it should be current step number for
+                training tasks and "<current_step_num>/<eval_taskset_name>" for eval tasks.
         """
         if not tasks:
             return

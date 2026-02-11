@@ -98,6 +98,7 @@ class Workflow(ABC):
         self.model = model
         self.auxiliary_model_wrappers = auxiliary_models
         self.auxiliary_models = ...  # 从 ModelWrapper 自动派生的 OpenAI client
+        self.logger = get_logger(__name__)  # 用于运行时监控的内置 logger
 
     @abstractmethod
     def run(self) -> List[Experience]:
@@ -512,3 +513,47 @@ trinity debug --config <config_file_path> --module viewer --output-dir <output_d
 该命令会在 `http://localhost:8502` 启动 Experience Viewer，用于可视化调试过程中生成的 Experience。你可以在用户友好的界面中检查生成的 Experience。需注意，Viewer 会从指定输出目录下的 `experiences.db` 文件中读取 Experience，因此请确保你已成功运行过 Workflow 调试命令，且替换 `<output_dir>` 为实际的输出目录。
 
 调试完成后，可在推理模型终端输入 `Ctrl+C` 以终止模型运行。
+
+
+#### 运行时监控
+
+在上述调试模式中，你可以快速测试和验证工作流的实现。然而，在实际训练过程中，你可能希望实时监控工作流的运行状态，以确保其按预期工作。为此，Trinity-RFT 提供了基于日志系统的监控功能。`Workflow` 基类内置了一个日志记录器（logger），你可以使用它来记录重要的运行时信息。
+
+```python
+class Workflow(ABC):
+
+    def __init__(
+        self,
+        *,
+        task: Task,
+        model: ModelWrapper,
+        auxiliary_models: Optional[List[ModelWrapper]] = None,
+    ):
+        # ...
+        self.logger = get_logger(__name__)  # 用于运行时监控的内置 logger
+```
+
+该内置的 logger 会将日志输出到控制台和 `<checkpoint_root_dir>/<project>/<name>/log` 目录下的文件中。这样就可以方便地在训练过程中监控工作流的运行状态。由于所有 Workflow 子类均继承该 logger，因此你可以直接在自定义工作流中使用它来记录关键信息。
+
+```python
+class ExampleWorkflow(Workflow):
+    def run(self) -> List[Experience]:
+        self.logger.info(f"Starting workflow for task: {self.task}")
+        # your workflow logic
+        if some_error_condition:
+            self.logger.error("An error occurred during workflow execution.")
+        self.logger.info(f"Completed workflow for task: {self.task}")
+        return experiences
+```
+
+由于 Trinity-RFT 会自动创建一组 Workflow Runners 来并行执行 Workflow。每个运行器会将其日志输出到一个单独的日志文件中。日志文件的命名规则为 `explorer_runner_<runner_id>.log`，其中 `<runner_id>` 是工作流运行器的唯一标识符。通过这种设计，你可以独立地追踪正在并行执行的每个工作流实例的运行情况。日志文件的具体组织结构如下：
+
+```
+<checkpoint_root_dir>/<project>/<name>/log/
+    ├── explorer_runner_0.log
+    ├── explorer_runner_1.log
+    ├── explorer_runner_2.log
+    └── ...
+```
+
+如果训练过程中出现报错或阻塞等异常情况，可通过查看对应日志文件快速定位问题，从而高效调试和优化工作流实现。

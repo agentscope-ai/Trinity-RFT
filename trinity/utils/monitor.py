@@ -268,22 +268,12 @@ class MlflowMonitor(Monitor):
 
 
 class SwanlabMonitor(Monitor):
-    """Monitor with SwanLab.
+    """Monitor with SwanLab (https://swanlab.cn/).
 
-    This monitor integrates with SwanLab (https://swanlab.cn/) to track experiments.
-
-    Supported monitor_args in config.monitor.monitor_args:
-                - api_key (Optional[str]): API key for swanlab.login(). If omitted, will read from env
-                    (SWANLAB_API_KEY, SWANLAB_APIKEY, SWANLAB_KEY, SWANLAB_TOKEN) or assume prior CLI login.
-        - workspace (Optional[str]): Organization/username workspace.
-        - mode (Optional[str]): "cloud" | "local" | "offline" | "disabled".
-        - logdir (Optional[str]): Local log directory when in local/offline modes.
-        - experiment_name (Optional[str]): Explicit experiment name. Defaults to "{name}_{role}".
-        - description (Optional[str]): Experiment description.
-        - tags (Optional[List[str]]): Tags to attach. Role and group are appended automatically.
-        - id (Optional[str]): Resume target run id (21 chars) when using resume modes.
-        - resume (Optional[Literal['must','allow','never']|bool]): Resume policy.
-        - reinit (Optional[bool]): Whether to re-init on repeated init() calls.
+    Set `SWANLAB_API_KEY` environment variable with your SwanLab API key before using this monitor.
+    If you're using local deployment of Swanlab, also set `SWANLAB_API_HOST` environment variable.
+    Pass additional SwanLab initialization arguments via `config.monitor.monitor_args` in the Config,
+    such as `tags`, `description`, `logdir`, etc. See SwanLab documentation for details.
     """
 
     def __init__(
@@ -293,11 +283,7 @@ class SwanlabMonitor(Monitor):
             swanlab is not None
         ), "swanlab is not installed. Please install it to use SwanlabMonitor."
 
-        monitor_args = (
-            (config.monitor.monitor_args or {})
-            if config and getattr(config, "monitor", None)
-            else {}
-        )
+        monitor_args = config.monitor.monitor_args or {}
 
         # Optional API login via code if provided; otherwise try environment, then rely on prior `swanlab login`.
         api_key = os.environ.get("SWANLAB_API_KEY")
@@ -308,7 +294,7 @@ class SwanlabMonitor(Monitor):
                 # Best-effort login; continue to init which may still work if already logged in
                 pass
         else:
-            raise RuntimeError("Swanlab API key not found in environment variable SWANLAB_API_KEY.")
+            raise RuntimeError("SWANLAB_API_KEY environment variable not set.")
 
         # Compose tags (ensure list and include role/group markers)
         tags = monitor_args.get("tags") or []

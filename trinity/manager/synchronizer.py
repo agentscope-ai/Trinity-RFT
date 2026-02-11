@@ -10,10 +10,6 @@ import ray
 
 from trinity.common.config import Config
 from trinity.common.constants import RunningStatus, SyncMethod
-from trinity.common.models.utils import (
-    get_checkpoint_dir_with_step_num,
-    load_state_dict,
-)
 from trinity.utils.log import get_logger
 
 
@@ -94,6 +90,8 @@ class Synchronizer:
             )
 
     async def _find_verl_latest_state_dict(self) -> None:
+        from trinity.common.models.utils import load_state_dict
+
         default_local_dir = self.config.checkpoint_job_dir
         local_latest_state_dict_iteration = os.path.join(
             default_local_dir, "latest_state_dict_iteration.txt"
@@ -219,6 +217,11 @@ class Synchronizer:
         Returns:
             The updated model version (step number).
         """
+        from trinity.common.models.utils import (
+            get_checkpoint_dir_with_step_num,
+            load_state_dict,
+        )
+
         if world_size is not None:  # Used when trainer updates the model
             assert step_num is not None
             assert self.checkpoint_shard_counter[step_num] < world_size, "World size mismatch!"

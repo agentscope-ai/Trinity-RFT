@@ -1,11 +1,13 @@
 import copy
 import os
 import subprocess
+import sys
 import tempfile
 from typing import List
 
 import streamlit as st
 import yaml
+from streamlit.web import cli
 
 from trinity.algorithm import ALGORITHM_TYPE
 from trinity.algorithm.advantage_fn import ADVANTAGE_FN
@@ -57,6 +59,20 @@ class ConfigManager:
         if "is_running" not in st.session_state:
             st.session_state.is_running = False
         self.generate_config()
+
+    @staticmethod
+    def run(port: int):
+        config_manager_path = os.path.abspath(__file__)
+        sys.argv = [
+            "streamlit",
+            "run",
+            config_manager_path,
+            "--server.port",
+            str(port),
+            "--server.fileWatcherType",
+            "none",
+        ]
+        sys.exit(cli.main())
 
     def reset_session_state(self):
         st.session_state["_init_config_manager"] = True

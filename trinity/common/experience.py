@@ -8,10 +8,10 @@ from dataclasses import asdict, dataclass, field, fields
 from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Union
 
 import torch
+from torch import Tensor
 
 if TYPE_CHECKING:
     from datasets import Dataset
-from torch import Tensor
 
 
 @dataclass

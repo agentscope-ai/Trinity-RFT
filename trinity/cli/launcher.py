@@ -1,31 +1,36 @@
 """Launch the trainer"""
-import argparse
 import asyncio
 import os
 import sys
 import traceback
-from pathlib import Path
 from pprint import pprint
 from typing import Optional
 
 import ray
+import typer
+from typing_extensions import Annotated
 
-from trinity.buffer.pipelines.task_pipeline import check_and_run_task_pipeline
 from trinity.common.config import Config, load_config
 from trinity.common.constants import DEBUG_NAMESPACE, PLUGIN_DIRS_ENV_VAR
-from trinity.explorer.explorer import Explorer
 from trinity.manager.checkpoint_converter import Converter
 from trinity.manager.state_manager import StateManager
-from trinity.trainer.trainer import Trainer
 from trinity.utils.dlc_utils import is_running, setup_ray_cluster, stop_ray_cluster
 from trinity.utils.log import get_logger
 from trinity.utils.plugin_loader import load_plugins
 
 logger = get_logger(__name__)
 
+app = typer.Typer(
+    help="Trinity CLI - Launch and manage Trinity-RFT processes.",
+    pretty_exceptions_show_locals=False,
+    pretty_exceptions_short=True,
+)
+
 
 def bench(config: Config) -> None:
     """Evaluate model."""
+    from trinity.explorer.explorer import Explorer
+
     config.explorer.name = "benchmark"
     try:
         explorer = Explorer.get_actor(config)
@@ -39,6 +44,8 @@ def bench(config: Config) -> None:
 
 def explore(config: Config) -> None:
     """Run explorer."""
+    from trinity.explorer.explorer import Explorer
+
     try:
         explorer = Explorer.get_actor(config)
         ray.get(explorer.prepare.remote())
@@ -51,6 +58,8 @@ def explore(config: Config) -> None:
 
 def train(config: Config) -> None:
     """Run trainer."""
+    from trinity.trainer.trainer import Trainer
+
     try:
         trainer = Trainer.get_actor(config)
         ray.get(trainer.prepare.remote())
@@ -63,6 +72,8 @@ def train(config: Config) -> None:
 
 def serve(config: Config) -> None:
     """Run explorer in server mode."""
+    from trinity.explorer.explorer import Explorer
+
     try:
         explorer = Explorer.get_actor(config)
         ray.get(explorer.prepare.remote())
@@ -83,6 +94,9 @@ def both(config: Config) -> None:
     the latest step. The specific number of experiences may vary for different
     algorithms and tasks.
     """
+    from trinity.explorer.explorer import Explorer
+    from trinity.trainer.trainer import Trainer
+
     try:
         explorer = Explorer.get_actor(config)
         trainer = Trainer.get_actor(config)
@@ -154,6 +168,8 @@ def run_stage(config: Config) -> None:
     )
     pprint(config)
     try:
+        from trinity.buffer.pipelines.task_pipeline import check_and_run_task_pipeline
+
         check_and_run_task_pipeline(config)
         MODE_MAP[config.mode](config)
     finally:
@@ -165,40 +181,60 @@ def run_stage(config: Config) -> None:
         ray.shutdown()
 
 
-def run(config_path: str, dlc: bool = False, plugin_dir: str = None):
+# ---------------------------------------------------------------------------
+# CLI commands
+# ---------------------------------------------------------------------------
+
+
+@app.command()
+def run(
+    config: Annotated[
+        str,
+        typer.Option("--config", help="Path to the config file."),
+    ],
+    dlc: Annotated[
+        bool,
+        typer.Option("--dlc", help="Specify when running in Aliyun PAI DLC."),
+    ] = False,
+    plugin_dir: Annotated[
+        Optional[str],
+        typer.Option("--plugin-dir", help="Path to the directory containing plugin modules."),
+    ] = None,
+) -> None:
+    """Run RFT process."""
     if plugin_dir:
         os.environ[PLUGIN_DIRS_ENV_VAR] = plugin_dir
     load_plugins()
-    config = load_config(config_path)
+    cfg = load_config(config)
 
     if dlc:
-        cluster_namespace = f"{config.project}-{config.name}"
-        config.cluster.ray_address = setup_ray_cluster(namespace=cluster_namespace)
+        cluster_namespace = f"{cfg.project}-{cfg.name}"
+        cfg.cluster.ray_address = setup_ray_cluster(namespace=cluster_namespace)
 
     if not is_running():
         raise RuntimeError("Ray is not running, please start it by `ray start --head`.")
 
     try:
-        if config.stages:
+        if cfg.stages:
             from trinity.trainer.verl.utils import get_latest_hf_checkpoint_path
 
             state_manager = StateManager(
-                path=os.path.join(config.checkpoint_root_dir, config.project, config.name)
+                path=os.path.join(cfg.checkpoint_root_dir, cfg.project, cfg.name)
             )
             latest_stage = state_manager.load_stage().get("latest_stage", 0)
             prev_stage_checkpoint = None
-            for i, stage_config in enumerate(config):
+            for i, stage_config in enumerate(cfg):
                 if i < latest_stage:
                     logger.info(
                         "===========================================================\n"
-                        f"> Skipping completed stage {i + 1}/{len(config.stages)}...\n"
+                        f"> Skipping completed stage {i + 1}/{len(cfg.stages)}...\n"
                         "==========================================================="
                     )
                     stage_config.check_and_update()
                 else:
                     logger.info(
                         "===========================================================\n"
-                        f"> Starting stage {i + 1}/{len(config.stages)}...\n"
+                        f"> Starting stage {i + 1}/{len(cfg.stages)}...\n"
                         "==========================================================="
                     )
                     state_manager.save_stage(i)
@@ -208,212 +244,132 @@ def run(config_path: str, dlc: bool = False, plugin_dir: str = None):
                     run_stage(stage_config)
                     logger.info(
                         "===========================================================\n"
-                        f"> Stage {i + 1}/{len(config.stages)} finished.\n"
+                        f"> Stage {i + 1}/{len(cfg.stages)} finished.\n"
                         "==========================================================="
                     )
                 prev_stage_checkpoint = get_latest_hf_checkpoint_path(stage_config)
         else:
-            config.check_and_update()
-            run_stage(config)
+            cfg.check_and_update()
+            run_stage(cfg)
 
     finally:
         if dlc:
             stop_ray_cluster(namespace=cluster_namespace)
 
 
-def studio(port: int = 8501):
-    from streamlit.web import cli as stcli
+@app.command()
+def studio(
+    port: Annotated[
+        int,
+        typer.Option("--port", help="The port for Trinity-Studio."),
+    ] = 8501,
+) -> None:
+    """Run studio to manage configurations."""
+    from trinity.manager.config_manager import ConfigManager
 
-    current_dir = Path(__file__).resolve().parent.parent
-    config_manager_path = os.path.join(current_dir, "manager", "config_manager.py")
-
-    sys.argv = [
-        "streamlit",
-        "run",
-        config_manager_path,
-        "--server.port",
-        str(port),
-        "--server.fileWatcherType",
-        "none",
-    ]
-    sys.exit(stcli.main())
+    ConfigManager.run(port)
 
 
+@app.command()
 def debug(
-    config_path: str,
-    module: str,
-    output_dir: str = "debug_output",
-    disable_overwrite: bool = False,
-    enable_profiling: bool = False,
-    port: int = 8502,
-    plugin_dir: str = None,
-):
-    """Debug a module."""
+    config: Annotated[
+        str,
+        typer.Option("--config", help="Path to the config file."),
+    ],
+    module: Annotated[
+        str,
+        typer.Option(
+            "--module",
+            help="The module to debug: 'inference_model', 'workflow', or 'viewer'.",
+        ),
+    ],
+    plugin_dir: Annotated[
+        Optional[str],
+        typer.Option("--plugin-dir", help="Path to the directory containing plugin modules."),
+    ] = None,
+    output_dir: Annotated[
+        str,
+        typer.Option("--output-dir", help="The output directory for debug files."),
+    ] = "debug_output",
+    disable_overwrite: Annotated[
+        bool,
+        typer.Option("--disable-overwrite", help="Disable overwriting the output directory."),
+    ] = False,
+    enable_profiling: Annotated[
+        bool,
+        typer.Option("--enable-profiling", help="Whether to use viztracer for workflow profiling."),
+    ] = False,
+    port: Annotated[
+        int,
+        typer.Option("--port", help="The port for Experience Viewer."),
+    ] = 8502,
+) -> None:
+    """Debug a workflow implementation."""
+    valid_modules = ("inference_model", "workflow", "viewer")
+    if module not in valid_modules:
+        raise typer.BadParameter(f"Only support {valid_modules} for debugging, got '{module}'")
+
     if plugin_dir:
         os.environ[PLUGIN_DIRS_ENV_VAR] = plugin_dir
     load_plugins()
-    config = load_config(config_path)
-    config.mode = "explore"
-    config.ray_namespace = DEBUG_NAMESPACE
-    config.check_and_update()
+    cfg = load_config(config)
+    cfg.mode = "explore"
+    cfg.ray_namespace = DEBUG_NAMESPACE
+    cfg.check_and_update()
     sys.path.insert(0, os.getcwd())
     ray.init(
-        namespace=config.ray_namespace,
-        runtime_env={"env_vars": config.get_envs()},
+        namespace=cfg.ray_namespace,
+        runtime_env={"env_vars": cfg.get_envs()},
         ignore_reinit_error=True,
     )
+
     from trinity.common.models import create_debug_explorer_model
 
     if module == "inference_model":
-        asyncio.run(create_debug_explorer_model(config))
+        asyncio.run(create_debug_explorer_model(cfg))
 
     elif module == "workflow":
         from trinity.explorer.workflow_runner import DebugWorkflowRunner
 
-        runner = DebugWorkflowRunner(config, output_dir, enable_profiling, disable_overwrite)
+        runner = DebugWorkflowRunner(cfg, output_dir, enable_profiling, disable_overwrite)
         asyncio.run(runner.debug())
-    elif module == "viewer":
-        from streamlit.web import cli as stcli
 
-        current_dir = Path(__file__).resolve().parent.parent
-        viewer_path = os.path.join(current_dir, "buffer", "viewer.py")
-        output_dir_abs = os.path.abspath(output_dir)
-        if output_dir_abs.endswith("/"):
-            output_dir_abs = output_dir_abs[:-1]
-        print(f"sqlite:///{output_dir_abs}/experiences.db")
-        sys.argv = [
-            "streamlit",
-            "run",
-            viewer_path,
-            "--server.port",
-            str(port),
-            "--server.fileWatcherType",
-            "none",
-            "--",
-            "--db-url",
-            f"sqlite:///{output_dir_abs}/experiences.db",
-            "--table",
-            "debug_buffer",
-            "--tokenizer",
-            config.model.model_path,
-        ]
-        sys.exit(stcli.main())
-    else:
-        raise ValueError(
-            f"Only support 'inference_model' and 'workflow' for debugging, got {module}"
+    elif module == "viewer":
+        from trinity.buffer.viewer import SQLExperienceViewer
+
+        output_dir_abs = os.path.abspath(output_dir).rstrip("/")
+
+        SQLExperienceViewer.run_viewer(
+            model_path=cfg.model.model_path,
+            db_url=f"sqlite:///{os.path.join(output_dir_abs, 'debug_buffer.db')}",
+            table_name="debug_buffer",
+            port=port,
         )
 
 
-def convert(checkpoint_dir: str, base_model_dir: Optional[str] = None) -> None:
-    if "global_step_" in checkpoint_dir:
-        while not os.path.basename(checkpoint_dir).startswith("global_step_"):
-            checkpoint_dir = os.path.dirname(checkpoint_dir)
+@app.command()
+def convert(
+    checkpoint_dir: Annotated[
+        str,
+        typer.Option("--checkpoint-dir", help="The path to the checkpoint directory."),
+    ],
+    base_model_dir: Annotated[
+        Optional[str],
+        typer.Option("--base-model-dir", help="The path to the base model."),
+    ] = None,
+) -> None:
+    """Convert checkpoints to huggingface format."""
+    dir_path = checkpoint_dir
+    if "global_step_" in dir_path:
+        while not os.path.basename(dir_path).startswith("global_step_"):
+            dir_path = os.path.dirname(dir_path)
     converter = Converter(base_model_dir)
-    converter.convert(checkpoint_dir)
+    converter.convert(dir_path)
 
 
 def main() -> None:
     """The main entrypoint."""
-    parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers(dest="command", required=True)
-
-    # run command
-    run_parser = subparsers.add_parser("run", help="Run RFT process.")
-    run_parser.add_argument("--config", type=str, required=True, help="Path to the config file.")
-    run_parser.add_argument(
-        "--plugin-dir",
-        type=str,
-        default=None,
-        help="Path to the directory containing plugin modules.",
-    )
-    run_parser.add_argument(
-        "--dlc", action="store_true", help="Specify when running in Aliyun PAI DLC."
-    )
-
-    # studio command
-    studio_parser = subparsers.add_parser("studio", help="Run studio.")
-    studio_parser.add_argument(
-        "--port", type=int, default=8501, help="The port for Trinity-Studio."
-    )
-
-    # debug command
-    debug_parser = subparsers.add_parser("debug", help="Debug the code.")
-    debug_parser.add_argument("--config", type=str, help="Path to the config file.")
-    debug_parser.add_argument(
-        "--module",
-        type=str,
-        choices=["inference_model", "workflow", "viewer"],
-        help="The module to start debugging, only support 'inference_model', 'workflow' and 'viewer' for now.",
-    )
-    debug_parser.add_argument(
-        "--plugin-dir",
-        type=str,
-        default=None,
-        help="Path to the directory containing plugin modules.",
-    )
-    debug_parser.add_argument(
-        "--output-dir",
-        type=str,
-        default="debug_output",
-        help="The output directory for debug files.",
-    )
-    debug_parser.add_argument(
-        "--disable-overwrite", action="store_true", help="Disable overwriting the output directory."
-    )
-    debug_parser.add_argument(
-        "--enable-profiling",
-        action="store_true",
-        help="Whether to use viztracer for workflow profiling.",
-    )
-    debug_parser.add_argument(
-        "--output-file",
-        type=str,
-        default=None,
-        help="[DEPRECATED] Please use --output-dir instead.",
-    )
-    debug_parser.add_argument(
-        "--port",
-        type=int,
-        default=8502,
-        help="The port for Experience Viewer.",
-    )
-
-    convert_parser = subparsers.add_parser(
-        "convert", help="Convert checkpoint to huggingface format."
-    )
-    convert_parser.add_argument(
-        "--checkpoint-dir",
-        type=str,
-        required=True,
-        help="The path to the checkpoint directory.",
-    )
-    convert_parser.add_argument(
-        "--base-model-dir",
-        type=str,
-        default=None,
-        help="The path to the base model.",
-    )
-
-    args = parser.parse_args()
-    if args.command == "run":
-        # TODO: support parse all args from command line
-        run(args.config, args.dlc, args.plugin_dir)
-    elif args.command == "studio":
-        studio(args.port)
-    elif args.command == "debug":
-        debug(
-            args.config,
-            args.module,
-            args.output_dir,
-            args.disable_overwrite,
-            args.enable_profiling,
-            args.port,
-            args.plugin_dir,
-        )
-    elif args.command == "convert":
-        convert(args.checkpoint_dir, args.base_model_dir)
-    else:
-        raise ValueError(f"Unknown command: {args.command}")
+    app()
 
 
 if __name__ == "__main__":

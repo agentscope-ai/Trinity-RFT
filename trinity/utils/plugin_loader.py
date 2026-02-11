@@ -27,7 +27,7 @@ def load_plugin_from_dirs(plugin_dirs: Union[str, List[str]]) -> None:
     """
     Load plugin modules from a directory.
     """
-    logger = get_logger(__name__, in_ray_actor=True)
+    logger = get_logger(__name__)
     if not isinstance(plugin_dirs, list):
         plugin_dirs = [plugin_dirs]
     plugin_dirs = set(plugin_dirs)
