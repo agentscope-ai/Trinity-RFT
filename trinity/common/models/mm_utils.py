@@ -182,6 +182,8 @@ def build_mm_message(
         vid_idx += 1
 
     content_list = surplus_content + content_list
+    if len(content_list) == 1 and content_list[0]["type"] == "text":
+        return {"role": "user", "content": content_list[0]["text"]}
     return {"role": "user", "content": content_list}
 
 
