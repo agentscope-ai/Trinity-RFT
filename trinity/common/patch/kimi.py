@@ -1,13 +1,6 @@
 """Monkey patching for 'kimi_vl' models."""
 
 
-def vllm_patch():
-    import transformers
-
-    if not hasattr(transformers.activations, "PytorchGELUTanh"):
-        transformers.activations.PytorchGELUTanh = transformers.activations.GELUTanh
-
-
 def kimi_vl_monkey_patch_decorator(func):
     """
     A decorator that applies temporary monkey patches for 'kimi_vl' models before

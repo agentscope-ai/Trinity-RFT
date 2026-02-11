@@ -8,6 +8,14 @@ from packaging.version import parse as parse_version
 from trinity.common.config import InferenceModelConfig
 
 
+def vllm_patch():
+    import transformers
+
+    # Patch for Kimi-VL-A3B-Thinking
+    if not hasattr(transformers.activations, "PytorchGELUTanh"):
+        transformers.activations.PytorchGELUTanh = transformers.activations.GELUTanh
+
+
 def get_vllm_version():
     try:
         vllm_version = parse_version(vllm.__version__)

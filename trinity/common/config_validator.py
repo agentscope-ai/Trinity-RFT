@@ -16,9 +16,9 @@ from trinity.common.config import (
     set_if_none,
 )
 from trinity.common.constants import StorageType, SyncMethod, SyncStyle
+from trinity.common.patch import kimi_vl_monkey_patch_decorator
 from trinity.utils.log import get_logger
 from trinity.utils.lora_utils import create_dummy_lora
-from trinity.utils.monkey_patch import kimi_vl_monkey_patch_decorator
 
 if TYPE_CHECKING:
     from trinity.common.verl_config import FSDPConfig

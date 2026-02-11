@@ -5,10 +5,8 @@ import os
 from collections import defaultdict
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
-import numpy as np
 import torch
 from packaging.version import parse as parse_version
-from PIL import Image
 from transformers import AutoProcessor
 
 from trinity.common.config import InferenceModelConfig
@@ -16,13 +14,10 @@ from trinity.common.experience import Experience
 from trinity.common.models.mm_utils import (
     build_mm_input_for_training,
     build_multi_modal_data,
-    build_multi_modal_inputs,
-    convert_messages_to_mm_format,
     has_multi_modal_content,
 )
 from trinity.common.models.model import BaseInferenceModel
 from trinity.common.models.vllm_patch import get_vllm_version
-from trinity.utils.annotations import Deprecated
 
 
 # V0 engine is deprecated since vLLM v0.10.2, related code will be removed in the future.
@@ -255,85 +250,6 @@ class vLLMRolloutModel(BaseInferenceModel):
                 prompt_text=self.tokenizer.decode(output.prompt_token_ids),
                 response_text=output.outputs[i].text,
                 multi_modal_inputs=multi_modal_inputs,
-            )
-            for i in range(len(output.outputs))
-        ]
-        return experiences
-
-    @Deprecated
-    async def chat_mm(
-        self, messages: List[Dict], images: List[Image.Image], videos: List[np.ndarray], **kwargs
-    ) -> Sequence[Experience]:
-        """Chat with the model with a list of messages in async.
-
-        Args:
-            messages (List[dict]): The input history messages.
-            raw_mm_data (dict): The raw multi-modal data.
-            kwargs (dict): A dictionary of sampling parameters.
-
-        Returns:
-            A list of experiences.
-        """
-        if self.processor is None:
-            await self._initialize_processor()
-        messages = convert_messages_to_mm_format(messages)
-        prompt = self.apply_chat_template(self.processor, messages)
-        return await self.generate_mm(prompt=prompt, images=images, videos=videos, **kwargs)
-
-    @Deprecated
-    async def generate_mm(
-        self,
-        prompt: str = None,
-        images: List[Image.Image] = None,
-        videos: List[np.ndarray] = None,
-        **kwargs,
-    ) -> Sequence[Experience]:
-        """Generate a response from the provided prompt in async.
-
-        Args:
-            prompt (str): The input prompt.
-            images (List): The list of image inputs.
-            videos (List): The list of video inputs.
-
-        Returns:
-            A list of experiences.
-        """
-        mm_inputs = build_multi_modal_inputs(
-            prompt=prompt,
-            images=images,
-            videos=videos,
-            processor=self.processor,
-        )
-
-        vllm_inputs = {
-            "prompt": mm_inputs["prompt"],
-            "multi_modal_data": mm_inputs["multi_modal_data"],
-        }
-
-        output = await self._generate_internal(prompt=vllm_inputs, **kwargs)
-        experiences = [
-            Experience(
-                tokens=torch.cat(
-                    (
-                        torch.tensor(output.prompt_token_ids, dtype=torch.int32),
-                        torch.tensor(output.outputs[i].token_ids, dtype=torch.int32),
-                    )
-                ),
-                logprobs=torch.cat(
-                    (
-                        torch.tensor(
-                            [
-                                list(logprob_dict.values())[0].logprob
-                                for logprob_dict in output.outputs[i].logprobs
-                            ],
-                            dtype=torch.float32,
-                        ),
-                    )
-                ),
-                prompt_length=len(output.prompt_token_ids),
-                prompt_text=mm_inputs["prompt"],
-                response_text=output.outputs[i].text,
-                multi_modal_inputs=mm_inputs["multi_modal_inputs"],
             )
             for i in range(len(output.outputs))
         ]

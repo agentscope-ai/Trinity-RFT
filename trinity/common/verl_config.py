@@ -9,8 +9,8 @@ from verl.workers.config import PolicyLossConfig, RouterReplayConfig
 from trinity.algorithm import ALGORITHM_TYPE
 from trinity.common.config import Config, SynchronizerConfig, set_if_none
 from trinity.common.constants import EXPLORER_NAME
+from trinity.common.patch import kimi_vl_monkey_patch_decorator
 from trinity.utils.log import get_logger
-from trinity.utils.monkey_patch import kimi_vl_monkey_patch_decorator
 
 logger = get_logger(__name__)
 

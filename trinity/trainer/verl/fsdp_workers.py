@@ -93,11 +93,11 @@ from verl.workers.sharding_manager.fsdp_ulysses import FSDPUlyssesShardingManage
 
 from trinity.common.config import AlgorithmConfig
 from trinity.common.constants import ROLLOUT_WEIGHT_SYNC_GROUP_NAME, SyncMethod
+from trinity.common.patch import kimi_vl_monkey_patch_decorator
 from trinity.manager.synchronizer import Synchronizer
 from trinity.trainer.verl.fsdp_checkpoint_manager import FSDPCheckpointManager
 from trinity.trainer.verl.utils import get_model_class
 from trinity.utils.distributed import init_process_group
-from trinity.utils.monkey_patch import kimi_vl_monkey_patch_decorator
 
 logger = logging.getLogger(__file__)
 logger.setLevel(os.getenv("VERL_LOGGING_LEVEL", "WARN"))
