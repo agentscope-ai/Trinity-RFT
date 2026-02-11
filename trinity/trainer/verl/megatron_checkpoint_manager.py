@@ -349,6 +349,7 @@ class MegatronCheckpointManager(OldMegatronCheckpointManager):
 
                     from accelerate import init_empty_weights
 
+                    # TODO: Switch to get_model_class
                     with init_empty_weights(), warnings.catch_warnings():
                         warnings.simplefilter("ignore")
                         if "mistral7b-rm" in self.config.model.path:

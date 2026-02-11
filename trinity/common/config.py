@@ -444,6 +444,7 @@ class TinkerConfig:
 class ModelConfig:
     # source model path
     model_path: str = ""
+    trust_remote_code: bool = False
     critic_model_path: str = ""
 
     custom_chat_template: Optional[str] = None
@@ -493,6 +494,7 @@ class InferenceModelConfig:
     # ! DO NOT SET in explorer.rollout_model, automatically set from config.model.model_path
     model_path: Optional[str] = None
     name: Optional[str] = None
+    trust_remote_code: bool = False
 
     engine_type: str = "vllm"
     engine_num: int = 1
@@ -663,7 +665,6 @@ class BufferConfig:
     # ! DO NOT SET FOLLOWING FIELDS
     explorer_output: Optional[StorageConfig] = None  # automatically set
     tokenizer_path: Optional[str] = None  # automatically set
-    pad_token_id: Optional[int] = None  # automatically set
     cache_dir: Optional[str] = None  # automatically set
 
 

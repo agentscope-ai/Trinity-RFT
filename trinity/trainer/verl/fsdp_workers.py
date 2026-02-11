@@ -95,7 +95,9 @@ from trinity.common.config import AlgorithmConfig
 from trinity.common.constants import ROLLOUT_WEIGHT_SYNC_GROUP_NAME, SyncMethod
 from trinity.manager.synchronizer import Synchronizer
 from trinity.trainer.verl.fsdp_checkpoint_manager import FSDPCheckpointManager
+from trinity.trainer.verl.utils import get_model_class
 from trinity.utils.distributed import init_process_group
+from trinity.utils.monkey_patch import kimi_vl_monkey_patch_decorator
 
 logger = logging.getLogger(__file__)
 logger.setLevel(os.getenv("VERL_LOGGING_LEVEL", "WARN"))
@@ -275,6 +277,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
             torch.distributed.barrier()
             torch.cuda.empty_cache()
 
+    @kimi_vl_monkey_patch_decorator
     def _build_model_optimizer(  # noqa: C901
         self,
         model_path,
@@ -292,13 +295,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
         tiled_mlp_shards=4,
     ):
         from torch.distributed.fsdp import CPUOffload, MixedPrecision
-        from transformers import (
-            AutoConfig,
-            AutoModel,
-            AutoModelForCausalLM,
-            AutoModelForImageTextToText,
-            AutoModelForVision2Seq,
-        )
+        from transformers import AutoConfig
         from verl.utils.model import (
             get_generation_config,
             print_model_size,
@@ -385,34 +382,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
 
         with init_context(), warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            has_remote_code = hasattr(actor_model_config, "auto_map") and any(
-                actor_model_config.architectures[0] in val
-                for val in actor_model_config.auto_map.values()
-            )
-            if has_remote_code:
-                auto_class = next(
-                    k
-                    for k, v in actor_model_config.auto_map.items()
-                    if actor_model_config.architectures[0] in v
-                )
-                match auto_class:
-                    case "AutoModelForVision2Seq":
-                        actor_module_class = AutoModelForVision2Seq
-                    case "AutoModelForCausalLM":
-                        actor_module_class = AutoModelForCausalLM
-                    case "AutoModelForImageTextToText":
-                        actor_module_class = AutoModelForImageTextToText
-                    case _:
-                        actor_module_class = AutoModel
-            else:
-                if type(actor_model_config) in AutoModelForVision2Seq._model_mapping.keys():
-                    actor_module_class = AutoModelForVision2Seq
-                elif type(actor_model_config) in AutoModelForCausalLM._model_mapping.keys():
-                    actor_module_class = AutoModelForCausalLM
-                elif type(actor_model_config) in AutoModelForImageTextToText._model_mapping.keys():
-                    actor_module_class = AutoModelForImageTextToText
-                else:
-                    actor_module_class = AutoModel
+            actor_module_class = get_model_class(actor_model_config)
 
             actor_module = actor_module_class.from_pretrained(
                 pretrained_model_name_or_path=local_path,
@@ -651,6 +621,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
         use_remove_padding = self.config.model.get("use_remove_padding", False)
         use_shm = self.config.model.get("use_shm", False)
         use_fused_kernels = self.config.model.get("use_fused_kernels", False)
+        trust_remote_code = self.config.model.get("trust_remote_code", False)
 
         if self._is_actor:
             # we need the model for actor
@@ -678,7 +649,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                 enable_gradient_checkpointing=self.config.model.get(
                     "enable_gradient_checkpointing", False
                 ),
-                trust_remote_code=self.config.model.get("trust_remote_code", False),
+                trust_remote_code=trust_remote_code,
                 use_liger=self.config.model.get("use_liger", False),
                 role="actor",
                 enable_activation_offload=self.config.model.get("enable_activation_offload", False),
@@ -733,7 +704,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                 override_model_config=override_model_config,
                 use_remove_padding=use_remove_padding,
                 use_fused_kernels=use_fused_kernels,
-                trust_remote_code=self.config.model.get("trust_remote_code", False),
+                trust_remote_code=trust_remote_code,
                 use_liger=self.config.model.get("use_liger", False),
                 role="ref",
                 use_tiled_mlp=ref_use_tiled_mlp,
@@ -753,6 +724,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                 processing_class=self.processor if self.processor is not None else self.tokenizer,
                 checkpoint_config=self.config.ref.checkpoint,
                 ray_namespace=self.config.synchronizer.ray_namespace,
+                trust_remote_code=trust_remote_code,
             )
 
         if self._is_actor:
@@ -764,6 +736,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                 processing_class=self.processor if self.processor is not None else self.tokenizer,
                 checkpoint_config=self.config.actor.checkpoint,
                 ray_namespace=self.config.synchronizer.ray_namespace,
+                trust_remote_code=trust_remote_code,
             )
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
@@ -1225,6 +1198,7 @@ class CriticWorker(Worker, DistProfilerExtension):
         )
         self.use_orig_params = self.config.model.fsdp_config.get("use_orig_params", False)
 
+    @kimi_vl_monkey_patch_decorator
     def _build_critic_model_optimizer(self, config):  # noqa: C901
         # the following line is necessary
         from torch.distributed.fsdp import MixedPrecision
@@ -1534,6 +1508,7 @@ class CriticWorker(Worker, DistProfilerExtension):
             processing_class=self.processor if self.processor is not None else self.tokenizer,
             checkpoint_config=self.config.checkpoint,
             ray_namespace=self.config.ray_namespace,
+            trust_remote_code=self.config.model.get("trust_remote_code", False),
         )
 
     @register(dispatch_mode=make_nd_compute_dataproto_dispatch_fn(mesh_name="critic"))

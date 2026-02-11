@@ -10,6 +10,7 @@ from trinity.algorithm import ALGORITHM_TYPE
 from trinity.common.config import Config, SynchronizerConfig, set_if_none
 from trinity.common.constants import EXPLORER_NAME
 from trinity.utils.log import get_logger
+from trinity.utils.monkey_patch import kimi_vl_monkey_patch_decorator
 
 logger = get_logger(__name__)
 
@@ -396,6 +397,7 @@ class veRLConfig:
     synchronizer: Optional[SynchronizerConfig] = None
     enable_preview: bool = True
 
+    @kimi_vl_monkey_patch_decorator
     def _check_parallel_config(
         self,
         obj: Union[Actor, Ref, Critic],
@@ -496,6 +498,7 @@ class veRLConfig:
 
         # kept to pass RayPPOTrainer._validate_config
         self.data.train_batch_size = config.buffer.train_batch_size
+        self.data.trust_remote_code = config.model.trust_remote_code
 
         self.synchronizer = config.synchronizer
         self.actor_rollout_ref.nccl_timeout = config.synchronizer.sync_timeout
@@ -512,9 +515,8 @@ class veRLConfig:
         actor_model_config = self.actor_rollout_ref.model
         actor_optim = actor_config.optim
         actor_model_config.path = config.model.model_path
-        actor_model_config.custom_chat_template = config.model.custom_chat_template
-        actor_model_config.rope_scaling = config.model.rope_scaling
-        actor_model_config.rope_theta = config.model.rope_theta
+        for attr in ["trust_remote_code", "custom_chat_template", "rope_scaling", "rope_theta"]:
+            setattr(actor_model_config, attr, getattr(config.model, attr))
         actor_optim.total_training_steps = self.trainer.total_training_steps
         actor_config.ppo_mini_batch_size = config.buffer.train_batch_size
         rollout_config.temperature = (

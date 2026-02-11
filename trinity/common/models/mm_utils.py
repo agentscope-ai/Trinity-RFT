@@ -20,7 +20,9 @@ def build_multi_modal_data(
     Preprocess multi-modal data and build multi-modal inputs
     """
     processor_class_name = processor.__class__.__name__
-    if "Qwen" in processor_class_name and "VLProcessor" in processor_class_name:
+    if (
+        "Qwen" in processor_class_name or "Kimi" in processor_class_name
+    ) and "VLProcessor" in processor_class_name:
         from qwen_vl_utils import process_vision_info
 
         image_inputs, video_inputs = process_vision_info(messages)
@@ -36,7 +38,9 @@ def build_multi_modal_data(
 
 def build_mm_input_for_training(processor: Any, prompt: str, multi_modal_data: Dict) -> Dict:
     processor_class_name = processor.__class__.__name__
-    if "Qwen" in processor_class_name and "VLProcessor" in processor_class_name:
+    if (
+        "Qwen" in processor_class_name or "Kimi" in processor_class_name
+    ) and "VLProcessor" in processor_class_name:
         inputs = processor(
             text=[prompt],
             images=multi_modal_data.get("image", None),

@@ -18,6 +18,7 @@ from trinity.common.config import (
 from trinity.common.constants import StorageType, SyncMethod, SyncStyle
 from trinity.utils.log import get_logger
 from trinity.utils.lora_utils import create_dummy_lora
+from trinity.utils.monkey_patch import kimi_vl_monkey_patch_decorator
 
 if TYPE_CHECKING:
     from trinity.common.verl_config import FSDPConfig
@@ -595,7 +596,7 @@ class ExplorerConfigValidator(ConfigValidator):
         model_args = rollout_args + length_args + rope_args
 
         # rollout model
-        for args in model_args + ["model_path"]:
+        for args in model_args + ["model_path", "trust_remote_code"]:
             set_if_none(config.explorer.rollout_model, args, getattr(config.model, args))
         set_if_none(
             config.explorer.rollout_model, "chat_template", config.model.custom_chat_template
@@ -873,26 +874,6 @@ class BufferConfigValidator(ConfigValidator):
                 f"Failed to create buffer dir {config.buffer.cache_dir}, please check "
                 f"your checkpoint directory: {config.checkpoint_job_dir}"
             ) from e
-
-        # set pad_token_id / tokenizer_path
-        if config.buffer.pad_token_id is None:
-            from transformers import AutoTokenizer
-
-            try:
-                tokenizer = AutoTokenizer.from_pretrained(config.model.model_path)
-                if tokenizer.pad_token_id is None:
-                    tokenizer.pad_token_id = tokenizer.eos_token_id
-                    self.logger.warning(
-                        f"tokenizer.pad_token_id is None. Now set to {tokenizer.eos_token_id}",
-                        stacklevel=1,
-                    )
-                config.buffer.pad_token_id = tokenizer.pad_token_id
-
-            except Exception:
-                self.logger.warning(
-                    f"Failed to get pad token id from model {config.model.model_path}"
-                )
-                config.buffer.pad_token_id = 0
 
         self._check_explorer_input(config)
         self._check_trainer_input(config)
@@ -1266,7 +1247,10 @@ class GPUMemoryValidator(ConfigValidator):
         else:
             self.logger.info("GPU memory check skipped for non-FSDP strategies.")
 
-    def _get_model_params_num_and_config(self, model_path: str) -> Tuple[int, Any]:
+    @kimi_vl_monkey_patch_decorator
+    def _get_model_params_num_and_config(
+        self, model_path: str, trust_remote_code: bool
+    ) -> Tuple[int, Any]:
         """Load model configuration and estimate total parameter count without loading weights.
 
         Uses `accelerate.init_empty_weights()` to avoid GPU memory allocation during inspection.
@@ -1286,9 +1270,13 @@ class GPUMemoryValidator(ConfigValidator):
         import transformers
         from accelerate import init_empty_weights
 
-        model_config = transformers.AutoConfig.from_pretrained(model_path)
+        model_config = transformers.AutoConfig.from_pretrained(
+            model_path, trust_remote_code=trust_remote_code
+        )
         with init_empty_weights():
-            model = transformers.AutoModel.from_config(model_config, torch_dtype=torch.bfloat16)
+            model = transformers.AutoModel.from_config(
+                model_config, trust_remote_code=trust_remote_code, dtype=torch.bfloat16
+            )
         params_num = model.num_parameters()
         assert params_num > 0, f"No parameters found in the model at path: {model_path}"
         return params_num, model_config
@@ -1382,7 +1370,9 @@ class GPUMemoryValidator(ConfigValidator):
 
         try:
             model_path = config.model.model_path
-            params_num, hf_config = self._get_model_params_num_and_config(model_path)
+            params_num, hf_config = self._get_model_params_num_and_config(
+                model_path, config.model.trust_remote_code
+            )
 
             verl_config: veRLConfig = config.trainer.trainer_config
             world_size = config.cluster.trainer_gpu_num
@@ -1407,7 +1397,7 @@ class GPUMemoryValidator(ConfigValidator):
                     critic_hf_config = hf_config
                 else:
                     critic_params_num, critic_hf_config = self._get_model_params_num_and_config(
-                        config.model.critic_model_path
+                        config.model.critic_model_path, config.model.trust_remote_code
                     )
 
                 (
@@ -1548,7 +1538,7 @@ class GPUMemoryValidator(ConfigValidator):
             optim_step_memory (float): Estimated optimizer step memory (bytes).
         """
         is_vl_model = False
-        if 'VL' in hf_config.__class__.__name__:
+        if "VL" in hf_config.__class__.__name__:
             hf_config = hf_config.text_config
             is_vl_model = True
         max_activation_memory = self._calc_fsdp_activation_memory(

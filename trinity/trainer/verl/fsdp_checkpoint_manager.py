@@ -48,6 +48,7 @@ from verl.utils.fsdp_utils import (
 from verl.utils.logger import log_with_rank
 
 from trinity.manager.synchronizer import Synchronizer
+from trinity.trainer.verl.utils import get_model_class
 from trinity.trainer.verl_trainer import CheckpointMonitor
 from trinity.utils.log import get_logger
 
@@ -62,13 +63,14 @@ class FSDPCheckpointManager(OldFSDPCheckpointManager):
     This class is useful in distributed training scenarios where synchronization and non-blocking I/O are important.
     """
 
-    def __init__(self, *args, ray_namespace: str = "", **kwargs):
+    def __init__(self, *args, ray_namespace: str = "", trust_remote_code: bool = False, **kwargs):
         super().__init__(*args, **kwargs)
         self.logger = get_logger()
         self.synchronizer = Synchronizer.get_actor(namespace=ray_namespace)
         self.checkpoint_monitor = CheckpointMonitor.get_actor(
             namespace=ray_namespace,
         )
+        self.trust_remote_code = trust_remote_code
 
         # Threads for asynchronous saving of different components
         self._model_state_dict_thread = None
@@ -321,35 +323,14 @@ class FSDPCheckpointManager(OldFSDPCheckpointManager):
             os.makedirs(hf_local_path, exist_ok=True)
 
             _, model_config, generation_config = self._get_unwrap_model_and_config()
-
-            if "ForTokenClassification" in model_config.architectures[0]:
-                from transformers import AutoModelForTokenClassification
-
-                auto_model_cls = AutoModelForTokenClassification
-            elif "ForCausalLM" in model_config.architectures[0]:
-                from transformers import AutoModelForCausalLM
-
-                auto_model_cls = AutoModelForCausalLM
-            elif "ForConditionalGeneration" in model_config.architectures[0]:
-                # Handle different transformers versions for Vision2Seq models
-                import transformers
-                from packaging import version
-
-                if version.parse(transformers.__version__) >= version.parse("4.54.0"):
-                    # transformers >= 4.54.0 uses AutoModelForImageTextToText
-                    from transformers import AutoModelForImageTextToText
-
-                    auto_model_cls = AutoModelForImageTextToText
-                else:
-                    # transformers < 4.54.0 uses AutoModelForVision2Seq
-                    from transformers import AutoModelForVision2Seq
-
-                    auto_model_cls = AutoModelForVision2Seq
-            else:
-                raise NotImplementedError(f"Unknown architecture {model_config['architectures']}")
+            auto_model_cls = get_model_class(model_config)
 
             with init_empty_weights():
-                save_model = auto_model_cls.from_config(model_config, torch_dtype=torch.bfloat16)
+                save_model = auto_model_cls.from_config(
+                    model_config,
+                    dtype=torch.bfloat16,
+                    trust_remote_code=self.trust_remote_code,
+                )
             save_model.to_empty(device="cpu")
 
             if save_model.can_generate():

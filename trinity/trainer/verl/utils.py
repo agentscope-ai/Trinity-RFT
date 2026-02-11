@@ -251,3 +251,40 @@ def get_latest_hf_checkpoint_path(config: Config):
     if not os.path.exists(hf_checkpoint_dir):
         raise ValueError(f"No huggingface checkpoint found in {hf_checkpoint_dir}")
     return hf_checkpoint_dir
+
+
+# modified from verl/workers/fsdp_workers.py:ActorRolloutRefWorker._build_model_optimizer
+def get_model_class(hf_config):
+    from transformers import (
+        AutoModel,
+        AutoModelForCausalLM,
+        AutoModelForImageTextToText,
+        AutoModelForVision2Seq,
+    )
+
+    has_remote_code = hasattr(hf_config, "auto_map") and any(
+        hf_config.architectures[0] in val for val in hf_config.auto_map.values()
+    )
+    if has_remote_code:
+        auto_class = next(
+            k for k, v in hf_config.auto_map.items() if hf_config.architectures[0] in v
+        )
+        match auto_class:
+            case "AutoModelForVision2Seq":
+                model_class = AutoModelForVision2Seq
+            case "AutoModelForCausalLM":
+                model_class = AutoModelForCausalLM
+            case "AutoModelForImageTextToText":
+                model_class = AutoModelForImageTextToText
+            case _:
+                model_class = AutoModel
+    else:
+        if type(hf_config) in AutoModelForVision2Seq._model_mapping.keys():
+            model_class = AutoModelForVision2Seq
+        elif type(hf_config) in AutoModelForCausalLM._model_mapping.keys():
+            model_class = AutoModelForCausalLM
+        elif type(hf_config) in AutoModelForImageTextToText._model_mapping.keys():
+            model_class = AutoModelForImageTextToText
+        else:
+            model_class = AutoModel
+    return model_class
