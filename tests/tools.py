@@ -187,6 +187,20 @@ def get_unittest_dataset_config(dataset_name: str = "countdown", split: str = "t
             default_workflow_type="simple_mm_workflow",
             default_reward_fn_type="math_boxed_reward",
         )
+    elif dataset_name == "geometry_sft":
+        # Multi-modal geometry dataset for sft with 8 samples
+        return ExperienceBufferConfig(
+            name=dataset_name,
+            path=os.path.join(os.path.dirname(__file__), "template", "data", "geometry"),
+            split="train",
+            storage_type=StorageType.FILE.value,
+            format=FormatConfig(
+                prompt_type=PromptType.PLAINTEXT,
+                prompt_key="problem",
+                response_key="answer",
+                image_key="images",
+            ),
+        )
     else:
         raise ValueError(f"Unknown dataset name: {dataset_name}")
 
