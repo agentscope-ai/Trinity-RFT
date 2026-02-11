@@ -1245,7 +1245,6 @@ class TestMultiModalGRPO(BaseTrainerCase):
 
 
 class TestMultiModalSFT(BaseTrainerCase):
-    @unittest.skip("Require specific vllm/transformers version")
     def test_trainer(self):
         """Test SFT mode with multi-modal data."""
         self.config.mode = "train"

@@ -58,9 +58,13 @@ def build_mm_message(prompt: str, images: List, videos: List):
     img_idx, vid_idx = 0, 0
     for segment in segments:
         if segment == "<image>":
+            if img_idx >= len(images):
+                raise ValueError("More <image> tags in prompt than images provided.")
             content_list.append({"type": "image", "image": images[img_idx]})
             img_idx += 1
         elif segment == "<video>":
+            if vid_idx >= len(videos):
+                raise ValueError("More <video> tags in prompt than videos provided.")
             content_list.append({"type": "video", "video": videos[vid_idx]})
             vid_idx += 1
         elif len(segment) == 0:

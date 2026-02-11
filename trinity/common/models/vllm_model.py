@@ -228,8 +228,8 @@ class vLLMRolloutModel(BaseInferenceModel):
             multi_modal_inputs = None
         else:  # multi modal
             multi_modal_inputs = build_mm_input_for_training(self.processor, **prompt)
-            multi_modal_inputs.pop("input_ids")
-            multi_modal_inputs.pop("attention_mask")
+            multi_modal_inputs.pop("input_ids", None)
+            multi_modal_inputs.pop("attention_mask", None)
 
         output = await self._generate_internal(prompt=prompt, lora_request=lora_request, **kwargs)
         experiences = [

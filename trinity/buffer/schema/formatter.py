@@ -194,7 +194,7 @@ class SFTFormatter(ExperienceFormatter):
                 multi_modal_data,
             )
             tokens = full_text_inputs.pop("input_ids")[0]
-            full_text_inputs.pop("attention_mask")
+            full_text_inputs.pop("attention_mask", None)
             prompt_text_inputs = build_mm_input_for_training(
                 self.processor,
                 prompt,
