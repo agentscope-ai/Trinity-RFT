@@ -1242,15 +1242,21 @@ document.write(`
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">ray</span>
 
-    <span class="n">rollout_model</span> <span class="o">=</span> <span class="n">ray</span><span class="o">.</span><span class="n">get_actor</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_rollout_model_0&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="n">DEBUG_NAMESPACE</span>
-    <span class="p">)</span>
-    <span class="n">auxiliary_models</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">)):</span>
-        <span class="n">model</span> <span class="o">=</span> <span class="n">ray</span><span class="o">.</span><span class="n">get_actor</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_auxiliary_model_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">_0&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="n">DEBUG_NAMESPACE</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">rollout_model</span> <span class="o">=</span> <span class="n">ray</span><span class="o">.</span><span class="n">get_actor</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_rollout_model_0&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="n">DEBUG_NAMESPACE</span>
         <span class="p">)</span>
-        <span class="n">auxiliary_models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+        <span class="n">auxiliary_models</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">)):</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">ray</span><span class="o">.</span><span class="n">get_actor</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_auxiliary_model_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">_0&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="n">DEBUG_NAMESPACE</span>
+            <span class="p">)</span>
+            <span class="n">auxiliary_models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s2">&quot;Debug explorer models not found. Please start the models first by running &quot;</span>
+            <span class="s2">&quot;`trinity debug --module inference_model --config config_path` in another process.&quot;</span>
+        <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
     <span class="k">return</span> <span class="n">rollout_model</span><span class="p">,</span> <span class="n">auxiliary_models</span></div>
 
 </pre></div>
