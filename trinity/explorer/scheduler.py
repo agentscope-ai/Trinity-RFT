@@ -518,6 +518,17 @@ class Scheduler:
             avg_time_per_task * self.config.explorer.dynamic_timeout.ratio,
         )
 
+    async def _cleanup_batch_and_restart_runners(self, batch_id: Union[int, str]) -> None:
+        """Clear timeout tasks for a batch and restart associated runners."""
+        self._clear_timeout_tasks(batch_id=batch_id)
+        runners_to_restart = [
+            runner_id
+            for runner_id, task in list(self.busy_runners.items())
+            if task.batch_id == batch_id
+        ]
+        if runners_to_restart:
+            await asyncio.gather(*[self._restart_runner(rid) for rid in runners_to_restart])
+
     async def get_results(
         self,
         batch_id: Union[int, str],
@@ -550,11 +561,15 @@ class Scheduler:
             completed_count = len(self.completed_tasks.get(batch_id, []))
             if completed_count >= min_num:
                 min_threshold_reached_time = min_threshold_reached_time or time.time()
-                if (completed_count >= scheduled_num) or (
+                if completed_count >= scheduled_num:
+                    break
+                if (
                     time.time() - min_threshold_reached_time
                     >= self.config.explorer.over_rollout.wait_after_min
                 ):
-                    break
+                    if clear_timeout_tasks:
+                        await self._cleanup_batch_and_restart_runners(batch_id)
+                        break
             await asyncio.sleep(0.1)
 
         if time.time() - start_time > timeout:
@@ -562,14 +577,7 @@ class Scheduler:
                 f"Timed out waiting for tasks at batch {batch_id} to complete after {timeout} seconds"
             )
             if clear_timeout_tasks:
-                self._clear_timeout_tasks(batch_id=batch_id)
-                runners_to_restart = []
-                for runner_id, task in list(self.busy_runners.items()):
-                    if task.batch_id == batch_id:
-                        runners_to_restart.append(runner_id)
-                asyncio.gather(
-                    *[self._restart_runner(runner_id) for runner_id in runners_to_restart]
-                )
+                await self._cleanup_batch_and_restart_runners(batch_id)
 
         statuses = []
         experiences = []
