@@ -562,4 +562,4 @@ Each runner will log its output to a separate log file. The log file naming conv
     └── ...
 ```
 
-If you found errors or blocking issues during training, you can check the corresponding log files for detailed information to help diagnose and fix problems.
+Trinity-RFT also provide a convenient command `log` to view these logs in real-time. You can use `trinity log --log-dir /path/to/log/dir -k explorer_runner` command to filter and view the logs of all runners at once or use `trinity log --log-dir /path/to/log/dir -k explorer_runner_0` to view the logs of a specific runner. If you encounter errors or blocking issues during training, you can check the corresponding log files for detailed information to help diagnose and resolve the problems.

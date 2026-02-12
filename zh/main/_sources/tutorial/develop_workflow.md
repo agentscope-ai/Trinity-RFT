@@ -556,4 +556,4 @@ class ExampleWorkflow(Workflow):
     └── ...
 ```
 
-如果训练过程中出现报错或阻塞等异常情况，可通过查看对应日志文件快速定位问题，从而高效调试和优化工作流实现。
+Trinity-RFT 还提供了一个方便的 `log` 命令来实时查看这些日志。你可以使用 `trinity log --log-dir /path/to/log/dir -k explorer_runner` 命令来过滤并查看所有 workflow runner 的日志，或者使用 `trinity log --log-dir /path/to/log/dir -k explorer_runner_0` 来查看特定 workflow runner 的日志。

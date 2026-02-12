@@ -17,6 +17,7 @@ Submodules
 
    trinity.manager.checkpoint_converter
    trinity.manager.config_manager
+   trinity.manager.log_manager
    trinity.manager.state_manager
    trinity.manager.synchronizer
 

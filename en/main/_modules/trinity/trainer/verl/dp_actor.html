@@ -1,0 +1,1325 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>trinity.trainer.verl.dp_actor &#8212; Trinity-RFT 0.5.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../../_static/documentation_options.js?v=5f152624"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+
+
+
+const initStyles = () => {
+    const defaultStyle = document.createElement('style');
+    defaultStyle.textContent = `pre.mermaid {
+    /* Same as .mermaid-container > pre */
+    display: block;
+    width: 100%;
+}
+
+pre.mermaid > svg {
+    /* Same as .mermaid-container > pre > svg */
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}`;
+    document.head.appendChild(defaultStyle);
+
+    const fullscreenStyle = document.createElement('style');
+    fullscreenStyle.textContent = `.mermaid-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.mermaid-container > pre {
+    display: block;
+    width: 100%;
+}
+
+.mermaid-container > pre > svg {
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+
+.mermaid-fullscreen-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    color: #333;
+}
+
+.mermaid-fullscreen-btn:hover {
+    opacity: 100% !important;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-btn.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-btn.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 95vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.98);
+    z-index: 9999;
+    padding: 20px;
+    overflow: auto;
+}
+
+.mermaid-fullscreen-modal.dark-theme {
+    background: rgba(0, 0, 0, 0.98);
+}
+
+.mermaid-fullscreen-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen {
+    position: relative;
+    width: 95vw;
+    height: 90vh;
+    max-width: 95vw;
+    max-height: 90vh;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen.dark-theme {
+    background: #1a1a1a;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.mermaid-container-fullscreen pre.mermaid {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen .mermaid svg {
+    height: 100% !important;
+    width: 100% !important;
+    cursor: grab;
+}
+
+.mermaid-fullscreen-close {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    font-size: 24px;
+    line-height: 1;
+    color: #333;
+}
+
+.mermaid-fullscreen-close:hover {
+    background: white;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-close.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-close.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal .mermaid-fullscreen-btn {
+    display: none !important;
+}`;
+    document.head.appendChild(fullscreenStyle);
+}
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    // We use a set of heuristics:
+    // 1. Check for common dark mode classes or attributes
+    // 2. Check computed background color brightness
+    if (document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.getAttribute('data-theme') === 'dark') {
+        // console.log("Dark theme detected via class/attribute");
+        return true;
+    }
+    if (document.documentElement.classList.contains('light') ||
+        document.documentElement.getAttribute('data-theme') === 'light' ||
+        document.body.classList.contains('light') ||
+        document.body.getAttribute('data-theme') === 'light') {
+        // console.log("Light theme detected via class/attribute");
+        return false;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // console.log("Dark theme detected via prefers-color-scheme");
+        return true;
+    }
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // console.log("Background color brightness:", brightness);
+        return brightness < 128;
+    }
+    // console.log("No dark or light theme detected, defaulting to light theme");
+    return false;
+};
+
+let darkTheme = isDarkTheme();
+let modal = null;
+let modalContent = null;
+let previousScrollOffset = [window.scrollX, window.scrollY];
+
+const runMermaid = async (rerun) => {
+    console.log("Running mermaid diagrams, rerun =", rerun);
+    // clear all existing mermaid charts
+    let all_mermaids = document.querySelectorAll(".mermaid");
+
+    if (rerun) {
+        all_mermaids.forEach((el) => {
+            if(!el.hasAttribute("data-original-code")) {
+                // store original code
+                // console.log(`Storing original code for first run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+            if(el.getAttribute("data-processed") === "true") {
+                // remove and restore original
+                el.removeAttribute("data-processed");
+                // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                el.innerHTML = el.getAttribute('data-original-code');
+            } else {
+                // store original code
+                // console.log(`Storing original code for re-run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+        });
+        await mermaid.run();
+    }
+
+    all_mermaids = document.querySelectorAll(".mermaid");
+    const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+
+    if ("False" === "True") {
+        const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll("");
+            if(all_mermaids.length !== mermaids_processed.length) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else if(svgs.size() !== mermaids_to_add_zoom) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else {
+                svgs.each(function() {
+                    var svg = d3.select(this);
+                    svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+                    var inner = svg.select("g");
+                    var zoom = d3.zoom().on("zoom", function(event) {
+                        inner.attr("transform", event.transform);
+                    });
+                    svg.call(zoom);
+                });
+            }
+        }
+    } else if(all_mermaids.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(() => runMermaid(false), 200);
+        return;
+    }
+
+    // Stop here if not adding fullscreen capability
+    if ("True" !== "True") return;
+
+    if (modal !== null ) {
+        // Destroy existing modal
+        modal.remove();
+        modal = null;
+        modalContent = null;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    const closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            // Already processed, adjust button class if needed
+            const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+            if (existingBtn) {
+                existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = '⛶';
+        fullscreenBtn.style.opacity = '50%';
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scroll, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.sdisplay = 'block';
+
+                if ("False" === "True") {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        container.appendChild(fullscreenBtn);
+    });
+};
+
+const load = async () => {
+    initStyles();
+
+    await runMermaid(true);
+
+    const reRunIfThemeChanges = async () => {
+        const newDarkTheme = isDarkTheme();
+        if (newDarkTheme !== darkTheme) {
+            darkTheme = newDarkTheme;
+            console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+            await mermaid.initialize(
+                {...JSON.parse(
+                    `{"startOnLoad": false}`
+                ),
+                ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+                }
+            );
+            await runMermaid(true);
+        }
+    };
+
+    // Update theme classes when theme changes
+    const themeObserver = new MutationObserver(reRunIfThemeChanges);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+};
+
+
+
+
+
+console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+mermaid.initialize(
+    {...JSON.parse(
+        `{"startOnLoad": false}`
+    ),
+    ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+    }
+);
+
+window.addEventListener("load", load);</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/trinity/trainer/verl/dp_actor';</script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../../_static/logo.svg" class="logo__image only-light" alt="Trinity-RFT 0.5.1 documentation - Home"/>
+    <script>document.write(`<img src="../../../../_static/logo.svg" class="logo__image only-dark" alt="Trinity-RFT 0.5.1 documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+<nav class="bd-links bd-docs-nav">
+    <div class="bd-toc-item navbar-nav">
+        <ul class="nav bd-sidenav">
+      <li class="toctree-l1 has-children">
+        <details>
+          <summary>
+            <p class="caption" aria-level="2" role="heading" style="text-align: center;">
+              <span class="fa fa-book"></span>
+             <b>latest</b>
+            </p>
+          </summary>
+          <ul>
+            <li class="toctree-l2 current "><a class="reference" href="dp_actor.html">latest</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../../../../v0.5.0/index.html">v0.5.0</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../../../../v0.4.1/index.html">v0.4.1</a></li>
+          </ul>
+        </details>
+      </li>
+    </ul>
+    </div>
+</nav>
+</div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Guidelines</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/trinity_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/develop_overview.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/develop_workflow.html">Workflow Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/develop_algorithm.html">Algorithms Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/example_mix_algo.html">Advanced Algorithm Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/develop_operator.html">Operator Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/develop_selector.html">🧪 Experimental: Task Selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/trinity_configs.html">Configuration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/trinity_gpu_configs.html">GPU Configuration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/synchronizer.html">Synchronizer in Trinity-RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/align_with_verl.html">Align configuration with veRL</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/metrics_reference.html">Monitor Metrics Reference</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/example_reasoning_basic.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/example_reasoning_advanced.html">Off-Policy RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/example_async_mode.html">Asynchronous RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/example_multi_turn.html">Concatenated Multi-Turn RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/example_step_wise.html">General Multi-Step RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/example_react.html">ReAct Agent Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/example_search_email.html">Email Search Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/example_dpo.html">Offline DPO and SFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/example_tinker_backend.html">Tinker Backend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/example_megatron.html">Megatron-LM Backend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/example_data_functionalities.html">Data Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/example_dataset_perspective.html">Example Summary</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">FAQ</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../../tutorial/faq.html">FAQ</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../../api_reference.html">API Reference</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../../build_api/trinity.buffer.html">trinity.buffer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.buffer.operators.html">trinity.buffer.operators package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.buffer.operators.filters.html">trinity.buffer.operators.filters package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.buffer.operators.mappers.html">trinity.buffer.operators.mappers package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.buffer.operators.data_juicer_operator.html">trinity.buffer.operators.data_juicer_operator module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.buffer.operators.experience_operator.html">trinity.buffer.operators.experience_operator module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.buffer.pipelines.html">trinity.buffer.pipelines package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.buffer.pipelines.experience_pipeline.html">trinity.buffer.pipelines.experience_pipeline module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.buffer.pipelines.task_pipeline.html">trinity.buffer.pipelines.task_pipeline module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.buffer.reader.html">trinity.buffer.reader package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.buffer.reader.file_reader.html">trinity.buffer.reader.file_reader module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.buffer.reader.queue_reader.html">trinity.buffer.reader.queue_reader module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.buffer.reader.sql_reader.html">trinity.buffer.reader.sql_reader module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.buffer.schema.html">trinity.buffer.schema package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.buffer.schema.formatter.html">trinity.buffer.schema.formatter module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.buffer.schema.sql_schema.html">trinity.buffer.schema.sql_schema module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.buffer.selector.html">trinity.buffer.selector package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.buffer.selector.difficulty_estimator.html">trinity.buffer.selector.difficulty_estimator module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.buffer.selector.selector.html">trinity.buffer.selector.selector module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.buffer.storage.html">trinity.buffer.storage package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.buffer.storage.file.html">trinity.buffer.storage.file module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.buffer.storage.queue.html">trinity.buffer.storage.queue module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.buffer.storage.sql.html">trinity.buffer.storage.sql module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.buffer.writer.html">trinity.buffer.writer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.buffer.writer.file_writer.html">trinity.buffer.writer.file_writer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.buffer.writer.queue_writer.html">trinity.buffer.writer.queue_writer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.buffer.writer.sql_writer.html">trinity.buffer.writer.sql_writer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.buffer.buffer.html">trinity.buffer.buffer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.buffer.buffer_reader.html">trinity.buffer.buffer_reader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.buffer.buffer_writer.html">trinity.buffer.buffer_writer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.buffer.task_scheduler.html">trinity.buffer.task_scheduler module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.buffer.utils.html">trinity.buffer.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.buffer.viewer.html">trinity.buffer.viewer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../../build_api/trinity.explorer.html">trinity.explorer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.explorer.proxy.html">trinity.explorer.proxy package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.explorer.proxy.app.html">trinity.explorer.proxy.app module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.explorer.proxy.client.html">trinity.explorer.proxy.client module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.explorer.proxy.recorder.html">trinity.explorer.proxy.recorder module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.explorer.proxy.service.html">trinity.explorer.proxy.service module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.explorer.explorer.html">trinity.explorer.explorer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.explorer.scheduler.html">trinity.explorer.scheduler module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.explorer.workflow_runner.html">trinity.explorer.workflow_runner module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../../build_api/trinity.trainer.html">trinity.trainer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.trainer.tinker.html">trinity.trainer.tinker package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.trainer.tinker.utils.html">trinity.trainer.tinker.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.trainer.verl.html">trinity.trainer.verl package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.trainer.verl.dp_actor.html">trinity.trainer.verl.dp_actor module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.trainer.verl.fsdp_checkpoint_manager.html">trinity.trainer.verl.fsdp_checkpoint_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.trainer.verl.fsdp_workers.html">trinity.trainer.verl.fsdp_workers module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.trainer.verl.megatron_actor.html">trinity.trainer.verl.megatron_actor module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.trainer.verl.megatron_checkpoint_manager.html">trinity.trainer.verl.megatron_checkpoint_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.trainer.verl.megatron_workers.html">trinity.trainer.verl.megatron_workers module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.trainer.verl.utils.html">trinity.trainer.verl.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.trainer.tinker_trainer.html">trinity.trainer.tinker_trainer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.trainer.trainer.html">trinity.trainer.trainer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.trainer.verl_trainer.html">trinity.trainer.verl_trainer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../../build_api/trinity.algorithm.html">trinity.algorithm package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.algorithm.advantage_fn.html">trinity.algorithm.advantage_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.advantage_fn.advantage_fn.html">trinity.algorithm.advantage_fn.advantage_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.advantage_fn.asymre_advantage.html">trinity.algorithm.advantage_fn.asymre_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.advantage_fn.grpo_advantage.html">trinity.algorithm.advantage_fn.grpo_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.advantage_fn.jsd_advantage.html">trinity.algorithm.advantage_fn.jsd_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.advantage_fn.multi_step_grpo_advantage.html">trinity.algorithm.advantage_fn.multi_step_grpo_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.advantage_fn.on_policy_distill_advantage.html">trinity.algorithm.advantage_fn.on_policy_distill_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.advantage_fn.opmd_advantage.html">trinity.algorithm.advantage_fn.opmd_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.advantage_fn.ppo_advantage.html">trinity.algorithm.advantage_fn.ppo_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.advantage_fn.rec_advantage.html">trinity.algorithm.advantage_fn.rec_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.advantage_fn.reinforce_advantage.html">trinity.algorithm.advantage_fn.reinforce_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.advantage_fn.reinforce_plus_plus_advantage.html">trinity.algorithm.advantage_fn.reinforce_plus_plus_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.advantage_fn.remax_advantage.html">trinity.algorithm.advantage_fn.remax_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.advantage_fn.rloo_advantage.html">trinity.algorithm.advantage_fn.rloo_advantage module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.algorithm.entropy_loss_fn.html">trinity.algorithm.entropy_loss_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.entropy_loss_fn.entropy_loss_fn.html">trinity.algorithm.entropy_loss_fn.entropy_loss_fn module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.algorithm.kl_fn.html">trinity.algorithm.kl_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.kl_fn.kl_fn.html">trinity.algorithm.kl_fn.kl_fn module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.algorithm.policy_loss_fn.html">trinity.algorithm.policy_loss_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.policy_loss_fn.chord_policy_loss.html">trinity.algorithm.policy_loss_fn.chord_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.policy_loss_fn.cispo_policy_loss.html">trinity.algorithm.policy_loss_fn.cispo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.policy_loss_fn.dpo_loss.html">trinity.algorithm.policy_loss_fn.dpo_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.policy_loss_fn.gspo_policy_loss.html">trinity.algorithm.policy_loss_fn.gspo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.policy_loss_fn.importance_sampling_policy_loss.html">trinity.algorithm.policy_loss_fn.importance_sampling_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.policy_loss_fn.mix_policy_loss.html">trinity.algorithm.policy_loss_fn.mix_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.policy_loss_fn.opmd_policy_loss.html">trinity.algorithm.policy_loss_fn.opmd_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.policy_loss_fn.policy_loss_fn.html">trinity.algorithm.policy_loss_fn.policy_loss_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.policy_loss_fn.ppo_policy_loss.html">trinity.algorithm.policy_loss_fn.ppo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.policy_loss_fn.rec_policy_loss.html">trinity.algorithm.policy_loss_fn.rec_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.policy_loss_fn.sapo_policy_loss.html">trinity.algorithm.policy_loss_fn.sapo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.policy_loss_fn.sft_loss.html">trinity.algorithm.policy_loss_fn.sft_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.policy_loss_fn.sppo_loss_fn.html">trinity.algorithm.policy_loss_fn.sppo_loss_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.policy_loss_fn.topr_policy_loss.html">trinity.algorithm.policy_loss_fn.topr_policy_loss module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.algorithm.sample_strategy.html">trinity.algorithm.sample_strategy package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.sample_strategy.mix_sample_strategy.html">trinity.algorithm.sample_strategy.mix_sample_strategy module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.sample_strategy.sample_strategy.html">trinity.algorithm.sample_strategy.sample_strategy module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.algorithm.sample_strategy.utils.html">trinity.algorithm.sample_strategy.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.algorithm.algorithm.html">trinity.algorithm.algorithm module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.algorithm.key_mapper.html">trinity.algorithm.key_mapper module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.algorithm.utils.html">trinity.algorithm.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../../build_api/trinity.manager.html">trinity.manager package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.manager.config_registry.html">trinity.manager.config_registry package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.manager.config_registry.algorithm_config_manager.html">trinity.manager.config_registry.algorithm_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.manager.config_registry.buffer_config_manager.html">trinity.manager.config_registry.buffer_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.manager.config_registry.config_registry.html">trinity.manager.config_registry.config_registry module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.manager.config_registry.explorer_config_manager.html">trinity.manager.config_registry.explorer_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.manager.config_registry.model_config_manager.html">trinity.manager.config_registry.model_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.manager.config_registry.trainer_config_manager.html">trinity.manager.config_registry.trainer_config_manager module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.manager.checkpoint_converter.html">trinity.manager.checkpoint_converter module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.manager.config_manager.html">trinity.manager.config_manager module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.manager.log_manager.html">trinity.manager.log_manager module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.manager.state_manager.html">trinity.manager.state_manager module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.manager.synchronizer.html">trinity.manager.synchronizer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../../build_api/trinity.common.html">trinity.common package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.common.models.html">trinity.common.models package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.vllm_patch.html">trinity.common.models.vllm_patch package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.mm_utils.html">trinity.common.models.mm_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.model.html">trinity.common.models.model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.tinker_model.html">trinity.common.models.tinker_model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.utils.html">trinity.common.models.utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.vllm_model.html">trinity.common.models.vllm_model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.vllm_worker.html">trinity.common.models.vllm_worker module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.common.patch.html">trinity.common.patch package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.patch.kimi.html">trinity.common.patch.kimi module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.html">trinity.common.rewards package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.accuracy_reward.html">trinity.common.rewards.accuracy_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.agents_reward.html">trinity.common.rewards.agents_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.countdown_reward.html">trinity.common.rewards.countdown_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.dapo_reward.html">trinity.common.rewards.dapo_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.eval_utils.html">trinity.common.rewards.eval_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.format_reward.html">trinity.common.rewards.format_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.human_reward.html">trinity.common.rewards.human_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.math_reward.html">trinity.common.rewards.math_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.naive_dapo_score.html">trinity.common.rewards.naive_dapo_score module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.qwen25_eval.html">trinity.common.rewards.qwen25_eval module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.reward_fn.html">trinity.common.rewards.reward_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.tool_reward.html">trinity.common.rewards.tool_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.utils.html">trinity.common.rewards.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.common.workflows.html">trinity.common.workflows package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.workflows.agentscope.html">trinity.common.workflows.agentscope package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.workflows.agentscope_workflow.html">trinity.common.workflows.agentscope_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.workflows.customized_math_workflows.html">trinity.common.workflows.customized_math_workflows module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.workflows.customized_toolcall_workflows.html">trinity.common.workflows.customized_toolcall_workflows module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.workflows.eval_workflow.html">trinity.common.workflows.eval_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.workflows.math_rm_workflow.html">trinity.common.workflows.math_rm_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.workflows.math_ruler_workflow.html">trinity.common.workflows.math_ruler_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.workflows.math_trainable_ruler_workflow.html">trinity.common.workflows.math_trainable_ruler_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.workflows.on_policy_distill_workflow.html">trinity.common.workflows.on_policy_distill_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.workflows.rubric_judge_workflow.html">trinity.common.workflows.rubric_judge_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.workflows.simple_mm_workflow.html">trinity.common.workflows.simple_mm_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.workflows.step_wise_workflow.html">trinity.common.workflows.step_wise_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.workflows.workflow.html">trinity.common.workflows.workflow module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.common.config.html">trinity.common.config module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.common.config_validator.html">trinity.common.config_validator module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.common.constants.html">trinity.common.constants module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.common.experience.html">trinity.common.experience module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.common.verl_config.html">trinity.common.verl_config module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../../build_api/trinity.utils.html">trinity.utils package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.utils.annotations.html">trinity.utils.annotations module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.utils.distributed.html">trinity.utils.distributed module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.utils.dlc_utils.html">trinity.utils.dlc_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.utils.log.html">trinity.utils.log module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.utils.lora_utils.html">trinity.utils.lora_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.utils.monitor.html">trinity.utils.monitor module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.utils.plugin_loader.html">trinity.utils.plugin_loader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.utils.registry.html">trinity.utils.registry module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.utils.timer.html">trinity.utils.timer module</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+<div class="header-extra-switchers" style="display:inline-flex; gap:.25rem; margin-left:.5rem; align-items:center;">
+  <button id="lang-toggle-btn" class="btn btn-sm btn-outline-secondary" title="">
+  <span id="lang-toggle-label"></span>
+</button>
+<script>
+(function () {
+  const btn = document.getElementById('lang-toggle-btn');
+  const lab = document.getElementById('lang-toggle-label');
+  if (!btn || !lab) return;
+
+  const m = location.pathname.match(/^(.*\/)(en|zh)(\/.*)$/);
+
+  const cur = m ? m[2] : 'en';
+  if (cur === 'en') {
+    lab.textContent = '中';
+    btn.title = '切换到中文';
+  } else {
+    lab.textContent = 'EN';
+    btn.title = 'Switch to English';
+  }
+
+  const targetHref = (function () {
+    if (!m) return location.href;
+    const other = cur === 'en' ? 'zh' : 'en';
+    const suffix = m[3] || '/';
+    return m[1] + other + suffix + location.search + location.hash;
+  })();
+
+  btn.addEventListener('click', function () {
+    location.href = targetHref;
+  });
+})();
+</script>
+</div>
+
+
+
+<div class="article-header-buttons">
+
+
+<a href="https://github.com/agentscope-ai/Trinity-RFT" target="_blank"
+   class="btn btn-sm btn-source-repository-button"
+   title="Source repository"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for trinity.trainer.verl.dp_actor</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Copyright 2024 Bytedance Ltd. and/or its affiliates</span>
+<span class="c1"># Copyright 2023-2024 SGLang Team</span>
+<span class="c1"># Copyright 2025 ModelBest Inc. and/or its affiliates</span>
+<span class="c1">#</span>
+<span class="c1"># Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c1"># you may not use this file except in compliance with the License.</span>
+<span class="c1"># You may obtain a copy of the License at</span>
+<span class="c1">#</span>
+<span class="c1">#     http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c1">#</span>
+<span class="c1"># Unless required by applicable law or agreed to in writing, software</span>
+<span class="c1"># distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c1"># WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c1"># See the License for the specific language governing permissions and</span>
+<span class="c1"># limitations under the License.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Single Process Actor.</span>
+<span class="sd">Modified from https://github.com/volcengine/verl/blob/v0.7.0/verl/workers/actor/dp_actor.py</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verl</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataProto</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.debug</span><span class="w"> </span><span class="kn">import</span> <span class="n">GPUMemoryLogger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.device</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_device_id</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.py_functional</span><span class="w"> </span><span class="kn">import</span> <span class="n">append_to_dict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.seqlen_balancing</span><span class="w"> </span><span class="kn">import</span> <span class="n">prepare_dynamic_batch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verl.workers.actor.dp_actor</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataParallelPPOActor</span> <span class="k">as</span> <span class="n">DPActor</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.algorithm</span><span class="w"> </span><span class="kn">import</span> <span class="n">ENTROPY_LOSS_FN</span><span class="p">,</span> <span class="n">KL_FN</span><span class="p">,</span> <span class="n">POLICY_LOSS_FN</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.algorithm.entropy_loss_fn.entropy_loss_fn</span><span class="w"> </span><span class="kn">import</span> <span class="n">DummyEntropyLossFn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.algorithm.kl_fn.kl_fn</span><span class="w"> </span><span class="kn">import</span> <span class="n">DummyKLFn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.algorithm.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">prefix_metrics</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">AlgorithmConfig</span>
+
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;DataParallelPPOActor&quot;</span><span class="p">]</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="s2">&quot;VERL_LOGGING_LEVEL&quot;</span><span class="p">,</span> <span class="s2">&quot;WARN&quot;</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="DataParallelPPOActor">
+<a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.dp_actor.html#trinity.trainer.verl.dp_actor.DataParallelPPOActor">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DataParallelPPOActor</span><span class="p">(</span><span class="n">DPActor</span><span class="p">):</span>
+<div class="viewcode-block" id="DataParallelPPOActor.__init__">
+<a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.dp_actor.html#trinity.trainer.verl.dp_actor.DataParallelPPOActor.__init__">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">actor_module</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">actor_optimizer</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Optimizer</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;When optimizer is None, it is Reference Policy&quot;&quot;&quot;</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">actor_module</span><span class="p">,</span> <span class="n">actor_optimizer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">policy_loss_fn</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kl_loss_fn</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entropy_loss_fn</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="DataParallelPPOActor.set_algorithm">
+<a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.dp_actor.html#trinity.trainer.verl.dp_actor.DataParallelPPOActor.set_algorithm">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_algorithm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">algorithm_config</span><span class="p">:</span> <span class="n">AlgorithmConfig</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loss_agg_mode</span> <span class="o">=</span> <span class="n">algorithm_config</span><span class="o">.</span><span class="n">loss_agg_mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">policy_loss_fn</span> <span class="o">=</span> <span class="n">POLICY_LOSS_FN</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">algorithm_config</span><span class="o">.</span><span class="n">policy_loss_fn</span><span class="p">)(</span>
+            <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;verl&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">algorithm_config</span><span class="o">.</span><span class="n">policy_loss_fn_args</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kl_loss_fn</span> <span class="o">=</span> <span class="n">KL_FN</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">algorithm_config</span><span class="o">.</span><span class="n">kl_loss_fn</span><span class="p">)(</span><span class="o">**</span><span class="n">algorithm_config</span><span class="o">.</span><span class="n">kl_loss_fn_args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">entropy_loss_fn</span> <span class="o">=</span> <span class="n">ENTROPY_LOSS_FN</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">algorithm_config</span><span class="o">.</span><span class="n">entropy_loss_fn</span><span class="p">)(</span>
+            <span class="o">**</span><span class="n">algorithm_config</span><span class="o">.</span><span class="n">entropy_loss_fn_args</span>
+        <span class="p">)</span></div>
+
+
+    <span class="nd">@GPUMemoryLogger</span><span class="p">(</span><span class="n">role</span><span class="o">=</span><span class="s2">&quot;dp actor&quot;</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="n">logger</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_policy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">DataProto</span><span class="p">):</span>  <span class="c1"># noqa: C901</span>
+        <span class="c1"># make sure we are in training mode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">actor_module</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+
+        <span class="c1"># temperature must be in the data.meta_info to avoid silent error</span>
+        <span class="n">temperature</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">meta_info</span><span class="p">[</span><span class="s2">&quot;temperature&quot;</span><span class="p">]</span>
+        <span class="n">select_keys</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">&quot;input_ids&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;position_ids&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;attention_mask&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;responses&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;response_mask&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="n">select_keys</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">policy_loss_fn</span><span class="o">.</span><span class="n">select_keys</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kl_loss_fn</span><span class="p">,</span> <span class="n">DummyKLFn</span><span class="p">):</span>
+            <span class="n">select_keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;ref_log_prob&quot;</span><span class="p">)</span>
+        <span class="c1"># rollout_is_weights will be used in policy loss</span>
+        <span class="c1"># rollout_log_probs is equal to old_log_prob in Trinity</span>
+        <span class="n">select_keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">select_keys</span><span class="p">))</span>
+
+        <span class="n">has_multi_modal_inputs</span> <span class="o">=</span> <span class="s2">&quot;multi_modal_inputs&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">non_tensor_batch</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="n">non_tensor_select_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;multi_modal_inputs&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">has_multi_modal_inputs</span> <span class="k">else</span> <span class="p">[]</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="n">batch_keys</span><span class="o">=</span><span class="n">select_keys</span><span class="p">,</span> <span class="n">non_tensor_batch_keys</span><span class="o">=</span><span class="n">non_tensor_select_keys</span><span class="p">)</span>
+
+        <span class="c1"># Split to make minibatch iterator for updating the actor</span>
+        <span class="c1"># See PPO paper for details. https://arxiv.org/abs/1707.06347</span>
+        <span class="n">mini_batches</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">ppo_mini_batch_size</span><span class="p">)</span>
+
+        <span class="c1"># EXPERIMENTAL: apply loss scale fix</span>
+        <span class="n">do_fix_actor_microbatch_loss_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">fix_actor_microbatch_loss_scale</span> <span class="ow">and</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loss_agg_mode</span> <span class="o">==</span> <span class="s2">&quot;token-mean&quot;</span>
+        <span class="p">)</span>
+
+        <span class="n">metrics</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">ppo_epochs</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">batch_idx</span><span class="p">,</span> <span class="n">mini_batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">mini_batches</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">use_dynamic_bsz</span><span class="p">:</span>
+                    <span class="n">max_token_len</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">ppo_max_token_len_per_gpu</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ulysses_sequence_parallel_size</span>
+                    <span class="p">)</span>
+                    <span class="n">micro_batches</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">prepare_dynamic_batch</span><span class="p">(</span>
+                        <span class="n">mini_batch</span><span class="p">,</span> <span class="n">max_token_len</span><span class="o">=</span><span class="n">max_token_len</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">gradient_accumulation</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">ppo_mini_batch_size</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">ppo_micro_batch_size_per_gpu</span>
+                    <span class="p">)</span>
+                    <span class="n">micro_batches</span> <span class="o">=</span> <span class="n">mini_batch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">ppo_micro_batch_size_per_gpu</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">do_fix_actor_microbatch_loss_scale</span><span class="p">:</span>
+                    <span class="c1"># calculate the total number of response tokens in the minibatch</span>
+                    <span class="n">mini_batch_token_num</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+                        <span class="n">mini_batch</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;response_mask&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">get_device_id</span><span class="p">())</span>
+                    <span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">actor_optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+
+                <span class="k">for</span> <span class="n">micro_batch</span> <span class="ow">in</span> <span class="n">micro_batches</span><span class="p">:</span>
+                    <span class="n">micro_batch</span> <span class="o">=</span> <span class="n">micro_batch</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">get_device_id</span><span class="p">())</span>
+                    <span class="n">micro_batch_metrics</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="n">model_inputs</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">micro_batch</span><span class="o">.</span><span class="n">batch</span><span class="p">,</span> <span class="o">**</span><span class="n">micro_batch</span><span class="o">.</span><span class="n">non_tensor_batch</span><span class="p">}</span>
+                    <span class="n">response_mask</span> <span class="o">=</span> <span class="n">model_inputs</span><span class="p">[</span><span class="s2">&quot;response_mask&quot;</span><span class="p">]</span>
+                    <span class="n">loss_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">policy_loss</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;loss_mode&quot;</span><span class="p">,</span> <span class="s2">&quot;vanilla&quot;</span><span class="p">)</span>
+
+                    <span class="c1"># all return: (bsz, response_length)</span>
+                    <span class="n">calculate_entropy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entropy_loss_fn</span> <span class="o">!=</span> <span class="n">DummyEntropyLossFn</span>
+                    <span class="n">entropy</span><span class="p">,</span> <span class="n">log_prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_forward_micro_batch</span><span class="p">(</span>
+                        <span class="n">micro_batch</span><span class="o">=</span><span class="n">model_inputs</span><span class="p">,</span>
+                        <span class="n">temperature</span><span class="o">=</span><span class="n">temperature</span><span class="p">,</span>
+                        <span class="n">calculate_entropy</span><span class="o">=</span><span class="n">calculate_entropy</span><span class="p">,</span>
+                    <span class="p">)</span>
+
+                    <span class="n">pg_loss</span><span class="p">,</span> <span class="n">pg_loss_metrics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">policy_loss_fn</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
+                        <span class="n">logprob</span><span class="o">=</span><span class="n">log_prob</span><span class="p">,</span> <span class="o">**</span><span class="n">model_inputs</span>
+                    <span class="p">)</span>
+                    <span class="n">prefix_metrics</span><span class="p">(</span>
+                        <span class="n">src_metrics</span><span class="o">=</span><span class="n">pg_loss_metrics</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;actor&quot;</span><span class="p">,</span> <span class="n">dst_metrics</span><span class="o">=</span><span class="n">micro_batch_metrics</span>
+                    <span class="p">)</span>
+
+                    <span class="c1"># TODO: to be check</span>
+                    <span class="c1"># Skip if using bypass_mode loss (metrics already computed in pg_metrics)</span>
+                    <span class="n">rollout_log_prob</span> <span class="o">=</span> <span class="n">model_inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rollout_log_probs&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">loss_mode</span> <span class="o">!=</span> <span class="s2">&quot;bypass_mode&quot;</span> <span class="ow">and</span> <span class="n">rollout_log_prob</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="c1"># Compute metrics using CURRENT policy π_θ vs π_rollout</span>
+                        <span class="c1"># Tracks evolving off-policy gap as π_θ updates during mini-batch training</span>
+                        <span class="kn">from</span><span class="w"> </span><span class="nn">verl.trainer.ppo.rollout_corr_helper</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                            <span class="n">compute_rollout_corr_metrics_from_logprobs</span><span class="p">,</span>
+                        <span class="p">)</span>
+
+                        <span class="n">rollout_corr_metrics</span> <span class="o">=</span> <span class="n">compute_rollout_corr_metrics_from_logprobs</span><span class="p">(</span>
+                            <span class="n">log_prob</span><span class="o">=</span><span class="n">log_prob</span><span class="p">,</span>
+                            <span class="n">rollout_log_prob</span><span class="o">=</span><span class="n">rollout_log_prob</span><span class="p">,</span>
+                            <span class="n">response_mask</span><span class="o">=</span><span class="n">response_mask</span><span class="p">,</span>
+                        <span class="p">)</span>
+                        <span class="n">micro_batch_metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">rollout_corr_metrics</span><span class="p">)</span>
+
+                    <span class="c1"># compute entropy loss from entropy</span>
+                    <span class="n">entropy_loss</span><span class="p">,</span> <span class="n">entropy_loss_metrics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">entropy_loss_fn</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
+                        <span class="n">entropy</span><span class="o">=</span><span class="n">entropy</span><span class="p">,</span>
+                        <span class="n">action_mask</span><span class="o">=</span><span class="n">response_mask</span><span class="p">,</span>
+                        <span class="n">loss_agg_mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">loss_agg_mode</span><span class="p">,</span>
+                        <span class="o">**</span><span class="n">model_inputs</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="n">prefix_metrics</span><span class="p">(</span>
+                        <span class="n">src_metrics</span><span class="o">=</span><span class="n">entropy_loss_metrics</span><span class="p">,</span>
+                        <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;actor&quot;</span><span class="p">,</span>
+                        <span class="n">dst_metrics</span><span class="o">=</span><span class="n">micro_batch_metrics</span><span class="p">,</span>
+                    <span class="p">)</span>
+
+                    <span class="c1"># compute policy loss</span>
+                    <span class="n">policy_loss</span> <span class="o">=</span> <span class="n">pg_loss</span> <span class="o">-</span> <span class="n">entropy_loss</span>
+
+                    <span class="n">kl_loss</span><span class="p">,</span> <span class="n">kl_loss_metrics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kl_loss_fn</span><span class="o">.</span><span class="n">calculate_kl_loss</span><span class="p">(</span>
+                        <span class="n">logprob</span><span class="o">=</span><span class="n">log_prob</span><span class="p">,</span>
+                        <span class="n">ref_logprob</span><span class="o">=</span><span class="n">model_inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ref_log_prob&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                        <span class="n">response_mask</span><span class="o">=</span><span class="n">response_mask</span><span class="p">,</span>
+                        <span class="n">loss_agg_mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">loss_agg_mode</span><span class="p">,</span>
+                        <span class="n">old_logprob</span><span class="o">=</span><span class="n">model_inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;old_log_probs&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                    <span class="p">)</span>
+                    <span class="n">prefix_metrics</span><span class="p">(</span>
+                        <span class="n">src_metrics</span><span class="o">=</span><span class="n">kl_loss_metrics</span><span class="p">,</span>
+                        <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;actor&quot;</span><span class="p">,</span>
+                        <span class="n">dst_metrics</span><span class="o">=</span><span class="n">micro_batch_metrics</span><span class="p">,</span>
+                    <span class="p">)</span>
+                    <span class="n">policy_loss</span> <span class="o">=</span> <span class="n">policy_loss</span> <span class="o">+</span> <span class="n">kl_loss</span>
+
+                    <span class="c1"># set loss scale for the microbatch</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">do_fix_actor_microbatch_loss_scale</span><span class="p">:</span>
+                        <span class="c1"># original implementation of microbatch loss scale</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">use_dynamic_bsz</span><span class="p">:</span>
+                            <span class="n">loss_scale</span> <span class="o">=</span> <span class="n">response_mask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">ppo_mini_batch_size</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">loss_scale</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_accumulation</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c1"># EXPERIMENTAL: fix for token-mean loss aggregation</span>
+                        <span class="c1"># scale microbatch loss according to the number of tokens (rather than sequences)</span>
+                        <span class="n">loss_scale</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">response_mask</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">/</span> <span class="p">(</span><span class="n">mini_batch_token_num</span> <span class="o">+</span> <span class="mf">1e-6</span><span class="p">)</span>
+
+                    <span class="n">loss</span> <span class="o">=</span> <span class="n">policy_loss</span> <span class="o">*</span> <span class="n">loss_scale</span>
+                    <span class="n">micro_batch_metrics</span><span class="p">[</span><span class="s2">&quot;actor/final_loss&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="s2">&quot;actor/kl_loss&quot;</span> <span class="ow">in</span> <span class="n">micro_batch_metrics</span><span class="p">:</span>
+                        <span class="n">micro_batch_metrics</span><span class="p">[</span><span class="s2">&quot;actor/kl_loss&quot;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">loss_scale</span>
+                    <span class="k">if</span> <span class="s2">&quot;actor/pg_loss&quot;</span> <span class="ow">in</span> <span class="n">micro_batch_metrics</span><span class="p">:</span>
+                        <span class="n">micro_batch_metrics</span><span class="p">[</span><span class="s2">&quot;actor/pg_loss&quot;</span><span class="p">]</span> <span class="o">*=</span> <span class="n">loss_scale</span>
+
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="o">.</span><span class="n">scale</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+
+                    <span class="n">append_to_dict</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="n">micro_batch_metrics</span><span class="p">)</span>
+
+                <span class="n">grad_norm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_optimizer_step</span><span class="p">()</span>
+                <span class="n">mini_batch_metrics</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;actor/grad_norm&quot;</span><span class="p">:</span> <span class="n">grad_norm</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()}</span>
+                <span class="n">append_to_dict</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="n">mini_batch_metrics</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">actor_optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">metrics</span></div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Trinity-RFT Team
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2025, Trinity-RFT Team.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

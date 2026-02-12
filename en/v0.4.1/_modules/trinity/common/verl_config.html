@@ -1,0 +1,1841 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>trinity.common.verl_config &#8212; Trinity-RFT 0.5.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../../../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../../../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../../../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../../../_static/documentation_options.js?v=5f152624"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+
+
+
+const initStyles = () => {
+    const defaultStyle = document.createElement('style');
+    defaultStyle.textContent = `pre.mermaid {
+    /* Same as .mermaid-container > pre */
+    display: block;
+    width: 100%;
+}
+
+pre.mermaid > svg {
+    /* Same as .mermaid-container > pre > svg */
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}`;
+    document.head.appendChild(defaultStyle);
+
+    const fullscreenStyle = document.createElement('style');
+    fullscreenStyle.textContent = `.mermaid-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.mermaid-container > pre {
+    display: block;
+    width: 100%;
+}
+
+.mermaid-container > pre > svg {
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+
+.mermaid-fullscreen-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    color: #333;
+}
+
+.mermaid-fullscreen-btn:hover {
+    opacity: 100% !important;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-btn.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-btn.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 95vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.98);
+    z-index: 9999;
+    padding: 20px;
+    overflow: auto;
+}
+
+.mermaid-fullscreen-modal.dark-theme {
+    background: rgba(0, 0, 0, 0.98);
+}
+
+.mermaid-fullscreen-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen {
+    position: relative;
+    width: 95vw;
+    height: 90vh;
+    max-width: 95vw;
+    max-height: 90vh;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen.dark-theme {
+    background: #1a1a1a;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.mermaid-container-fullscreen pre.mermaid {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen .mermaid svg {
+    height: 100% !important;
+    width: 100% !important;
+    cursor: grab;
+}
+
+.mermaid-fullscreen-close {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    font-size: 24px;
+    line-height: 1;
+    color: #333;
+}
+
+.mermaid-fullscreen-close:hover {
+    background: white;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-close.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-close.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal .mermaid-fullscreen-btn {
+    display: none !important;
+}`;
+    document.head.appendChild(fullscreenStyle);
+}
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    // We use a set of heuristics:
+    // 1. Check for common dark mode classes or attributes
+    // 2. Check computed background color brightness
+    if (document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.getAttribute('data-theme') === 'dark') {
+        // console.log("Dark theme detected via class/attribute");
+        return true;
+    }
+    if (document.documentElement.classList.contains('light') ||
+        document.documentElement.getAttribute('data-theme') === 'light' ||
+        document.body.classList.contains('light') ||
+        document.body.getAttribute('data-theme') === 'light') {
+        // console.log("Light theme detected via class/attribute");
+        return false;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // console.log("Dark theme detected via prefers-color-scheme");
+        return true;
+    }
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // console.log("Background color brightness:", brightness);
+        return brightness < 128;
+    }
+    // console.log("No dark or light theme detected, defaulting to light theme");
+    return false;
+};
+
+let darkTheme = isDarkTheme();
+let modal = null;
+let modalContent = null;
+let previousScrollOffset = [window.scrollX, window.scrollY];
+
+const runMermaid = async (rerun) => {
+    console.log("Running mermaid diagrams, rerun =", rerun);
+    // clear all existing mermaid charts
+    let all_mermaids = document.querySelectorAll(".mermaid");
+
+    if (rerun) {
+        all_mermaids.forEach((el) => {
+            if(!el.hasAttribute("data-original-code")) {
+                // store original code
+                // console.log(`Storing original code for first run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+            if(el.getAttribute("data-processed") === "true") {
+                // remove and restore original
+                el.removeAttribute("data-processed");
+                // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                el.innerHTML = el.getAttribute('data-original-code');
+            } else {
+                // store original code
+                // console.log(`Storing original code for re-run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+        });
+        await mermaid.run();
+    }
+
+    all_mermaids = document.querySelectorAll(".mermaid");
+    const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+
+    if ("False" === "True") {
+        const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll("");
+            if(all_mermaids.length !== mermaids_processed.length) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else if(svgs.size() !== mermaids_to_add_zoom) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            } else {
+                svgs.each(function() {
+                    var svg = d3.select(this);
+                    svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+                    var inner = svg.select("g");
+                    var zoom = d3.zoom().on("zoom", function(event) {
+                        inner.attr("transform", event.transform);
+                    });
+                    svg.call(zoom);
+                });
+            }
+        }
+    } else if(all_mermaids.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(() => runMermaid(false), 200);
+        return;
+    }
+
+    // Stop here if not adding fullscreen capability
+    if ("True" !== "True") return;
+
+    if (modal !== null ) {
+        // Destroy existing modal
+        modal.remove();
+        modal = null;
+        modalContent = null;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    const closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal.classList.contains('active')) {
+            closeModal();
+        }
+    });
+
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            // Already processed, adjust button class if needed
+            const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+            if (existingBtn) {
+                existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = '⛶';
+        fullscreenBtn.style.opacity = '50%';
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scroll, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.sdisplay = 'block';
+
+                if ("False" === "True") {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        container.appendChild(fullscreenBtn);
+    });
+};
+
+const load = async () => {
+    initStyles();
+
+    await runMermaid(true);
+
+    const reRunIfThemeChanges = async () => {
+        const newDarkTheme = isDarkTheme();
+        if (newDarkTheme !== darkTheme) {
+            darkTheme = newDarkTheme;
+            console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+            await mermaid.initialize(
+                {...JSON.parse(
+                    `{"startOnLoad": false}`
+                ),
+                ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+                }
+            );
+            await runMermaid(true);
+        }
+    };
+
+    // Update theme classes when theme changes
+    const themeObserver = new MutationObserver(reRunIfThemeChanges);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+};
+
+
+
+
+
+console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+mermaid.initialize(
+    {...JSON.parse(
+        `{"startOnLoad": false}`
+    ),
+    ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+    }
+);
+
+window.addEventListener("load", load);</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/trinity/common/verl_config';</script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../../../_static/logo.svg" class="logo__image only-light" alt="Trinity-RFT 0.5.1 documentation - Home"/>
+    <script>document.write(`<img src="../../../_static/logo.svg" class="logo__image only-dark" alt="Trinity-RFT 0.5.1 documentation - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+<nav class="bd-links bd-docs-nav">
+    <div class="bd-toc-item navbar-nav">
+        <ul class="nav bd-sidenav">
+      <li class="toctree-l1 has-children">
+        <details>
+          <summary>
+            <p class="caption" aria-level="2" role="heading" style="text-align: center;">
+              <span class="fa fa-book"></span>
+             <b>v0.4.1</b>
+            </p>
+          </summary>
+          <ul>
+            <li class="toctree-l2  "><a class="reference" href="../../../../main/index.html">latest</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../../../v0.5.0/index.html">v0.5.0</a></li>
+            <li class="toctree-l2 current "><a class="reference" href="verl_config.html">v0.4.1</a></li>
+          </ul>
+        </details>
+      </li>
+    </ul>
+    </div>
+</nav>
+</div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">Search</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">Guidelines</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/trinity_installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/develop_overview.html">Developer Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/develop_workflow.html">Workflow Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/develop_algorithm.html">Algorithms Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/example_mix_algo.html">Advanced Algorithm Development</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/develop_operator.html">Operator Development Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/develop_selector.html">🧪 Experimental: Task Selection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/trinity_configs.html">Configuration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/trinity_gpu_configs.html">GPU Configuration Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/synchronizer.html">Synchronizer in Trinity-RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/align_with_verl.html">Align configuration with veRL</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">Examples</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/example_reasoning_basic.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/example_reasoning_advanced.html">Off-Policy RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/example_async_mode.html">Asynchronous RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/example_multi_turn.html">Concatenated Multi-Turn RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/example_step_wise.html">General Multi-Step RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/example_react.html">ReAct Agent Training</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/example_search_email.html">Email Search Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/example_dpo.html">Offline DPO and SFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/example_tinker_backend.html">Tinker Backend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/example_megatron.html">Megatron-LM Backend</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/example_data_functionalities.html">Data Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/example_dataset_perspective.html">Example Summary</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">FAQ</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="../../../tutorial/faq.html">FAQ</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../../../api_reference.html">API Reference</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../build_api/trinity.buffer.html">trinity.buffer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../build_api/trinity.buffer.operators.html">trinity.buffer.operators package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.buffer.operators.filters.html">trinity.buffer.operators.filters package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.buffer.operators.mappers.html">trinity.buffer.operators.mappers package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.buffer.operators.data_juicer_operator.html">trinity.buffer.operators.data_juicer_operator module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.buffer.operators.experience_operator.html">trinity.buffer.operators.experience_operator module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../build_api/trinity.buffer.pipelines.html">trinity.buffer.pipelines package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.buffer.pipelines.experience_pipeline.html">trinity.buffer.pipelines.experience_pipeline module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.buffer.pipelines.task_pipeline.html">trinity.buffer.pipelines.task_pipeline module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../build_api/trinity.buffer.reader.html">trinity.buffer.reader package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.buffer.reader.file_reader.html">trinity.buffer.reader.file_reader module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.buffer.reader.queue_reader.html">trinity.buffer.reader.queue_reader module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.buffer.reader.sql_reader.html">trinity.buffer.reader.sql_reader module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../build_api/trinity.buffer.schema.html">trinity.buffer.schema package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.buffer.schema.formatter.html">trinity.buffer.schema.formatter module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.buffer.schema.sql_schema.html">trinity.buffer.schema.sql_schema module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../build_api/trinity.buffer.selector.html">trinity.buffer.selector package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.buffer.selector.difficulty_estimator.html">trinity.buffer.selector.difficulty_estimator module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.buffer.selector.selector.html">trinity.buffer.selector.selector module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../build_api/trinity.buffer.storage.html">trinity.buffer.storage package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.buffer.storage.file.html">trinity.buffer.storage.file module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.buffer.storage.queue.html">trinity.buffer.storage.queue module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.buffer.storage.sql.html">trinity.buffer.storage.sql module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../build_api/trinity.buffer.writer.html">trinity.buffer.writer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.buffer.writer.file_writer.html">trinity.buffer.writer.file_writer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.buffer.writer.queue_writer.html">trinity.buffer.writer.queue_writer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.buffer.writer.sql_writer.html">trinity.buffer.writer.sql_writer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.buffer.buffer.html">trinity.buffer.buffer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.buffer.buffer_reader.html">trinity.buffer.buffer_reader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.buffer.buffer_writer.html">trinity.buffer.buffer_writer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.buffer.task_scheduler.html">trinity.buffer.task_scheduler module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.buffer.utils.html">trinity.buffer.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.buffer.viewer.html">trinity.buffer.viewer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../build_api/trinity.explorer.html">trinity.explorer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../build_api/trinity.explorer.proxy.html">trinity.explorer.proxy package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.explorer.proxy.app.html">trinity.explorer.proxy.app module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.explorer.proxy.client.html">trinity.explorer.proxy.client module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.explorer.proxy.recorder.html">trinity.explorer.proxy.recorder module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.explorer.proxy.service.html">trinity.explorer.proxy.service module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.explorer.explorer.html">trinity.explorer.explorer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.explorer.scheduler.html">trinity.explorer.scheduler module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.explorer.workflow_runner.html">trinity.explorer.workflow_runner module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../build_api/trinity.trainer.html">trinity.trainer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../build_api/trinity.trainer.tinker.html">trinity.trainer.tinker package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.trainer.tinker.utils.html">trinity.trainer.tinker.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../build_api/trinity.trainer.verl.html">trinity.trainer.verl package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.trainer.verl.dp_actor.html">trinity.trainer.verl.dp_actor module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.trainer.verl.fsdp_checkpoint_manager.html">trinity.trainer.verl.fsdp_checkpoint_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.trainer.verl.fsdp_workers.html">trinity.trainer.verl.fsdp_workers module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.trainer.verl.megatron_actor.html">trinity.trainer.verl.megatron_actor module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.trainer.verl.megatron_checkpoint_manager.html">trinity.trainer.verl.megatron_checkpoint_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.trainer.verl.megatron_workers.html">trinity.trainer.verl.megatron_workers module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.trainer.verl.utils.html">trinity.trainer.verl.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.trainer.tinker_trainer.html">trinity.trainer.tinker_trainer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.trainer.trainer.html">trinity.trainer.trainer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.trainer.verl_trainer.html">trinity.trainer.verl_trainer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../build_api/trinity.algorithm.html">trinity.algorithm package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../build_api/trinity.algorithm.advantage_fn.html">trinity.algorithm.advantage_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.advantage_fn.advantage_fn.html">trinity.algorithm.advantage_fn.advantage_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.advantage_fn.asymre_advantage.html">trinity.algorithm.advantage_fn.asymre_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.advantage_fn.grpo_advantage.html">trinity.algorithm.advantage_fn.grpo_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.advantage_fn.multi_step_grpo_advantage.html">trinity.algorithm.advantage_fn.multi_step_grpo_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.advantage_fn.on_policy_distill_advantage.html">trinity.algorithm.advantage_fn.on_policy_distill_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.advantage_fn.opmd_advantage.html">trinity.algorithm.advantage_fn.opmd_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.advantage_fn.ppo_advantage.html">trinity.algorithm.advantage_fn.ppo_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.advantage_fn.rec_advantage.html">trinity.algorithm.advantage_fn.rec_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.advantage_fn.reinforce_advantage.html">trinity.algorithm.advantage_fn.reinforce_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.advantage_fn.reinforce_plus_plus_advantage.html">trinity.algorithm.advantage_fn.reinforce_plus_plus_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.advantage_fn.remax_advantage.html">trinity.algorithm.advantage_fn.remax_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.advantage_fn.rloo_advantage.html">trinity.algorithm.advantage_fn.rloo_advantage module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../build_api/trinity.algorithm.entropy_loss_fn.html">trinity.algorithm.entropy_loss_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.entropy_loss_fn.entropy_loss_fn.html">trinity.algorithm.entropy_loss_fn.entropy_loss_fn module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../build_api/trinity.algorithm.kl_fn.html">trinity.algorithm.kl_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.kl_fn.kl_fn.html">trinity.algorithm.kl_fn.kl_fn module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../build_api/trinity.algorithm.policy_loss_fn.html">trinity.algorithm.policy_loss_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.policy_loss_fn.chord_policy_loss.html">trinity.algorithm.policy_loss_fn.chord_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.policy_loss_fn.cispo_policy_loss.html">trinity.algorithm.policy_loss_fn.cispo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.policy_loss_fn.dpo_loss.html">trinity.algorithm.policy_loss_fn.dpo_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.policy_loss_fn.gspo_policy_loss.html">trinity.algorithm.policy_loss_fn.gspo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.policy_loss_fn.importance_sampling_policy_loss.html">trinity.algorithm.policy_loss_fn.importance_sampling_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.policy_loss_fn.mix_policy_loss.html">trinity.algorithm.policy_loss_fn.mix_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.policy_loss_fn.opmd_policy_loss.html">trinity.algorithm.policy_loss_fn.opmd_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.policy_loss_fn.policy_loss_fn.html">trinity.algorithm.policy_loss_fn.policy_loss_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.policy_loss_fn.ppo_policy_loss.html">trinity.algorithm.policy_loss_fn.ppo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.policy_loss_fn.rec_policy_loss.html">trinity.algorithm.policy_loss_fn.rec_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.policy_loss_fn.sapo_policy_loss.html">trinity.algorithm.policy_loss_fn.sapo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.policy_loss_fn.sft_loss.html">trinity.algorithm.policy_loss_fn.sft_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.policy_loss_fn.sppo_loss_fn.html">trinity.algorithm.policy_loss_fn.sppo_loss_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.policy_loss_fn.topr_policy_loss.html">trinity.algorithm.policy_loss_fn.topr_policy_loss module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../build_api/trinity.algorithm.sample_strategy.html">trinity.algorithm.sample_strategy package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.sample_strategy.mix_sample_strategy.html">trinity.algorithm.sample_strategy.mix_sample_strategy module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.sample_strategy.sample_strategy.html">trinity.algorithm.sample_strategy.sample_strategy module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.algorithm.sample_strategy.utils.html">trinity.algorithm.sample_strategy.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.algorithm.algorithm.html">trinity.algorithm.algorithm module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.algorithm.key_mapper.html">trinity.algorithm.key_mapper module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.algorithm.utils.html">trinity.algorithm.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../build_api/trinity.manager.html">trinity.manager package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../build_api/trinity.manager.config_registry.html">trinity.manager.config_registry package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.manager.config_registry.algorithm_config_manager.html">trinity.manager.config_registry.algorithm_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.manager.config_registry.buffer_config_manager.html">trinity.manager.config_registry.buffer_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.manager.config_registry.config_registry.html">trinity.manager.config_registry.config_registry module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.manager.config_registry.explorer_config_manager.html">trinity.manager.config_registry.explorer_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.manager.config_registry.model_config_manager.html">trinity.manager.config_registry.model_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.manager.config_registry.trainer_config_manager.html">trinity.manager.config_registry.trainer_config_manager module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.manager.config_manager.html">trinity.manager.config_manager module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.manager.state_manager.html">trinity.manager.state_manager module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.manager.synchronizer.html">trinity.manager.synchronizer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../build_api/trinity.common.html">trinity.common package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../build_api/trinity.common.models.html">trinity.common.models package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.models.vllm_patch.html">trinity.common.models.vllm_patch package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.models.mm_utils.html">trinity.common.models.mm_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.models.model.html">trinity.common.models.model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.models.tinker_model.html">trinity.common.models.tinker_model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.models.utils.html">trinity.common.models.utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.models.vllm_model.html">trinity.common.models.vllm_model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.models.vllm_worker.html">trinity.common.models.vllm_worker module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../build_api/trinity.common.rewards.html">trinity.common.rewards package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.rewards.accuracy_reward.html">trinity.common.rewards.accuracy_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.rewards.agents_reward.html">trinity.common.rewards.agents_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.rewards.countdown_reward.html">trinity.common.rewards.countdown_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.rewards.dapo_reward.html">trinity.common.rewards.dapo_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.rewards.eval_utils.html">trinity.common.rewards.eval_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.rewards.format_reward.html">trinity.common.rewards.format_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.rewards.human_reward.html">trinity.common.rewards.human_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.rewards.math_reward.html">trinity.common.rewards.math_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.rewards.naive_dapo_score.html">trinity.common.rewards.naive_dapo_score module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.rewards.qwen25_eval.html">trinity.common.rewards.qwen25_eval module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.rewards.reward_fn.html">trinity.common.rewards.reward_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.rewards.tool_reward.html">trinity.common.rewards.tool_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.rewards.utils.html">trinity.common.rewards.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../build_api/trinity.common.workflows.html">trinity.common.workflows package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.workflows.agentscope.html">trinity.common.workflows.agentscope package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.workflows.agentscope_workflow.html">trinity.common.workflows.agentscope_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.workflows.customized_math_workflows.html">trinity.common.workflows.customized_math_workflows module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.workflows.customized_toolcall_workflows.html">trinity.common.workflows.customized_toolcall_workflows module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.workflows.eval_workflow.html">trinity.common.workflows.eval_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.workflows.math_rm_workflow.html">trinity.common.workflows.math_rm_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.workflows.math_ruler_workflow.html">trinity.common.workflows.math_ruler_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.workflows.math_trainable_ruler_workflow.html">trinity.common.workflows.math_trainable_ruler_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.workflows.on_policy_distill_workflow.html">trinity.common.workflows.on_policy_distill_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.workflows.rubric_judge_workflow.html">trinity.common.workflows.rubric_judge_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.workflows.simple_mm_workflow.html">trinity.common.workflows.simple_mm_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.workflows.step_wise_workflow.html">trinity.common.workflows.step_wise_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.workflows.workflow.html">trinity.common.workflows.workflow module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.common.config.html">trinity.common.config module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.common.constants.html">trinity.common.constants module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.common.experience.html">trinity.common.experience module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.common.verl_config.html">trinity.common.verl_config module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../../../build_api/trinity.utils.html">trinity.utils package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.utils.annotations.html">trinity.utils.annotations module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.utils.distributed.html">trinity.utils.distributed module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.utils.dlc_utils.html">trinity.utils.dlc_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.utils.log.html">trinity.utils.log module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.utils.lora_utils.html">trinity.utils.lora_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.utils.monitor.html">trinity.utils.monitor module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.utils.plugin_loader.html">trinity.utils.plugin_loader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.utils.registry.html">trinity.utils.registry module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.utils.timer.html">trinity.utils.timer module</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+<div class="header-extra-switchers" style="display:inline-flex; gap:.25rem; margin-left:.5rem; align-items:center;">
+  <button id="lang-toggle-btn" class="btn btn-sm btn-outline-secondary" title="">
+  <span id="lang-toggle-label"></span>
+</button>
+<script>
+(function () {
+  const btn = document.getElementById('lang-toggle-btn');
+  const lab = document.getElementById('lang-toggle-label');
+  if (!btn || !lab) return;
+
+  const m = location.pathname.match(/^(.*\/)(en|zh)(\/.*)$/);
+
+  const cur = m ? m[2] : 'en';
+  if (cur === 'en') {
+    lab.textContent = '中';
+    btn.title = '切换到中文';
+  } else {
+    lab.textContent = 'EN';
+    btn.title = 'Switch to English';
+  }
+
+  const targetHref = (function () {
+    if (!m) return location.href;
+    const other = cur === 'en' ? 'zh' : 'en';
+    const suffix = m[3] || '/';
+    return m[1] + other + suffix + location.search + location.hash;
+  })();
+
+  btn.addEventListener('click', function () {
+    location.href = targetHref;
+  });
+})();
+</script>
+</div>
+
+
+
+<div class="article-header-buttons">
+
+
+<a href="https://github.com/agentscope-ai/Trinity-RFT" target="_blank"
+   class="btn btn-sm btn-source-repository-button"
+   title="Source repository"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1></h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for trinity.common.verl_config</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">omegaconf</span><span class="w"> </span><span class="kn">import</span> <span class="n">OmegaConf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verl.workers.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">PolicyLossConfig</span><span class="p">,</span> <span class="n">RouterReplayConfig</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.algorithm</span><span class="w"> </span><span class="kn">import</span> <span class="n">ALGORITHM_TYPE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span><span class="p">,</span> <span class="n">SynchronizerConfig</span><span class="p">,</span> <span class="n">set_if_none</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">EXPLORER_NAME</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.patch</span><span class="w"> </span><span class="kn">import</span> <span class="n">kimi_vl_monkey_patch_decorator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
+
+<span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Data">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.Data">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Data</span><span class="p">:</span>
+    <span class="n">train_batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1024</span>  <span class="c1"># kept to pass RayPPOTrainer._validate_config</span>
+    <span class="n">trust_remote_code</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="FusedKernelOptions">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.FusedKernelOptions">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FusedKernelOptions</span><span class="p">:</span>
+    <span class="n">impl_backend</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="ActorModel">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.ActorModel">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ActorModel</span><span class="p">:</span>
+    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">external_lib</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">override_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">enable_gradient_checkpointing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">use_remove_padding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">use_fused_kernels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">fused_kernel_options</span><span class="p">:</span> <span class="n">FusedKernelOptions</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">FusedKernelOptions</span><span class="p">)</span>
+    <span class="n">custom_chat_template</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">enable_activation_offload</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">use_shm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">trust_remote_code</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># Whether to enable loading a remote code model</span>
+
+    <span class="c1"># lora configs</span>
+    <span class="n">lora_rank</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># The rank of the LoRA model, default to 0. If lora_rank &gt; 0, LoRA module is enabled in trainer</span>
+    <span class="n">lora_alpha</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span>
+    <span class="n">target_modules</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;all-linear&quot;</span>
+    <span class="n">exclude_modules</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">lora_adapter_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="c1"># rope configs</span>
+    <span class="n">rope_scaling</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">rope_theta</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="Optim">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.Optim">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Optim</span><span class="p">:</span>
+    <span class="c1"># For actor, most fields are set in algorithm.optimizer</span>
+    <span class="c1"># For critic, you can set trainer_config.critic.optim</span>
+    <span class="n">optimizer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;adam&quot;</span>
+    <span class="n">optimizer_impl</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;torch.optim&quot;</span>
+    <span class="n">lr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span>
+    <span class="n">lr_warmup_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">lr_warmup_steps_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">min_lr_ratio</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">warmup_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># deprecated !</span>
+    <span class="n">lr_scheduler_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;constant&quot;</span>
+    <span class="n">total_training_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>  <span class="c1"># ! DO NOT SET, use trainer.total_steps</span>
+    <span class="n">betas</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">])</span>
+    <span class="n">clip_grad</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">lr_warmup_init</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># 0.0</span>
+    <span class="n">lr_decay_steps</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">lr_decay_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># &quot;constant&quot;</span>
+    <span class="n">min_lr</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># 0.0</span>
+    <span class="n">weight_decay</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.01</span>
+    <span class="n">weight_decay_incr_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;constant&quot;</span>
+    <span class="n">lr_wsd_decay_style</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;exponential&quot;</span>
+    <span class="n">lr_wsd_decay_steps</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">use_checkpoint_opt_param_scheduler</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">override_optimizer_config</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="WrapPolicy">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.WrapPolicy">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">WrapPolicy</span><span class="p">:</span>
+    <span class="n">min_num_params</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span></div>
+
+
+
+<div class="viewcode-block" id="FSDPConfig">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.FSDPConfig">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">FSDPConfig</span><span class="p">:</span>
+    <span class="n">_target_</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;verl.workers.config.FSDPEngineConfig&quot;</span>  <span class="c1"># DO NOT SET</span>
+    <span class="n">param_offload</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">optimizer_offload</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">offload_policy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">reshard_after_forward</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">wrap_policy</span><span class="p">:</span> <span class="n">WrapPolicy</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">WrapPolicy</span><span class="p">)</span>
+    <span class="n">fsdp_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">forward_prefetch</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">model_dtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;bfloat16&quot;</span>
+    <span class="n">mixed_precision</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Checkpoint">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.Checkpoint">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Checkpoint</span><span class="p">:</span>
+    <span class="n">load_contents</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="s2">&quot;optimizer&quot;</span><span class="p">,</span> <span class="s2">&quot;extra&quot;</span><span class="p">])</span>
+    <span class="n">save_contents</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="s2">&quot;optimizer&quot;</span><span class="p">,</span> <span class="s2">&quot;extra&quot;</span><span class="p">])</span>
+    <span class="n">async_save</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># TODO: testing async save</span></div>
+
+
+
+<div class="viewcode-block" id="OverrideTransformerConfig">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.OverrideTransformerConfig">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">OverrideTransformerConfig</span><span class="p">:</span>
+    <span class="n">recompute_granularity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;full&quot;</span>
+    <span class="n">recompute_modules</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;core_attn&quot;</span><span class="p">])</span>
+    <span class="n">recompute_method</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;uniform&quot;</span>
+    <span class="n">recompute_num_layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span></div>
+
+
+
+<div class="viewcode-block" id="MegatronConfig">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.MegatronConfig">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MegatronConfig</span><span class="p">:</span>
+    <span class="n">param_offload</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">grad_offload</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">optimizer_offload</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">tensor_model_parallel_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">expert_model_parallel_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">expert_tensor_parallel_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">pipeline_model_parallel_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">virtual_pipeline_model_parallel_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">context_parallel_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">sequence_parallel</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">use_distributed_optimizer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">use_dist_checkpointing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">dist_checkpointing_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">42</span>
+    <span class="n">override_ddp_config</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">override_transformer_config</span><span class="p">:</span> <span class="n">OverrideTransformerConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">default_factory</span><span class="o">=</span><span class="n">OverrideTransformerConfig</span>
+    <span class="p">)</span>
+    <span class="n">use_mbridge</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;bfloat16&quot;</span>
+    <span class="n">use_remove_padding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+
+<div class="viewcode-block" id="ProfileConfig">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.ProfileConfig">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ProfileConfig</span><span class="p">:</span>
+    <span class="n">use_profile</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">profile_ranks</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">step_start</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">step_end</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="n">save_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="Actor">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.Actor">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Actor</span><span class="p">:</span>
+    <span class="n">strategy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">ppo_mini_batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">256</span>
+    <span class="n">ppo_micro_batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">ppo_micro_batch_size_per_gpu</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">use_dynamic_bsz</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">ppo_max_token_len_per_gpu</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">fix_actor_microbatch_loss_scale</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># EXPERIMENTAL</span>
+    <span class="n">grad_clip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">ppo_epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">shuffle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">ulysses_sequence_parallel_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">entropy_from_logits_with_chunking</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">entropy_checkpointing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">checkpoint</span><span class="p">:</span> <span class="n">Checkpoint</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Checkpoint</span><span class="p">)</span>
+    <span class="n">optim</span><span class="p">:</span> <span class="n">Optim</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Optim</span><span class="p">)</span>
+    <span class="n">fsdp_config</span><span class="p">:</span> <span class="n">FSDPConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">FSDPConfig</span><span class="p">)</span>
+    <span class="n">megatron</span><span class="p">:</span> <span class="n">MegatronConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">MegatronConfig</span><span class="p">)</span>
+    <span class="n">profile</span><span class="p">:</span> <span class="n">ProfileConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">ProfileConfig</span><span class="p">)</span>
+    <span class="n">data_loader_seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">load_weight</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">policy_loss</span><span class="p">:</span> <span class="n">PolicyLossConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">PolicyLossConfig</span><span class="p">)</span>
+    <span class="n">profiler</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">router_replay</span><span class="p">:</span> <span class="n">RouterReplayConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">RouterReplayConfig</span><span class="p">)</span>
+    <span class="c1"># do not set</span>
+    <span class="n">loss_agg_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;token-mean&quot;</span>
+    <span class="n">clip_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.2</span>
+    <span class="n">clip_ratio_low</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">clip_ratio_high</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">entropy_coeff</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.001</span>
+    <span class="n">use_kl_loss</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="Ref">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.Ref">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Ref</span><span class="p">:</span>
+    <span class="n">strategy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">fsdp_config</span><span class="p">:</span> <span class="n">FSDPConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">FSDPConfig</span><span class="p">)</span>
+    <span class="n">log_prob_micro_batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">log_prob_micro_batch_size_per_gpu</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">log_prob_use_dynamic_bsz</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">log_prob_max_token_len_per_gpu</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">ulysses_sequence_parallel_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">entropy_from_logits_with_chunking</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">entropy_checkpointing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">checkpoint</span><span class="p">:</span> <span class="n">Checkpoint</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">Checkpoint</span><span class="p">(</span><span class="n">load_contents</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">],</span> <span class="n">save_contents</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">])</span>
+    <span class="p">)</span>
+    <span class="n">megatron</span><span class="p">:</span> <span class="n">MegatronConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">MegatronConfig</span><span class="p">)</span>
+    <span class="n">profile</span><span class="p">:</span> <span class="n">ProfileConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">ProfileConfig</span><span class="p">)</span>
+    <span class="n">load_weight</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">profiler</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">router_replay</span><span class="p">:</span> <span class="n">RouterReplayConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">RouterReplayConfig</span><span class="p">)</span></div>
+
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_ValKwargs</span><span class="p">:</span>
+    <span class="n">do_sample</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_MultiTurn</span><span class="p">:</span>
+    <span class="n">enable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+
+
+<div class="viewcode-block" id="Rollout">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.Rollout">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Rollout</span><span class="p">:</span>
+    <span class="c1"># do not set</span>
+    <span class="n">val_kwargs</span><span class="p">:</span> <span class="n">_ValKwargs</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">_ValKwargs</span><span class="p">)</span>
+    <span class="n">multi_turn</span><span class="p">:</span> <span class="n">_MultiTurn</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">_MultiTurn</span><span class="p">)</span>
+    <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># &gt; 1 for grpo</span>
+    <span class="n">log_prob_use_dynamic_bsz</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">log_prob_micro_batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">log_prob_micro_batch_size_per_gpu</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">log_prob_max_token_len_per_gpu</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="ActorRolloutRef">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.ActorRolloutRef">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ActorRolloutRef</span><span class="p">:</span>
+    <span class="n">hybrid_engine</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">ActorModel</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">ActorModel</span><span class="p">)</span>
+    <span class="n">actor</span><span class="p">:</span> <span class="n">Actor</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Actor</span><span class="p">)</span>
+    <span class="n">ref</span><span class="p">:</span> <span class="n">Ref</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Ref</span><span class="p">)</span>
+    <span class="n">rollout</span><span class="p">:</span> <span class="n">Rollout</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Rollout</span><span class="p">)</span>
+    <span class="n">nccl_timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">600</span>  <span class="c1"># ! DO NOT SET, it will be set by `config.synchronizer.sync_timeout`</span>
+    <span class="n">synchronizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SynchronizerConfig</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">explorer_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">EXPLORER_NAME</span></div>
+
+
+
+<div class="viewcode-block" id="CriticModel">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.CriticModel">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CriticModel</span><span class="p">:</span>
+    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">tokenizer_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">override_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">external_lib</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">trust_remote_code</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># Whether to enable loading a remote code model</span>
+    <span class="n">enable_gradient_checkpointing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">use_remove_padding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">fsdp_config</span><span class="p">:</span> <span class="n">FSDPConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">FSDPConfig</span><span class="p">)</span>
+
+    <span class="c1"># rope configs</span>
+    <span class="n">rope_scaling</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">rope_theta</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="Critic">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.Critic">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Critic</span><span class="p">:</span>
+    <span class="n">enable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">strategy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">optim</span><span class="p">:</span> <span class="n">Optim</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Optim</span><span class="p">)</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">CriticModel</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">CriticModel</span><span class="p">)</span>
+    <span class="n">ppo_mini_batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">ppo_micro_batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">ppo_micro_batch_size_per_gpu</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">forward_micro_batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">forward_micro_batch_size_per_gpu</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">use_dynamic_bsz</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">ppo_max_token_len_per_gpu</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">forward_max_token_len_per_gpu</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">ulysses_sequence_parallel_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">ppo_epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">shuffle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">grad_clip</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">cliprange_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">checkpoint</span><span class="p">:</span> <span class="n">Checkpoint</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Checkpoint</span><span class="p">)</span>
+    <span class="n">rollout_n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">loss_agg_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;token-mean&quot;</span>
+    <span class="n">megatron</span><span class="p">:</span> <span class="n">MegatronConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">MegatronConfig</span><span class="p">)</span>
+    <span class="n">profile</span><span class="p">:</span> <span class="n">ProfileConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">ProfileConfig</span><span class="p">)</span>
+    <span class="n">data_loader_seed</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">load_weight</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">nccl_timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">600</span>  <span class="c1"># ! DO NOT SET, it will be set by `config.synchronizer.sync_timeout`</span>
+    <span class="n">ray_namespace</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>  <span class="c1"># automatically generated</span>
+    <span class="n">profiler</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span></div>
+
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_RewardModel</span><span class="p">:</span>
+    <span class="n">input_tokenizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">external_lib</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">use_remove_padding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">fsdp_config</span><span class="p">:</span> <span class="n">FSDPConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">FSDPConfig</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="RewardModel">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.RewardModel">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RewardModel</span><span class="p">:</span>
+    <span class="n">enable</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">strategy</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">_RewardModel</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">_RewardModel</span><span class="p">)</span>
+    <span class="n">micro_batch_size_per_gpu</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">max_length</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">ulysses_sequence_parallel_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">use_dynamic_bsz</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">forward_max_token_len_per_gpu</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">reward_manager</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;naive&quot;</span>
+    <span class="n">use_reward_loop</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+
+<div class="viewcode-block" id="CustomRewardFunction">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.CustomRewardFunction">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">CustomRewardFunction</span><span class="p">:</span>
+    <span class="n">path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;compute_score&quot;</span></div>
+
+
+
+<div class="viewcode-block" id="KL_Ctrl">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.KL_Ctrl">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">KL_Ctrl</span><span class="p">:</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;fixed&quot;</span>
+    <span class="n">kl_coef</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.001</span>
+    <span class="n">horizon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">10000</span>
+    <span class="n">target_kl</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span></div>
+
+
+
+<div class="viewcode-block" id="RolloutCorrection">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.RolloutCorrection">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RolloutCorrection</span><span class="p">:</span>
+    <span class="n">rollout_is</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">rollout_is_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span>
+    <span class="n">rollout_rs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">rollout_rs_threshold</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">rollout_rs_threshold_lower</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">rollout_token_veto_threshold</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># Because rollout and training in Trinity runs separately,</span>
+    <span class="c1"># rollout_is_batch_normalize is default to True</span>
+    <span class="n">bypass_mode</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">loss_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ppo_clip&quot;</span>
+    <span class="n">rollout_is_batch_normalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="Algorithm">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.Algorithm">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Algorithm</span><span class="p">:</span>
+    <span class="n">rollout_correction</span><span class="p">:</span> <span class="n">RolloutCorrection</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">RolloutCorrection</span><span class="p">)</span>
+    <span class="c1"># ! DO NOT SET gamma or lam below; they are kept here merely for compatibility with verl,</span>
+    <span class="c1"># and their values will be overwritten by those in AlgorithmConfig.advantage_fn_args</span>
+    <span class="c1"># if they are really needed (e.g., for GAE advantage/returns computation)</span>
+    <span class="n">gamma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">lam</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">adv_estimator</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gae&quot;</span>
+    <span class="n">norm_adv_by_std_in_grpo</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">use_kl_in_reward</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">kl_penalty</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;kl&quot;</span>
+    <span class="n">kl_ctrl</span><span class="p">:</span> <span class="n">KL_Ctrl</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">KL_Ctrl</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="Trainer">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.Trainer">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Trainer</span><span class="p">:</span>
+    <span class="n">balance_batch</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">total_epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">30</span>
+    <span class="n">total_training_steps</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
+        <span class="nb">int</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># ! DO NOT SET, use trainer.total_steps in global_config</span>
+    <span class="n">project_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">group_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">experiment_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">logger</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">val_generations_to_log_to_wandb</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">nnodes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">n_gpus_per_node</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">save_freq</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">resume_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span>
+    <span class="n">resume_from_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">test_freq</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">critic_warmup</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">default_hdfs_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">remove_previous_ckpt_in_save</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># deprecated</span>
+    <span class="n">del_local_ckpt_after_load</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">default_local_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">val_before_train</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">training_rollout_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;parallel&quot;</span>
+    <span class="n">enable_exp_buffer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">sync_freq</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">max_actor_ckpt_to_keep</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">max_critic_ckpt_to_keep</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span>  <span class="c1"># default to cuda</span></div>
+
+
+
+<div class="viewcode-block" id="veRLConfig">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.veRLConfig">[docs]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">veRLConfig</span><span class="p">:</span>
+    <span class="n">data</span><span class="p">:</span> <span class="n">Data</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Data</span><span class="p">)</span>
+    <span class="n">actor_rollout_ref</span><span class="p">:</span> <span class="n">ActorRolloutRef</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">ActorRolloutRef</span><span class="p">)</span>
+    <span class="n">critic</span><span class="p">:</span> <span class="n">Critic</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Critic</span><span class="p">)</span>
+    <span class="n">reward_model</span><span class="p">:</span> <span class="n">RewardModel</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">RewardModel</span><span class="p">)</span>
+    <span class="n">custom_reward_function</span><span class="p">:</span> <span class="n">CustomRewardFunction</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">CustomRewardFunction</span><span class="p">)</span>
+    <span class="n">algorithm</span><span class="p">:</span> <span class="n">Algorithm</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Algorithm</span><span class="p">)</span>
+    <span class="n">trainer</span><span class="p">:</span> <span class="n">Trainer</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Trainer</span><span class="p">)</span>
+    <span class="n">global_profiler</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">synchronizer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SynchronizerConfig</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">enable_preview</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="nd">@kimi_vl_monkey_patch_decorator</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_parallel_config</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">obj</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Actor</span><span class="p">,</span> <span class="n">Ref</span><span class="p">,</span> <span class="n">Critic</span><span class="p">],</span>
+        <span class="n">component_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">model_config</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ActorModel</span><span class="p">,</span> <span class="n">CriticModel</span><span class="p">],</span>
+        <span class="n">fsdp_config</span><span class="p">:</span> <span class="n">FSDPConfig</span><span class="p">,</span>
+        <span class="n">world_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">sp_attr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ulysses_sequence_parallel_size&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;fsdp&quot;</span><span class="p">):</span>
+            <span class="c1"># check sequence parallelism</span>
+            <span class="n">sp_size</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">sp_attr</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">world_size</span> <span class="o">%</span> <span class="n">sp_size</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;The number of trainer GPUs (</span><span class="si">{</span><span class="n">world_size</span><span class="si">}</span><span class="s2">) must be &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;divisible by `</span><span class="si">{</span><span class="n">component_name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">sp_attr</span><span class="si">}</span><span class="s2">` (</span><span class="si">{</span><span class="n">sp_size</span><span class="si">}</span><span class="s2">). &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Please change `trainer.</span><span class="si">{</span><span class="n">sp_attr</span><span class="si">}</span><span class="s2">` or &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">component_name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">sp_attr</span><span class="si">}</span><span class="s2">` in verl config to a reasonable value.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">import</span><span class="w"> </span><span class="nn">transformers</span>
+
+                <span class="n">hf_config</span> <span class="o">=</span> <span class="n">transformers</span><span class="o">.</span><span class="n">AutoConfig</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
+                    <span class="n">model_config</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">trust_remote_code</span><span class="o">=</span><span class="n">model_config</span><span class="o">.</span><span class="n">trust_remote_code</span>
+                <span class="p">)</span>
+                <span class="n">num_attention_heads</span> <span class="o">=</span> <span class="n">hf_config</span><span class="o">.</span><span class="n">num_attention_heads</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="n">num_attention_heads</span> <span class="o">=</span> <span class="kc">None</span>
+
+            <span class="k">if</span> <span class="n">num_attention_heads</span> <span class="ow">and</span> <span class="n">num_attention_heads</span> <span class="o">%</span> <span class="n">sp_size</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;The number of attention heads (</span><span class="si">{</span><span class="n">num_attention_heads</span><span class="si">}</span><span class="s2">) must be &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;divisible by `trainer.ulysses_sequence_parallel_size` (</span><span class="si">{</span><span class="n">sp_size</span><span class="si">}</span><span class="s2">).&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Please change `trainer.</span><span class="si">{</span><span class="n">sp_attr</span><span class="si">}</span><span class="s2">` or &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">component_name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">sp_attr</span><span class="si">}</span><span class="s2">` in verl config to a reasonable value.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="n">fsdp_size</span> <span class="o">=</span> <span class="n">fsdp_config</span><span class="o">.</span><span class="n">fsdp_size</span>
+            <span class="k">if</span> <span class="n">fsdp_size</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">fsdp_size</span> <span class="o">&gt;=</span> <span class="n">world_size</span><span class="p">:</span>
+                <span class="n">fsdp_size</span> <span class="o">=</span> <span class="n">fsdp_config</span><span class="o">.</span><span class="n">fsdp_size</span> <span class="o">=</span> <span class="n">world_size</span>
+            <span class="k">if</span> <span class="n">world_size</span> <span class="o">%</span> <span class="n">fsdp_size</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;The number of GPUs (</span><span class="si">{</span><span class="n">world_size</span><span class="si">}</span><span class="s2">) must be &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;divisible by `</span><span class="si">{</span><span class="n">component_name</span><span class="si">}</span><span class="s2">.fsdp_config.fsdp_size` (</span><span class="si">{</span><span class="n">fsdp_size</span><span class="si">}</span><span class="s2">). &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Please change `</span><span class="si">{</span><span class="n">component_name</span><span class="si">}</span><span class="s2">.fsdp_config.fsdp_size` in verl config &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;to a reasonable value.&quot;</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># TODO: add check for megatron strategy</span>
+            <span class="k">pass</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_adjust_token_len_if_needed</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">obj</span><span class="p">,</span>
+        <span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">,</span>
+        <span class="n">component_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">token_len_attr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ppo_max_token_len_per_gpu&quot;</span><span class="p">,</span>
+        <span class="n">sp_attr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ulysses_sequence_parallel_size&quot;</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Helper to adjust token length per GPU if current setting is too small.</span>
+
+<span class="sd">        Ensures: token_len * seq_parallel &gt;= config.model.max_model_len</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">current_token_len</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">token_len_attr</span><span class="p">)</span>
+        <span class="n">seq_parallel</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">sp_attr</span><span class="p">)</span>
+        <span class="n">required_min</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">max_model_len</span>  <span class="c1"># type: ignore</span>
+
+        <span class="k">if</span> <span class="n">current_token_len</span> <span class="o">*</span> <span class="n">seq_parallel</span> <span class="o">&lt;</span> <span class="n">required_min</span><span class="p">:</span>
+            <span class="n">new_token_len</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">required_min</span> <span class="o">/</span> <span class="n">seq_parallel</span><span class="p">)</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">token_len_attr</span><span class="p">,</span> <span class="n">new_token_len</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">component_name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">token_len_attr</span><span class="si">}</span><span class="s2"> is automatically set to </span><span class="si">{</span><span class="n">new_token_len</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;to match model.max_model_len (</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">max_model_len</span><span class="si">}</span><span class="s2">). If you face OOM issues, &quot;</span>
+                <span class="s2">&quot;please set `model.max_model_len` to a smaller value.&quot;</span>
+            <span class="p">)</span>
+
+<div class="viewcode-block" id="veRLConfig.synchronize_config">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.veRLConfig.synchronize_config">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">synchronize_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># noqa: C901</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Synchronize config.&quot;&quot;&quot;</span>
+        <span class="c1"># Trainer Config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">nnodes</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">trainer_node_num</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">n_gpus_per_node</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">trainer_gpu_num_per_node</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">total_training_steps</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">total_steps</span> <span class="ow">or</span> <span class="n">sys</span><span class="o">.</span><span class="n">maxsize</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">sync_freq</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">save_freq</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">save_interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">project_name</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">project</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">group_name</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">group</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">experiment_name</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">default_local_dir</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">checkpoint_job_dir</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">max_checkpoints_to_keep</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">max_actor_ckpt_to_keep</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">max_checkpoints_to_keep</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">max_critic_ckpt_to_keep</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">max_checkpoints_to_keep</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">continue_from_checkpoint</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">resume_mode</span> <span class="o">=</span> <span class="s2">&quot;disable&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">resume_mode</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span>
+
+        <span class="c1"># kept to pass RayPPOTrainer._validate_config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">train_batch_size</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">train_batch_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">trust_remote_code</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">trust_remote_code</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">synchronizer</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">actor_rollout_ref</span><span class="o">.</span><span class="n">nccl_timeout</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_timeout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">actor_rollout_ref</span><span class="o">.</span><span class="n">synchronizer</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">actor_rollout_ref</span><span class="o">.</span><span class="n">explorer_name</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">algorithm</span> <span class="o">=</span> <span class="n">ALGORITHM_TYPE</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">algorithm_type</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">critic</span><span class="o">.</span><span class="n">enable</span> <span class="o">=</span> <span class="n">algorithm</span><span class="o">.</span><span class="n">use_critic</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">critic</span><span class="o">.</span><span class="n">nccl_timeout</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_timeout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">critic</span><span class="o">.</span><span class="n">ray_namespace</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">ray_namespace</span>
+
+        <span class="c1"># Actor / Rollout Config</span>
+        <span class="n">actor_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">actor_rollout_ref</span><span class="o">.</span><span class="n">actor</span>
+        <span class="n">rollout_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">actor_rollout_ref</span><span class="o">.</span><span class="n">rollout</span>
+        <span class="n">actor_model_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">actor_rollout_ref</span><span class="o">.</span><span class="n">model</span>
+        <span class="n">actor_optim</span> <span class="o">=</span> <span class="n">actor_config</span><span class="o">.</span><span class="n">optim</span>
+        <span class="n">actor_model_config</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">model_path</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;trust_remote_code&quot;</span><span class="p">,</span> <span class="s2">&quot;custom_chat_template&quot;</span><span class="p">,</span> <span class="s2">&quot;rope_scaling&quot;</span><span class="p">,</span> <span class="s2">&quot;rope_theta&quot;</span><span class="p">]:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">actor_model_config</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">attr</span><span class="p">))</span>
+        <span class="n">actor_optim</span><span class="o">.</span><span class="n">total_training_steps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">total_training_steps</span>
+        <span class="n">actor_config</span><span class="o">.</span><span class="n">ppo_mini_batch_size</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">train_batch_size</span>
+        <span class="n">rollout_config</span><span class="o">.</span><span class="n">temperature</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">explorer_input</span><span class="o">.</span><span class="n">tasksets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">rollout_args</span><span class="o">.</span><span class="n">temperature</span>
+            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">explorer_input</span><span class="o">.</span><span class="n">tasksets</span>
+            <span class="k">else</span> <span class="mf">1.0</span>
+        <span class="p">)</span>
+        <span class="n">rollout_config</span><span class="o">.</span><span class="n">n</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">repeat_times</span>
+        <span class="k">for</span> <span class="n">actor_attr</span><span class="p">,</span> <span class="n">trainer_attr</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="p">(</span><span class="s2">&quot;grad_clip&quot;</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="p">(</span><span class="s2">&quot;use_dynamic_bsz&quot;</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="p">(</span><span class="s2">&quot;fix_actor_microbatch_loss_scale&quot;</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="p">(</span><span class="s2">&quot;ulysses_sequence_parallel_size&quot;</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="p">(</span><span class="s2">&quot;ppo_max_token_len_per_gpu&quot;</span><span class="p">,</span> <span class="s2">&quot;max_token_len_per_gpu&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;strategy&quot;</span><span class="p">,</span> <span class="s2">&quot;trainer_strategy&quot;</span><span class="p">),</span>
+        <span class="p">]:</span>
+            <span class="n">set_if_none</span><span class="p">(</span><span class="n">actor_config</span><span class="p">,</span> <span class="n">actor_attr</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="p">,</span> <span class="n">trainer_attr</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_parallel_config</span><span class="p">(</span>
+            <span class="n">obj</span><span class="o">=</span><span class="n">actor_config</span><span class="p">,</span>
+            <span class="n">component_name</span><span class="o">=</span><span class="s2">&quot;actor&quot;</span><span class="p">,</span>
+            <span class="n">model_config</span><span class="o">=</span><span class="n">actor_model_config</span><span class="p">,</span>
+            <span class="n">fsdp_config</span><span class="o">=</span><span class="n">actor_config</span><span class="o">.</span><span class="n">fsdp_config</span><span class="p">,</span>
+            <span class="n">world_size</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">trainer_gpu_num</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_adjust_token_len_if_needed</span><span class="p">(</span>
+            <span class="n">obj</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">actor_rollout_ref</span><span class="o">.</span><span class="n">actor</span><span class="p">,</span>
+            <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
+            <span class="n">component_name</span><span class="o">=</span><span class="s2">&quot;actor&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Ref Config</span>
+        <span class="n">ref_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">actor_rollout_ref</span><span class="o">.</span><span class="n">ref</span>
+        <span class="k">for</span> <span class="n">ref_attr</span><span class="p">,</span> <span class="n">trainer_attr</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="p">(</span><span class="s2">&quot;log_prob_use_dynamic_bsz&quot;</span><span class="p">,</span> <span class="s2">&quot;use_dynamic_bsz&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;log_prob_max_token_len_per_gpu&quot;</span><span class="p">,</span> <span class="s2">&quot;max_token_len_per_gpu&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;ulysses_sequence_parallel_size&quot;</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="p">(</span><span class="s2">&quot;strategy&quot;</span><span class="p">,</span> <span class="s2">&quot;trainer_strategy&quot;</span><span class="p">),</span>
+        <span class="p">]:</span>
+            <span class="n">set_if_none</span><span class="p">(</span><span class="n">ref_config</span><span class="p">,</span> <span class="n">ref_attr</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="p">,</span> <span class="n">trainer_attr</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_parallel_config</span><span class="p">(</span>
+            <span class="n">obj</span><span class="o">=</span><span class="n">ref_config</span><span class="p">,</span>
+            <span class="n">component_name</span><span class="o">=</span><span class="s2">&quot;ref&quot;</span><span class="p">,</span>
+            <span class="n">model_config</span><span class="o">=</span><span class="n">actor_model_config</span><span class="p">,</span>
+            <span class="n">fsdp_config</span><span class="o">=</span><span class="n">ref_config</span><span class="o">.</span><span class="n">fsdp_config</span><span class="p">,</span>
+            <span class="n">world_size</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">trainer_gpu_num</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_adjust_token_len_if_needed</span><span class="p">(</span>
+            <span class="n">obj</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">actor_rollout_ref</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span>
+            <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
+            <span class="n">component_name</span><span class="o">=</span><span class="s2">&quot;ref&quot;</span><span class="p">,</span>
+            <span class="n">token_len_attr</span><span class="o">=</span><span class="s2">&quot;log_prob_max_token_len_per_gpu&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Critic config</span>
+        <span class="n">critic_optim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">critic</span><span class="o">.</span><span class="n">optim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">critic</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">critic_model_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">critic</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">tokenizer_path</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">critic_model_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">critic</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">rope_scaling</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">rope_scaling</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">critic</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">rope_theta</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">rope_theta</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">critic</span><span class="o">.</span><span class="n">ppo_mini_batch_size</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">train_batch_size</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">critic</span><span class="o">.</span><span class="n">rollout_n</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">repeat_times</span>
+        <span class="n">critic_optim</span><span class="o">.</span><span class="n">total_training_steps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">total_training_steps</span>
+        <span class="k">for</span> <span class="n">critic_attr</span><span class="p">,</span> <span class="n">trainer_attr</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="p">(</span><span class="s2">&quot;grad_clip&quot;</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="p">(</span><span class="s2">&quot;use_dynamic_bsz&quot;</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="p">(</span><span class="s2">&quot;ulysses_sequence_parallel_size&quot;</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="p">(</span><span class="s2">&quot;strategy&quot;</span><span class="p">,</span> <span class="s2">&quot;trainer_strategy&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;ppo_max_token_len_per_gpu&quot;</span><span class="p">,</span> <span class="s2">&quot;max_token_len_per_gpu&quot;</span><span class="p">),</span>
+        <span class="p">]:</span>
+            <span class="n">set_if_none</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">critic</span><span class="p">,</span> <span class="n">critic_attr</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="p">,</span> <span class="n">trainer_attr</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_parallel_config</span><span class="p">(</span>
+            <span class="n">obj</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">critic</span><span class="p">,</span>
+            <span class="n">component_name</span><span class="o">=</span><span class="s2">&quot;critic&quot;</span><span class="p">,</span>
+            <span class="n">model_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">critic</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
+            <span class="n">fsdp_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">critic</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">fsdp_config</span><span class="p">,</span>
+            <span class="n">world_size</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">trainer_gpu_num</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_adjust_token_len_if_needed</span><span class="p">(</span>
+            <span class="n">obj</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">critic</span><span class="p">,</span>
+            <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
+            <span class="n">component_name</span><span class="o">=</span><span class="s2">&quot;critic&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">set_if_none</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">critic</span><span class="p">,</span> <span class="s2">&quot;forward_max_token_len_per_gpu&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">critic</span><span class="o">.</span><span class="n">ppo_max_token_len_per_gpu</span>
+        <span class="p">)</span>
+
+        <span class="c1"># LoRA related config</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">lora_configs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">lora_config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">lora_configs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;lora_rank&quot;</span><span class="p">,</span> <span class="s2">&quot;lora_alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;target_modules&quot;</span><span class="p">,</span> <span class="s2">&quot;exclude_modules&quot;</span><span class="p">]:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">actor_model_config</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">lora_config</span><span class="p">,</span> <span class="n">attr</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">lora_config</span><span class="o">.</span><span class="n">is_dummy</span><span class="p">:</span>
+                <span class="n">actor_model_config</span><span class="o">.</span><span class="n">lora_adapter_path</span> <span class="o">=</span> <span class="n">lora_config</span><span class="o">.</span><span class="n">path</span>
+            <span class="k">if</span> <span class="n">actor_config</span><span class="o">.</span><span class="n">strategy</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;fsdp&quot;</span><span class="p">,</span> <span class="s2">&quot;fsdp2&quot;</span><span class="p">]:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Lora is only supported for fsdp and fsdp2, but got </span><span class="si">{</span><span class="n">actor_config</span><span class="o">.</span><span class="n">strategy</span><span class="si">}</span><span class="s2"> instead, changed to fsdp.&quot;</span>
+                <span class="p">)</span>
+                <span class="n">actor_config</span><span class="o">.</span><span class="n">strategy</span> <span class="o">=</span> <span class="s2">&quot;fsdp&quot;</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">critic</span><span class="o">.</span><span class="n">strategy</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;fsdp&quot;</span><span class="p">,</span> <span class="s2">&quot;fsdp2&quot;</span><span class="p">]:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Lora is only supported for fsdp and fsdp2, but got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">critic</span><span class="o">.</span><span class="n">strategy</span><span class="si">}</span><span class="s2"> instead, changed to fsdp.&quot;</span>
+                <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">critic</span><span class="o">.</span><span class="n">strategy</span> <span class="o">=</span> <span class="s2">&quot;fsdp&quot;</span>
+
+        <span class="c1"># Algorithm related config</span>
+        <span class="n">optim_config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">optimizer</span>
+        <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="n">optim_config</span><span class="o">.</span><span class="n">__dataclass_fields__</span><span class="p">:</span>
+            <span class="n">field_value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">optim_config</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">field_name</span> <span class="o">==</span> <span class="s2">&quot;optimizer_type&quot;</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">actor_optim</span><span class="p">,</span> <span class="s2">&quot;optimizer&quot;</span><span class="p">,</span> <span class="n">field_value</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">actor_optim</span><span class="p">,</span> <span class="n">field_name</span><span class="p">):</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">actor_optim</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">field_value</span><span class="p">)</span>
+        <span class="c1"># ensure megatron optimizer config compatibility</span>
+        <span class="n">set_if_none</span><span class="p">(</span><span class="n">actor_optim</span><span class="p">,</span> <span class="s2">&quot;lr_warmup_init&quot;</span><span class="p">,</span> <span class="n">optim_config</span><span class="o">.</span><span class="n">min_lr_ratio</span> <span class="o">*</span> <span class="n">optim_config</span><span class="o">.</span><span class="n">lr</span><span class="p">)</span>
+        <span class="n">set_if_none</span><span class="p">(</span><span class="n">actor_optim</span><span class="p">,</span> <span class="s2">&quot;lr_decay_steps&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">total_training_steps</span><span class="p">)</span>
+        <span class="n">set_if_none</span><span class="p">(</span><span class="n">actor_optim</span><span class="p">,</span> <span class="s2">&quot;lr_decay_style&quot;</span><span class="p">,</span> <span class="n">optim_config</span><span class="o">.</span><span class="n">lr_scheduler_type</span><span class="p">)</span>
+        <span class="n">set_if_none</span><span class="p">(</span><span class="n">actor_optim</span><span class="p">,</span> <span class="s2">&quot;min_lr&quot;</span><span class="p">,</span> <span class="n">optim_config</span><span class="o">.</span><span class="n">min_lr_ratio</span> <span class="o">*</span> <span class="n">optim_config</span><span class="o">.</span><span class="n">lr</span><span class="p">)</span>
+        <span class="n">set_if_none</span><span class="p">(</span><span class="n">critic_optim</span><span class="p">,</span> <span class="s2">&quot;lr_warmup_init&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="n">set_if_none</span><span class="p">(</span><span class="n">critic_optim</span><span class="p">,</span> <span class="s2">&quot;lr_decay_steps&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">total_training_steps</span><span class="p">)</span>
+        <span class="n">set_if_none</span><span class="p">(</span><span class="n">critic_optim</span><span class="p">,</span> <span class="s2">&quot;lr_decay_style&quot;</span><span class="p">,</span> <span class="s2">&quot;constant&quot;</span><span class="p">)</span>
+        <span class="n">set_if_none</span><span class="p">(</span><span class="n">critic_optim</span><span class="p">,</span> <span class="s2">&quot;min_lr&quot;</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+        <span class="c1"># fix optimizer type for fsdp</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">trainer_strategy</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;fsdp&quot;</span><span class="p">):</span>
+            <span class="n">optim_map</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;adam&quot;</span><span class="p">:</span> <span class="s2">&quot;AdamW&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;adamw&quot;</span><span class="p">:</span> <span class="s2">&quot;AdamW&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;sgd&quot;</span><span class="p">:</span> <span class="s2">&quot;SGD&quot;</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="n">actor_optim</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">actor_optim</span><span class="o">.</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">actor_optim</span><span class="o">.</span><span class="n">optimizer</span><span class="p">)</span>
+            <span class="n">critic_optim</span><span class="o">.</span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">optim_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">critic_optim</span><span class="o">.</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">critic_optim</span><span class="o">.</span><span class="n">optimizer</span><span class="p">)</span>
+        <span class="n">actor_config</span><span class="o">.</span><span class="n">use_kl_loss</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">kl_loss_fn</span> <span class="o">!=</span> <span class="s2">&quot;none&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">use_kl_in_reward</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">kl_penalty_fn</span> <span class="o">!=</span> <span class="s2">&quot;none&quot;</span>
+        <span class="c1"># TODO (yanxi): it seems that adv_estimator now only affects whether use_critic is set to</span>
+        <span class="c1"># True or False in RayPPOTrainer.__init__() (and hence in VerlPPOTrainerWrapper).</span>
+        <span class="c1"># Need to double check whether this is indeed the case,</span>
+        <span class="c1"># and see if adv_estimator can be removed completely.</span>
+
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">algorithm_type</span> <span class="o">==</span> <span class="s2">&quot;dpo&quot;</span><span class="p">:</span>  <span class="c1"># for DPO</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;DPO micro batch size is doubled for computing loss.&quot;</span><span class="p">)</span>
+            <span class="n">actor_config</span><span class="o">.</span><span class="n">ppo_micro_batch_size_per_gpu</span> <span class="o">*=</span> <span class="mi">2</span>
+            <span class="n">ref_config</span><span class="o">.</span><span class="n">log_prob_micro_batch_size_per_gpu</span> <span class="o">*=</span> <span class="mi">2</span>
+
+        <span class="c1"># check rollout config (only works for lora)</span>
+        <span class="k">for</span> <span class="n">rollout_attr</span><span class="p">,</span> <span class="n">actor_attr</span> <span class="ow">in</span> <span class="p">[</span>
+            <span class="p">(</span><span class="s2">&quot;log_prob_use_dynamic_bsz&quot;</span><span class="p">,</span> <span class="s2">&quot;use_dynamic_bsz&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;log_prob_micro_batch_size&quot;</span><span class="p">,</span> <span class="s2">&quot;ppo_micro_batch_size&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;log_prob_micro_batch_size_per_gpu&quot;</span><span class="p">,</span> <span class="s2">&quot;ppo_micro_batch_size_per_gpu&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;log_prob_max_token_len_per_gpu&quot;</span><span class="p">,</span> <span class="s2">&quot;ppo_max_token_len_per_gpu&quot;</span><span class="p">),</span>
+        <span class="p">]:</span>
+            <span class="n">set_if_none</span><span class="p">(</span><span class="n">rollout_config</span><span class="p">,</span> <span class="n">rollout_attr</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">actor_config</span><span class="p">,</span> <span class="n">actor_attr</span><span class="p">))</span>
+
+        <span class="c1"># TODO: check other fields</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">enable_preview</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">enable_preview</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="load_config">
+<a class="viewcode-back" href="../../../build_api/trinity.common.verl_config.html#trinity.common.verl_config.load_config">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_config</span><span class="p">(</span><span class="n">config_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">veRLConfig</span><span class="p">:</span>
+    <span class="n">schema</span> <span class="o">=</span> <span class="n">OmegaConf</span><span class="o">.</span><span class="n">structured</span><span class="p">(</span><span class="n">veRLConfig</span><span class="p">)</span>
+    <span class="n">yaml_config</span> <span class="o">=</span> <span class="n">OmegaConf</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">OmegaConf</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">schema</span><span class="p">,</span> <span class="n">yaml_config</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">OmegaConf</span><span class="o">.</span><span class="n">to_object</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid configuration: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span></div>
+
+</pre></div>
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By Trinity-RFT Team
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2025, Trinity-RFT Team.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../../../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../../../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

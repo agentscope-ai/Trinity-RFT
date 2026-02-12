@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>trinity.trainer.verl.fsdp_checkpoint_manager module &#8212; Trinity-RFT 0.5.0 文档</title>
+    <title>trinity.trainer.verl.fsdp_checkpoint_manager module &#8212; Trinity-RFT 0.5.1 文档</title>
   
   
   
@@ -36,7 +36,7 @@
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
   <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
 
-    <script src="../_static/documentation_options.js?v=6edd33ca"></script>
+    <script src="../_static/documentation_options.js?v=c79d47ac"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
@@ -137,8 +137,8 @@
       
     
     
-    <img src="../_static/logo.svg" class="logo__image only-light" alt="Trinity-RFT 0.5.0 文档 - Home"/>
-    <script>document.write(`<img src="../_static/logo.svg" class="logo__image only-dark" alt="Trinity-RFT 0.5.0 文档 - Home"/>`);</script>
+    <img src="../_static/logo.svg" class="logo__image only-light" alt="Trinity-RFT 0.5.1 文档 - Home"/>
+    <script>document.write(`<img src="../_static/logo.svg" class="logo__image only-dark" alt="Trinity-RFT 0.5.1 文档 - Home"/>`);</script>
   
   
 </a></div>
@@ -590,7 +590,9 @@ document.write(`
   </button>
 `);
 </script>
-
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
 </div></div>
       
     </div>
@@ -606,6 +608,21 @@ document.write(`
     <div id="print-main-content">
         <div id="jb-print-toc">
             
+            <div>
+                <h2> 目录 </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager"><code class="docutils literal notranslate"><span class="pre">FSDPCheckpointManager</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager.__init__"><code class="docutils literal notranslate"><span class="pre">FSDPCheckpointManager.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager.upload_state_dict"><code class="docutils literal notranslate"><span class="pre">FSDPCheckpointManager.upload_state_dict()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager.save_state_dict"><code class="docutils literal notranslate"><span class="pre">FSDPCheckpointManager.save_state_dict()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager.save_checkpoint"><code class="docutils literal notranslate"><span class="pre">FSDPCheckpointManager.save_checkpoint()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager.wait_on_save_thread"><code class="docutils literal notranslate"><span class="pre">FSDPCheckpointManager.wait_on_save_thread()</span></code></a></li>
+</ul>
+</li>
+</ul>
+            </nav>
         </div>
     </div>
 </div>
@@ -615,8 +632,71 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="trinity-trainer-verl-fsdp-checkpoint-manager-module">
-<h1>trinity.trainer.verl.fsdp_checkpoint_manager module<a class="headerlink" href="#trinity-trainer-verl-fsdp-checkpoint-manager-module" title="Link to this heading">#</a></h1>
+  <section id="module-trinity.trainer.verl.fsdp_checkpoint_manager">
+<span id="trinity-trainer-verl-fsdp-checkpoint-manager-module"></span><h1>trinity.trainer.verl.fsdp_checkpoint_manager module<a class="headerlink" href="#module-trinity.trainer.verl.fsdp_checkpoint_manager" title="Link to this heading">#</a></h1>
+<p>FSDP Checkpoint Manager.
+Modified from <a class="github reference external" href="https://github.com/volcengine/verl/blob/v0.7.0/verl/utils/checkpoint/fsdp_checkpoint_manager.py">volcengine/verl</a></p>
+<dl class="py class">
+<dt class="sig sig-object py" id="trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">trinity.trainer.verl.fsdp_checkpoint_manager.</span></span><span class="sig-name descname"><span class="pre">FSDPCheckpointManager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ray_namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trust_remote_code</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/trainer/verl/fsdp_checkpoint_manager.html#FSDPCheckpointManager"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager" title="Link to this definition">#</a></dt>
+<dd><p>基类：<code class="xref py py-class docutils literal notranslate"><span class="pre">FSDPCheckpointManager</span></code></p>
+<p>An enhanced version of the original FSDP checkpoint manager that:</p>
+<ol class="arabic simple">
+<li><p>Uploads model state dicts to a remote Synchronizer actor (either directly or via checkpoints).</p></li>
+<li><p>Offloads saving operations (model, optimizer, extra states) into background threads to avoid blocking the training loop.</p></li>
+</ol>
+<p>This class is useful in distributed training scenarios where synchronization and non-blocking I/O are important.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ray_namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trust_remote_code</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/trainer/verl/fsdp_checkpoint_manager.html#FSDPCheckpointManager.__init__"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager.upload_state_dict">
+<span class="sig-name descname"><span class="pre">upload_state_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">global_step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/trainer/verl/fsdp_checkpoint_manager.html#FSDPCheckpointManager.upload_state_dict"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager.upload_state_dict" title="Link to this definition">#</a></dt>
+<dd><p>Uploads the full model state dictionary to the synchronizer actor for remote access.</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>global_step</strong> (<em>int</em>) -- The current training step number.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager.save_state_dict">
+<span class="sig-name descname"><span class="pre">save_state_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">local_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">global_step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/trainer/verl/fsdp_checkpoint_manager.html#FSDPCheckpointManager.save_state_dict"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager.save_state_dict" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager.save_checkpoint">
+<span class="sig-name descname"><span class="pre">save_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">local_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">global_step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_ckpt_to_keep</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_as_hf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/trainer/verl/fsdp_checkpoint_manager.html#FSDPCheckpointManager.save_checkpoint"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager.save_checkpoint" title="Link to this definition">#</a></dt>
+<dd><p>Modified from verl.utils.checkpoint.fsdp_checkpoint_manager.py:save_checkpoint</p>
+<p>Saves the model checkpoint to disk, optionally uploads it to a remote Synchronizer,
+and uses background threads to prevent blocking the main training loop.</p>
+<p>Main improvements over the base class:
+- Uses separate threads for saving model/optimizer/extras.
+- Implements synchronization with a remote actor. If the model is not trained (<cite>global_step == 0</cite>) or continues from a breakpoint, <cite>Synchonizer</cite> will be notified and the model will not be saved.</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>local_path</strong> (<em>str</em>) -- Local directory path to save the checkpoint.</p></li>
+<li><p><strong>hdfs_path</strong> (<em>str</em><em>, </em><em>optional</em>) -- HDFS path for saving the checkpoint (not implemented here).</p></li>
+<li><p><strong>global_step</strong> (<em>int</em>) -- Current training step.</p></li>
+<li><p><strong>max_ckpt_to_keep</strong> (<em>int</em><em>, </em><em>optional</em>) -- Maximum number of checkpoints to keep locally.</p></li>
+<li><p><strong>save_as_hf</strong> (<em>bool</em>) -- Whether to force save the model in Hugging Face format.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager.wait_on_save_thread">
+<span class="sig-name descname"><span class="pre">wait_on_save_thread</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/trinity/trainer/verl/fsdp_checkpoint_manager.html#FSDPCheckpointManager.wait_on_save_thread"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager.wait_on_save_thread" title="Link to this definition">#</a></dt>
+<dd><p>Wait for all background saving threads to complete.</p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 
@@ -654,6 +734,28 @@ document.write(`
             </div>
             
             
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> 目录
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager"><code class="docutils literal notranslate"><span class="pre">FSDPCheckpointManager</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager.__init__"><code class="docutils literal notranslate"><span class="pre">FSDPCheckpointManager.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager.upload_state_dict"><code class="docutils literal notranslate"><span class="pre">FSDPCheckpointManager.upload_state_dict()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager.save_state_dict"><code class="docutils literal notranslate"><span class="pre">FSDPCheckpointManager.save_state_dict()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager.save_checkpoint"><code class="docutils literal notranslate"><span class="pre">FSDPCheckpointManager.save_checkpoint()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager.wait_on_save_thread"><code class="docutils literal notranslate"><span class="pre">FSDPCheckpointManager.wait_on_save_thread()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
               
             
           </div>
