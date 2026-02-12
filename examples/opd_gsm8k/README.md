@@ -52,9 +52,15 @@ Then you are all set! It should be pretty simple😄, and the training should co
 
 
 
+### KL-based OPD Results
+
 ![](../../docs/sphinx_doc/assets/opd_acc.png)
 ![](../../docs/sphinx_doc/assets/opd_kl.png)
 
+### JSD-based OPD Results
+
+![](../../docs/sphinx_doc/assets/jsd_acc.png)
+![](../../docs/sphinx_doc/assets/jsd_kl.png)
 
 ## References
 

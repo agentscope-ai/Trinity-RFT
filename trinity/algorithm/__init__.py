@@ -28,6 +28,7 @@ ALGORITHM_TYPE: Registry = Registry(
         "rec": "trinity.algorithm.algorithm.RECAlgorithm",
         "multi_step_grpo": "trinity.algorithm.algorithm.MultiStepGRPOAlgorithm",
         "on_policy_distill": "trinity.algorithm.algorithm.OnPolicyDistillAlgorithm",
+        "jsd": "trinity.algorithm.algorithm.JSDAlgorithm",
     },
 )
 
