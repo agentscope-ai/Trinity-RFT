@@ -809,6 +809,10 @@ window.addEventListener("load", load);</script>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.vllm_worker.html">trinity.common.models.vllm_worker module</a></li>
 </ul>
 </details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.common.patch.html">trinity.common.patch package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.patch.kimi.html">trinity.common.patch.kimi module</a></li>
+</ul>
+</details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.html">trinity.common.rewards package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.accuracy_reward.html">trinity.common.rewards.accuracy_reward module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.agents_reward.html">trinity.common.rewards.agents_reward module</a></li>
@@ -1016,84 +1020,235 @@ document.write(`
                 <article class="bd-article">
                   
   <h1>Source code for trinity.common.models.mm_utils</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;&quot;Multi-modal utilities for processing and handling multi-modal data such as images and videos.</span>
-<span class="sd">Only support Qwen2.5 VL series.</span>
+<span></span><span class="sd">&quot;&quot;&quot;Utilities for processing multi-modal data (images/videos) for specific vision-language models.</span>
 
-<span class="sd">Modified from: verl/utils/dataset/rl_dataset.py</span>
+<span class="sd">Supported models:</span>
+<span class="sd">- Qwen2.5-VL, Qwen3-VL series</span>
+<span class="sd">- Kimi VL series</span>
+
+<span class="sd">Provides functions to:</span>
+<span class="sd">1. Parse prompts with media tags (&lt;image&gt;/&lt;video&gt;)</span>
+<span class="sd">2. Validate multi-modal content in conversations</span>
+<span class="sd">3. Preprocess media inputs for inference/training</span>
+<span class="sd">4. Construct model-compatible message formats</span>
+
+<span class="sd">Note:</span>
+<span class="sd">    Only processors with class names containing both (&quot;Qwen&quot; OR &quot;Kimi&quot;) AND &quot;Processor&quot; are supported.</span>
+<span class="sd">    Relies on `qwen_vl_utils.process_vision_info` for media extraction.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
 
 
-<div class="viewcode-block" id="build_multi_modal_inputs">
-<a class="viewcode-back" href="../../../../build_api/trinity.common.models.mm_utils.html#trinity.common.models.mm_utils.build_multi_modal_inputs">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">build_multi_modal_inputs</span><span class="p">(</span>
-    <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">images</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">],</span>
-    <span class="n">videos</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span>
+<div class="viewcode-block" id="build_multi_modal_data">
+<a class="viewcode-back" href="../../../../build_api/trinity.common.models.mm_utils.html#trinity.common.models.mm_utils.build_multi_modal_data">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_multi_modal_data</span><span class="p">(</span>
     <span class="n">processor</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+    <span class="n">messages</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Preprocess multi-modal data and build multi-modal inputs</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract and preprocess vision inputs from multi-modal messages for vLLM inference.</span>
+
+<span class="sd">    Processes messages containing image/video placeholders using model-specific vision utilities.</span>
+<span class="sd">    Returns structured media inputs compatible with vLLM&#39;s multi-modal API.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        processor: Vision-language processor instance (must have class name containing</span>
+<span class="sd">                   (&quot;Qwen&quot; OR &quot;Kimi&quot;) AND &quot;Processor&quot;).</span>
+<span class="sd">        messages: List of conversation messages in model-expected format. Each message&#39;s &quot;content&quot;</span>
+<span class="sd">                  may be a string or list of content items (text/image/video dictionaries).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary containing processed media inputs with keys:</span>
+<span class="sd">        - &quot;image&quot;: List of processed image objects (if images exist)</span>
+<span class="sd">        - &quot;video&quot;: List of processed video objects (if videos exist)</span>
+<span class="sd">        Keys are omitted when no corresponding media is present.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        NotImplementedError: If processor class name doesn&#39;t match supported patterns.</span>
+<span class="sd">        ImportError: If required `qwen_vl_utils` module is unavailable.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; messages = [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: [{&quot;type&quot;: &quot;image&quot;, &quot;image&quot;: &quot;img.jpg&quot;}, {&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: &quot;Describe this&quot;}]}]</span>
+<span class="sd">        &gt;&gt;&gt; build_multi_modal_data(processor, messages)</span>
+<span class="sd">        {&quot;image&quot;: [processed_image]}</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">prompt</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Prompt is required for build multi-modal inputs&quot;</span><span class="p">)</span>
+    <span class="n">processor_class_name</span> <span class="o">=</span> <span class="n">processor</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="s2">&quot;Qwen&quot;</span> <span class="ow">in</span> <span class="n">processor_class_name</span> <span class="ow">or</span> <span class="s2">&quot;Kimi&quot;</span> <span class="ow">in</span> <span class="n">processor_class_name</span>
+    <span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;Processor&quot;</span> <span class="ow">in</span> <span class="n">processor_class_name</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">qwen_vl_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">process_vision_info</span>
 
-    <span class="n">multi_modal_data</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">if</span> <span class="n">images</span><span class="p">:</span>
-        <span class="n">multi_modal_data</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">images</span>
-    <span class="k">if</span> <span class="n">videos</span><span class="p">:</span>
-        <span class="n">multi_modal_data</span><span class="p">[</span><span class="s2">&quot;video&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">videos</span>
+        <span class="n">image_inputs</span><span class="p">,</span> <span class="n">video_inputs</span> <span class="o">=</span> <span class="n">process_vision_info</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span>
+        <span class="n">multi_modal_data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">image_inputs</span><span class="p">:</span>
+            <span class="n">multi_modal_data</span><span class="p">[</span><span class="s2">&quot;image&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">image_inputs</span>
+        <span class="k">if</span> <span class="n">video_inputs</span><span class="p">:</span>
+            <span class="n">multi_modal_data</span><span class="p">[</span><span class="s2">&quot;video&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">video_inputs</span>
 
-    <span class="n">model_inputs</span> <span class="o">=</span> <span class="n">processor</span><span class="p">(</span>
-        <span class="n">text</span><span class="o">=</span><span class="p">[</span><span class="n">prompt</span><span class="p">],</span>
-        <span class="n">images</span><span class="o">=</span><span class="n">multi_modal_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;image&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-        <span class="n">videos</span><span class="o">=</span><span class="n">multi_modal_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;video&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-        <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="n">input_ids</span> <span class="o">=</span> <span class="n">model_inputs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;input_ids&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">model_inputs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;attention_mask&quot;</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="s2">&quot;second_per_grid_ts&quot;</span> <span class="ow">in</span> <span class="n">model_inputs</span><span class="p">:</span>
-        <span class="n">model_inputs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;second_per_grid_ts&quot;</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;prompt&quot;</span><span class="p">:</span> <span class="n">prompt</span><span class="p">,</span>
-        <span class="s2">&quot;prompt_token_ids&quot;</span><span class="p">:</span> <span class="n">input_ids</span><span class="p">,</span>
-        <span class="s2">&quot;multi_modal_data&quot;</span><span class="p">:</span> <span class="n">multi_modal_data</span><span class="p">,</span>
-        <span class="s2">&quot;multi_modal_inputs&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">model_inputs</span><span class="p">),</span>
-    <span class="p">}</span></div>
+        <span class="k">return</span> <span class="n">multi_modal_data</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;Processor &#39;</span><span class="si">{</span><span class="n">processor_class_name</span><span class="si">}</span><span class="s2">&#39; not supported. Only Qwen/Kimi VL processors are supported.&quot;</span>
+    <span class="p">)</span></div>
 
 
 
-<div class="viewcode-block" id="convert_messages_to_mm_format">
-<a class="viewcode-back" href="../../../../build_api/trinity.common.models.mm_utils.html#trinity.common.models.mm_utils.convert_messages_to_mm_format">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">convert_messages_to_mm_format</span><span class="p">(</span><span class="n">messages</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
+<div class="viewcode-block" id="build_mm_input_for_training">
+<a class="viewcode-back" href="../../../../build_api/trinity.common.models.mm_utils.html#trinity.common.models.mm_utils.build_mm_input_for_training">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_mm_input_for_training</span><span class="p">(</span>
+    <span class="n">processor</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">multi_modal_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Tokenize prompt and integrate processed media inputs for model training.</span>
+
+<span class="sd">    Combines text prompt with preprocessed image/video data into model-ready tensor inputs.</span>
+<span class="sd">    Handles padding and tensor conversion for training workflows.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        processor: Vision-language processor instance (must have class name containing</span>
+<span class="sd">                   (&quot;Qwen&quot; OR &quot;Kimi&quot;) AND &quot;Processor&quot;).</span>
+<span class="sd">        prompt: Plain text prompt WITHOUT media tags (e.g., &quot;Describe this image&quot;).</span>
+<span class="sd">                Media placement is handled via `multi_modal_data`, not prompt tags.</span>
+<span class="sd">        multi_modal_data: Dictionary from `build_multi_modal_data()` containing:</span>
+<span class="sd">                          {&quot;image&quot;: [...], &quot;video&quot;: [...]} (keys optional)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dictionary of model inputs including:</span>
+<span class="sd">        - input_ids: Tokenized prompt IDs</span>
+<span class="sd">        - attention_mask: Attention mask tensor</span>
+<span class="sd">        - pixel_values: Processed image tensors (if images provided)</span>
+<span class="sd">        - pixel_values_videos: Processed video tensors (if videos provided)</span>
+<span class="sd">        All tensors converted to PyTorch format (`return_tensors=&quot;pt&quot;`).</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        NotImplementedError: If processor class name doesn&#39;t match supported patterns.</span>
+<span class="sd">        ValueError: If media counts mismatch prompt expectations (handled internally by processor).</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        Prompt should NOT contain &lt;image&gt;/&lt;video&gt; tags here. Media association is managed</span>
+<span class="sd">        through the structured `multi_modal_data` dictionary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">processor_class_name</span> <span class="o">=</span> <span class="n">processor</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="s2">&quot;Qwen&quot;</span> <span class="ow">in</span> <span class="n">processor_class_name</span> <span class="ow">or</span> <span class="s2">&quot;Kimi&quot;</span> <span class="ow">in</span> <span class="n">processor_class_name</span>
+    <span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;Processor&quot;</span> <span class="ow">in</span> <span class="n">processor_class_name</span><span class="p">:</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="n">processor</span><span class="p">(</span>
+            <span class="n">text</span><span class="o">=</span><span class="p">[</span><span class="n">prompt</span><span class="p">],</span>
+            <span class="n">images</span><span class="o">=</span><span class="n">multi_modal_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;image&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">videos</span><span class="o">=</span><span class="n">multi_modal_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;video&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">padding</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;Processor &#39;</span><span class="si">{</span><span class="n">processor_class_name</span><span class="si">}</span><span class="s2">&#39; not supported. Only Qwen/Kimi VL processors are supported.&quot;</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="build_mm_message">
+<a class="viewcode-back" href="../../../../build_api/trinity.common.models.mm_utils.html#trinity.common.models.mm_utils.build_mm_message">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">build_mm_message</span><span class="p">(</span>
+    <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">images</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">videos</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Construct multi-modal message by injecting media references at tag positions in prompt.</span>
+
+<span class="sd">    Parses prompt for &lt;image&gt;/&lt;video&gt; tags, replaces them with corresponding media references,</span>
+<span class="sd">    and handles surplus media items. Extra media (beyond tag count) is prepended to content.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        prompt: Text containing optional &lt;image&gt; and &lt;video&gt; tags as media placeholders.</span>
+<span class="sd">                Example: &quot;First &lt;image&gt; then &lt;video&gt; and finally &lt;image&gt;&quot;</span>
+<span class="sd">        images: List of image references (file paths, URLs, or PIL images) in order of appearance.</span>
+<span class="sd">        videos: List of video references (file paths, URLs) in order of appearance.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Message dictionary formatted for VL models:</span>
+<span class="sd">        {</span>
+<span class="sd">            &quot;role&quot;: &quot;user&quot;,</span>
+<span class="sd">            &quot;content&quot;: [</span>
+<span class="sd">                {&quot;type&quot;: &quot;image&quot;, &quot;image&quot;: ...},  # Surplus media first</span>
+<span class="sd">                {&quot;type&quot;: &quot;video&quot;, &quot;video&quot;: ...},</span>
+<span class="sd">                {&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: &quot;First &quot;},</span>
+<span class="sd">                {&quot;type&quot;: &quot;image&quot;, &quot;image&quot;: ...},  # Tag-replaced media</span>
+<span class="sd">                ...</span>
+<span class="sd">            ]</span>
+<span class="sd">        }</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If prompt contains more &lt;image&gt; tags than provided images,</span>
+<span class="sd">                    or more &lt;video&gt; tags than provided videos.</span>
+
+<span class="sd">    Behavior details:</span>
+<span class="sd">        - Tags are case-sensitive and must be exact: &quot;&lt;image&gt;&quot;, &quot;&lt;video&gt;&quot;</span>
+<span class="sd">        - Empty text segments between tags are omitted</span>
+<span class="sd">        - Surplus media (images/videos beyond tag count) appears at START of content list</span>
+<span class="sd">        - Text segments preserve original prompt ordering around tags</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">content_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">segments</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(&lt;image&gt;|&lt;video&gt;)&quot;</span><span class="p">,</span> <span class="n">prompt</span><span class="p">)</span>
+    <span class="n">img_idx</span><span class="p">,</span> <span class="n">vid_idx</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">segment</span> <span class="ow">in</span> <span class="n">segments</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">segment</span> <span class="o">==</span> <span class="s2">&quot;&lt;image&gt;&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">img_idx</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">images</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;More &lt;image&gt; tags in prompt than images provided.&quot;</span><span class="p">)</span>
+            <span class="n">content_list</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;image&quot;</span><span class="p">,</span> <span class="s2">&quot;image&quot;</span><span class="p">:</span> <span class="n">images</span><span class="p">[</span><span class="n">img_idx</span><span class="p">]})</span>
+            <span class="n">img_idx</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">segment</span> <span class="o">==</span> <span class="s2">&quot;&lt;video&gt;&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">vid_idx</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">videos</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;More &lt;video&gt; tags in prompt than videos provided.&quot;</span><span class="p">)</span>
+            <span class="n">content_list</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;video&quot;</span><span class="p">,</span> <span class="s2">&quot;video&quot;</span><span class="p">:</span> <span class="n">videos</span><span class="p">[</span><span class="n">vid_idx</span><span class="p">]})</span>
+            <span class="n">vid_idx</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">content_list</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">segment</span><span class="p">})</span>
+
+    <span class="c1"># Prepend surplus media items (not referenced by tags)</span>
+    <span class="n">surplus_content</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">while</span> <span class="n">img_idx</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">images</span><span class="p">):</span>
+        <span class="n">surplus_content</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;image&quot;</span><span class="p">,</span> <span class="s2">&quot;image&quot;</span><span class="p">:</span> <span class="n">images</span><span class="p">[</span><span class="n">img_idx</span><span class="p">]})</span>
+        <span class="n">img_idx</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">while</span> <span class="n">vid_idx</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">videos</span><span class="p">):</span>
+        <span class="n">surplus_content</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;video&quot;</span><span class="p">,</span> <span class="s2">&quot;video&quot;</span><span class="p">:</span> <span class="n">videos</span><span class="p">[</span><span class="n">vid_idx</span><span class="p">]})</span>
+        <span class="n">vid_idx</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">content_list</span> <span class="o">=</span> <span class="n">surplus_content</span> <span class="o">+</span> <span class="n">content_list</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">content_list</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">content_list</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">content_list</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s2">&quot;text&quot;</span><span class="p">]}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">content_list</span><span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="has_multi_modal_content">
+<a class="viewcode-back" href="../../../../build_api/trinity.common.models.mm_utils.html#trinity.common.models.mm_utils.has_multi_modal_content">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">has_multi_modal_content</span><span class="p">(</span><span class="n">messages</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if any message contains non-text (image/video) content.</span>
+
+<span class="sd">    Inspects message content structure to detect multi-modal elements. Handles both:</span>
+<span class="sd">    - String content (text-only, returns False)</span>
+<span class="sd">    - List content (multi-modal candidates)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        messages: List of conversation messages. Each message must contain a &quot;content&quot; field.</span>
+<span class="sd">                  Content may be:</span>
+<span class="sd">                  - str: Plain text message</span>
+<span class="sd">                  - List[Dict]: Multi-modal content items (each with &quot;type&quot; key)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        True if any message contains at least one non-text content item (type != &quot;text&quot;),</span>
+<span class="sd">        False otherwise.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        &gt;&gt;&gt; msg = [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: [{&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: &quot;Hi&quot;}, {&quot;type&quot;: &quot;image&quot;, &quot;image&quot;: &quot;...&quot;}]}]</span>
+<span class="sd">        &gt;&gt;&gt; has_multi_modal_content(msg)</span>
+<span class="sd">        True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">message</span> <span class="ow">in</span> <span class="n">messages</span><span class="p">:</span>
-        <span class="n">content</span> <span class="o">=</span> <span class="n">message</span><span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">]</span>
-        <span class="n">content_list</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">segments</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;(&lt;image&gt;|&lt;video&gt;)&quot;</span><span class="p">,</span> <span class="n">content</span><span class="p">)</span>
-        <span class="n">segments</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">segments</span> <span class="k">if</span> <span class="n">item</span> <span class="o">!=</span> <span class="s2">&quot;&quot;</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">segment</span> <span class="ow">in</span> <span class="n">segments</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">segment</span> <span class="o">==</span> <span class="s2">&quot;&lt;image&gt;&quot;</span><span class="p">:</span>
-                <span class="n">content_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;image&quot;</span><span class="p">}</span>
-                <span class="p">)</span>  <span class="c1"># chat template will fill the actual image data later</span>
-            <span class="k">elif</span> <span class="n">segment</span> <span class="o">==</span> <span class="s2">&quot;&lt;video&gt;&quot;</span><span class="p">:</span>
-                <span class="n">content_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;video&quot;</span><span class="p">}</span>
-                <span class="p">)</span>  <span class="c1"># chat template will fill the actual video data later</span>
-            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">continue</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">content_list</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">segment</span><span class="p">})</span>
-
-        <span class="n">message</span><span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">content_list</span>
-    <span class="k">return</span> <span class="n">messages</span></div>
+        <span class="n">content</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;content&quot;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">content</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="kc">False</span></div>
 
 </pre></div>
 

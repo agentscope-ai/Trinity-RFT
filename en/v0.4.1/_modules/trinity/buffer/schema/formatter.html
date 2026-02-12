@@ -1143,7 +1143,7 @@ document.write(`
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">processor</span> <span class="o">=</span> <span class="kc">None</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">transformers</span><span class="o">.</span><span class="n">AutoTokenizer</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">tokenizer_path</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">chat_template</span> <span class="o">=</span> <span class="n">format_config</span><span class="o">.</span><span class="n">chat_template</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">chat_template</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chat_template</span> <span class="o">=</span> <span class="n">format_config</span><span class="o">.</span><span class="n">chat_template</span>
         <span class="c1"># For messages type</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prompt_type</span> <span class="o">==</span> <span class="n">PromptType</span><span class="o">.</span><span class="n">MESSAGES</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">messages_key</span> <span class="o">=</span> <span class="n">format_config</span><span class="o">.</span><span class="n">messages_key</span>
@@ -1164,7 +1164,6 @@ document.write(`
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">messages</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">],</span>
         <span class="n">tools</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">mm_data</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Experience</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert messages and tools into an Experience object.</span>
 
@@ -1205,95 +1204,63 @@ document.write(`
                 <span class="n">prompt_length</span><span class="o">=</span><span class="n">prompt_length</span><span class="p">,</span>
                 <span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span>
             <span class="p">)</span>
-        <span class="k">if</span> <span class="n">mm_data</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_mm_data_to_experiences</span><span class="p">(</span><span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span> <span class="n">mm_data</span><span class="o">=</span><span class="n">mm_data</span><span class="p">)</span>
-        <span class="n">token_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">apply_chat_template</span><span class="p">(</span>
-            <span class="n">messages</span><span class="p">,</span>
-            <span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">,</span>
-            <span class="n">add_generation_prompt</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span><span class="p">,</span>
-            <span class="n">chat_template</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">chat_template</span><span class="p">,</span>
-        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">prompt_tokens_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">apply_chat_template</span><span class="p">(</span>
-            <span class="n">messages</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
-            <span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">,</span>
-            <span class="n">add_generation_prompt</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span><span class="p">,</span>
-            <span class="n">chat_template</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">chat_template</span><span class="p">,</span>
-        <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">Experience</span><span class="p">(</span>
-            <span class="n">tokens</span><span class="o">=</span><span class="n">token_ids</span><span class="p">,</span>
-            <span class="n">prompt_length</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">prompt_tokens_ids</span><span class="p">),</span>
-            <span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_key</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">video_key</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models.mm_utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                <span class="n">build_mm_input_for_training</span><span class="p">,</span>
+                <span class="n">build_multi_modal_data</span><span class="p">,</span>
+            <span class="p">)</span>
 
-<div class="viewcode-block" id="SFTFormatter.load_mm_data">
-<a class="viewcode-back" href="../../../../build_api/trinity.buffer.schema.formatter.html#trinity.buffer.schema.formatter.SFTFormatter.load_mm_data">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">load_mm_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load multi-modal data such as images or videos.</span>
-
-<span class="sd">        NOTE: You can override this method for custom data loading.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            sample (Dict): The raw sample dictionary containing multi-modal data.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            Dict: A dictionary containing multi-modal data. Specifically, it may contain:</span>
-<span class="sd">                - images: A list of `PIL.Image.Image` if `self.image_key` is set</span>
-<span class="sd">                - videos: A list of `numpy.ndarray` if `self.video_key` is set</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.dataset.vision_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">process_image</span><span class="p">,</span> <span class="n">process_video</span>
-
-        <span class="n">mm_data</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_key</span><span class="p">:</span>
-            <span class="n">mm_data</span><span class="p">[</span><span class="s2">&quot;images&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">process_image</span><span class="p">(</span><span class="n">img</span><span class="p">)</span> <span class="k">for</span> <span class="n">img</span> <span class="ow">in</span> <span class="n">sample</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">image_key</span><span class="p">]]</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">video_key</span><span class="p">:</span>
-            <span class="n">mm_data</span><span class="p">[</span><span class="s2">&quot;videos&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">process_video</span><span class="p">(</span><span class="n">vid</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span> <span class="k">for</span> <span class="n">vid</span> <span class="ow">in</span> <span class="n">sample</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">video_key</span><span class="p">]]</span>
-        <span class="k">return</span> <span class="n">mm_data</span></div>
-
-
-<div class="viewcode-block" id="SFTFormatter.convert_mm_data_to_experiences">
-<a class="viewcode-back" href="../../../../build_api/trinity.buffer.schema.formatter.html#trinity.buffer.schema.formatter.SFTFormatter.convert_mm_data_to_experiences">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">convert_mm_data_to_experiences</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">messages</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">],</span>
-        <span class="n">mm_data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Experience</span><span class="p">:</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models.mm_utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-            <span class="n">build_multi_modal_inputs</span><span class="p">,</span>
-            <span class="n">convert_messages_to_mm_format</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="n">messages</span> <span class="o">=</span> <span class="n">convert_messages_to_mm_format</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span>
-        <span class="n">sequence</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">apply_chat_template</span><span class="p">(</span>
-            <span class="n">messages</span><span class="p">,</span>
-            <span class="n">add_generation_prompt</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">chat_template</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">chat_template</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">apply_chat_template</span><span class="p">(</span>
-            <span class="n">messages</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
-            <span class="n">add_generation_prompt</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">chat_template</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">chat_template</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">sequence_data</span> <span class="o">=</span> <span class="n">build_multi_modal_inputs</span><span class="p">(</span>
-            <span class="n">prompt</span><span class="o">=</span><span class="n">sequence</span><span class="p">,</span>
-            <span class="n">images</span><span class="o">=</span><span class="n">mm_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;images&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-            <span class="n">videos</span><span class="o">=</span><span class="n">mm_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;videos&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-            <span class="n">processor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="n">prompt_data</span> <span class="o">=</span> <span class="n">build_multi_modal_inputs</span><span class="p">(</span>
-            <span class="n">prompt</span><span class="o">=</span><span class="n">prompt</span><span class="p">,</span>
-            <span class="n">images</span><span class="o">=</span><span class="n">mm_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;images&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-            <span class="n">videos</span><span class="o">=</span><span class="n">mm_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;videos&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-            <span class="n">processor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">Experience</span><span class="p">(</span>
-            <span class="n">tokens</span><span class="o">=</span><span class="n">sequence_data</span><span class="p">[</span><span class="s2">&quot;prompt_token_ids&quot;</span><span class="p">],</span>
-            <span class="n">prompt_length</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">prompt_data</span><span class="p">[</span><span class="s2">&quot;prompt_token_ids&quot;</span><span class="p">]),</span>
-            <span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span>
-            <span class="n">multi_modal_inputs</span><span class="o">=</span><span class="n">sequence_data</span><span class="p">[</span><span class="s2">&quot;multi_modal_inputs&quot;</span><span class="p">],</span>
-        <span class="p">)</span></div>
-
+            <span class="n">full_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">apply_chat_template</span><span class="p">(</span>
+                <span class="n">messages</span><span class="p">,</span>
+                <span class="n">tokenize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">add_generation_prompt</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">chat_template</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">chat_template</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">prompt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">apply_chat_template</span><span class="p">(</span>
+                <span class="n">messages</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">tokenize</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">add_generation_prompt</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">chat_template</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">chat_template</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">multi_modal_data</span> <span class="o">=</span> <span class="n">build_multi_modal_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="p">,</span> <span class="n">messages</span><span class="p">)</span>
+            <span class="n">full_text_inputs</span> <span class="o">=</span> <span class="n">build_mm_input_for_training</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="p">,</span>
+                <span class="n">full_text</span><span class="p">,</span>
+                <span class="n">multi_modal_data</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">tokens</span> <span class="o">=</span> <span class="n">full_text_inputs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;input_ids&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">full_text_inputs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;attention_mask&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">prompt_text_inputs</span> <span class="o">=</span> <span class="n">build_mm_input_for_training</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="p">,</span>
+                <span class="n">prompt</span><span class="p">,</span>
+                <span class="n">multi_modal_data</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">Experience</span><span class="p">(</span>
+                <span class="n">tokens</span><span class="o">=</span><span class="n">tokens</span><span class="p">,</span>
+                <span class="n">prompt_length</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">prompt_text_inputs</span><span class="p">[</span><span class="s2">&quot;input_ids&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span>
+                <span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span>
+                <span class="n">multi_modal_inputs</span><span class="o">=</span><span class="n">full_text_inputs</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">token_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">apply_chat_template</span><span class="p">(</span>
+                <span class="n">messages</span><span class="p">,</span>
+                <span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">,</span>
+                <span class="n">add_generation_prompt</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span><span class="p">,</span>
+                <span class="n">chat_template</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">chat_template</span><span class="p">,</span>
+            <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">prompt_tokens_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">apply_chat_template</span><span class="p">(</span>
+                <span class="n">messages</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                <span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">,</span>
+                <span class="n">add_generation_prompt</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span><span class="p">,</span>
+                <span class="n">chat_template</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">chat_template</span><span class="p">,</span>
+            <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">Experience</span><span class="p">(</span>
+                <span class="n">tokens</span><span class="o">=</span><span class="n">token_ids</span><span class="p">,</span>
+                <span class="n">prompt_length</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">prompt_tokens_ids</span><span class="p">),</span>
+                <span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span>
+            <span class="p">)</span>
 
 <div class="viewcode-block" id="SFTFormatter.format">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.schema.formatter.html#trinity.buffer.schema.formatter.SFTFormatter.format">[docs]</a>
@@ -1317,13 +1284,18 @@ document.write(`
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">system_prompt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">system_message</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">system_prompt</span><span class="p">}</span>
                 <span class="n">messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">system_message</span><span class="p">)</span>
-            <span class="n">messages</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">sample</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">prompt_key</span><span class="p">]})</span>
+            <span class="n">prompt</span> <span class="o">=</span> <span class="n">sample</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">prompt_key</span><span class="p">]</span>
+            <span class="n">images</span> <span class="o">=</span> <span class="n">sample</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">image_key</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_key</span> <span class="k">else</span> <span class="p">[]</span>
+            <span class="n">videos</span> <span class="o">=</span> <span class="n">sample</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">video_key</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">video_key</span> <span class="k">else</span> <span class="p">[]</span>
+
+            <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models.mm_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_mm_message</span>
+
+            <span class="n">messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">build_mm_message</span><span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="n">images</span><span class="p">,</span> <span class="n">videos</span><span class="p">))</span>
             <span class="n">messages</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">sample</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">response_key</span><span class="p">]})</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported prompt_type: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">prompt_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">tools</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tools_key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="n">mm_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_mm_data</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_key</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">video_key</span> <span class="k">else</span> <span class="kc">None</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_messages_to_experience</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="n">tools</span><span class="p">,</span> <span class="n">mm_data</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_messages_to_experience</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="n">tools</span><span class="p">)</span></div>
 </div>
 
 

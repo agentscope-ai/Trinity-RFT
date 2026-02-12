@@ -1039,6 +1039,7 @@ document.write(`
     <span class="n">set_if_none</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">StorageType</span><span class="p">,</span> <span class="n">SyncMethod</span><span class="p">,</span> <span class="n">SyncStyle</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.patch</span><span class="w"> </span><span class="kn">import</span> <span class="n">kimi_vl_monkey_patch_decorator</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.lora_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_dummy_lora</span>
 
@@ -1661,7 +1662,7 @@ document.write(`
         <span class="n">model_args</span> <span class="o">=</span> <span class="n">rollout_args</span> <span class="o">+</span> <span class="n">length_args</span> <span class="o">+</span> <span class="n">rope_args</span>
 
         <span class="c1"># rollout model</span>
-        <span class="k">for</span> <span class="n">args</span> <span class="ow">in</span> <span class="n">model_args</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;model_path&quot;</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">args</span> <span class="ow">in</span> <span class="n">model_args</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;model_path&quot;</span><span class="p">,</span> <span class="s2">&quot;trust_remote_code&quot;</span><span class="p">]:</span>
             <span class="n">set_if_none</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">args</span><span class="p">))</span>
         <span class="n">set_if_none</span><span class="p">(</span>
             <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="p">,</span> <span class="s2">&quot;chat_template&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">custom_chat_template</span>
@@ -1963,26 +1964,6 @@ document.write(`
                 <span class="sa">f</span><span class="s2">&quot;Failed to create buffer dir </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">cache_dir</span><span class="si">}</span><span class="s2">, please check &quot;</span>
                 <span class="sa">f</span><span class="s2">&quot;your checkpoint directory: </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">checkpoint_job_dir</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
-
-        <span class="c1"># set pad_token_id / tokenizer_path</span>
-        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">pad_token_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoTokenizer</span>
-
-            <span class="k">try</span><span class="p">:</span>
-                <span class="n">tokenizer</span> <span class="o">=</span> <span class="n">AutoTokenizer</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">model_path</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">pad_token_id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">tokenizer</span><span class="o">.</span><span class="n">pad_token_id</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">eos_token_id</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;tokenizer.pad_token_id is None. Now set to </span><span class="si">{</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">eos_token_id</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                        <span class="n">stacklevel</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-                    <span class="p">)</span>
-                <span class="n">config</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">pad_token_id</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">pad_token_id</span>
-
-            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Failed to get pad token id from model </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">model_path</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="p">)</span>
-                <span class="n">config</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">pad_token_id</span> <span class="o">=</span> <span class="mi">0</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_explorer_input</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_trainer_input</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
@@ -2372,7 +2353,10 @@ document.write(`
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;GPU memory check skipped for non-FSDP strategies.&quot;</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_get_model_params_num_and_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="nd">@kimi_vl_monkey_patch_decorator</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_model_params_num_and_config</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">model_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">trust_remote_code</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Load model configuration and estimate total parameter count without loading weights.</span>
 
 <span class="sd">        Uses `accelerate.init_empty_weights()` to avoid GPU memory allocation during inspection.</span>
@@ -2392,9 +2376,13 @@ document.write(`
         <span class="kn">import</span><span class="w"> </span><span class="nn">transformers</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">accelerate</span><span class="w"> </span><span class="kn">import</span> <span class="n">init_empty_weights</span>
 
-        <span class="n">model_config</span> <span class="o">=</span> <span class="n">transformers</span><span class="o">.</span><span class="n">AutoConfig</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
+        <span class="n">model_config</span> <span class="o">=</span> <span class="n">transformers</span><span class="o">.</span><span class="n">AutoConfig</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
+            <span class="n">model_path</span><span class="p">,</span> <span class="n">trust_remote_code</span><span class="o">=</span><span class="n">trust_remote_code</span>
+        <span class="p">)</span>
         <span class="k">with</span> <span class="n">init_empty_weights</span><span class="p">():</span>
-            <span class="n">model</span> <span class="o">=</span> <span class="n">transformers</span><span class="o">.</span><span class="n">AutoModel</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">model_config</span><span class="p">,</span> <span class="n">torch_dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bfloat16</span><span class="p">)</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">transformers</span><span class="o">.</span><span class="n">AutoModel</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span>
+                <span class="n">model_config</span><span class="p">,</span> <span class="n">trust_remote_code</span><span class="o">=</span><span class="n">trust_remote_code</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bfloat16</span>
+            <span class="p">)</span>
         <span class="n">params_num</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">num_parameters</span><span class="p">()</span>
         <span class="k">assert</span> <span class="n">params_num</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;No parameters found in the model at path: </span><span class="si">{</span><span class="n">model_path</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">return</span> <span class="n">params_num</span><span class="p">,</span> <span class="n">model_config</span>
@@ -2490,7 +2478,9 @@ document.write(`
 
         <span class="k">try</span><span class="p">:</span>
             <span class="n">model_path</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">model_path</span>
-            <span class="n">params_num</span><span class="p">,</span> <span class="n">hf_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_model_params_num_and_config</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
+            <span class="n">params_num</span><span class="p">,</span> <span class="n">hf_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_model_params_num_and_config</span><span class="p">(</span>
+                <span class="n">model_path</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">trust_remote_code</span>
+            <span class="p">)</span>
 
             <span class="n">verl_config</span><span class="p">:</span> <span class="n">veRLConfig</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">trainer_config</span>
             <span class="n">world_size</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">trainer_gpu_num</span>
@@ -2515,7 +2505,7 @@ document.write(`
                     <span class="n">critic_hf_config</span> <span class="o">=</span> <span class="n">hf_config</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">critic_params_num</span><span class="p">,</span> <span class="n">critic_hf_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_model_params_num_and_config</span><span class="p">(</span>
-                        <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">critic_model_path</span>
+                        <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">critic_model_path</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">trust_remote_code</span>
                     <span class="p">)</span>
 
                 <span class="p">(</span>
@@ -2656,6 +2646,10 @@ document.write(`
 <span class="sd">            params_memory (float): Estimated parameter + optimizer memory (bytes).</span>
 <span class="sd">            optim_step_memory (float): Estimated optimizer step memory (bytes).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">is_vl_model</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="s2">&quot;VL&quot;</span> <span class="ow">in</span> <span class="n">hf_config</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span>
+            <span class="n">hf_config</span> <span class="o">=</span> <span class="n">hf_config</span><span class="o">.</span><span class="n">text_config</span>
+            <span class="n">is_vl_model</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">max_activation_memory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calc_fsdp_activation_memory</span><span class="p">(</span>
             <span class="n">hf_config</span><span class="p">,</span> <span class="n">num_tokens</span><span class="p">,</span> <span class="n">logits_memory_type</span><span class="p">,</span> <span class="n">dtype_coeff</span>
         <span class="p">)</span>
@@ -2666,6 +2660,12 @@ document.write(`
         <span class="n">optim_step_mb</span> <span class="o">=</span> <span class="n">optim_step_memory</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1024</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">gpu_capacity_mb</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">memory_capacity</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1024</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="n">is_vl_model</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;Note: This is a vision-language (VL) model. &quot;</span>
+                <span class="s2">&quot;The memory estimate below only covers the text encoder portion. &quot;</span>
+                <span class="s2">&quot;Actual GPU memory usage will be higher due to the vision components.&quot;</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;Estimated GPU memory usage for </span><span class="si">{</span><span class="n">module_name</span><span class="si">}</span><span class="s2"> model &#39;</span><span class="si">{</span><span class="n">model_path</span><span class="si">}</span><span class="s2">&#39;: &quot;</span>
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">total_mb</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> MB (</span><span class="si">{</span><span class="n">params_mb</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> MB params + &quot;</span>

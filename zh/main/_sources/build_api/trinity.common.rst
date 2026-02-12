@@ -8,6 +8,7 @@ Subpackages
    :maxdepth: 4
 
    trinity.common.models
+   trinity.common.patch
    trinity.common.rewards
    trinity.common.workflows
 

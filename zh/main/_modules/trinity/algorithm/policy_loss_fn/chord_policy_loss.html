@@ -814,6 +814,10 @@ window.addEventListener("load", load);</script>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.vllm_worker.html">trinity.common.models.vllm_worker module</a></li>
 </ul>
 </details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.common.patch.html">trinity.common.patch package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.patch.kimi.html">trinity.common.patch.kimi module</a></li>
+</ul>
+</details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.html">trinity.common.rewards package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.accuracy_reward.html">trinity.common.rewards.accuracy_reward module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.agents_reward.html">trinity.common.rewards.agents_reward module</a></li>
@@ -1251,35 +1255,27 @@ document.write(`
             <span class="n">per_micro_batch_weight_usual</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_accumulation</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_batch_size_usual</span>  <span class="c1"># type: ignore</span>
             <span class="n">per_micro_batch_weight_expert</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gradient_accumulation</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_batch_size_expert</span>  <span class="c1"># type: ignore</span>
 
-        <span class="k">if</span> <span class="n">n_usual_exp</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">grpo_loss</span><span class="p">,</span> <span class="n">grpo_metrics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grpo_loss_fn</span><span class="p">(</span>
-                <span class="n">logprob</span><span class="p">[</span><span class="o">~</span><span class="n">expert_mask</span><span class="p">],</span>
-                <span class="n">old_logprob</span><span class="p">[</span><span class="o">~</span><span class="n">expert_mask</span><span class="p">],</span>
-                <span class="n">action_mask</span><span class="p">[</span><span class="o">~</span><span class="n">expert_mask</span><span class="p">],</span>
-                <span class="n">advantages</span><span class="p">[</span><span class="o">~</span><span class="n">expert_mask</span><span class="p">],</span>
-                <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="n">grpo_loss</span> <span class="o">=</span> <span class="n">grpo_loss</span> <span class="o">*</span> <span class="n">n_usual_exp</span> <span class="o">*</span> <span class="n">per_micro_batch_weight_usual</span>
-            <span class="n">grpo_metrics</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="o">*</span> <span class="n">n_usual_exp</span> <span class="o">*</span> <span class="n">per_micro_batch_weight_usual</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">grpo_metrics</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-            <span class="p">}</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">grpo_loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">logprob</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-            <span class="n">grpo_metrics</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">grpo_loss</span><span class="p">,</span> <span class="n">grpo_metrics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">grpo_loss_fn</span><span class="p">(</span>
+            <span class="n">logprob</span><span class="p">[</span><span class="o">~</span><span class="n">expert_mask</span><span class="p">],</span>
+            <span class="n">old_logprob</span><span class="p">[</span><span class="o">~</span><span class="n">expert_mask</span><span class="p">],</span>
+            <span class="n">action_mask</span><span class="p">[</span><span class="o">~</span><span class="n">expert_mask</span><span class="p">],</span>
+            <span class="n">advantages</span><span class="p">[</span><span class="o">~</span><span class="n">expert_mask</span><span class="p">],</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">grpo_loss</span> <span class="o">=</span> <span class="n">grpo_loss</span> <span class="o">*</span> <span class="n">n_usual_exp</span> <span class="o">*</span> <span class="n">per_micro_batch_weight_usual</span>
+        <span class="n">grpo_metrics</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="o">*</span> <span class="n">n_usual_exp</span> <span class="o">*</span> <span class="n">per_micro_batch_weight_usual</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">grpo_metrics</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
 
         <span class="c1"># SFT Loss (expert)</span>
-        <span class="k">if</span> <span class="n">n_expert_exp</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">sft_loss</span><span class="p">,</span> <span class="n">sft_metrics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sft_loss_fn</span><span class="p">(</span>
-                <span class="n">logprob</span><span class="p">[</span><span class="n">expert_mask</span><span class="p">],</span>
-                <span class="n">action_mask</span><span class="p">[</span><span class="n">expert_mask</span><span class="p">],</span>
-            <span class="p">)</span>
-            <span class="n">sft_loss</span> <span class="o">=</span> <span class="n">sft_loss</span> <span class="o">*</span> <span class="n">n_expert_exp</span> <span class="o">*</span> <span class="n">per_micro_batch_weight_expert</span>
-            <span class="n">sft_metrics</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="o">*</span> <span class="n">n_expert_exp</span> <span class="o">*</span> <span class="n">per_micro_batch_weight_expert</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sft_metrics</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-            <span class="p">}</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">sft_loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">logprob</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
-            <span class="n">sft_metrics</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">sft_loss</span><span class="p">,</span> <span class="n">sft_metrics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sft_loss_fn</span><span class="p">(</span>
+            <span class="n">logprob</span><span class="p">[</span><span class="n">expert_mask</span><span class="p">],</span>
+            <span class="n">action_mask</span><span class="p">[</span><span class="n">expert_mask</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">sft_loss</span> <span class="o">=</span> <span class="n">sft_loss</span> <span class="o">*</span> <span class="n">n_expert_exp</span> <span class="o">*</span> <span class="n">per_micro_batch_weight_expert</span>
+        <span class="n">sft_metrics</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="o">*</span> <span class="n">n_expert_exp</span> <span class="o">*</span> <span class="n">per_micro_batch_weight_expert</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sft_metrics</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">}</span>
 
         <span class="n">mu</span> <span class="o">=</span> <span class="n">mu_schedule_function</span><span class="p">(</span>
             <span class="n">current_step</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu_warmup_steps</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu_decay_steps</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu_peak</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu_valley</span>

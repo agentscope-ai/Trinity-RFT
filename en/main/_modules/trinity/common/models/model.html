@@ -809,6 +809,10 @@ window.addEventListener("load", load);</script>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.vllm_worker.html">trinity.common.models.vllm_worker module</a></li>
 </ul>
 </details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.common.patch.html">trinity.common.patch package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.patch.kimi.html">trinity.common.patch.kimi module</a></li>
+</ul>
+</details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.html">trinity.common.rewards package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.accuracy_reward.html">trinity.common.rewards.accuracy_reward module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.agents_reward.html">trinity.common.rewards.agents_reward module</a></li>
@@ -1025,10 +1029,8 @@ document.write(`
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">httpx</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ray</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">PIL</span><span class="w"> </span><span class="kn">import</span> <span class="n">Image</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">InferenceModelConfig</span>
@@ -1431,45 +1433,6 @@ document.write(`
         <span class="k">return</span> <span class="p">[</span><span class="n">exp</span> <span class="k">for</span> <span class="n">exps</span> <span class="ow">in</span> <span class="n">results</span> <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">exps</span><span class="p">]</span></div>
 
 
-<div class="viewcode-block" id="ModelWrapper.generate_mm">
-<a class="viewcode-back" href="../../../../build_api/trinity.common.models.model.html#trinity.common.models.model.ModelWrapper.generate_mm">[docs]</a>
-    <span class="nd">@_history_recorder</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">generate_mm</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">prompts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-        <span class="n">images</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">]],</span>
-        <span class="n">videos</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]],</span>
-        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate a list of experiences from a list of prompts and multi-modal data.&quot;&quot;&quot;</span>
-        <span class="n">results</span> <span class="o">=</span> <span class="n">ray</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-            <span class="p">[</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">generate_mm</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">prompt</span><span class="p">,</span> <span class="n">images</span><span class="o">=</span><span class="n">img</span><span class="p">,</span> <span class="n">videos</span><span class="o">=</span><span class="n">vid</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">prompt</span><span class="p">,</span> <span class="n">img</span><span class="p">,</span> <span class="n">vid</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prompts</span><span class="p">,</span> <span class="n">images</span><span class="p">,</span> <span class="n">videos</span><span class="p">)</span>
-            <span class="p">]</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">exp</span> <span class="k">for</span> <span class="n">exps</span> <span class="ow">in</span> <span class="n">results</span> <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">exps</span><span class="p">]</span></div>
-
-
-<div class="viewcode-block" id="ModelWrapper.generate_mm_async">
-<a class="viewcode-back" href="../../../../build_api/trinity.common.models.model.html#trinity.common.models.model.ModelWrapper.generate_mm_async">[docs]</a>
-    <span class="nd">@_history_recorder</span>
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">generate_mm_async</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">prompts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-        <span class="n">images</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">]],</span>
-        <span class="n">videos</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]],</span>
-        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
-        <span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span>
-            <span class="o">*</span><span class="p">[</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">generate_mm</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">images</span><span class="o">=</span><span class="n">img</span><span class="p">,</span> <span class="n">videos</span><span class="o">=</span><span class="n">vid</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">p</span><span class="p">,</span> <span class="n">img</span><span class="p">,</span> <span class="n">vid</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prompts</span><span class="p">,</span> <span class="n">images</span><span class="p">,</span> <span class="n">videos</span><span class="p">)</span>
-            <span class="p">]</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">exp</span> <span class="k">for</span> <span class="n">exps</span> <span class="ow">in</span> <span class="n">results</span> <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">exps</span><span class="p">]</span></div>
-
-
 <div class="viewcode-block" id="ModelWrapper.chat">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.models.model.html#trinity.common.models.model.ModelWrapper.chat">[docs]</a>
     <span class="nd">@_history_recorder</span>
@@ -1486,24 +1449,6 @@ document.write(`
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate a list of experiences from a list of messages in async.&quot;&quot;&quot;</span>
         <span class="n">lora_request</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_lora_request_async</span><span class="p">()</span>
         <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="n">lora_request</span><span class="o">=</span><span class="n">lora_request</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="ModelWrapper.chat_mm">
-<a class="viewcode-back" href="../../../../build_api/trinity.common.models.model.html#trinity.common.models.model.ModelWrapper.chat_mm">[docs]</a>
-    <span class="nd">@_history_recorder</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">chat_mm</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">messages</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">images</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">],</span> <span class="n">videos</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
-        <span class="k">return</span> <span class="n">ray</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">chat_mm</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="n">images</span><span class="o">=</span><span class="n">images</span><span class="p">,</span> <span class="n">videos</span><span class="o">=</span><span class="n">videos</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span></div>
-
-
-<div class="viewcode-block" id="ModelWrapper.chat_mm_async">
-<a class="viewcode-back" href="../../../../build_api/trinity.common.models.model.html#trinity.common.models.model.ModelWrapper.chat_mm_async">[docs]</a>
-    <span class="nd">@_history_recorder</span>
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">chat_mm_async</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">messages</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">images</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">],</span> <span class="n">videos</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
-        <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">chat_mm</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="n">images</span><span class="o">=</span><span class="n">images</span><span class="p">,</span> <span class="n">videos</span><span class="o">=</span><span class="n">videos</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ModelWrapper.logprobs">

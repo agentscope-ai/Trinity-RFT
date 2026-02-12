@@ -629,8 +629,10 @@ document.write(`
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.build_multi_modal_inputs"><code class="docutils literal notranslate"><span class="pre">build_multi_modal_inputs()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.convert_messages_to_mm_format"><code class="docutils literal notranslate"><span class="pre">convert_messages_to_mm_format()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.build_multi_modal_data"><code class="docutils literal notranslate"><span class="pre">build_multi_modal_data()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.build_mm_input_for_training"><code class="docutils literal notranslate"><span class="pre">build_mm_input_for_training()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.build_mm_message"><code class="docutils literal notranslate"><span class="pre">build_mm_message()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.has_multi_modal_content"><code class="docutils literal notranslate"><span class="pre">has_multi_modal_content()</span></code></a></li>
 </ul>
             </nav>
         </div>
@@ -644,19 +646,182 @@ document.write(`
                   
   <section id="module-trinity.common.models.mm_utils">
 <span id="trinity-common-models-mm-utils-module"></span><h1>trinity.common.models.mm_utils module<a class="headerlink" href="#module-trinity.common.models.mm_utils" title="Link to this heading">#</a></h1>
-<p>&quot;Multi-modal utilities for processing and handling multi-modal data such as images and videos.
-Only support Qwen2.5 VL series.</p>
-<p>Modified from: verl/utils/dataset/rl_dataset.py</p>
+<p>Utilities for processing multi-modal data (images/videos) for specific vision-language models.</p>
+<p>Supported models:
+- Qwen2.5-VL, Qwen3-VL series
+- Kimi VL series</p>
+<p>Provides functions to:
+1. Parse prompts with media tags (&lt;image&gt;/&lt;video&gt;)
+2. Validate multi-modal content in conversations
+3. Preprocess media inputs for inference/training
+4. Construct model-compatible message formats</p>
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p>Only processors with class names containing both (&quot;Qwen&quot; OR &quot;Kimi&quot;) AND &quot;Processor&quot; are supported.
+Relies on <cite>qwen_vl_utils.process_vision_info</cite> for media extraction.</p>
+</div>
 <dl class="py function">
-<dt class="sig sig-object py" id="trinity.common.models.mm_utils.build_multi_modal_inputs">
-<span class="sig-prename descclassname"><span class="pre">trinity.common.models.mm_utils.</span></span><span class="sig-name descname"><span class="pre">build_multi_modal_inputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">images</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Image</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">videos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">ndarray</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/trinity/common/models/mm_utils.html#build_multi_modal_inputs"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.models.mm_utils.build_multi_modal_inputs" title="Link to this definition">#</a></dt>
-<dd><p>Preprocess multi-modal data and build multi-modal inputs</p>
+<dt class="sig sig-object py" id="trinity.common.models.mm_utils.build_multi_modal_data">
+<span class="sig-prename descclassname"><span class="pre">trinity.common.models.mm_utils.</span></span><span class="sig-name descname"><span class="pre">build_multi_modal_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">processor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">messages</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/trinity/common/models/mm_utils.html#build_multi_modal_data"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.models.mm_utils.build_multi_modal_data" title="Link to this definition">#</a></dt>
+<dd><p>Extract and preprocess vision inputs from multi-modal messages for vLLM inference.</p>
+<p>Processes messages containing image/video placeholders using model-specific vision utilities.
+Returns structured media inputs compatible with vLLM's multi-modal API.</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>processor</strong> -- Vision-language processor instance (must have class name containing
+(&quot;Qwen&quot; OR &quot;Kimi&quot;) AND &quot;Processor&quot;).</p></li>
+<li><p><strong>messages</strong> -- List of conversation messages in model-expected format. Each message's &quot;content&quot;
+may be a string or list of content items (text/image/video dictionaries).</p></li>
+</ul>
+</dd>
+<dt class="field-even">返回<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>&quot;image&quot;: List of processed image objects (if images exist)</p></li>
+<li><p>&quot;video&quot;: List of processed video objects (if videos exist)</p></li>
+</ul>
+<p>Keys are omitted when no corresponding media is present.</p>
+</p>
+</dd>
+<dt class="field-odd">返回类型<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary containing processed media inputs with keys</p>
+</dd>
+<dt class="field-even">抛出<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>NotImplementedError</strong> -- If processor class name doesn't match supported patterns.</p></li>
+<li><p><strong>ImportError</strong> -- If required <cite>qwen_vl_utils</cite> module is unavailable.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">示例</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">messages</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;image&quot;</span><span class="p">,</span> <span class="s2">&quot;image&quot;</span><span class="p">:</span> <span class="s2">&quot;img.jpg&quot;</span><span class="p">},</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="s2">&quot;Describe this&quot;</span><span class="p">}]}]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">build_multi_modal_data</span><span class="p">(</span><span class="n">processor</span><span class="p">,</span> <span class="n">messages</span><span class="p">)</span>
+<span class="go">{&quot;image&quot;: [processed_image]}</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="trinity.common.models.mm_utils.convert_messages_to_mm_format">
-<span class="sig-prename descclassname"><span class="pre">trinity.common.models.mm_utils.</span></span><span class="sig-name descname"><span class="pre">convert_messages_to_mm_format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">messages</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/trinity/common/models/mm_utils.html#convert_messages_to_mm_format"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.models.mm_utils.convert_messages_to_mm_format" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="trinity.common.models.mm_utils.build_mm_input_for_training">
+<span class="sig-prename descclassname"><span class="pre">trinity.common.models.mm_utils.</span></span><span class="sig-name descname"><span class="pre">build_mm_input_for_training</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">processor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi_modal_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/trinity/common/models/mm_utils.html#build_mm_input_for_training"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.models.mm_utils.build_mm_input_for_training" title="Link to this definition">#</a></dt>
+<dd><p>Tokenize prompt and integrate processed media inputs for model training.</p>
+<p>Combines text prompt with preprocessed image/video data into model-ready tensor inputs.
+Handles padding and tensor conversion for training workflows.</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>processor</strong> -- Vision-language processor instance (must have class name containing
+(&quot;Qwen&quot; OR &quot;Kimi&quot;) AND &quot;Processor&quot;).</p></li>
+<li><p><strong>prompt</strong> -- Plain text prompt WITHOUT media tags (e.g., &quot;Describe this image&quot;).
+Media placement is handled via <cite>multi_modal_data</cite>, not prompt tags.</p></li>
+<li><p><strong>multi_modal_data</strong> -- Dictionary from <cite>build_multi_modal_data()</cite> containing:
+{&quot;image&quot;: [...], &quot;video&quot;: [...]} (keys optional)</p></li>
+</ul>
+</dd>
+<dt class="field-even">返回<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p>input_ids: Tokenized prompt IDs</p></li>
+<li><p>attention_mask: Attention mask tensor</p></li>
+<li><p>pixel_values: Processed image tensors (if images provided)</p></li>
+<li><p>pixel_values_videos: Processed video tensors (if videos provided)</p></li>
+</ul>
+<p>All tensors converted to PyTorch format (<cite>return_tensors=&quot;pt&quot;</cite>).</p>
+</p>
+</dd>
+<dt class="field-odd">返回类型<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Dictionary of model inputs including</p>
+</dd>
+<dt class="field-even">抛出<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><strong>NotImplementedError</strong> -- If processor class name doesn't match supported patterns.</p></li>
+<li><p><strong>ValueError</strong> -- If media counts mismatch prompt expectations (handled internally by processor).</p></li>
+</ul>
+</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p>Prompt should NOT contain &lt;image&gt;/&lt;video&gt; tags here. Media association is managed
+through the structured <cite>multi_modal_data</cite> dictionary.</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="trinity.common.models.mm_utils.build_mm_message">
+<span class="sig-prename descclassname"><span class="pre">trinity.common.models.mm_utils.</span></span><span class="sig-name descname"><span class="pre">build_mm_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">images</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">videos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/trinity/common/models/mm_utils.html#build_mm_message"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.models.mm_utils.build_mm_message" title="Link to this definition">#</a></dt>
+<dd><p>Construct multi-modal message by injecting media references at tag positions in prompt.</p>
+<p>Parses prompt for &lt;image&gt;/&lt;video&gt; tags, replaces them with corresponding media references,
+and handles surplus media items. Extra media (beyond tag count) is prepended to content.</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prompt</strong> -- Text containing optional &lt;image&gt; and &lt;video&gt; tags as media placeholders.
+Example: &quot;First &lt;image&gt; then &lt;video&gt; and finally &lt;image&gt;&quot;</p></li>
+<li><p><strong>images</strong> -- List of image references (file paths, URLs, or PIL images) in order of appearance.</p></li>
+<li><p><strong>videos</strong> -- List of video references (file paths, URLs) in order of appearance.</p></li>
+</ul>
+</dd>
+<dt class="field-even">返回<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl>
+<dt>{</dt><dd><p>&quot;role&quot;: &quot;user&quot;,
+&quot;content&quot;: [</p>
+<blockquote>
+<div><p>{&quot;type&quot;: &quot;image&quot;, &quot;image&quot;: ...},  # Surplus media first
+{&quot;type&quot;: &quot;video&quot;, &quot;video&quot;: ...},
+{&quot;type&quot;: &quot;text&quot;, &quot;text&quot;: &quot;First &quot;},
+{&quot;type&quot;: &quot;image&quot;, &quot;image&quot;: ...},  # Tag-replaced media
+...</p>
+</div></blockquote>
+<p>]</p>
+</dd>
+</dl>
+<p>}</p>
+</p>
+</dd>
+<dt class="field-odd">返回类型<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Message dictionary formatted for VL models</p>
+</dd>
+<dt class="field-even">抛出<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> -- If prompt contains more &lt;image&gt; tags than provided images,
+    or more &lt;video&gt; tags than provided videos.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Behavior details:</dt><dd><ul class="simple">
+<li><p>Tags are case-sensitive and must be exact: &quot;&lt;image&gt;&quot;, &quot;&lt;video&gt;&quot;</p></li>
+<li><p>Empty text segments between tags are omitted</p></li>
+<li><p>Surplus media (images/videos beyond tag count) appears at START of content list</p></li>
+<li><p>Text segments preserve original prompt ordering around tags</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="trinity.common.models.mm_utils.has_multi_modal_content">
+<span class="sig-prename descclassname"><span class="pre">trinity.common.models.mm_utils.</span></span><span class="sig-name descname"><span class="pre">has_multi_modal_content</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">messages</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/trinity/common/models/mm_utils.html#has_multi_modal_content"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.models.mm_utils.has_multi_modal_content" title="Link to this definition">#</a></dt>
+<dd><p>Check if any message contains non-text (image/video) content.</p>
+<p>Inspects message content structure to detect multi-modal elements. Handles both:
+- String content (text-only, returns False)
+- List content (multi-modal candidates)</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>messages</strong> -- List of conversation messages. Each message must contain a &quot;content&quot; field.
+Content may be:
+- str: Plain text message
+- List[Dict]: Multi-modal content items (each with &quot;type&quot; key)</p>
+</dd>
+<dt class="field-even">返回<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if any message contains at least one non-text content item (type != &quot;text&quot;),
+False otherwise.</p>
+</dd>
+</dl>
+<p class="rubric">示例</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">msg</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="p">[{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="s2">&quot;Hi&quot;</span><span class="p">},</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;image&quot;</span><span class="p">,</span> <span class="s2">&quot;image&quot;</span><span class="p">:</span> <span class="s2">&quot;...&quot;</span><span class="p">}]}]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">has_multi_modal_content</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
 
 </section>
 
@@ -705,8 +870,10 @@ Only support Qwen2.5 VL series.</p>
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.build_multi_modal_inputs"><code class="docutils literal notranslate"><span class="pre">build_multi_modal_inputs()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.convert_messages_to_mm_format"><code class="docutils literal notranslate"><span class="pre">convert_messages_to_mm_format()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.build_multi_modal_data"><code class="docutils literal notranslate"><span class="pre">build_multi_modal_data()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.build_mm_input_for_training"><code class="docutils literal notranslate"><span class="pre">build_mm_input_for_training()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.build_mm_message"><code class="docutils literal notranslate"><span class="pre">build_mm_message()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.has_multi_modal_content"><code class="docutils literal notranslate"><span class="pre">has_multi_modal_content()</span></code></a></li>
 </ul>
   </nav></div>
 
