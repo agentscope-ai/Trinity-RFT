@@ -89,6 +89,7 @@ We list some algorithms supported by Trinity-RFT in the following table. For mor
 | CISPO [[Paper](https://arxiv.org/pdf/2506.13585)] | - | [[Code](https://github.com/agentscope-ai/Trinity-RFT/tree/main/trinity/algorithm/policy_loss_fn/cispo_policy_loss.py)] | `algorithm_type: cispo` |
 | SAPO [[Paper](https://arxiv.org/pdf/2511.20347)] | - | [[Code](https://github.com/agentscope-ai/Trinity-RFT/tree/main/trinity/algorithm/policy_loss_fn/sapo_policy_loss.py)] | `algorithm_type: sapo` |
 | On-Policy Distillation [[Blog](https://thinkingmachines.ai/blog/on-policy-distillation/)] [[Paper](https://arxiv.org/pdf/2306.13649)] | [[GSM8K Example](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/opd_gsm8k)] | [[Code](https://github.com/agentscope-ai/Trinity-RFT/tree/main/trinity/common/workflows/on_policy_distill_workflow.py)] | `algorithm_type: on_policy_distill` |
+| JSD (Jensen-Shannon Divergence) | [[GSM8K Example](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/opd_gsm8k/opd_gsm8k_jsd.yaml)] | [[Code](https://github.com/agentscope-ai/Trinity-RFT/tree/main/trinity/algorithm/advantage_fn/jsd_advantage.py)] | `algorithm_type: jsd` |
 
 
 
