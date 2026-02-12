@@ -8,7 +8,7 @@ This is an example of using the [MIX](../../docs/sphinx_doc/source/tutorial/exam
 The specific requirements are:
 
 ```yaml
-vllm>=0.10.2  # Qwen3 VL requires vllm>=0.11.0
+vllm>=0.10.2  # Qwen3 VL requires vllm>=0.11.0; it is recommended to use version >= 0.13.0
 transformers>=4.54.0
 qwen_vl_utils
 ```
@@ -34,3 +34,11 @@ trinity run --config examples/mix_vlm/mix_vlm.yaml
 
 The reward curve is shown below:
 ![](../../docs/sphinx_doc/assets/mix_vlm_reward.png)
+
+## Supported Model Architectures
+
+The following vision-language model series are currently supported:
+
+1. Qwen2.5-VL series
+2. Qwen3-VL series
+3. Kimi-VL-A3B-Thinking series
