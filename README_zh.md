@@ -86,7 +86,7 @@ Trinity-RFT 面向不同背景和目标的用户提供相应功能：
 > [!TIP]
 > **推荐阅读顺序**
 >
-> 🆕 **新手入门：** [安装](https://github.com/agentscope-ai/Trinity-RFT/blob/main/docs/sphinx_doc/source_zh/tutorial/trinity_installation.html) → [快速开始 (GSM8K)](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/example_reasoning_basic.html) → [参数配置指南](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/trinity_configs.html) → [GPU 资源配置指南](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/trinity_gpu_configs.html)
+> 🆕 **新手入门：** [安装](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/trinity_installation.html) → [快速开始 (GSM8K)](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/example_reasoning_basic.html) → [参数配置指南](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/trinity_configs.html) → [GPU 资源配置指南](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/trinity_gpu_configs.html)
 >
 > 🔬 **算法研究者：** [开发者指南](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/develop_overview.html) → [算法开发指南](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/develop_algorithm.html) → [CHORD 算法示例](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/example_mix_algo.html)
 >

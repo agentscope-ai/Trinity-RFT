@@ -73,7 +73,7 @@ Trinity-RFT provides functionalities for users with different backgrounds and ob
 > [!TIP]
 > **Recommended Learning Paths**
 >
-> 🆕 **New users:** [Installation](https://github.com/agentscope-ai/Trinity-RFT/blob/main/docs/sphinx_doc/source/tutorial/trinity_installation.html) → [Quick Start (GSM8K)](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/example_reasoning_basic.html) → [Configuration Guide](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/trinity_configs.html) → [GPU Resource Guide](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/trinity_gpu_configs.html)
+> 🆕 **New users:** [Installation](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/trinity_installation.html) → [Quick Start (GSM8K)](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/example_reasoning_basic.html) → [Configuration Guide](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/trinity_configs.html) → [GPU Resource Guide](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/trinity_gpu_configs.html)
 >
 > 🔬 **Algorithm researchers:** [Developer Guide](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/develop_overview.html) → [Algorithm Development Guide](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/develop_algorithm.html) → [CHORD Algorithm Example](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/example_mix_algo.html)
 >
