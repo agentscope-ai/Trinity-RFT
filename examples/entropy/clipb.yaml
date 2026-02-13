@@ -1,0 +1,100 @@
+project: math_dapo
+name: clipb_example
+checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
+model:
+  model_path: ${oc.env:TRINITY_MODEL_PATH,Qwen/Qwen2.5-7B-Instruct}
+  max_prompt_tokens: 1024
+  max_response_tokens: 7168
+algorithm:
+  algorithm_type: grpo_verl
+  advantage_fn: clipb
+  advantage_fn_args:
+    mu: 2.5
+  repeat_times: 16
+  kl_loss_fn_args:
+    kl_coef: 0.0
+cluster:
+  node_num: 1
+  gpu_per_node: 8
+buffer:
+  total_epochs: 20
+  batch_size: 64
+  explorer_input:
+    taskset:
+      name: dapo_235
+      storage_type: file
+      path: ${oc.env:TRINITY_TASKSET_PATH}  # processed DAPO-Math-17k
+      format:
+        prompt_key: 'question'
+        response_key: 'ground_truth'
+      rollout_args:
+        temperature: 1.0
+        logprobs: 20
+    eval_tasksets:
+    - name: dapo-validation-500
+      storage_type: file
+      path: '/path/to/dapo-validation' # validation samples from DAPO-Math-17k
+      split: 'test'
+      repeat_times: 32
+      format:
+        prompt_key: 'question'
+        response_key: 'ground_truth'
+      rollout_args:
+        temperature: 0.7
+    - name: amc23
+      storage_type: file
+      path: math-ai/amc23 # Path to the AMC23 dataset
+      split: 'test'
+      repeat_times: 32
+      format:
+        prompt_key: 'question'
+        response_key: 'answer'
+      rollout_args:
+        temperature: 0.7
+    - name: aime24
+      storage_type: file
+      path: HuggingFaceH4/aime_2024  # Path to the AIME2024 dataset
+      split: 'train'
+      repeat_times: 32
+      format:
+        prompt_key: 'problem'
+        response_key: 'answer'
+      rollout_args:
+        temperature: 0.7
+    - name : aime25
+      storage_type: file
+      path: math-ai/aime25 # Path to the AIME2025 dataset
+      split: 'test'
+      repeat_times: 32
+      format:
+        prompt_key: 'problem'
+        response_key: 'answer'
+      rollout_args:
+        temperature: 0.7
+    default_workflow_type: 'async_math_workflow'
+    default_reward_fn_type: 'math_boxed_reward'
+  trainer_input:
+    experience_buffer:
+      name: math_buffer
+      storage_type: queue
+      max_read_timeout: 7200
+explorer:
+  eval_interval: 20
+  eval_on_startup: true
+  runner_per_model: 8
+  rollout_model:
+    engine_type: vllm_async
+    engine_num: 4
+    tensor_parallel_size: 1
+    seed: 42
+trainer:
+  trainer_type: 'verl'
+  save_interval: 200
+  trainer_config:
+    algorithm:
+      rollout_correction:
+        bypass_mode: false
+synchronizer:
+  sync_method: 'nccl'
+  sync_interval: 1
+  sync_timeout: 3200

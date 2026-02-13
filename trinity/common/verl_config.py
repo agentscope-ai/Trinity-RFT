@@ -175,6 +175,7 @@ class Actor:
     router_replay: RouterReplayConfig = field(default_factory=RouterReplayConfig)
     # do not set
     loss_agg_mode: str = "token-mean"
+    loss_scale_factor: Optional[float] = None
     clip_ratio: float = 0.2
     clip_ratio_low: Optional[float] = None
     clip_ratio_high: Optional[float] = None

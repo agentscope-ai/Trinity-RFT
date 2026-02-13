@@ -540,3 +540,25 @@ class JSDAlgorithm(AlgorithmType):
             "kl_loss_fn": "none",
             "entropy_loss_fn": "none",
         }
+
+
+class GRPOverlAlgorithm(AlgorithmType):
+    """GRPO algorithm, but advantage computation is done in trainer."""
+
+    use_critic: bool = False
+    use_reference: bool = True
+    compute_advantage_in_trainer: bool = True
+    can_balance_batch: bool = True
+    schema: str = "experience"
+
+    @classmethod
+    def default_config(cls) -> Dict:
+        return {
+            "repeat_times": 2,
+            "advantage_fn": "grpo",
+            "sample_strategy": "default",
+            "policy_loss_fn": "ppo",
+            "kl_penalty_fn": "none",
+            "kl_loss_fn": "k2",
+            "entropy_loss_fn": "default",
+        }
