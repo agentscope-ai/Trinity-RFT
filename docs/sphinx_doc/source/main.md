@@ -27,7 +27,7 @@ Trinity-RFT provides functionalities for users with different backgrounds and ob
 
 | Category | Tutorial / Guideline      |
 | --- | ----|
-| *Run diverse RFT modes* | + [Quick start: GRPO on GSM8k](/tutorial/example_reasoning_basic.md)<br>+ [Off-policy RFT](/tutorial/example_reasoning_advanced.md)<br>+ [Fully asynchronous RFT](/tutorial/example_async_mode.md)<br>+ [Offline learning by DPO or SFT](/tutorial/example_dpo.md)     |
+| *Run diverse RFT modes* | + [Quick start: GRPO on GSM8k](/tutorial/example_reasoning_basic.md)<br>+ [Off-policy RFT](/tutorial/example_reasoning_advanced.md)<br>+ [Fully asynchronous RFT](/tutorial/example_async_mode.md)<br>+ [Offline learning by DPO or SFT](/tutorial/example_dpo.md)<br>+ [RFT without local GPU (Tinker Backend)](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/tinker)     |
 | *Multi-step agentic RL* | + [Concatenated multi-turn workflow](/tutorial/example_multi_turn.md)<br>+ [General multi-step workflow](/tutorial/example_step_wise.md)<br>+ [ReAct workflow with an agent framework](/tutorial/example_react.md)  <br>+ [Example: train a web-search agent](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/agentscope_websearch) |
 | *Full-lifecycle data pipelines* | + [Rollout task mixing and selection](/tutorial/develop_selector.md)<br>+ [Online task curriculum](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/bots) (📝 [paper](https://arxiv.org/pdf/2510.26374))<br>+ [Research project: learn-to-ask](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/learn_to_ask) (📝 [paper](https://arxiv.org/pdf/2510.25441)) <br>+ [Experience replay with prioritization](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/ppo_countdown_exp_replay)<br>+ [Advanced data processing & human-in-the-loop](/tutorial/example_data_functionalities.md)  |
 | *Algorithm development* | + [RL algorithm development with Trinity-RFT](/tutorial/example_mix_algo.md) (📝 [paper](https://arxiv.org/pdf/2508.11408))<br>+ [Research project: R3L (reflect-then-retry RL)](https://github.com/shiweijiezero/R3L) (📝 [paper](https://arxiv.org/abs/2601.03715))<br>+ [Research project: group-relative REINFORCE](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/rec_gsm8k) (📝 [paper](https://arxiv.org/abs/2509.24203)) <br>+ Non-verifiable domains: [RULER](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/grpo_gsm8k_ruler), [trainable RULER](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/grpo_gsm8k_trainable_ruler), [rubric-as-reward](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/grpo_rubric_as_reward) |
@@ -98,12 +98,12 @@ We list some algorithms supported by Trinity-RFT in the following table. For mor
 
 This project is built upon many excellent open-source projects, including:
 
-+ [verl](https://github.com/volcengine/verl) and [PyTorch's FSDP](https://pytorch.org/docs/stable/fsdp.html) for LLM training;
++ [verl](https://github.com/volcengine/verl), [FSDP](https://pytorch.org/docs/stable/fsdp.html) and [Megatron-LM](https://github.com/NVIDIA/Megatron-LM) for LLM training;
 + [vLLM](https://github.com/vllm-project/vllm) for LLM inference;
 + [Data-Juicer](https://github.com/datajuicer/data-juicer) for data processing pipelines;
 + [AgentScope](https://github.com/agentscope-ai/agentscope) for agentic workflow;
 + [Ray](https://github.com/ray-project/ray) for distributed systems;
-+ we have also drawn inspirations from RL frameworks like [OpenRLHF](https://github.com/OpenRLHF/OpenRLHF), [TRL](https://github.com/huggingface/trl) and [ChatLearn](https://github.com/alibaba/ChatLearn);
++ we have also drawn inspirations from RL frameworks like [OpenRLHF](https://github.com/OpenRLHF/OpenRLHF), [TRL](https://github.com/huggingface/trl), [ChatLearn](https://github.com/alibaba/ChatLearn) and [rLLM](https://github.com/rllm-org/rllm);
 + ......
 
 

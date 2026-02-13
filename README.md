@@ -39,7 +39,7 @@ Trinity-RFT provides functionalities for users with different backgrounds and ob
 * [2026-01] Introducing [R3L](https://github.com/shiweijiezero/R3L): a systematic reflect-then-retry RL mechanism with efficient language-guided exploration and stable off-policy learning ([paper](https://arxiv.org/abs/2601.03715)).
 * [2025-12] [[Release Notes]](https://github.com/agentscope-ai/Trinity-RFT/releases/tag/v0.4.0) Trinity-RFT v0.4.0 released: added [Tinker](https://thinkingmachines.ai/tinker/) backend for users **without GPUs**, add more benchmarks, enhance online RL and more.
 * [2025-12] Trinity-RFT powers the medical and health business of "Taobao Shangou", enabling the AI agent to understand vague symptoms, proactively ask follow-up questions, and provide precise recommendations ([News](https://tech.china.com.cn/sx/20251201/411376.shtml)).
-* [2025-11] Introducing [Learn-to-Ask](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/learn_to_ask): a framework for training proactive dialogue agents from offline expert data  ([paper](https://arxiv.org/pdf/2510.25441)).
+* [2025-11] Introducing [Learn-to-Ask](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/learn_to_ask): a framework for training proactive dialogue agents from offline expert data ([paper](https://arxiv.org/pdf/2510.25441)).
 * [2025-11] Introducing [BOTS](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/bots): online RL task selection for efficient LLM fine-tuning ([paper](https://arxiv.org/pdf/2510.26374)).
 * [2025-09] [Our paper](https://arxiv.org/pdf/2509.24203) reveals a novel off-policy interpretation for group-relative REINFORCE and its variants like GRPO and AsymRE ([implementation](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/rec_gsm8k)).
 * [2025-08] Introducing [CHORD](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/mix_chord): dynamic SFT + RL integration for advanced LLM fine-tuning ([paper](https://arxiv.org/pdf/2508.11408)).
@@ -69,6 +69,15 @@ Trinity-RFT provides functionalities for users with different backgrounds and ob
 | *Algorithm development*           | • [RL algorithm development with Trinity-RFT](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/example_mix_algo.html) (📝 [paper](https://arxiv.org/pdf/2508.11408))<br>• [Research project: R3L (reflect-then-retry RL)](https://github.com/shiweijiezero/R3L) (📝 [paper](https://arxiv.org/abs/2601.03715))<br>• [Research project: group-relative REINFORCE](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/rec_gsm8k) (📝 [paper](https://arxiv.org/abs/2509.24203))<br>• Non-verifiable domains: [RULER](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/grpo_gsm8k_ruler), [trainable RULER](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/grpo_gsm8k_trainable_ruler), [rubric-as-reward](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/grpo_rubric_as_reward) |
 | *Benchmarks*                      | • [Benchmark toolkit (quick verification & experimentation)](https://github.com/agentscope-ai/Trinity-RFT/tree/main/benchmark/README.md)<br>• [Guru-Math benchmark & comparison with veRL](https://github.com/agentscope-ai/Trinity-RFT/tree/main/benchmark/reports/guru_math.md)<br>• [FrozenLake benchmark & comparison with rLLM](https://github.com/agentscope-ai/Trinity-RFT/tree/main/benchmark/reports/frozenlake.md)<br>• [Alfworld benchmark & comparison with rLLM](https://github.com/agentscope-ai/Trinity-RFT/tree/main/benchmark/reports/alfworld.md) |
 | *Going deeper into Trinity-RFT*   | • [Full configurations](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/trinity_configs.html)<br>• [GPU resource and training configuration guide](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/trinity_gpu_configs.html)<br>• [Training VLM](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/grpo_vlm)<br>• [Understand the coordination between explorer and trainer](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/synchronizer.html)<br>• [How to align configuration with veRL](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/align_with_verl.html) |
+
+> [!TIP]
+> **Recommended Learning Paths**
+>
+> 🆕 **New users:** [Installation](https://github.com/agentscope-ai/Trinity-RFT/blob/main/docs/sphinx_doc/source/tutorial/trinity_installation.html) → [Quick Start (GSM8K)](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/example_reasoning_basic.html) → [Configuration Guide](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/trinity_configs.html) → [GPU Resource Guide](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/trinity_gpu_configs.html)
+>
+> 🔬 **Algorithm researchers:** [Developer Guide](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/develop_overview.html) → [Algorithm Development Guide](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/develop_algorithm.html) → [CHORD Algorithm Example](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/example_mix_algo.html)
+>
+> 🤖 **Agent developers:** [Developer Guide](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/develop_overview.html) → [Workflow Development](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/develop_workflow.html) → [General Multi-step Workflow Example](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/example_multi_turn.html)
 
 > [!NOTE]
 > For more tutorials, please refer to the [Trinity-RFT documentation](https://agentscope-ai.github.io/Trinity-RFT/).
@@ -366,12 +375,12 @@ For studio users, click "Run" in the web interface.
 
 ## Contribution Guide
 
-This project is currently under active development, and we welcome contributions from the community!
+This project is currently under active development--star the repo to watch releases for the latest updates!
 
-We welcome contributions of all kinds, including:
+We welcome all kinds of contributions from the community, including:
 
 * Documentation improvements
-* Example workflows
+* Example workflows, algorithms, and data pipelines
 * Bug fixes and performance optimizations
 
 If you're new to the project, documentation and example updates are a great place to start.

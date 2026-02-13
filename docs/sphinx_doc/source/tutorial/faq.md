@@ -80,7 +80,7 @@ ImportError: ...
 UsageError: api_key not configured (no-tty). call wandb.login(key=[your_api_key]) ...
 ```
 
-**A:** Try to log in to WandB before starting Ray and running the experiment. One way to do this is run the command `export WANDB_API_KEY=[your_api_key]`. Yoy may also try using other monitors instead of WandB by setting `monitor.monitor_type=tensorboard/mlflow`.
+**A:** Try to log in to WandB before starting Ray and running the experiment. One way to do this is run the command `export WANDB_API_KEY=[your_api_key]`. You may also try using other monitors instead of WandB by setting `monitor.monitor_type=tensorboard/mlflow`.
 
 ---
 

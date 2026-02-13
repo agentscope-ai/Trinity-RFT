@@ -47,10 +47,9 @@ Trinity-RFT 面向不同背景和目标的用户提供相应功能：
 * [2026-01] [[发布说明]](https://github.com/agentscope-ai/Trinity-RFT/releases/tag/v0.4.1) Trinity-RFT v0.4.1 发布：升级 verl 至 v0.7.0，Tinker 后端支持 OpenAI API，修复若干 Bug。
 * [2026-01] 推出 [R3L](https://github.com/shiweijiezero/R3L)：基于反思-重试的强化学习机制，由自然语言反馈引导高效探索，并达成稳定的 off-policy 学习（[论文](https://arxiv.org/abs/2601.03715)）。
 * [2025-12] [[发布说明]](https://github.com/agentscope-ai/Trinity-RFT/releases/tag/v0.4.0) Trinity-RFT v0.4.0 发布：新增[Tinker](https://thinkingmachines.ai/tinker/) 后端以支持在 **无 GPU** 的设备上训练，增加更多基准测试，增强在线 RL 等功能。
-* [2025-12] Trinity-RFT 已支持 [tinker](https://thinkingmachines.ai/tinker/) 训练后端，可在**无 GPU 的设备**上进行模型训练。
 * [2025-12] Trinity-RFT 助力淘宝闪购医药健康业务，让 AI 智能体能够理解模糊症状、主动询问后续问题，并提供精准推荐（[新闻](https://tech.china.com.cn/sx/20251201/411376.shtml)）。
 * [2025-11] [[发布说明](https://github.com/agentscope-ai/Trinity-RFT/releases/tag/v0.3.3)] Trinity-RFT v0.3.3 发布：修复若干 Bug。
-* [2025-11] 推出 [Learn-to-Ask](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/learn_to_ask)：利用离线专家数据，训练具备主动问询能力的对话智能体（[论文](https://arxiv.org/pdf/2510.25441)）.
+* [2025-11] 推出 [Learn-to-Ask](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/learn_to_ask)：利用离线专家数据，训练具备主动问询能力的对话智能体（[论文](https://arxiv.org/pdf/2510.25441)）。
 * [2025-11] 推出 [BOTS](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/bots)：在线 RL 任务选择，实现高效 LLM 微调（[论文](https://arxiv.org/pdf/2510.26374)）。
 * [2025-09] 我们的 [论文](https://arxiv.org/pdf/2509.24203) 揭示了 group-relative REINFORCE 及其变种（如 GRPO 和 AsymRE）的 off-policy 解释（[代码](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/rec_gsm8k)）。
 * [2025-08] 推出 [CHORD](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/mix_chord)：动态 SFT + RL 集成，实现进阶 LLM 微调（[论文](https://arxiv.org/pdf/2508.11408)）。
@@ -83,6 +82,15 @@ Trinity-RFT 面向不同背景和目标的用户提供相应功能：
 | *基准测试* | + [基准测试工具 (快速验证与实验)](https://github.com/agentscope-ai/Trinity-RFT/tree/main/benchmark/README.md)<br>+ [Guru-Math 测试 & 对比 veRL](https://github.com/agentscope-ai/Trinity-RFT/tree/main/benchmark/reports/guru_math.md)<br>+ [FrozenLake 测试 & 对比 rLLM](https://github.com/agentscope-ai/Trinity-RFT/tree/main/benchmark/reports/frozenlake.md)<br>+ [Alfworld 测试 & 对比 rLLM](https://github.com/agentscope-ai/Trinity-RFT/tree/main/benchmark/reports/alfworld.md) |
 | *深入了解 Trinity-RFT* | + [完整配置指南](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/trinity_configs.html)<br>+ [GPU 资源与训练配置对应指南](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/trinity_gpu_configs.html)<br>+ [训练多模态模型](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/grpo_vlm)<br>+ [理解 explorer-trainer 同步逻辑](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/synchronizer.html)<br>+ [如何与 verl 对齐配置](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/align_with_verl.html)   |
 
+
+> [!TIP]
+> **推荐阅读顺序**
+>
+> 🆕 **新手入门：** [安装](https://github.com/agentscope-ai/Trinity-RFT/blob/main/docs/sphinx_doc/source_zh/tutorial/trinity_installation.html) → [快速开始 (GSM8K)](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/example_reasoning_basic.html) → [参数配置指南](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/trinity_configs.html) → [GPU 资源配置指南](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/trinity_gpu_configs.html)
+>
+> 🔬 **算法研究者：** [开发者指南](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/develop_overview.html) → [算法开发指南](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/develop_algorithm.html) → [CHORD 算法示例](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/example_mix_algo.html)
+>
+> 🤖 **Agent 开发者：** [开发者指南](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/develop_overview.html) → [Workflow 开发](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/develop_workflow.html) → [通用多轮 Workflow 示例](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/example_multi_turn.html)
 
 > [!NOTE]
 > 更多教程请参考 [Trinity-RFT 文档](https://agentscope-ai.github.io/Trinity-RFT/)。
@@ -149,6 +157,7 @@ Trinity-RFT 面向不同背景和目标的用户提供相应功能：
 
 
 - [快速上手](#快速上手)
+  - [使用 CPU 快速上手](#使用-cpu-快速上手)
   - [第一步：安装](#第一步安装)
   - [第二步：准备数据集和模型](#第二步准备数据集和模型)
   - [第三步：准备配置文件](#第三步准备配置文件)
@@ -161,14 +170,31 @@ Trinity-RFT 面向不同背景和目标的用户提供相应功能：
 
 ## 快速上手
 
-
 > [!NOTE]
 > 本项目正处于活跃开发阶段。欢迎提出意见和建议！
->
-> **没有 GPU？没问题！** 您仍然可以尝试使用：
-> 1. 按照安装步骤进行操作（可跳过 `flash-attn` 等 GPU 专用的软件包）
-> 2. 运行 **[Tinker 训练示例](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/tinker)**，该示例专为仅使用 CPU 的系统设计。
 
+### 使用 CPU 快速上手
+
+如果您没有 GPU，仍然可以通过 Tinker 后端体验 Trinity-RFT。
+
+```bash
+# 创建并激活环境
+python3.10 -m venv .venv
+source .venv/bin/activate
+
+# 安装支持仅 CPU 后端的 Trinity-RFT
+pip install -e ".[tinker]"
+```
+
+运行一个简单示例：
+
+```bash
+trinity run --config examples/tinker/tinker.yaml
+```
+
+该示例专为仅使用 CPU 的设备设计。更多细节请参见完整的 [Tinker 训练示例](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/tinker)。
+
+如需在 GPU 设备上运行 Trinity-RFT，请按照以下步骤操作。
 
 ### 第一步：安装
 
@@ -178,22 +204,26 @@ Trinity-RFT 面向不同背景和目标的用户提供相应功能：
 - **CUDA**：版本 >= 12.8
 - **GPU**： 至少一块 [compute capability](https://developer.nvidia.com/cuda/gpus) 为 8.0 或更高的 NVIDIA GPU（例如 RTX 30 系列、A100、H100）
 
-## 源码安装（推荐）
+**推荐安装方式：**
+
+* 没有 GPU → 使用 Tinker 后端
+* 希望快速搭建 → 使用 Docker
+* 希望开发和贡献 → 使用 Conda / venv
+
+#### 源码安装（推荐）
 
 如需修改、扩展 Trinity-RFT，推荐使用此方法。
 
-### 1. 克隆仓库
+首先，克隆仓库：
 
 ```bash
 git clone https://github.com/agentscope-ai/Trinity-RFT
 cd Trinity-RFT
 ```
 
-### 2. 构建环境
+然后，通过以下任一方式构建环境：
 
-可选择以下任一方式：
-
-#### 使用预构建 Docker 镜像（推荐初学者使用该方法）
+**使用预构建 Docker 镜像（推荐初学者使用该方法）**
 
 
 ```bash
@@ -211,7 +241,7 @@ docker run -it \
 
 > 该镜像已经通过 `uv` 安装了 Trinity-RFT 以及所有 GPU 相关依赖，且会自动激活虚拟环境（也可通过 `source /opt/venv/bin/activate` 手动激活）。必要时可使用 `uv pip install` 添加额外的包。
 
-#### 使用 Conda
+**使用 Conda**
 
 ```bash
 conda create -n trinity python=3.12
@@ -228,7 +258,7 @@ pip install -e ".[vllm,flash_attn]"
 pip install -e ".[dev]"  # 用于调试和开发
 ```
 
-#### 使用 venv
+**使用 venv**
 
 ```bash
 python3.10 -m venv .venv
@@ -245,7 +275,7 @@ pip install -e ".[vllm,flash_attn]"
 pip install -e ".[dev]"  # 用于调试和开发
 ```
 
-#### 使用 `uv`
+**使用 uv**
 
 [`uv`](https://github.com/astral-sh/uv) 是现代的 Python 包管理工具。
 
@@ -256,7 +286,7 @@ uv sync --extra vllm --extra dev --extra flash_attn
 # uv sync --extra tinker --extra dev
 ```
 
-## 通过 PyPI 安装
+#### 通过 PyPI 安装
 
 如果您只需使用 Trinity-RFT 而不打算修改代码：
 
@@ -382,12 +412,17 @@ trinity run --config examples/grpo_gsm8k/gsm8k.yaml
 
 ## 贡献指南
 
+本项目正处于活跃开发阶段——点击 Star 关注本仓库以获取最新更新！
 
-本项目正处于活跃开发阶段，我们欢迎来自社区的贡献！
+我们欢迎来自社区的各种贡献，包括：
 
+* 文档改进
+* 工作流、算法和数据处理流水线
+* Bug 修复和性能优化
 
-请参阅 [贡献指南](./CONTRIBUTING.md) 了解详情。
+如果您是项目新手，文档和例子的更新是很好的入手点。
 
+详细的贡献指南请参见 [CONTRIBUTING.md](./CONTRIBUTING.md)，以及我们的 [good-first-issue 列表](https://github.com/agentscope-ai/Trinity-RFT/issues/470)。
 
 ## 致谢
 
@@ -399,7 +434,7 @@ trinity run --config examples/grpo_gsm8k/gsm8k.yaml
 + [Data-Juicer](https://github.com/datajuicer/data-juicer) 用于数据处理流水线；
 + [AgentScope](https://github.com/agentscope-ai/agentscope) 用于智能体工作流；
 + [Ray](https://github.com/ray-project/ray) 用于分布式系统；
-+ 我们也从 [OpenRLHF](https://github.com/OpenRLHF/OpenRLHF)、[TRL](https://github.com/huggingface/trl) 和 [ChatLearn](https://github.com/alibaba/ChatLearn) 等框架中汲取了灵感；
++ 我们也从 [OpenRLHF](https://github.com/OpenRLHF/OpenRLHF)、[TRL](https://github.com/huggingface/trl)、[ChatLearn](https://github.com/alibaba/ChatLearn) 和 [rLLM](https://github.com/rllm-org/rllm) 等框架中汲取了灵感；
 + ......
 
 ## 引用
