@@ -26,7 +26,7 @@ Trinity-RFT 面向不同背景和目标的用户提供相应功能：
 
 | 类别 | 教程 / 指南  |
 | --- | ----|
-| *运行各种 RFT 模式* | + [快速开始：在 GSM8k 上运行 GRPO](/tutorial/example_reasoning_basic.md)<br>+ [Off-policy RFT](/tutorial/example_reasoning_advanced.md)<br>+ [全异步 RFT](/tutorial/example_async_mode.md)<br>+ [通过 DPO 或 SFT 进行离线学习](/tutorial/example_dpo.md)     |
+| *运行各种 RFT 模式* | + [快速开始：在 GSM8k 上运行 GRPO](/tutorial/example_reasoning_basic.md)<br>+ [Off-policy RFT](/tutorial/example_reasoning_advanced.md)<br>+ [全异步 RFT](/tutorial/example_async_mode.md)<br>+ [通过 DPO 或 SFT 进行离线学习](/tutorial/example_dpo.md)<br>+ [在无GPU环境下运行RFT训练（Tinker 后端）](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/tinker)     |
 | *多轮智能体强化学习* | + [拼接多轮任务](/tutorial/example_multi_turn.md)<br>+ [通用多轮任务](/tutorial/example_step_wise.md)<br>+ [调用智能体框架中的 ReAct 工作流](/tutorial/example_react.md)  <br>+ [例子：训练一个网络搜索智能体](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/agentscope_websearch) |
 | *全生命周期的数据流水线* | + [Rollout 任务混合与选取](/tutorial/develop_selector.md)<br>+ [在线任务选择](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/bots) (📝 [论文](https://arxiv.org/pdf/2510.26374))<br>+ [研究项目：learn-to-ask](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/learn_to_ask) (📝 [论文](https://arxiv.org/pdf/2510.25441)) <br>+ [经验回放机制](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/ppo_countdown_exp_replay)<br>+ [高级数据处理能力 &  Human-in-the-loop](/tutorial/example_data_functionalities.md)  |
 | *强化学习算法开发* | + [使用 Trinity-RFT 进行 RL 算法开发](/tutorial/example_mix_algo.md) (📝 [论文](https://arxiv.org/pdf/2508.11408))<br>+ [研究项目: R3L (基于反思-重试的强化学习)](https://github.com/shiweijiezero/R3L) (📝 [论文](https://arxiv.org/abs/2601.03715))<br>+ [研究项目: group-relative REINFORCE](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/rec_gsm8k) (📝 [论文](https://arxiv.org/abs/2509.24203)) <br>+ 不可验证的领域: [RULER](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/grpo_gsm8k_ruler), [可训练 RULER](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/grpo_gsm8k_trainable_ruler), [rubric-as-reward](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/grpo_rubric_as_reward) |
@@ -98,7 +98,7 @@ Trinity-RFT 面向不同背景和目标的用户提供相应功能：
 + [Data-Juicer](https://github.com/datajuicer/data-juicer?tab=readme-ov-file) 用于数据处理流水线；
 + [AgentScope](https://github.com/agentscope-ai/agentscope) 用于智能体工作流；
 + [Ray](https://github.com/ray-project/ray) 用于分布式系统；
-+ 我们也从 [OpenRLHF](https://github.com/OpenRLHF/OpenRLHF)、[TRL](https://github.com/huggingface/trl) 和 [ChatLearn](https://github.com/alibaba/ChatLearn) 等框架中汲取了灵感；
++ 我们也从 [OpenRLHF](https://github.com/OpenRLHF/OpenRLHF)、[TRL](https://github.com/huggingface/trl)、[ChatLearn](https://github.com/alibaba/ChatLearn) 和 [rLLM](https://github.com/rllm-org/rllm) 等框架中汲取了灵感；
 + ......
 
 ## 引用

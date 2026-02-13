@@ -104,7 +104,7 @@ ray start --head
 - 对于 trainer，当 `trainer.use_dynamic_bsz=false` 时，调整 `trainer.max_token_len_per_gpu`；当 `trainer.use_dynamic_bsz=true` 时，调整 `trainer.ppo_max_token_len_per_gpu` 和 `trainer.ulysses_sequence_parallel_size`。设置 `trainer.trainer_config.actor_rollout_ref.actor.entropy_from_logits_with_chunking=true` 也可能有帮助。
 - 对于 explorer，调整 `explorer.rollout_model.tensor_parallel_size`。
 
-此外，Trinity-RFT 提供了[GPU 相关配置指南](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/trinity_gpu_configs.html)，可参考其中建议。
+此外，Trinity-RFT 提供了[GPU 相关配置指南](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/trinity_gpu_configs.html)，可参考其中建议。
 
 ## 第三部分：调试方法
 

@@ -1,0 +1,1733 @@
+
+<!DOCTYPE html>
+
+
+<html lang="zh-CN" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>参数配置指南 &#8212; Trinity-RFT 0.5.1 文档</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+
+  
+  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
+  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+    <script src="../_static/documentation_options.js?v=c79d47ac"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="../_static/translations.js?v=beaddf03"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorial/trinity_configs';</script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+    <link rel="next" title="GPU 资源相关配置指南" href="trinity_gpu_configs.html" />
+    <link rel="prev" title="🧪 实验性功能：任务选择器" href="develop_selector.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="zh-CN"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-primary-sidebar-checkbox"/>
+  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          id="pst-secondary-sidebar-checkbox"/>
+  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/logo.svg" class="logo__image only-light" alt="Trinity-RFT 0.5.1 文档 - Home"/>
+    <script>document.write(`<img src="../_static/logo.svg" class="logo__image only-dark" alt="Trinity-RFT 0.5.1 文档 - Home"/>`);</script>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+<nav class="bd-links bd-docs-nav">
+    <div class="bd-toc-item navbar-nav">
+        <ul class="nav bd-sidenav">
+      <li class="toctree-l1 has-children">
+        <details>
+          <summary>
+            <p class="caption" aria-level="2" role="heading" style="text-align: center;">
+              <span class="fa fa-book"></span>
+             <b>v0.5.1</b>
+            </p>
+          </summary>
+          <ul>
+            <li class="toctree-l2  "><a class="reference" href="../../main/tutorial/trinity_configs.html">latest</a></li>
+            <li class="toctree-l2 current "><a class="reference" href="trinity_configs.html">v0.5.1</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../v0.5.0/tutorial/trinity_configs.html">v0.5.0</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../v0.4.1/tutorial/trinity_configs.html">v0.4.1</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../v0.4.0/tutorial/trinity_configs.html">v0.4.0</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../v0.3.3/tutorial/trinity_configs.html">v0.3.3</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../v0.3.2/tutorial/trinity_configs.html">v0.3.2</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../v0.3.1/tutorial/trinity_configs.html">v0.3.1</a></li>
+          </ul>
+        </details>
+      </li>
+    </ul>
+    </div>
+</nav>
+</div>
+        <div class="sidebar-primary-item">
+
+ <script>
+ document.write(`
+   <button class="btn search-button-field search-button__button" title="搜索" aria-label="搜索" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+    <span class="search-button__default-text">搜索</span>
+    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+   </button>
+ `);
+ </script></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">教程</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="trinity_installation.html">安装指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="develop_overview.html">开发者指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="develop_workflow.html">Workflow 开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="develop_algorithm.html">Algorithm 开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_mix_algo.html">Algorithm 进阶开发</a></li>
+<li class="toctree-l1"><a class="reference internal" href="develop_operator.html">Operator 开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="develop_selector.html">🧪 实验性功能：任务选择器</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">参数配置指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trinity_gpu_configs.html">GPU 资源相关配置指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="synchronizer.html">Synchronizer 介绍</a></li>
+<li class="toctree-l1"><a class="reference internal" href="align_with_verl.html">与 veRL 对齐训练配置</a></li>
+<li class="toctree-l1"><a class="reference internal" href="metrics_reference.html">监控指标解释</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">样例</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="example_reasoning_basic.html">快速上手</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_reasoning_advanced.html">Off-Policy RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_async_mode.html">异步 RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_multi_turn.html">多轮对话拼接任务</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_step_wise.html">通用多轮 RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_react.html">ReAct Agent 训练</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_search_email.html">邮件搜索例子</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_dpo.html">离线 DPO 和 SFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_tinker_backend.html">Tinker 后端</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_megatron.html">Megatron-LM 支持</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_data_functionalities.html">数据处理</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_dataset_perspective.html">样例总览</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">常见问题</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="faq.html">常见问题（FAQ）</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api_reference.html">API Reference</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.buffer.html">trinity.buffer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.operators.html">trinity.buffer.operators package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.operators.filters.html">trinity.buffer.operators.filters package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.operators.mappers.html">trinity.buffer.operators.mappers package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.operators.data_juicer_operator.html">trinity.buffer.operators.data_juicer_operator module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.operators.experience_operator.html">trinity.buffer.operators.experience_operator module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.pipelines.html">trinity.buffer.pipelines package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.pipelines.experience_pipeline.html">trinity.buffer.pipelines.experience_pipeline module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.pipelines.task_pipeline.html">trinity.buffer.pipelines.task_pipeline module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.reader.html">trinity.buffer.reader package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.reader.file_reader.html">trinity.buffer.reader.file_reader module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.reader.queue_reader.html">trinity.buffer.reader.queue_reader module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.reader.sql_reader.html">trinity.buffer.reader.sql_reader module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.schema.html">trinity.buffer.schema package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.schema.formatter.html">trinity.buffer.schema.formatter module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.schema.sql_schema.html">trinity.buffer.schema.sql_schema module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.selector.html">trinity.buffer.selector package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.selector.difficulty_estimator.html">trinity.buffer.selector.difficulty_estimator module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.selector.selector.html">trinity.buffer.selector.selector module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.storage.html">trinity.buffer.storage package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.storage.file.html">trinity.buffer.storage.file module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.storage.queue.html">trinity.buffer.storage.queue module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.storage.sql.html">trinity.buffer.storage.sql module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.writer.html">trinity.buffer.writer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.writer.file_writer.html">trinity.buffer.writer.file_writer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.writer.queue_writer.html">trinity.buffer.writer.queue_writer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.writer.sql_writer.html">trinity.buffer.writer.sql_writer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.buffer.html">trinity.buffer.buffer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.buffer_reader.html">trinity.buffer.buffer_reader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.buffer_writer.html">trinity.buffer.buffer_writer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.task_scheduler.html">trinity.buffer.task_scheduler module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.utils.html">trinity.buffer.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.viewer.html">trinity.buffer.viewer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.explorer.html">trinity.explorer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.explorer.proxy.html">trinity.explorer.proxy package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.explorer.proxy.app.html">trinity.explorer.proxy.app module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.explorer.proxy.client.html">trinity.explorer.proxy.client module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.explorer.proxy.recorder.html">trinity.explorer.proxy.recorder module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.explorer.proxy.service.html">trinity.explorer.proxy.service module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.explorer.explorer.html">trinity.explorer.explorer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.explorer.scheduler.html">trinity.explorer.scheduler module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.explorer.workflow_runner.html">trinity.explorer.workflow_runner module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.trainer.html">trinity.trainer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.trainer.tinker.html">trinity.trainer.tinker package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.tinker.utils.html">trinity.trainer.tinker.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.trainer.verl.html">trinity.trainer.verl package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.dp_actor.html">trinity.trainer.verl.dp_actor module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.fsdp_checkpoint_manager.html">trinity.trainer.verl.fsdp_checkpoint_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.fsdp_workers.html">trinity.trainer.verl.fsdp_workers module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.megatron_actor.html">trinity.trainer.verl.megatron_actor module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.megatron_checkpoint_manager.html">trinity.trainer.verl.megatron_checkpoint_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.megatron_workers.html">trinity.trainer.verl.megatron_workers module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.utils.html">trinity.trainer.verl.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.trainer.tinker_trainer.html">trinity.trainer.tinker_trainer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.trainer.trainer.html">trinity.trainer.trainer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.trainer.verl_trainer.html">trinity.trainer.verl_trainer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.html">trinity.algorithm package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.html">trinity.algorithm.advantage_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.advantage_fn.html">trinity.algorithm.advantage_fn.advantage_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.asymre_advantage.html">trinity.algorithm.advantage_fn.asymre_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.grpo_advantage.html">trinity.algorithm.advantage_fn.grpo_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.jsd_advantage.html">trinity.algorithm.advantage_fn.jsd_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.multi_step_grpo_advantage.html">trinity.algorithm.advantage_fn.multi_step_grpo_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.on_policy_distill_advantage.html">trinity.algorithm.advantage_fn.on_policy_distill_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.opmd_advantage.html">trinity.algorithm.advantage_fn.opmd_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.ppo_advantage.html">trinity.algorithm.advantage_fn.ppo_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.rec_advantage.html">trinity.algorithm.advantage_fn.rec_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.reinforce_advantage.html">trinity.algorithm.advantage_fn.reinforce_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.reinforce_plus_plus_advantage.html">trinity.algorithm.advantage_fn.reinforce_plus_plus_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.remax_advantage.html">trinity.algorithm.advantage_fn.remax_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.rloo_advantage.html">trinity.algorithm.advantage_fn.rloo_advantage module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.entropy_loss_fn.html">trinity.algorithm.entropy_loss_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.entropy_loss_fn.entropy_loss_fn.html">trinity.algorithm.entropy_loss_fn.entropy_loss_fn module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.kl_fn.html">trinity.algorithm.kl_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.kl_fn.kl_fn.html">trinity.algorithm.kl_fn.kl_fn module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.html">trinity.algorithm.policy_loss_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.chord_policy_loss.html">trinity.algorithm.policy_loss_fn.chord_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.cispo_policy_loss.html">trinity.algorithm.policy_loss_fn.cispo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.dpo_loss.html">trinity.algorithm.policy_loss_fn.dpo_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.gspo_policy_loss.html">trinity.algorithm.policy_loss_fn.gspo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.importance_sampling_policy_loss.html">trinity.algorithm.policy_loss_fn.importance_sampling_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.mix_policy_loss.html">trinity.algorithm.policy_loss_fn.mix_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.opmd_policy_loss.html">trinity.algorithm.policy_loss_fn.opmd_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.policy_loss_fn.html">trinity.algorithm.policy_loss_fn.policy_loss_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.ppo_policy_loss.html">trinity.algorithm.policy_loss_fn.ppo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.rec_policy_loss.html">trinity.algorithm.policy_loss_fn.rec_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.sapo_policy_loss.html">trinity.algorithm.policy_loss_fn.sapo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.sft_loss.html">trinity.algorithm.policy_loss_fn.sft_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.sppo_loss_fn.html">trinity.algorithm.policy_loss_fn.sppo_loss_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.topr_policy_loss.html">trinity.algorithm.policy_loss_fn.topr_policy_loss module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.sample_strategy.html">trinity.algorithm.sample_strategy package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.sample_strategy.mix_sample_strategy.html">trinity.algorithm.sample_strategy.mix_sample_strategy module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.sample_strategy.sample_strategy.html">trinity.algorithm.sample_strategy.sample_strategy module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.sample_strategy.utils.html">trinity.algorithm.sample_strategy.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.algorithm.algorithm.html">trinity.algorithm.algorithm module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.algorithm.key_mapper.html">trinity.algorithm.key_mapper module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.algorithm.utils.html">trinity.algorithm.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.manager.html">trinity.manager package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.manager.config_registry.html">trinity.manager.config_registry package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.algorithm_config_manager.html">trinity.manager.config_registry.algorithm_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.buffer_config_manager.html">trinity.manager.config_registry.buffer_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.config_registry.html">trinity.manager.config_registry.config_registry module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.explorer_config_manager.html">trinity.manager.config_registry.explorer_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.model_config_manager.html">trinity.manager.config_registry.model_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.trainer_config_manager.html">trinity.manager.config_registry.trainer_config_manager module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.manager.checkpoint_converter.html">trinity.manager.checkpoint_converter module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.manager.config_manager.html">trinity.manager.config_manager module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.manager.log_manager.html">trinity.manager.log_manager module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.manager.state_manager.html">trinity.manager.state_manager module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.manager.synchronizer.html">trinity.manager.synchronizer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.common.html">trinity.common package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.common.models.html">trinity.common.models package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.vllm_patch.html">trinity.common.models.vllm_patch package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.mm_utils.html">trinity.common.models.mm_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.model.html">trinity.common.models.model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.tinker_model.html">trinity.common.models.tinker_model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.utils.html">trinity.common.models.utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.vllm_model.html">trinity.common.models.vllm_model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.vllm_worker.html">trinity.common.models.vllm_worker module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.common.patch.html">trinity.common.patch package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.patch.kimi.html">trinity.common.patch.kimi module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.common.rewards.html">trinity.common.rewards package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.accuracy_reward.html">trinity.common.rewards.accuracy_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.agents_reward.html">trinity.common.rewards.agents_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.countdown_reward.html">trinity.common.rewards.countdown_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.dapo_reward.html">trinity.common.rewards.dapo_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.eval_utils.html">trinity.common.rewards.eval_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.format_reward.html">trinity.common.rewards.format_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.human_reward.html">trinity.common.rewards.human_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.math_reward.html">trinity.common.rewards.math_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.naive_dapo_score.html">trinity.common.rewards.naive_dapo_score module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.qwen25_eval.html">trinity.common.rewards.qwen25_eval module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.reward_fn.html">trinity.common.rewards.reward_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.tool_reward.html">trinity.common.rewards.tool_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.utils.html">trinity.common.rewards.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.common.workflows.html">trinity.common.workflows package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.agentscope.html">trinity.common.workflows.agentscope package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.agentscope_workflow.html">trinity.common.workflows.agentscope_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.customized_math_workflows.html">trinity.common.workflows.customized_math_workflows module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.customized_toolcall_workflows.html">trinity.common.workflows.customized_toolcall_workflows module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.eval_workflow.html">trinity.common.workflows.eval_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.math_rm_workflow.html">trinity.common.workflows.math_rm_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.math_ruler_workflow.html">trinity.common.workflows.math_ruler_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.math_trainable_ruler_workflow.html">trinity.common.workflows.math_trainable_ruler_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.on_policy_distill_workflow.html">trinity.common.workflows.on_policy_distill_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.rubric_judge_workflow.html">trinity.common.workflows.rubric_judge_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.simple_mm_workflow.html">trinity.common.workflows.simple_mm_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.step_wise_workflow.html">trinity.common.workflows.step_wise_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.workflow.html">trinity.common.workflows.workflow module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.common.config.html">trinity.common.config module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.common.config_validator.html">trinity.common.config_validator module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.common.constants.html">trinity.common.constants module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.common.experience.html">trinity.common.experience module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.common.verl_config.html">trinity.common.verl_config module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.utils.html">trinity.utils package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.annotations.html">trinity.utils.annotations module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.distributed.html">trinity.utils.distributed module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.dlc_utils.html">trinity.utils.dlc_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.log.html">trinity.utils.log module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.lora_utils.html">trinity.utils.lora_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.monitor.html">trinity.utils.monitor module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.plugin_loader.html">trinity.utils.plugin_loader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.registry.html">trinity.utils.registry module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.timer.html">trinity.utils.timer module</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+<div class="header-extra-switchers" style="display:inline-flex; gap:.25rem; margin-left:.5rem; align-items:center;">
+  <button id="lang-toggle-btn" class="btn btn-sm btn-outline-secondary" title="">
+  <span id="lang-toggle-label"></span>
+</button>
+<script>
+(function () {
+  const btn = document.getElementById('lang-toggle-btn');
+  const lab = document.getElementById('lang-toggle-label');
+  if (!btn || !lab) return;
+
+  const m = location.pathname.match(/^(.*\/)(en|zh)(\/.*)$/);
+
+  const cur = m ? m[2] : 'en';
+  if (cur === 'en') {
+    lab.textContent = '中';
+    btn.title = '切换到中文';
+  } else {
+    lab.textContent = 'EN';
+    btn.title = 'Switch to English';
+  }
+
+  const targetHref = (function () {
+    if (!m) return location.href;
+    const other = cur === 'en' ? 'zh' : 'en';
+    const suffix = m[3] || '/';
+    return m[1] + other + suffix + location.search + location.hash;
+  })();
+
+  btn.addEventListener('click', function () {
+    location.href = targetHref;
+  });
+})();
+</script>
+</div>
+
+
+
+<div class="article-header-buttons">
+
+
+<a href="https://github.com/agentscope-ai/Trinity-RFT" target="_blank"
+   class="btn btn-sm btn-source-repository-button"
+   title="源码库"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="下载此页面">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/tutorial/trinity_configs.md" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="下载源文件"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.md</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="列印成 PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="全屏模式"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
+  </button>
+`);
+</script>
+
+
+<script>
+document.write(`
+  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="搜索" aria-label="搜索" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+  </button>
+`);
+</script>
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>参数配置指南</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> 目录 </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">概述</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">全局配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">算法配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">监控配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#model">Model 配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cluster">Cluster 配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#buffer">Buffer 配置</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#explorer">Explorer 输入配置</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trainer">Trainer 输入配置</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">Explorer 配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#synchronizer">Synchronizer 配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">Trainer 配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#service">Service 配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dataprocessor">DataProcessor 配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#log">Log 配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage">Stage 配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#verl-trainer">veRL Trainer 配置（高级）</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">图形化配置生成器（高级）</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#streamlit">步骤 0：了解 Streamlit</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id9">步骤 1：实现新配置项</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#config-manager-py">步骤 2：将新参数集成到 <code class="docutils literal notranslate"><span class="pre">config_manager.py</span></code></a></li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="configuration-guide">
+<span id="id1"></span><h1>参数配置指南<a class="headerlink" href="#configuration-guide" title="Link to this heading">#</a></h1>
+<p>本节详细描述了 <strong>Trinity-RFT</strong> 中使用的参数。</p>
+<section id="id2">
+<h2>概述<a class="headerlink" href="#id2" title="Link to this heading">#</a></h2>
+<p><strong>Trinity-RFT</strong> 的配置通过一个 <code class="docutils literal notranslate"><span class="pre">YAML</span></code> 文件定义，并根据不同的模块划分为多个部分。以下是一个基础配置文件的示例：</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Trinity-RFT</span>
+<span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">example</span>
+<span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">both</span>
+<span class="nt">checkpoint_root_dir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}</span>
+<span class="nt">continue_from_checkpoint</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+
+<span class="nt">algorithm</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># 算法相关参数</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<span class="nt">model</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># 模型相关配置</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<span class="nt">cluster</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># 集群节点和 GPU 设置</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<span class="nt">buffer</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># 数据相关配置</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<span class="nt">explorer</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># explorer 相关设置（rollout 模型、workflow runners）</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># trainer 特定参数</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<span class="nt">synchronizer</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># 模型权重同步设置</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<span class="nt">monitor</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># 监控配置（例如 WandB、TensorBoard 或 MLFlow）</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<span class="nt">service</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># 使用的服务</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<span class="nt">data_processor</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># 数据预处理设置</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<span class="nt">log</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># Ray actor 日志</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+
+<span class="nt">stages</span><span class="p">:</span>
+<span class="w">  </span><span class="c1"># 多阶段训练</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+</pre></div>
+</div>
+<p>每个部分将在下文详细说明。关于此处未涵盖的具体参数的更多细节，请参考<a class="reference external" href="https://github.com/agentscope-ai/Trinity-RFT/blob/main/trinity/common/config.py">源码</a>。</p>
+<div class="admonition tip">
+<p class="admonition-title">小技巧</p>
+<p>Trinity-RFT 使用<a class="reference external" href="https://omegaconf.readthedocs.io/en/latest/">OmegaConf</a> 来加载 YAML 配置文件。
+它支持一些高级特性，如<a class="reference external" href="https://omegaconf.readthedocs.io/en/latest/usage.html#variable-interpolation">变量插值</a>和<a class="reference external" href="https://omegaconf.readthedocs.io/en/latest/custom_resolvers.html#oc-env">环境变量替换</a>。
+用户可利用这些特性简化配置。</p>
+</div>
+</section>
+<hr class="docutils" />
+<section id="id3">
+<h2>全局配置<a class="headerlink" href="#id3" title="Link to this heading">#</a></h2>
+<p>这些是适用于整个实验的一般性设置。</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Trinity-RFT</span>
+<span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">example</span>
+<span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">both</span>
+<span class="nt">checkpoint_root_dir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}</span><span class="w">   </span><span class="c1"># TRINITY_CHECKPOINT_ROOT_DIR 是预先设置的环境变量</span>
+<span class="nt">ignore_validator_suggestions</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">project</span></code>: 项目名称。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">name</span></code>: 当前实验的名称。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mode</span></code>: Trinity-RFT 的运行模式。选项包括：</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">both</span></code>: 同时启动 trainer 和 explorer（默认）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">train</span></code>: 仅启动 trainer。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">explore</span></code>: 仅启动 explorer。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bench</span></code>: 用于 benchmark 测试。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">colocate</span></code>: 仅适用于单 GPU 场景，在同一 GPU 上启动 trainer 和 explorer。</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">checkpoint_root_dir</span></code>: 所有检查点和日志的根目录。该实验的检查点将存储在 <code class="docutils literal notranslate"><span class="pre">&lt;checkpoint_root_dir&gt;/&lt;project&gt;/&lt;name&gt;/</span></code> 路径下。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">continue_from_checkpoint</span></code>: 若设置为 <code class="docutils literal notranslate"><span class="pre">true</span></code>，实验将从检查点路径中的最新检查点继续；否则，会将当前实验重命名为 <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_&lt;timestamp&gt;</span></code> 并启动新实验。由于我们的分离式设计，从检查点恢复的时候，我们只能保证Trainer的模型参数以及其使用的可选缓冲区（<code class="docutils literal notranslate"><span class="pre">auxiliary_buffers</span></code>）可以恢复到最新检查点的状态，而Explorer和Experience Buffer不能保证恢复到同一时点。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ray_namespace</span></code>: 当前实验中启动模块的命名空间。若未指定，则默认为 <code class="docutils literal notranslate"><span class="pre">&lt;project&gt;/&lt;name&gt;</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ignore_validator_suggestions</span></code>：如果设置为<code class="docutils literal notranslate"><span class="pre">false</span></code>，配置验证器将检查GPU内存使用情况，并提出配置更改建议。如果设置为<code class="docutils literal notranslate"><span class="pre">true</span></code>，验证器将不检查GPU内存使用情况。默认值为<code class="docutils literal notranslate"><span class="pre">false</span></code>。</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="id4">
+<h2>算法配置<a class="headerlink" href="#id4" title="Link to this heading">#</a></h2>
+<p>指定 RFT 算法类型及其相关超参数。</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">algorithm</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">algorithm_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">grpo</span>
+<span class="w">  </span><span class="nt">repeat_times</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
+<span class="w">  </span><span class="nt">optimizer</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">lr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1e-6</span>
+<span class="w">    </span><span class="nt">lr_scheduler_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">constant</span>
+<span class="w">  </span><span class="c1"># 以下参数为可选</span>
+<span class="w">  </span><span class="c1"># 若未指定，将根据 `algorithm_type` 自动设置</span>
+<span class="w">  </span><span class="nt">sample_strategy</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;default&quot;</span>
+<span class="w">  </span><span class="nt">advantage_fn</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ppo&quot;</span>
+<span class="w">  </span><span class="nt">kl_penalty_fn</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;none&quot;</span>
+<span class="w">  </span><span class="nt">kl_loss_fn</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;k2&quot;</span>
+<span class="w">  </span><span class="nt">entropy_loss_fn</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;default&quot;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">algorithm_type</span></code>: 强化学习算法类型。支持类型：<code class="docutils literal notranslate"><span class="pre">ppo</span></code>、<code class="docutils literal notranslate"><span class="pre">grpo</span></code>、<code class="docutils literal notranslate"><span class="pre">opmd</span></code>、<code class="docutils literal notranslate"><span class="pre">dpo</span></code>、<code class="docutils literal notranslate"><span class="pre">sft</span></code>、<code class="docutils literal notranslate"><span class="pre">mix</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">repeat_times</span></code>: 每个任务重复的次数。默认为 <code class="docutils literal notranslate"><span class="pre">1</span></code>。在 <code class="docutils literal notranslate"><span class="pre">dpo</span></code> 中自动设为 <code class="docutils literal notranslate"><span class="pre">2</span></code>。某些算法如 GRPO 和 OPMD 要求 <code class="docutils literal notranslate"><span class="pre">repeat_times</span></code> &gt; 1。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">optimizer</span></code>: Actor 优化器的参数。</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">lr</span></code>: 优化器的学习率。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">warmup_style</span></code>：已弃用，请改用 <code class="docutils literal notranslate"><span class="pre">lr_scheduler_type</span></code>。该域将会在未来版本中移除。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lr_scheduler_type</span></code>：Actor 模型的学习率调度器类型。默认值为 <code class="docutils literal notranslate"><span class="pre">constant</span></code>。支持类型：<code class="docutils literal notranslate"><span class="pre">constant</span></code>、<code class="docutils literal notranslate"><span class="pre">cosine</span></code>。</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sample_strategy</span></code>: 从 experience buffer 加载 experience 时使用的采样策略。支持类型：<code class="docutils literal notranslate"><span class="pre">default</span></code>、<code class="docutils literal notranslate"><span class="pre">staleness_control</span></code>、<code class="docutils literal notranslate"><span class="pre">mix</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">advantage_fn</span></code>: 用于计算优势值的函数。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">kl_penalty_fn</span></code>: 用于在奖励中计算 KL 惩罚的函数。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">kl_loss_fn</span></code>: 用于计算 KL 损失的函数。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">entropy_loss_fn</span></code>: 用于计算熵损失的函数。</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="id5">
+<h2>监控配置<a class="headerlink" href="#id5" title="Link to this heading">#</a></h2>
+<p>用于在执行过程中记录指标。</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">monitor</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">monitor_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">wandb</span>
+<span class="w">  </span><span class="nt">monitor_args</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">base_url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">http://localhost:8080</span>
+<span class="w">    </span><span class="nt">api_key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">your_api_key</span>
+<span class="w">  </span><span class="nt">enable_ray_timeline</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">monitor_type</span></code>: 监控系统类型。选项：</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">wandb</span></code>: 记录到 <a class="reference external" href="https://docs.wandb.ai/quickstart/">Weights &amp; Biases</a>。需要登录并设置 <code class="docutils literal notranslate"><span class="pre">WANDB_API_KEY</span></code>。项目和运行名称与全局配置中的 <code class="docutils literal notranslate"><span class="pre">project</span></code> 和 <code class="docutils literal notranslate"><span class="pre">name</span></code> 字段一致。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tensorboard</span></code>: 记录到 <a class="reference external" href="https://www.tensorflow.org/tensorboard">TensorBoard</a>。文件保存在 <code class="docutils literal notranslate"><span class="pre">&lt;checkpoint_root_dir&gt;/&lt;project&gt;/&lt;name&gt;/monitor/tensorboard</span></code> 下。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mlflow</span></code>: 记录到 <a class="reference external" href="https://mlflow.org/">MLFlow</a>。如果设置了 <a class="reference external" href="https://mlflow.org/docs/latest/ml/auth/">MLFlow 认证</a>，请在运行前将 <code class="docutils literal notranslate"><span class="pre">MLFLOW_TRACKING_USERNAME</span></code> 和 <code class="docutils literal notranslate"><span class="pre">MLFLOW_TRACKING_PASSWORD</span></code> 设置为环境变量。</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">monitor_args</span></code>: 初始化监控器的参数字典。</p>
+<ul>
+<li><p>对于 <code class="docutils literal notranslate"><span class="pre">wandb</span></code>：</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">base_url</span></code>: 若设置，将覆盖 <code class="docutils literal notranslate"><span class="pre">WANDB_BASE_URL</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">api_key</span></code>: 若设置，将覆盖 <code class="docutils literal notranslate"><span class="pre">WANDB_API_KEY</span></code>。</p></li>
+</ul>
+</li>
+<li><p>对于 <code class="docutils literal notranslate"><span class="pre">mlflow</span></code>：</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">uri</span></code>: MLFlow 实例的 URI。强烈建议设置；默认为 <code class="docutils literal notranslate"><span class="pre">http://localhost:5000</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">username</span></code>: 若设置，将覆盖 <code class="docutils literal notranslate"><span class="pre">MLFLOW_TRACKING_USERNAME</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">password</span></code>: 若设置，将覆盖 <code class="docutils literal notranslate"><span class="pre">MLFLOW_TRACKING_PASSWORD</span></code>。</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">enable_ray_timeline</span></code>: 若为 <code class="docutils literal notranslate"><span class="pre">True</span></code>，将导出一个 <code class="docutils literal notranslate"><span class="pre">timeline.json</span></code> 文件到 <code class="docutils literal notranslate"><span class="pre">&lt;checkpoint_root_dir&gt;/&lt;project&gt;/&lt;name&gt;/monitor</span></code>。可在 Chrome 浏览器中访问 <a class="reference internal" href="#chrome://tracing"><span class="xref myst">chrome://tracing</span></a> 查看。</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="model">
+<h2>Model 配置<a class="headerlink" href="#model" title="Link to this heading">#</a></h2>
+<p>定义模型路径和 token 限制。</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">model</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">model_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${oc.env:MODEL_PATH}</span><span class="w">  </span><span class="c1"># MODEL_PATH 是预先设置的环境变量</span>
+<span class="w">  </span><span class="nt">critic_model_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${model.model_path}</span><span class="w">  </span><span class="c1"># 使用 model.model_path 的值</span>
+<span class="w">  </span><span class="nt">custom_chat_template</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">None</span>
+<span class="w">  </span><span class="nt">chat_template_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">None</span>
+<span class="w">  </span><span class="nt">max_model_len</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">20480</span>
+<span class="w">  </span><span class="nt">max_prompt_tokens</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4096</span>
+<span class="w">  </span><span class="nt">max_response_tokens</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16384</span>
+<span class="w">  </span><span class="nt">min_response_tokens</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">  </span><span class="nt">enable_prompt_truncation</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">repetition_penalty</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+<span class="w">  </span><span class="nt">lora_configs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="w">  </span><span class="nt">rope_scaling</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="w">  </span><span class="nt">rope_theta</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="w">  </span><span class="nt">tinker</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enable</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="nt">rank</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32</span>
+<span class="w">    </span><span class="nt">seed</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="w">    </span><span class="nt">train_mlp</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">train_attn</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">train_unembed</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">model_path</span></code>: 被训练模型的路径。如果启用了<code class="docutils literal notranslate"><span class="pre">tinker</span></code>，则该路径为本地 tokenizer 的路径。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">critic_model_path</span></code>: 可选的独立 critic 模型路径。若为空，则默认为 <code class="docutils literal notranslate"><span class="pre">model_path</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">custom_chat_template</span></code>: 可选的自定义 chat template 字符串格式。若未指定，系统会使用 tokenizer 的默认 chat template。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">chat_template_path</span></code>: 可选的 chat template 文件路径，类型通常为 jinja2；若设置，则覆盖 <code class="docutils literal notranslate"><span class="pre">custom_chat_template</span></code>。若未指定，系统会使用 tokenizer 的默认 chat template。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_model_len</span></code>: 表示模型所支持的单个序列最大 token 数。如未指定，系统会尝试将其设为 <code class="docutils literal notranslate"><span class="pre">max_prompt_tokens</span></code> + <code class="docutils literal notranslate"><span class="pre">max_response_tokens</span></code>。但前提是这两个值都必须已设置，否则将引发错误。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_prompt_tokens</span></code>: 输入 prompt 中允许的最大 token 数。仅对 <code class="docutils literal notranslate"><span class="pre">InferenceModel</span></code> 中的 <code class="docutils literal notranslate"><span class="pre">chat</span></code> 和 <code class="docutils literal notranslate"><span class="pre">generate</span></code> 方法生效。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_response_tokens</span></code>: 模型生成的回复中允许的最大 token 数。仅对 <code class="docutils literal notranslate"><span class="pre">InferenceModel</span></code> 中的 <code class="docutils literal notranslate"><span class="pre">chat</span></code> 和 <code class="docutils literal notranslate"><span class="pre">generate</span></code> 方法生效。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">min_response_tokens</span></code>: 模型生成的回复中允许的最小 token 数。仅对 <code class="docutils literal notranslate"><span class="pre">InferenceModel</span></code> 中的 <code class="docutils literal notranslate"><span class="pre">chat</span></code> 和 <code class="docutils literal notranslate"><span class="pre">generate</span></code> 方法生效。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">enable_prompt_truncation</span></code>: 是否截断 prompt。默认为 <code class="docutils literal notranslate"><span class="pre">true</span></code>。若设置为 <code class="docutils literal notranslate"><span class="pre">true</span></code>，则 prompt 将被截断为 <code class="docutils literal notranslate"><span class="pre">max_prompt_tokens</span></code> 个 token；若设置为 <code class="docutils literal notranslate"><span class="pre">false</span></code>，则 prompt 不会被截断，存在 prompt 和 response 长度之和超过 <code class="docutils literal notranslate"><span class="pre">max_model_len</span></code> 的风险。在 OpenAI API 模式下不生效。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">repetition_penalty</span></code>：重复惩罚因子。默认值为 <code class="docutils literal notranslate"><span class="pre">1.0</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lora_configs</span></code>：可选的 LoRA 配置。若未指定，则默认为 <code class="docutils literal notranslate"><span class="pre">null</span></code>。目前仅支持一个 LoRA 配置，并且如果启用了<code class="docutils literal notranslate"><span class="pre">tinker</span></code>，则不会使用此LoRA配置。</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">name</span></code>：LoRA 的名称。默认为 <code class="docutils literal notranslate"><span class="pre">None</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">path</span></code>：LoRA 的路径。默认为 <code class="docutils literal notranslate"><span class="pre">None</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">base_model_name</span></code>：LoRA 所基于的基础模型名称。若未指定，则默认为 <code class="docutils literal notranslate"><span class="pre">None</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lora_rank</span></code>：LoRA 的秩（rank）。默认为 <code class="docutils literal notranslate"><span class="pre">32</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lora_alpha</span></code>：LoRA 的 alpha 值。默认为 <code class="docutils literal notranslate"><span class="pre">32</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">lora_dtype</span></code>：LoRA 的数据类型。默认为 <code class="docutils literal notranslate"><span class="pre">auto</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">target_modules</span></code>：LoRA 的目标模块列表。默认为 <code class="docutils literal notranslate"><span class="pre">all-linear</span></code>。</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rope_scaling</span></code>：可选的 RoPE 缩放配置，采用 JSON 格式。若未指定，则默认为 <code class="docutils literal notranslate"><span class="pre">null</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rope_theta</span></code>：可选的 RoPE theta 值。若未指定，则默认为 <code class="docutils literal notranslate"><span class="pre">null</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tinker</span></code>：可选的 Tinker 配置。注意：若启用 Tinker，则 LoRA 配置将被忽略。</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">enable</span></code>：是否启用 Tinker。默认为 <code class="docutils literal notranslate"><span class="pre">false</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rank</span></code>：控制适配矩阵大小的 LoRA 秩（rank）。默认为 <code class="docutils literal notranslate"><span class="pre">32</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">seed</span></code>：Tinker 使用的随机种子。若未指定，则默认为 <code class="docutils literal notranslate"><span class="pre">null</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">train_mlp</span></code>：是否训练 MLP 层。默认为 <code class="docutils literal notranslate"><span class="pre">true</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">train_attn</span></code>：是否训练注意力层。默认为 <code class="docutils literal notranslate"><span class="pre">true</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">train_unembed</span></code>：是否训练反嵌入（unembedding）层。默认为 <code class="docutils literal notranslate"><span class="pre">true</span></code>。</p></li>
+</ul>
+</li>
+</ul>
+<div class="admonition tip">
+<p class="admonition-title">小技巧</p>
+<p>如果使用的是 Explorer 提供的 openai API，则只有 <code class="docutils literal notranslate"><span class="pre">max_model_len</span></code> 会生效，而 <code class="docutils literal notranslate"><span class="pre">max_response_tokens</span></code>、<code class="docutils literal notranslate"><span class="pre">max_prompt_tokens</span></code> 和 <code class="docutils literal notranslate"><span class="pre">min_response_tokens</span></code> 的值将被忽略，在没有独立指定 <code class="docutils literal notranslate"><span class="pre">max_tokens</span></code> 时，每次 API 调用将生成最多 <code class="docutils literal notranslate"><span class="pre">max_model_len</span> <span class="pre">-</span> <span class="pre">prompt_length</span></code> 个 token，因此在使用时请确保 prompt 长度小于 <code class="docutils literal notranslate"><span class="pre">max_model_len</span></code>。</p>
+</div>
+</section>
+<hr class="docutils" />
+<section id="cluster">
+<h2>Cluster 配置<a class="headerlink" href="#cluster" title="Link to this heading">#</a></h2>
+<p>定义使用的集群包含的节点数和每节点的 GPU 数。</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">cluster</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">node_num</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">  </span><span class="nt">gpu_per_node</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">node_num</span></code>: 计算节点总数。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gpu_per_node</span></code>: 每节点可用的 GPU 数量。</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="buffer">
+<h2>Buffer 配置<a class="headerlink" href="#buffer" title="Link to this heading">#</a></h2>
+<p>配置 explorer 和 trainer 使用的数据缓冲区（Buffer）。</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">buffer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32</span>
+<span class="w">  </span><span class="nt">train_batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">256</span>
+<span class="w">  </span><span class="nt">total_epochs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
+
+<span class="w">  </span><span class="nt">explorer_input</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">taskset</span><span class="p">:</span>
+<span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<span class="w">    </span><span class="nt">eval_tasksets</span><span class="p">:</span>
+<span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<span class="w">  </span><span class="nt">trainer_input</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">experience_buffer</span><span class="p">:</span>
+<span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<span class="w">    </span><span class="nt">auxiliary_buffers</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">buffer_1</span><span class="p">:</span>
+<span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<span class="w">      </span><span class="nt">buffer_2</span><span class="p">:</span>
+<span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">batch_size</span></code>: 每个训练步骤使用的任务数。<em>请勿手动将此值乘以 <code class="docutils literal notranslate"><span class="pre">algorithm.repeat_times</span></code></em>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">train_batch_size</span></code>: 每个训练步骤使用的 experience 数量。默认为 <code class="docutils literal notranslate"><span class="pre">batch_size</span></code> * <code class="docutils literal notranslate"><span class="pre">algorithm.repeat_times</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">total_epochs</span></code>: 总训练轮数。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">total_steps</span></code>: 总训练步数（可选）。若指定，则 <code class="docutils literal notranslate"><span class="pre">total_epochs</span></code> 不生效。</p></li>
+</ul>
+<section id="explorer">
+<h3>Explorer 输入配置<a class="headerlink" href="#explorer" title="Link to this heading">#</a></h3>
+<p>定义 explorer 用于训练和评估的数据集。</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">buffer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">explorer_input</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">default_workflow_type</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;math_workflow&#39;</span>
+<span class="w">    </span><span class="nt">default_eval_workflow_type</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;math_workflow&#39;</span>
+<span class="w">    </span><span class="nt">default_reward_fn_type</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;countdown_reward&#39;</span>
+<span class="w">    </span><span class="nt">taskset</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">countdown_train</span>
+<span class="w">      </span><span class="nt">storage_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">file</span>
+<span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${oc.env:TRINITY_TASKSET_PATH}</span>
+<span class="w">      </span><span class="nt">split</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">train</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">prompt_key</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;question&#39;</span>
+<span class="w">        </span><span class="nt">response_key</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;answer&#39;</span>
+<span class="w">      </span><span class="nt">rollout_args</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">temperature</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+<span class="w">      </span><span class="nt">default_workflow_type</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;math_workflow&#39;</span>
+<span class="w">      </span><span class="nt">default_reward_fn_type</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;countdown_reward&#39;</span>
+
+<span class="w">    </span><span class="nt">eval_tasksets</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">countdown_eval</span>
+<span class="w">      </span><span class="nt">storage_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">file</span>
+<span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${oc.env:TRINITY_TASKSET_PATH}</span>
+<span class="w">      </span><span class="nt">split</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test</span>
+<span class="w">      </span><span class="nt">repeat_times</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">prompt_type</span><span class="p">:</span><span class="w"> </span><span class="err">`</span><span class="l l-Scalar l-Scalar-Plain">plaintext`</span>
+<span class="w">        </span><span class="nt">prompt_key</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;question&#39;</span>
+<span class="w">        </span><span class="nt">response_key</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;answer&#39;</span>
+<span class="w">      </span><span class="nt">rollout_args</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">temperature</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span>
+<span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">buffer.explorer_input.taskset</span></code>: 用于训练探索策略的任务数据集。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">buffer.explorer_input.eval_tasksets</span></code>: 用于评测的任务数据集列表。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">buffer.explorer_input.default_workflow_type</span></code>: 若未在数据集级别指定，则为所有任务数据集设置默认的工作流类型。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">buffer.explorer_input.default_eval_workflow_type</span></code>: 若未在数据集级别指定，则为所有评测任务数据集设置默认的工作流类型。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">buffer.explorer_input.default_reward_fn_type</span></code>: 若未在数据集级别指定，则为所有任务数据集设置默认的奖励类型。</p></li>
+</ul>
+<p>每个任务数据集的配置定义如下：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">name</span></code>: 数据集名称。该名称将用作 Ray actor 的名称，因此必须唯一。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">storage_type</span></code>: 数据集的存储方式。选项：<code class="docutils literal notranslate"><span class="pre">file</span></code>、<code class="docutils literal notranslate"><span class="pre">queue</span></code>、<code class="docutils literal notranslate"><span class="pre">sql</span></code>。</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">file</span></code>: 数据集存储在 <code class="docutils literal notranslate"><span class="pre">jsonl</span></code>/<code class="docutils literal notranslate"><span class="pre">parquet</span></code> 文件中。数据文件组织需符合 HuggingFace 标准。<em>建议大多数情况下使用此存储类型。</em></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sql</span></code>: 数据集存储在 SQL 数据库中。<em>此类型尚不稳定，将在未来版本中优化。</em></p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">path</span></code>: 任务数据集的路径。</p>
+<ul>
+<li><p>对于 <code class="docutils literal notranslate"><span class="pre">file</span></code> 类型，路径指向包含任务数据集文件的目录。它支持使用与 <a class="reference external" href="https://huggingface.co/docs/datasets/main/en/package_reference/loading_methods#datasets.load_dataset"><code class="docutils literal notranslate"><span class="pre">datasets.load_dataset()</span></code></a> 函数兼容的格式加载本地和远程数据文件。</p></li>
+<li><p>对于 <code class="docutils literal notranslate"><span class="pre">sql</span></code> 类型，路径指向 sqlite 数据库文件。</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">subset_name</span></code>: 任务数据集的子集名称，对应 huggingface datasets <code class="docutils literal notranslate"><span class="pre">load_dataset</span></code> 函数中的 <code class="docutils literal notranslate"><span class="pre">name</span></code> 参数。默认为 <code class="docutils literal notranslate"><span class="pre">None</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">split</span></code>: 任务数据集的划分。对应 huggingface datasets <code class="docutils literal notranslate"><span class="pre">load_dataset</span></code> 函数中的 <code class="docutils literal notranslate"><span class="pre">split</span></code> 参数。默认为 <code class="docutils literal notranslate"><span class="pre">train</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">repeat_times</span></code>: 为一个任务生成的 rollout 数量。若未设置，则自动设为 <code class="docutils literal notranslate"><span class="pre">algorithm.repeat_times</span></code>（<code class="docutils literal notranslate"><span class="pre">taskset</span></code>）或 <code class="docutils literal notranslate"><span class="pre">1</span></code>（<code class="docutils literal notranslate"><span class="pre">eval_tasksets</span></code>）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rollout_args</span></code>: rollout 参数。</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">temperature</span></code>: 采样温度。</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">default_workflow_type</span></code>: 应用于该数据集的工作流逻辑类型。若未指定，则使用 <code class="docutils literal notranslate"><span class="pre">buffer.default_workflow_type</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">default_reward_fn_type</span></code>: 探索过程中使用的奖励函数。若未指定，则使用 <code class="docutils literal notranslate"><span class="pre">buffer.default_reward_fn_type</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">workflow_args</span></code>: 用于补充数据集级别参数的字典。</p></li>
+</ul>
+</section>
+<section id="trainer">
+<h3>Trainer 输入配置<a class="headerlink" href="#trainer" title="Link to this heading">#</a></h3>
+<p>定义 trainer 使用的 experience buffer 和可选的辅助数据集。</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">buffer</span><span class="p">:</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+<span class="w">  </span><span class="l l-Scalar l-Scalar-Plain">trainer_input</span><span class="p p-Indicator">:</span>
+<span class="w">    </span><span class="nt">experience_buffer</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">countdown_buffer</span>
+<span class="w">      </span><span class="nt">storage_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">queue</span>
+<span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sqlite:///countdown_buffer.db</span>
+<span class="w">      </span><span class="nt">max_read_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1800</span>
+
+<span class="w">    </span><span class="nt">auxiliary_buffers</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">sft_dataset</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sft_dataset</span>
+<span class="w">        </span><span class="nt">storage_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">file</span>
+<span class="w">        </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${oc.env:TRINITY_SFT_DATASET_PATH}</span>
+<span class="w">        </span><span class="nt">format</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">prompt_key</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;question&#39;</span>
+<span class="w">          </span><span class="nt">response_key</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;answer&#39;</span>
+<span class="w">      </span><span class="nt">other_buffer</span><span class="p">:</span>
+<span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">...</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">experience_buffer</span></code>: 它是 Trainer 的输入，也是 Explorer 的输出。即使在 explore 模式下也必须定义。</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">name</span></code>: experience buffer 的名称。该名称将用作 Ray actor 的名称，因此必须唯一。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">storage_type</span></code>: experience buffer 的存储类型。</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">queue</span></code>: experience 数据存储在队列中。大多数使用场景推荐此类型。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sql</span></code>: experience 数据存储在 SQL 数据库中。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">file</span></code>: experience 数据存储在 JSON 文件中。仅建议在 <code class="docutils literal notranslate"><span class="pre">explore</span></code> 模式下用于调试目的。</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">path</span></code>: experience buffer 的路径。</p>
+<ul>
+<li><p>对于 <code class="docutils literal notranslate"><span class="pre">queue</span></code> 类型，此字段可选。可在此指定 SQLite 数据库或 JSON 文件路径以备份队列数据。</p></li>
+<li><p>对于 <code class="docutils literal notranslate"><span class="pre">file</span></code> 类型，路径指向包含数据集文件的目录。</p></li>
+<li><p>对于 <code class="docutils literal notranslate"><span class="pre">sql</span></code> 类型，路径指向 SQLite 数据库文件。</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">format</span></code>: 主要针对 SFT 和 DPO 算法的数据集，用于规范化提取的数据。</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">prompt_type</span></code>: 指定数据集中 prompt 的类型。目前支持 <code class="docutils literal notranslate"><span class="pre">plaintext</span></code>、<code class="docutils literal notranslate"><span class="pre">messages</span></code>。</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">plaintext</span></code>: prompt 为 string 格式。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">messages</span></code>: prompt 为消息列表。</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">prompt_key</span></code>: 指定数据集中包含用户 prompt 的列。仅适用于 <code class="docutils literal notranslate"><span class="pre">plaintext</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">response_key</span></code>: 指定数据集中包含 response 的列。仅适用于 <code class="docutils literal notranslate"><span class="pre">plaintext</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">system_prompt_key</span></code>: 指定数据集中包含 system prompt 的列。仅适用于 <code class="docutils literal notranslate"><span class="pre">plaintext</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">system_prompt</span></code>: 以字符串形式指定 system prompt。优先级低于 <code class="docutils literal notranslate"><span class="pre">system_prompt_key</span></code>。仅适用于 <code class="docutils literal notranslate"><span class="pre">plaintext</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">messages_key</span></code>: 指定数据集中包含 messages 的列。仅适用于 <code class="docutils literal notranslate"><span class="pre">messages</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tools_key</span></code>: 指定数据集中包含 tools 的列。支持 <code class="docutils literal notranslate"><span class="pre">plaintext</span></code> 和 <code class="docutils literal notranslate"><span class="pre">messages</span></code>，但 tool 数据应组织为 dict 列表。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">chosen_key</span></code>: 指定数据集中包含 DPO chosen 数据的列。支持 <code class="docutils literal notranslate"><span class="pre">plaintext</span></code> 和 <code class="docutils literal notranslate"><span class="pre">messages</span></code>，数据类型应与 prompt 类型一致。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rejected_key</span></code>: 类似于 <code class="docutils literal notranslate"><span class="pre">chosen_key</span></code>，但指定 DPO rejected 数据的列。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">enable_concatenated_multi_turn</span></code>: 启用拼接的多轮 SFT 数据预处理。仅适用于 <code class="docutils literal notranslate"><span class="pre">messages</span></code>，且仅在 SFT 算法中生效。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">chat_template</span></code>: 以字符串形式指定 chat template。若未提供，则使用 <code class="docutils literal notranslate"><span class="pre">model.custom_chat_template</span></code>。</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_read_timeout</span></code>: 读取新 experience 数据的最大等待时间（秒）。若超时，则直接返回不完整批次。仅当 <code class="docutils literal notranslate"><span class="pre">storage_type</span></code> 为 <code class="docutils literal notranslate"><span class="pre">queue</span></code> 时生效。默认为 1800 秒（30 分钟）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">replay_buffer</span></code>: 仅当 <code class="docutils literal notranslate"><span class="pre">storage_type</span></code> 为 <code class="docutils literal notranslate"><span class="pre">queue</span></code> 时生效。用于配置 experience 重用的回放缓冲区。</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">enable</span></code>: 是否将 experience 放回缓冲区。默认为 <code class="docutils literal notranslate"><span class="pre">false</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">reuse_cooldown_time</span></code>: experience 重用的冷却时间（秒）。若未指定，默认为 <code class="docutils literal notranslate"><span class="pre">None</span></code>，表示 experience 不可被重复使用。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">priority_fn</span></code>: experience 优先级函数，用于确定 experience 的重用顺序。目前支持 <code class="docutils literal notranslate"><span class="pre">linear_decay</span></code> 和 <code class="docutils literal notranslate"><span class="pre">linear_decay_use_count_control_randomization</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">priority_fn_args</span></code>: 传递给优先级函数的参数字典，具体参数取决于所选的优先级函数。</p></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">auxiliary_buffers</span></code>: trainer 使用的可选缓冲区。为字典结构，每个键为 buffer 名称，值为 buffer 配置。每个 buffer 配置与 <code class="docutils literal notranslate"><span class="pre">experience_buffer</span></code> 类似。</p></li>
+</ul>
+</section>
+</section>
+<hr class="docutils" />
+<section id="id6">
+<h2>Explorer 配置<a class="headerlink" href="#id6" title="Link to this heading">#</a></h2>
+<p>控制 rollout 模型和工作流执行。</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">explorer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">explorer</span>
+<span class="w">  </span><span class="nt">runner_per_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
+<span class="w">  </span><span class="nt">concurrent_mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sequential</span>
+<span class="w">  </span><span class="nt">max_repeat_times_per_runner</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="w">  </span><span class="nt">max_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">900</span>
+<span class="w">  </span><span class="nt">max_retry_times</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="w">  </span><span class="nt">env_vars</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{}</span>
+<span class="w">  </span><span class="nt">rollout_model</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">engine_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">vllm</span>
+<span class="w">    </span><span class="nt">engine_num</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">    </span><span class="nt">tensor_parallel_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">    </span><span class="nt">enable_history</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="w">  </span><span class="nt">auxiliary_models</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">model_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Qwen/Qwen2.5-7B-Instruct</span>
+<span class="w">    </span><span class="nt">tensor_parallel_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">  </span><span class="nt">eval_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
+<span class="w">  </span><span class="nt">eval_on_startup</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<span class="w">  </span><span class="nt">over_rollout</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">ratio</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0</span>
+<span class="w">    </span><span class="nt">wait_after_min</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30.0</span>
+<span class="w">  </span><span class="nt">dynamic_timeout</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enable</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="nt">ratio</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3.0</span>
+<span class="w">  </span><span class="nt">runner_state_report_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">name</span></code>: explorer 的名称。该名称将用作 Ray actor 的名称，因此必须唯一。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">runner_per_model</span></code>: 每个推理引擎实例所服务的 WorkflowRunner 数量。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">concurrent_mode</span></code>: 执行一组任务（例如 GRPO 算法中对一个任务的多次重复执行）的并发模式。支持如下选项：</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">sequential</span></code>: 顺序执行（默认）。每次执行一个任务，等待其完成后再执行下一个任务。对 workflow 的实现要求最低，但吞吐量也最差。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">asynchronous</span></code>: 异步执行。使用异步模式一次性提交所有任务，并在任务完成后收集结果。要求 workflow 正确地实现了异步调用接口，并且 workflow 之间没有共享状态，以避免竞态条件。吞吐量优于顺序执行，但具体性能受限于 workflow 的实现。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">multi-threading</span></code>: 多线程执行。使用多线程同时执行多个任务。需要确保 workflow 的实现是线程安全的，以避免竞态条件。吞吐量通常优于顺序执行，但可能低于异步执行，具体取决于工作流的实现和系统资源。</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_repeat_times_per_runner</span></code>: 将本来需要重复执行 <code class="docutils literal notranslate"><span class="pre">algorithm.repeat_times</span></code> 次的任务切分为多个子任务，每个子任务的 <code class="docutils literal notranslate"><span class="pre">repeat_times</span></code> 不超过该值，仅适用于 GRPO 类算法。如果未设置，则不限制重复次数。推荐在 <code class="docutils literal notranslate"><span class="pre">concurrent_mode</span></code> 为 <code class="docutils literal notranslate"><span class="pre">sequential</span></code> 时使用此参数，以避免单个 WorkflowRunner 长时间占用资源。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_timeout</span></code>: 等待 Workflow 完成的最大时间（秒）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_retry_times</span></code>: Workflow 失败或超时情况下的最大重试次数。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">env_vars</span></code>: 为每个 WorkflowRunner 设置的环境变量。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.engine_type</span></code>: 推理引擎类型。支持 <code class="docutils literal notranslate"><span class="pre">vllm_async</span></code> 和 <code class="docutils literal notranslate"><span class="pre">vllm</span></code>，二者的含义相同，都使用了异步引擎。后续版本会只保留 <code class="docutils literal notranslate"><span class="pre">vllm</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.engine_num</span></code>: 推理引擎实例的数量。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.tensor_parallel_size</span></code>: 每个实例的张量并行度。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.enable_history</span></code>: 是否启用模型调用历史记录功能。若设为 <code class="docutils literal notranslate"><span class="pre">True</span></code>，模型会自动记录调用返回的 experience。请定期通过 <code class="docutils literal notranslate"><span class="pre">extract_experience_from_history</span></code> 提取历史，以避免内存溢出。默认为 <code class="docutils literal notranslate"><span class="pre">False</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">auxiliary_models</span></code>: 用于自定义工作流的辅助模型。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eval_interval</span></code>: 模型评估的间隔（以 step 为单位）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">eval_on_startup</span></code>: 是否在启动时评估模型。更准确地说，是在第 0 步使用原始模型评估，因此中断训练后重启时不会触发该行为。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">over_rollout</span></code>: [实验性] 超量 rollout 机制的配置，允许 explorer 在每个步骤中使用少于完整批次大小的任务继续进行。这在某些任务显著耗时较长的场景中能有效地提高吞吐量。仅当使用动态同步（<code class="docutils literal notranslate"><span class="pre">synchronizer.sync_style</span></code> 不是 <code class="docutils literal notranslate"><span class="pre">fixed</span></code>）时适用。</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">ratio</span></code>: explorer 在每个步骤中仅等待 <code class="docutils literal notranslate"><span class="pre">(1</span> <span class="pre">-</span> <span class="pre">ratio)</span> <span class="pre">*</span> <span class="pre">batch_size</span></code> 的任务。默认为 <code class="docutils literal notranslate"><span class="pre">0.0</span></code>，表示等待所有任务。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">wait_after_min</span></code>: 达到最小任务阈值后，等待此秒数后再继续。</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dynamic_timeout</span></code>: [实验性] 动态超时机制的配置，根据成功任务的平均耗时调整每个任务的超时时间。</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">enable</span></code>: 是否启用动态超时。默认为 <code class="docutils literal notranslate"><span class="pre">false</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ratio</span></code>: 每个任务的超时时间动态设置为 <code class="docutils literal notranslate"><span class="pre">average_time_per_success_task</span> <span class="pre">*</span> <span class="pre">ratio</span></code>。默认为 <code class="docutils literal notranslate"><span class="pre">3.0</span></code>。</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">runner_state_report_interval</span></code>: WorkflowRunner 报告自身状态的时间间隔（秒）。若设为大于 0 的值，工作流执行器会定期将其状态报告给 explorer 主进程并打印在命令行中，以便监控其运行状态。默认为 <code class="docutils literal notranslate"><span class="pre">0</span></code>，表示不启用此功能。推荐如需使用此功能，将其设置为 <code class="docutils literal notranslate"><span class="pre">10</span></code> 秒或更长时间以减少对性能的影响。</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="synchronizer">
+<h2>Synchronizer 配置<a class="headerlink" href="#synchronizer" title="Link to this heading">#</a></h2>
+<p>控制 trainer 和 explorer 之间的模型权重同步方式。详细介绍可以参考 <a class="reference internal" href="synchronizer.html#synchronizer"><span class="std std-ref">Synchronizer 介绍</span></a>。</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">synchronizer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">sync_method</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;nccl&#39;</span>
+<span class="w">  </span><span class="nt">sync_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span>
+<span class="w">  </span><span class="nt">sync_offset</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="w">  </span><span class="nt">sync_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1200</span>
+<span class="w">  </span><span class="nt">sync_style</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;fixed&#39;</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">sync_method</span></code>: 同步方法。选项：</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">nccl</span></code>: 使用 NCCL 进行快速同步。仅 <code class="docutils literal notranslate"><span class="pre">both</span></code> 模式支持。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">checkpoint</span></code>: 从磁盘加载最新模型。<code class="docutils literal notranslate"><span class="pre">train</span></code>、<code class="docutils literal notranslate"><span class="pre">explore</span></code> 或 <code class="docutils literal notranslate"><span class="pre">bench</span></code> 模式均支持。</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sync_interval</span></code>: trainer 和 explorer 之间模型权重同步的间隔（步）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sync_offset</span></code>: trainer 和 explorer 之间模型权重同步的偏移量（步）。explorer 可在 trainer 开始训练前运行 <code class="docutils literal notranslate"><span class="pre">sync_offset</span></code> 步。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sync_timeout</span></code>: 同步超时时间。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sync_style</span></code>: 同步风格。选项：</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">fixed</span></code>: explorer 和 trainer 每隔 <code class="docutils literal notranslate"><span class="pre">sync_interval</span></code> 步同步一次权重。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">explorer_driven</span></code>: explorer 在完成 <code class="docutils literal notranslate"><span class="pre">sync_interval</span></code> 步后通知 trainer 同步权重，而不管此时 trainer 已完成多少步。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trainer_driven</span></code>: trainer 在完成 <code class="docutils literal notranslate"><span class="pre">sync_interval</span></code> 步后通知 explorer 同步权重，而不管此时 explorer 已完成多少步。</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="id7">
+<h2>Trainer 配置<a class="headerlink" href="#id7" title="Link to this heading">#</a></h2>
+<p>指定 trainer 的后端和行为。</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">trainer</span>
+<span class="w">  </span><span class="nt">trainer_type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;verl&quot;</span>
+<span class="w">  </span><span class="nt">trainer_strategy</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;fsdp&quot;</span>
+<span class="w">  </span><span class="nt">total_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1000</span>
+<span class="w">  </span><span class="nt">save_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
+<span class="w">  </span><span class="nt">save_strategy</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;unrestricted&quot;</span>
+<span class="w">  </span><span class="nt">save_hf_checkpoint</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;last&quot;</span>
+<span class="w">  </span><span class="nt">grad_clip</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+<span class="w">  </span><span class="nt">use_dynamic_bsz</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">max_token_len_per_gpu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16384</span>
+<span class="w">  </span><span class="nt">ulysses_sequence_parallel_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">  </span><span class="nt">max_checkpoints_to_keep</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="w">  </span><span class="nt">trainer_config</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">name</span></code>: trainer 的名称。该名称将用作 Ray actor 的名称，因此必须唯一。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trainer_type</span></code>: trainer 后端实现。目前仅支持 <code class="docutils literal notranslate"><span class="pre">verl</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trainer_strategy</span></code>: VeRL 的训练策略。默认值为 <code class="docutils literal notranslate"><span class="pre">fsdp</span></code>。可选值如下：</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">fsdp</span></code>: 使用 PyTorch FSDP。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fsdp2</span></code>: 使用 PyTorch FSDP2。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">megatron</span></code>: 使用 Megatron-LM。</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">save_interval</span></code>: 保存模型检查点的频率（步）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">total_steps</span></code>: 总训练步数。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">save_strategy</span></code>: 模型保存时的并行策略。默认值为<code class="docutils literal notranslate"><span class="pre">unrestricted</span></code>。可选值如下：</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">single_thread</span></code>：整个系统中，仅允许一个线程进行模型保存，不同保存线程之间串行执行。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">single_process</span></code>：整个系统中，仅允许一个进程执行保存，该进程内的多个线程可以并行处理保存任务，不同进程之间串行执行。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">single_node</span></code>：整个系统中，仅允许一个计算节点执行保存，该节点内的进程和线程可并行工作，不同节点的保存串行执行。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">unrestricted</span></code>：不限制保存操作，允许多个节点、进程或线程同时保存模型。</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">save_hf_checkpoint</span></code>: 指定保存 HuggingFace 格式检查点的时机，默认为 &quot;last&quot;。注意在保存为 HuggingFace 格式会消耗额外的时间、存储空间和显存，可能影响训练性能或导致显存不足错误。可选值：</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">last</span></code>: 仅训练产生的最后一个检查点保存为 HuggingFace 格式。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">always</span></code>: 所有检查点均保存为 HuggingFace 格式。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">never</span></code>: 不保存 HuggingFace 格式检查点。</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">grad_clip</span></code>: 梯度裁剪阈值。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">use_dynamic_bsz</span></code>: 是否使用动态批量大小。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_token_len_per_gpu</span></code>: 训练过程中，每个 GPU 最大 token 长度; 当 <code class="docutils literal notranslate"><span class="pre">use_dynamic_bsz=true</span></code> 时生效。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ulysses_sequence_parallel_size</span></code>: 序列并行的并行度，即用于分割单个序列的 GPU 数量。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_checkpoints_to_keep</span></code>: 保留的最大检查点数量。超过此数量后，最旧的检查点将被删除。如果未指定，则将保留所有检查点。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trainer_config</span></code>: 内联提供的 trainer 配置。</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="service">
+<h2>Service 配置<a class="headerlink" href="#service" title="Link to this heading">#</a></h2>
+<p>配置 Trinity-RFT 使用的服务。目前仅支持 Data Juicer 服务。</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">service</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">data_juicer</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">server_url</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;http://127.0.0.1:5005&#39;</span>
+<span class="w">    </span><span class="nt">auto_start</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5005</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">server_url</span></code>: data juicer 服务的 URL。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">auto_start</span></code>: 是否自动启动 data juicer 服务。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">port</span></code>: 当 <code class="docutils literal notranslate"><span class="pre">auto_start</span></code> 为 true 时，Data Juicer 服务使用的端口。</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="dataprocessor">
+<h2>DataProcessor 配置<a class="headerlink" href="#dataprocessor" title="Link to this heading">#</a></h2>
+<p>配置 task / experience 处理流水线，详情请参考 <a class="reference internal" href="example_data_functionalities.html#data-processing"><span class="std std-ref">数据处理</span></a> 部分。</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">data_processor</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">task_pipeline</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">num_process</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32</span>
+<span class="w">    </span><span class="nt">operators</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;llm_difficulty_score_filter&quot;</span>
+<span class="w">        </span><span class="nt">args</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">api_or_hf_model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;qwen2.5-7b-instruct&quot;</span>
+<span class="w">          </span><span class="nt">min_score</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0</span>
+<span class="w">          </span><span class="nt">input_keys</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;question&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;answer&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">          </span><span class="nt">field_names</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;Question&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;Answer&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">inputs</span><span class="p">:</span><span class="w">  </span><span class="c1"># 输出将自动设置为 explorer 输入</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${oc.env:TRINITY_TASKSET_PATH}</span>
+<span class="w">    </span><span class="nt">target_fields</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;question&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;answer&quot;</span><span class="p p-Indicator">]</span>
+<span class="w">  </span><span class="nt">experience_pipeline</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">operators</span><span class="p">:</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data_juicer</span>
+<span class="w">        </span><span class="nt">args</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">config_path</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;examples/grpo_gsm8k_experience_pipeline/dj_scoring_exp.yaml&#39;</span>
+<span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">reward_shaping_mapper</span>
+<span class="w">        </span><span class="nt">args</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">reward_shaping_configs</span><span class="p">:</span>
+<span class="w">            </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">stats_key</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;llm_quality_score&#39;</span>
+<span class="w">              </span><span class="nt">op_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ADD</span>
+<span class="w">              </span><span class="nt">weight</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+</pre></div>
+</div>
+<p>--</p>
+</section>
+<section id="log">
+<h2>Log 配置<a class="headerlink" href="#log" title="Link to this heading">#</a></h2>
+<p>Ray actor 日志配置。</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">log</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">level</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">INFO</span>
+<span class="w">  </span><span class="nt">group_by_node</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">level</span></code>: 日志级别（支持 <code class="docutils literal notranslate"><span class="pre">DEBUG</span></code>、<code class="docutils literal notranslate"><span class="pre">INFO</span></code>、<code class="docutils literal notranslate"><span class="pre">WARNING</span></code>、<code class="docutils literal notranslate"><span class="pre">ERROR</span></code>）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">group_by_node</span></code>: 是否按节点 IP 分组日志。若设为 <code class="docutils literal notranslate"><span class="pre">True</span></code>，actor 的日志将保存到 <code class="docutils literal notranslate"><span class="pre">&lt;checkpoint_root_dir&gt;/&lt;project&gt;/&lt;name&gt;/log/&lt;node_ip&gt;/&lt;actor_name&gt;.log</span></code>，否则保存到 <code class="docutils literal notranslate"><span class="pre">&lt;checkpoint_root_dir&gt;/&lt;project&gt;/&lt;name&gt;/log/&lt;actor_name&gt;.log</span></code>。</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="stage">
+<h2>Stage 配置<a class="headerlink" href="#stage" title="Link to this heading">#</a></h2>
+<p>对于多阶段训练，可以在 <code class="docutils literal notranslate"><span class="pre">stages</span></code> 字段中定义多个阶段。每个阶段可以有自己的 <code class="docutils literal notranslate"><span class="pre">algorithm</span></code>、<code class="docutils literal notranslate"><span class="pre">buffer</span></code> 和其他配置。如果某个参数未在阶段中指定，则继承自全局配置。多个阶段将按定义顺序依次执行。</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">stages</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">stage_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sft_warmup</span>
+<span class="w">    </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">train</span>
+<span class="w">    </span><span class="nt">algorithm</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">algorithm_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sft</span>
+<span class="w">    </span><span class="nt">buffer</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">train_batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">64</span>
+<span class="w">      </span><span class="nt">total_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
+<span class="w">      </span><span class="nt">trainer_input</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">experience_buffer</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sft_buffer</span>
+<span class="w">          </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${oc.env:TRINITY_DATASET_PATH}</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">stage_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rft</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">stage_name</span></code>: 阶段名称。应唯一，并将用作实验名称的后缀。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">mode</span></code>: 该阶段 Trinity-RFT 的运行模式。若未指定，则继承自全局 <code class="docutils literal notranslate"><span class="pre">mode</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">algorithm</span></code>: 该阶段的算法配置。若未指定，则继承自全局 <code class="docutils literal notranslate"><span class="pre">algorithm</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">buffer</span></code>: 该阶段的缓冲区配置。若未指定，则继承自全局 <code class="docutils literal notranslate"><span class="pre">buffer</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">explorer</span></code>: 该阶段的 explorer 配置。若未指定，则继承自全局 <code class="docutils literal notranslate"><span class="pre">explorer</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trainer</span></code>: 该阶段的 trainer 配置。若未指定，则继承自全局 <code class="docutils literal notranslate"><span class="pre">trainer</span></code>。</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="verl-trainer">
+<h2>veRL Trainer 配置（高级）<a class="headerlink" href="#verl-trainer" title="Link to this heading">#</a></h2>
+<p>针对使用 <code class="docutils literal notranslate"><span class="pre">verl</span></code> trainer 后端的高级用户。包含 actor/critic 模型、优化器参数和训练循环的细粒度设置。</p>
+<blockquote>
+<div><p>有关完整参数含义，请参考 <a class="reference external" href="https://verl.readthedocs.io/en/latest/examples/config.html">veRL 文档</a>。</p>
+</div></blockquote>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">actor_rollout_ref</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">hybrid_engine</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<span class="w">  </span><span class="nt">model</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">external_lib</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="w">    </span><span class="nt">override_config</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="nt">enable_gradient_checkpointing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<span class="w">    </span><span class="nt">use_remove_padding</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<span class="w">    </span><span class="nt">use_fused_kernels</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="w">    </span><span class="nt">fused_kernel_options</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">impl_backend</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">None</span>
+<span class="w">  </span><span class="nt">actor</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">strategy</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">fsdp</span><span class="w">  </span><span class="c1"># 这是为了向后兼容</span>
+<span class="w">    </span><span class="c1"># ppo_micro_batch_size: 8 # 将被弃用，使用 ppo_micro_batch_size_per_gpu</span>
+<span class="w">    </span><span class="nt">ppo_micro_batch_size_per_gpu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+<span class="w">    </span><span class="nt">use_dynamic_bsz</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<span class="w">    </span><span class="nt">ppo_max_token_len_per_gpu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">16384</span><span class="w"> </span><span class="c1"># n * ${data.max_model_len}</span>
+<span class="w">    </span><span class="nt">grad_clip</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+<span class="w">    </span><span class="nt">ppo_epochs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">    </span><span class="nt">shuffle</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="w">    </span><span class="nt">ulysses_sequence_parallel_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w"> </span><span class="c1"># sp size</span>
+<span class="w">    </span><span class="nt">entropy_from_logits_with_chunking</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="nt">entropy_checkpointing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="nt">checkpoint</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">load_contents</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&#39;model&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;optimizer&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;extra&#39;</span><span class="p p-Indicator">]</span>
+<span class="w">      </span><span class="nt">save_contents</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&#39;model&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;optimizer&#39;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&#39;extra&#39;</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">optim</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">lr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1e-6</span>
+<span class="w">      </span><span class="nt">lr_warmup_steps_ratio</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.</span><span class="w">  </span><span class="c1"># 总步数将在运行时注入</span>
+<span class="w">      </span><span class="c1"># min_lr_ratio: null   # 仅在余弦预热时有用</span>
+<span class="w">      </span><span class="nt">warmup_style</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">constant</span><span class="w">  </span><span class="c1"># 从 constant/cosine 中选择</span>
+<span class="w">      </span><span class="nt">total_training_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-1</span><span class="w">  </span><span class="c1"># 必须由程序覆盖</span>
+<span class="w">    </span><span class="nt">fsdp_config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">wrap_policy</span><span class="p">:</span>
+<span class="w">        </span><span class="c1"># transformer_layer_cls_to_wrap: None</span>
+<span class="w">        </span><span class="nt">min_num_params</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="w">      </span><span class="nt">param_offload</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="w">      </span><span class="nt">optimizer_offload</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="w">      </span><span class="nt">fsdp_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-1</span>
+<span class="w">      </span><span class="nt">forward_prefetch</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="w">  </span><span class="nt">ref</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">fsdp_config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">param_offload</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="w">      </span><span class="nt">wrap_policy</span><span class="p">:</span>
+<span class="w">        </span><span class="c1"># transformer_layer_cls_to_wrap: None</span>
+<span class="w">        </span><span class="nt">min_num_params</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="w">      </span><span class="nt">fsdp_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-1</span>
+<span class="w">      </span><span class="nt">forward_prefetch</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="w">    </span><span class="c1"># log_prob_micro_batch_size: 4 # 将被弃用，使用 log_prob_micro_batch_size_per_gpu</span>
+<span class="w">    </span><span class="nt">log_prob_micro_batch_size_per_gpu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+<span class="w">    </span><span class="nt">log_prob_use_dynamic_bsz</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${actor_rollout_ref.actor.use_dynamic_bsz}</span>
+<span class="w">    </span><span class="nt">log_prob_max_token_len_per_gpu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${actor_rollout_ref.actor.ppo_max_token_len_per_gpu}</span>
+<span class="w">    </span><span class="nt">ulysses_sequence_parallel_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${actor_rollout_ref.actor.ulysses_sequence_parallel_size}</span><span class="w"> </span><span class="c1"># sp size</span>
+<span class="w">    </span><span class="nt">entropy_from_logits_with_chunking</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${actor_rollout_ref.actor.entropy_from_logits_with_chunking}</span>
+<span class="w">    </span><span class="nt">entropy_checkpointing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${actor_rollout_ref.actor.entropy_checkpointing}</span>
+
+<span class="nt">critic</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">strategy</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">fsdp</span>
+<span class="w">  </span><span class="nt">optim</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">lr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1e-5</span>
+<span class="w">    </span><span class="nt">lr_warmup_steps_ratio</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.</span><span class="w">  </span><span class="c1"># 总步数将在运行时注入</span>
+<span class="w">    </span><span class="c1"># min_lr_ratio: null   # 仅在余弦预热时有用</span>
+<span class="w">    </span><span class="nt">warmup_style</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">constant</span><span class="w">  </span><span class="c1"># 从 constant/cosine 中选择</span>
+<span class="w">    </span><span class="nt">total_training_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-1</span><span class="w">  </span><span class="c1"># 必须由程序覆盖</span>
+<span class="w">  </span><span class="nt">model</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">override_config</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="w"> </span><span class="p p-Indicator">}</span>
+<span class="w">    </span><span class="nt">external_lib</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${actor_rollout_ref.model.external_lib}</span>
+<span class="w">    </span><span class="nt">enable_gradient_checkpointing</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<span class="w">    </span><span class="nt">use_remove_padding</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="w">    </span><span class="nt">fsdp_config</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">param_offload</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="w">      </span><span class="nt">optimizer_offload</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="w">      </span><span class="nt">wrap_policy</span><span class="p">:</span>
+<span class="w">        </span><span class="c1"># transformer_layer_cls_to_wrap: None</span>
+<span class="w">        </span><span class="nt">min_num_params</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="w">      </span><span class="nt">fsdp_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">-1</span>
+<span class="w">      </span><span class="nt">forward_prefetch</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="w">  </span><span class="nt">ppo_micro_batch_size_per_gpu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
+<span class="w">  </span><span class="nt">forward_micro_batch_size_per_gpu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${critic.ppo_micro_batch_size_per_gpu}</span>
+<span class="w">  </span><span class="nt">use_dynamic_bsz</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${actor_rollout_ref.actor.use_dynamic_bsz}</span>
+<span class="w">  </span><span class="nt">ppo_max_token_len_per_gpu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32768</span><span class="w"> </span><span class="c1"># (${actor_rollout_ref.actor.ppo_max_token_len_per_gpu}) * 2</span>
+<span class="w">  </span><span class="nt">forward_max_token_len_per_gpu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${critic.ppo_max_token_len_per_gpu}</span>
+<span class="w">  </span><span class="nt">ulysses_sequence_parallel_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span><span class="w"> </span><span class="c1"># sp size</span>
+<span class="w">  </span><span class="nt">ppo_epochs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${actor_rollout_ref.actor.ppo_epochs}</span>
+<span class="w">  </span><span class="nt">shuffle</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${actor_rollout_ref.actor.shuffle}</span>
+<span class="w">  </span><span class="nt">grad_clip</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+<span class="w">  </span><span class="nt">cliprange_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.5</span>
+
+<span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">balance_batch</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<span class="w">  </span><span class="c1"># total_training_steps: null</span>
+<span class="w">  </span><span class="nt">resume_mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">auto</span>
+<span class="w">  </span><span class="nt">resume_from_path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;&quot;</span>
+<span class="w">  </span><span class="nt">critic_warmup</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="w">  </span><span class="nt">default_hdfs_dir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<span class="w">  </span><span class="nt">remove_previous_ckpt_in_save</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="w">  </span><span class="nt">del_local_ckpt_after_load</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="w">  </span><span class="nt">max_actor_ckpt_to_keep</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+<span class="w">  </span><span class="nt">max_critic_ckpt_to_keep</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">actor_rollout_ref.model.enable_gradient_checkpointing</span></code>: 是否启用梯度检查点，以减少 GPU 内存使用。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">actor_rollout_ref.model.use_remove_padding</span></code>: 是否移除填充 token，以减少训练时间。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">actor_rollout_ref.model.use_fused_kernels</span></code>: 是否使用自定义融合内核（如 FlashAttention、融合 MLP）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">actor_rollout_ref.model.fused_kernel_options.impl_backend</span></code>: 融合内核的实现后端。若 <code class="docutils literal notranslate"><span class="pre">use_fused_kernels</span></code> 为 true，则使用此选项。可选值：&quot;triton&quot; 或 &quot;torch&quot;。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">actor_rollout_ref.actor.use_dynamic_bsz</span></code>: 是否重新组织批数据，具体是拼接较短数据以减少实际训练过程中的批大小。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">actor_rollout_ref.actor.ppo_micro_batch_size_per_gpu</span></code>: 单个 GPU 一次前向传播的批大小。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">actor_rollout_ref.actor.ulysses_sequence_parallel_size</span></code>: Ulysses 序列并行大小。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">actor_rollout_ref.actor.entropy_from_logits_with_chunking</span></code>: 使用分块计算熵以降低内存峰值。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">actor_rollout_ref.actor.entropy_checkpointing</span></code>: 重新计算熵。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">actor_rollout_ref.actor.checkpoint</span></code>: 要加载和保存的内容。使用 'hf_model' 可将整个模型保存为 hf 格式；目前仅使用分片检查点以节省空间。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">actor_rollout_ref.actor.optim.lr</span></code>: actor 模型的学习率。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">actor_rollout_ref.actor.optim.lr_warmup_steps_ratio</span></code>: 学习率预热步数比例。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">actor_rollout_ref.actor.optim.warmup_style</span></code>: 学习率预热方式。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">actor_rollout_ref.actor.optim.total_training_steps</span></code>: actor 模型的总训练步数。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">actor_rollout_ref.ref.log_prob_micro_batch_size_per_gpu</span></code>: 单个 GPU 在一次参考模型前向传播中的批大小。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">critic.model.enable_gradient_checkpointing</span></code>: 是否启用梯度检查点，以减少 GPU 内存使用。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">critic.model.use_remove_padding</span></code>: 是否移除填充 token，以减少训练时间。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">critic.optim.lr</span></code>: critic 模型的学习率。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">critic.optim.lr_warmup_steps_ratio</span></code>: 学习率预热步数比例。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">critic.optim.warmup_style</span></code>: 学习率预热风格。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">critic.optim.total_training_steps</span></code>: critic 模型的总训练步数。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">critic.ppo_micro_batch_size_per_gpu</span></code>: 单个 GPU 在一次 critic 模型前向传播中的批大小。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">critic.ulysses_sequence_parallel_size</span></code>: Ulysses 序列并行大小。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">critic.grad_clip</span></code>: critic 模型训练的梯度裁剪。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">critic.cliprange_value</span></code>: 用于计算值损失。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trainer.balance_batch</span></code>: 训练期间是否在 GPU 间平衡批大小。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trainer.resume_mode</span></code>: 训练的恢复模式。支持 <code class="docutils literal notranslate"><span class="pre">disable</span></code>、<code class="docutils literal notranslate"><span class="pre">auto</span></code> 和 <code class="docutils literal notranslate"><span class="pre">resume_path</span></code>。默认是<code class="docutils literal notranslate"><span class="pre">auto</span></code>，即查找最后一个检查点以恢复；若找不到，则从头开始训练。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trainer.resume_from_path</span></code>: 恢复路径。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trainer.critic_warmup</span></code>: 在实际策略学习前训练 critic 模型的步数。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trainer.default_hdfs_dir</span></code>: 保存检查点的默认 HDFS 目录。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trainer.remove_previous_ckpt_in_save</span></code>: 保存时是否删除之前的检查点。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trainer.del_local_ckpt_after_load</span></code>: 加载后是否删除本地检查点。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trainer.max_actor_ckpt_to_keep</span></code>: 最多保留的 actor 检查点数量。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trainer.max_critic_ckpt_to_keep</span></code>: 最多保留的 critic 检查点数量。</p></li>
+</ul>
+</section>
+<section id="id8">
+<h2>图形化配置生成器（高级）<a class="headerlink" href="#id8" title="Link to this heading">#</a></h2>
+<p>本节将介绍如何为配置生成器页面添加新的配置参数。</p>
+<section id="streamlit">
+<h3>步骤 0：了解 Streamlit<a class="headerlink" href="#streamlit" title="Link to this heading">#</a></h3>
+<p>在为配置生成器页面添加新参数之前，需要先了解 <a class="reference external" href="https://docs.streamlit.io/develop/api-reference">Streamlit</a> 的相关 API 和机制。本项目主要使用 Streamlit 的各种输入组件，并利用 <code class="docutils literal notranslate"><span class="pre">st.session_state</span></code> 存储用户输入的参数。</p>
+</section>
+<section id="id9">
+<h3>步骤 1：实现新配置项<a class="headerlink" href="#id9" title="Link to this heading">#</a></h3>
+<p>为了说明如何为配置生成器页面创建新参数设置，我们以 <code class="docutils literal notranslate"><span class="pre">train_batch_size</span></code> 为例。</p>
+<ol class="arabic">
+<li><p>确定参数的合适作用域。目前参数分为四个文件：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">trinity/manager/config_registry/buffer_config_manager.py</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trinity/manager/config_registry/explorer_config_manager.py</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trinity/manager/config_registry/model_config_manager.py</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trinity/manager/config_registry/trainer_config_manager.py</span></code></p></li>
+</ul>
+<p>本例中，<code class="docutils literal notranslate"><span class="pre">train_batch_size</span></code> 应放在 <code class="docutils literal notranslate"><span class="pre">buffer_config_manager.py</span></code> 文件中。</p>
+</li>
+<li><p>使用 Streamlit 创建参数设置函数。函数名必须以 'set_' 开头，其余部分成为配置名称。</p></li>
+<li><p>使用 <code class="docutils literal notranslate"><span class="pre">CONFIG_GENERATORS.register_config</span></code> 装饰器装饰参数设置函数。该装饰器需要以下信息：</p>
+<ul class="simple">
+<li><p>参数的默认值</p></li>
+<li><p>可见性条件（如适用）</p></li>
+<li><p>额外配置参数（如需要）</p></li>
+</ul>
+</li>
+</ol>
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p><code class="docutils literal notranslate"><span class="pre">CONFIG_GENERATORS.register_config</span></code> 装饰器会自动将 <code class="docutils literal notranslate"><span class="pre">key=config_name</span></code> 作为参数传递给注册的配置函数。确保你的函数接受此关键字参数。</p>
+</div>
+<p>对于 <code class="docutils literal notranslate"><span class="pre">train_batch_size</span></code>，我们将使用以下设置：</p>
+<ul class="simple">
+<li><p>默认值：96</p></li>
+<li><p>可见性条件：<code class="docutils literal notranslate"><span class="pre">lambda:</span> <span class="pre">st.session_state[&quot;trainer_gpu_num&quot;]</span> <span class="pre">&gt;</span> <span class="pre">0</span></code></p></li>
+<li><p>额外配置：<code class="docutils literal notranslate"><span class="pre">{&quot;_train_batch_size_per_gpu&quot;:</span> <span class="pre">16}</span></code></p></li>
+</ul>
+<p>以下是 <code class="docutils literal notranslate"><span class="pre">train_batch_size</span></code> 参数的完整代码：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span>
+    <span class="n">default_value</span><span class="o">=</span><span class="mi">96</span><span class="p">,</span>
+    <span class="n">visible</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">&quot;trainer_gpu_num&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="n">other_configs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;_train_batch_size_per_gpu&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">},</span>
+<span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_train_batch_size</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;key&quot;</span><span class="p">)</span>
+    <span class="n">trainer_gpu_num</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">&quot;trainer_gpu_num&quot;</span><span class="p">]</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">&quot;_train_batch_size_per_gpu&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">&quot;trainer_gpu_num&quot;</span><span class="p">]</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">on_change</span><span class="p">():</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">&quot;_train_batch_size_per_gpu&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">//</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">&quot;trainer_gpu_num&quot;</span><span class="p">],</span> <span class="mi">1</span>
+        <span class="p">)</span>
+
+    <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span>
+        <span class="s2">&quot;Train Batch Size&quot;</span><span class="p">,</span>
+        <span class="n">min_value</span><span class="o">=</span><span class="n">trainer_gpu_num</span><span class="p">,</span>
+        <span class="n">step</span><span class="o">=</span><span class="n">trainer_gpu_num</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="n">_str_for_train_batch_size</span><span class="p">(),</span>
+        <span class="n">on_change</span><span class="o">=</span><span class="n">on_change</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+<p>如果参数需要验证，创建一个检查函数。对于 <code class="docutils literal notranslate"><span class="pre">train_batch_size</span></code>，我们需要确保它能被 <code class="docutils literal notranslate"><span class="pre">trainer_gpu_num</span></code> 整除。若不能，则显示警告，并将参数添加到 <code class="docutils literal notranslate"><span class="pre">unfinished_fields</span></code>。</p>
+<p>使用 <code class="docutils literal notranslate"><span class="pre">CONFIG_GENERATORS.register_check</span></code> 装饰器装饰检查函数：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_check</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">check_train_batch_size</span><span class="p">(</span><span class="n">unfinished_fields</span><span class="p">:</span> <span class="nb">set</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">%</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">&quot;trainer_gpu_num&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">unfinished_fields</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">_str_for_train_batch_size</span><span class="p">())</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">备注</p>
+<p><code class="docutils literal notranslate"><span class="pre">CONFIG_GENERATORS.register_check</span></code> 装饰器会自动接收 <code class="docutils literal notranslate"><span class="pre">key=config_name</span></code> 和 <code class="docutils literal notranslate"><span class="pre">unfinished_fields=self.unfinished_fields</span></code> 作为参数。确保你的函数接受这些关键字参数。</p>
+</div>
+</section>
+<section id="config-manager-py">
+<h3>步骤 2：将新参数集成到 <code class="docutils literal notranslate"><span class="pre">config_manager.py</span></code><a class="headerlink" href="#config-manager-py" title="Link to this heading">#</a></h3>
+<p>要成功将新参数集成到 <code class="docutils literal notranslate"><span class="pre">config_manager.py</span></code> 文件中，请遵循以下步骤：</p>
+<ol class="arabic">
+<li><p><strong>参数分类</strong>：
+根据其功能确定新参数的合适部分。配置生成器页面分为两种主要模式：</p>
+<ul class="simple">
+<li><p>初学者模式：包含“基本配置”和“重要配置”部分。</p></li>
+<li><p>专家模式：包含“模型”、“缓冲区”、“Explorer 和 Synchronizer”以及“Trainer”部分。</p></li>
+</ul>
+</li>
+<li><p><strong>添加参数</strong>：
+在 <code class="docutils literal notranslate"><span class="pre">ConfigManager</span></code> 类的 <code class="docutils literal notranslate"><span class="pre">self.get_configs</span></code> 方法中，将新参数添加到相应部分。</p>
+<p>示例：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">ConfigManager</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_expert_buffer_part</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_configs</span><span class="p">(</span><span class="s2">&quot;total_epochs&quot;</span><span class="p">,</span> <span class="s2">&quot;train_batch_size&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p><strong>集成到 YAML 文件</strong>：
+在 YAML 文件结构中找到新参数的合适位置。应在 <code class="docutils literal notranslate"><span class="pre">generate_config</span></code> 函数及其关联子函数中完成。</p></li>
+<li><p><strong>赋值参数值</strong>：
+使用 <code class="docutils literal notranslate"><span class="pre">st.session_state</span></code> 从配置生成器页面获取参数值，并将其赋给 YAML 中的对应字段。</p>
+<p>示例：</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">ConfigManager</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_gen_buffer_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">buffer_config</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;batch_size&quot;</span><span class="p">:</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">&quot;train_batch_size&quot;</span><span class="p">],</span>
+            <span class="c1"># Additional configuration parameters</span>
+        <span class="p">}</span>
+</pre></div>
+</div>
+</li>
+</ol>
+<p>严格遵循这些步骤，你可以确保新参数成功添加到配置生成器页面，并正确集成到配置系统中。</p>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="develop_selector.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">上一页</p>
+        <p class="prev-next-title">🧪 实验性功能：任务选择器</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="trinity_gpu_configs.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">下一页</p>
+        <p class="prev-next-title">GPU 资源相关配置指南</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> 目录
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">概述</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">全局配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">算法配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">监控配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#model">Model 配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#cluster">Cluster 配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#buffer">Buffer 配置</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#explorer">Explorer 输入配置</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trainer">Trainer 输入配置</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">Explorer 配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#synchronizer">Synchronizer 配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">Trainer 配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#service">Service 配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dataprocessor">DataProcessor 配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#log">Log 配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stage">Stage 配置</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#verl-trainer">veRL Trainer 配置（高级）</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">图形化配置生成器（高级）</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#streamlit">步骤 0：了解 Streamlit</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id9">步骤 1：实现新配置项</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#config-manager-py">步骤 2：将新参数集成到 <code class="docutils literal notranslate"><span class="pre">config_manager.py</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+作者： Trinity-RFT Team
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2025, Trinity-RFT Team.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
+<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
