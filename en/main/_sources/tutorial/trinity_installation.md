@@ -82,6 +82,14 @@ uv sync --extra vllm --extra dev --extra flash_attn
 # uv sync --extra tinker --extra dev
 ```
 
+```{tip}
+If you can't install flash-attn due to network error or compiler error, you can try to install it from our pre-compiled wheel:
+
+`python scripts/install/install_flash_attn.py`
+
+If you are using `uv`, add `--uv` flag to the command above.
+```
+
 ---
 
 ## Using Docker
