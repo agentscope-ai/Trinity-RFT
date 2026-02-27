@@ -18,6 +18,10 @@ import re
 from typing import Any, Dict, List, Union
 
 
+def is_qwen_like_processor(processor: Any) -> bool:
+    return re.search(r"(Qwen|Kimi|Glm).*Processor", processor.__class__.__name__) is not None
+
+
 def build_multi_modal_data(
     processor: Any,
     messages: List[Dict],
@@ -49,9 +53,7 @@ def build_multi_modal_data(
         {"image": [processed_image]}
     """
     processor_class_name = processor.__class__.__name__
-    if (
-        "Qwen" in processor_class_name or "Kimi" in processor_class_name
-    ) and "Processor" in processor_class_name:
+    if is_qwen_like_processor(processor):
         from qwen_vl_utils import process_vision_info
 
         image_inputs, video_inputs = process_vision_info(messages)
@@ -100,9 +102,7 @@ def build_mm_input_for_training(
         through the structured `multi_modal_data` dictionary.
     """
     processor_class_name = processor.__class__.__name__
-    if (
-        "Qwen" in processor_class_name or "Kimi" in processor_class_name
-    ) and "Processor" in processor_class_name:
+    if is_qwen_like_processor(processor):
         inputs = processor(
             text=[prompt],
             images=multi_modal_data.get("image", None),

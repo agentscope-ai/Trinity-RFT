@@ -46,10 +46,10 @@ from verl.utils.fsdp_utils import (
     get_fsdp_state_ctx,
 )
 from verl.utils.logger import log_with_rank
+from verl.utils.model import get_hf_auto_model_class
 
 from trinity.manager.synchronizer import Synchronizer
-from trinity.trainer.verl.utils import get_model_class
-from trinity.trainer.verl_trainer import CheckpointMonitor
+from trinity.trainer.verl.verl_trainer import CheckpointMonitor
 from trinity.utils.log import get_logger
 
 
@@ -323,7 +323,7 @@ class FSDPCheckpointManager(OldFSDPCheckpointManager):
             os.makedirs(hf_local_path, exist_ok=True)
 
             _, model_config, generation_config = self._get_unwrap_model_and_config()
-            auto_model_cls = get_model_class(model_config)
+            auto_model_cls = get_hf_auto_model_class(model_config)
 
             with init_empty_weights():
                 save_model = auto_model_cls.from_config(

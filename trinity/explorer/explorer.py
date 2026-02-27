@@ -383,7 +383,8 @@ class Explorer:
         if self.explore_start_time is not None:
             metric = {"time/explorer_sync_interval": time.time() - self.explore_start_time}
             self.explore_start_time = None
-            self.monitor.log(metric, step=end_step)
+            if self.monitor is not None:
+                self.monitor.log(metric, step=end_step)
 
     async def _finish_explore_step(self, step: int, model_version: int) -> None:
         metric = {"rollout/model_version": model_version}
@@ -391,13 +392,15 @@ class Explorer:
             statuses, exps = await self.scheduler.get_results(
                 batch_id=step, min_num=self.min_wait_num
             )
-        pipeline_metrics = await self.experience_pipeline.process.remote(exps)
-        self.taskset.feedback(pipeline_metrics)
-        metric.update(pipeline_metrics)
+        if self.experience_pipeline is not None:
+            pipeline_metrics = await self.experience_pipeline.process.remote(exps)
+            self.taskset.feedback(pipeline_metrics)
+            metric.update(pipeline_metrics)
         if statuses:
             metric.update(gather_metrics([status.metrics[0] for status in statuses], "rollout"))
             metric["rollout/finished_task_count"] = len(statuses)
-            self.monitor.log(metric, step=step)
+            if self.monitor is not None:
+                self.monitor.log(metric, step=step)
 
     async def _finish_eval_step(self, step: Optional[int] = None, prefix: str = "eval") -> None:
         if not self.pending_eval_tasks:
@@ -421,7 +424,8 @@ class Explorer:
         if self.eval_start_time is not None:
             metric.update({"time/eval": time.time() - self.eval_start_time})
             self.eval_start_time = None
-        self.monitor.log(metric, step)
+        if self.monitor is not None:
+            self.monitor.log(metric, step)
 
     async def shutdown(self) -> None:
         if self.scheduler:

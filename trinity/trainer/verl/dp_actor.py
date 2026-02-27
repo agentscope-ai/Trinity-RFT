@@ -475,10 +475,10 @@ class DataParallelPPOActor(DPActor):
                                 verl_F.entropy_from_logits, logits
                             )
 
-        outputs = {"log_probs": log_probs}
-        if calculate_entropy:
-            outputs["entropys"] = entropy
-        return outputs
+            outputs = {"log_probs": log_probs}
+            if calculate_entropy:
+                outputs["entropys"] = entropy
+            return outputs
 
     # TODO: remove this method after upgrading verl
     @GPUMemoryLogger(role="dp actor", logger=logger)

@@ -18,6 +18,7 @@ Modified from https://github.com/volcengine/verl/blob/v0.7.0/verl/workers/megatr
 
 import datetime
 import os
+import sys
 import time
 
 import psutil
@@ -28,6 +29,15 @@ import vllm  # noqa: F401 ; import vllm to set NCCL_CUMEM_ENABLE automatically.
 from codetiming import Timer
 from megatron.core import parallel_state as mpu
 from omegaconf import DictConfig, OmegaConf, open_dict
+
+# patch for verl to support transformers v5
+if not hasattr(sys.modules["transformers"], "AutoModelForVision2Seq"):
+    setattr(
+        sys.modules["transformers"],
+        "AutoModelForVision2Seq",
+        sys.modules["transformers"].AutoModelForImageTextToText,
+    )
+    sys.modules["transformers"].__all__.append("AutoModelForVision2Seq")
 
 try:
     from verl.workers.engine.mindspeed.transformer_impl import repatch

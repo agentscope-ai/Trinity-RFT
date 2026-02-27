@@ -272,11 +272,11 @@ class TrainEngineWrapper(ABC):
 def get_trainer_wrapper(config: Config) -> TrainEngineWrapper:
     """Get a trainer wrapper."""
     if config.trainer.trainer_type == "verl":
-        from trinity.trainer.verl_trainer import VerlPPOTrainerWrapper
+        from trinity.trainer.verl.verl_trainer import VerlPPOTrainerWrapper
 
         return VerlPPOTrainerWrapper(config)
     elif config.trainer.trainer_type == "tinker":
-        from trinity.trainer.tinker_trainer import TinkerTrainerWrapper
+        from trinity.trainer.tinker.tinker_trainer import TinkerTrainerWrapper
 
         return TinkerTrainerWrapper(config)
     else:

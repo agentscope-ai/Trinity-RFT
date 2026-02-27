@@ -40,7 +40,7 @@ from verl.utils.megatron_utils import (
 )
 
 from trinity.manager.synchronizer import Synchronizer
-from trinity.trainer.verl_trainer import CheckpointMonitor
+from trinity.trainer.verl.verl_trainer import CheckpointMonitor
 from trinity.utils.log import get_logger
 
 
@@ -349,7 +349,7 @@ class MegatronCheckpointManager(OldMegatronCheckpointManager):
 
                     from accelerate import init_empty_weights
 
-                    # TODO: Switch to get_model_class
+                    # TODO: Switch to get_hf_auto_model_class
                     with init_empty_weights(), warnings.catch_warnings():
                         warnings.simplefilter("ignore")
                         if "mistral7b-rm" in self.config.model.path:

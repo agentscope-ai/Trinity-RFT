@@ -253,38 +253,61 @@ def get_latest_hf_checkpoint_path(config: Config):
     return hf_checkpoint_dir
 
 
-# modified from verl/workers/fsdp_workers.py:ActorRolloutRefWorker._build_model_optimizer
-def get_model_class(hf_config):
-    from transformers import (
-        AutoModel,
-        AutoModelForCausalLM,
-        AutoModelForImageTextToText,
-        AutoModelForVision2Seq,
-    )
+# modified from verl/utils/tokenizer.py:hf_processor
+def hf_processor(name_or_path, **kwargs):
+    """Create a huggingface processor to process multimodal data.
 
-    has_remote_code = hasattr(hf_config, "auto_map") and any(
-        hf_config.architectures[0] in val for val in hf_config.auto_map.values()
-    )
-    if has_remote_code:
-        auto_class = next(
-            k for k, v in hf_config.auto_map.items() if hf_config.architectures[0] in v
-        )
-        match auto_class:
-            case "AutoModelForVision2Seq":
-                model_class = AutoModelForVision2Seq
-            case "AutoModelForCausalLM":
-                model_class = AutoModelForCausalLM
-            case "AutoModelForImageTextToText":
-                model_class = AutoModelForImageTextToText
+    Args:
+        name_or_path (str): The name of the processor.
+
+    Returns:
+        transformers.ProcessorMixin: The pretrained processor.
+    """
+    import types
+    import warnings
+
+    from transformers import AutoConfig, AutoProcessor
+
+    try:
+        processor = AutoProcessor.from_pretrained(name_or_path, **kwargs)
+        config = AutoConfig.from_pretrained(name_or_path, **kwargs)
+
+        # Bind vlm model's get_rope_index method to processor
+        processor.config = config
+        match processor.__class__.__name__:
+            case "Qwen2VLProcessor":
+                from transformers.models.qwen2_vl import Qwen2VLModel
+
+                processor.get_rope_index = types.MethodType(Qwen2VLModel.get_rope_index, processor)
+            case "Qwen2_5_VLProcessor":
+                from transformers.models.qwen2_5_vl import Qwen2_5_VLModel
+
+                processor.get_rope_index = types.MethodType(
+                    Qwen2_5_VLModel.get_rope_index, processor
+                )
+            case "Qwen3VLProcessor":
+                from transformers.models.qwen3_vl import Qwen3VLModel
+
+                processor.get_rope_index = types.MethodType(Qwen3VLModel.get_rope_index, processor)
+            case "Glm4vImageProcessor" | "Glm4vProcessor":
+                from transformers.models.glm4v import Glm4vModel
+
+                processor.get_rope_index = types.MethodType(Glm4vModel.get_rope_index, processor)
+            case "Glm46VProcessor":
+                from transformers.models.glm46v import Glm46VModel
+
+                processor.get_rope_index = types.MethodType(Glm46VModel.get_rope_index, processor)
             case _:
-                model_class = AutoModel
-    else:
-        if type(hf_config) in AutoModelForVision2Seq._model_mapping.keys():
-            model_class = AutoModelForVision2Seq
-        elif type(hf_config) in AutoModelForCausalLM._model_mapping.keys():
-            model_class = AutoModelForCausalLM
-        elif type(hf_config) in AutoModelForImageTextToText._model_mapping.keys():
-            model_class = AutoModelForImageTextToText
-        else:
-            model_class = AutoModel
-    return model_class
+                raise ValueError(f"Unsupported processor type: {processor.__class__.__name__}")
+    except Exception as e:
+        processor = None
+        # TODO(haibin.lin): try-catch should be removed after adding transformer version req to setup.py to avoid
+        # silent failure
+        warnings.warn(
+            f"Failed to create processor: {e}. This may affect multimodal processing", stacklevel=1
+        )
+    # Avoid load tokenizer, see:
+    # https://github.com/huggingface/transformers/blob/v4.49.0/src/transformers/models/auto/processing_auto.py#L344
+    if processor is not None and "Processor" not in processor.__class__.__name__:
+        processor = None
+    return processor

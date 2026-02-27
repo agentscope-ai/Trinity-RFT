@@ -1,5 +1,6 @@
 import math
 import os
+import re
 import sys
 import time
 from abc import ABC, abstractmethod
@@ -21,7 +22,7 @@ from trinity.utils.log import get_logger
 from trinity.utils.lora_utils import create_dummy_lora
 
 if TYPE_CHECKING:
-    from trinity.common.verl_config import FSDPConfig
+    from trinity.trainer.verl.verl_config import FSDPConfig
 
 
 class ConfigValidator(ABC):
@@ -1129,7 +1130,7 @@ class TrainerConfigValidator(ConfigValidator):
 
         if config.trainer.trainer_type == "verl":
             if config.trainer.trainer_config:
-                from trinity.common.verl_config import veRLConfig
+                from trinity.trainer.verl.verl_config import veRLConfig
 
                 trainer_config_schema = OmegaConf.structured(veRLConfig)
                 trainer_config = OmegaConf.merge(
@@ -1141,7 +1142,7 @@ class TrainerConfigValidator(ConfigValidator):
                     "`trainer_config_path` is deprecated; please use `trainer_config` instead."
                 )
             else:
-                from trinity.common.verl_config import veRLConfig
+                from trinity.trainer.verl.verl_config import veRLConfig
 
                 self.logger.info("`trainer_config` is not provided, using default trainer config.")
                 config.trainer.trainer_config = veRLConfig()
@@ -1359,7 +1360,7 @@ class GPUMemoryValidator(ConfigValidator):
         Raises:
             ValueError: If estimated memory usage exceeds safe limits and suggestions are not bypassed.
         """
-        from trinity.common.verl_config import veRLConfig
+        from trinity.trainer.verl.verl_config import veRLConfig
 
         self.pytorch_env_flag = (
             os.environ.get("PYTORCH_CUDA_ALLOC_CONF", "") == "expandable_segments:True"
@@ -1536,7 +1537,7 @@ class GPUMemoryValidator(ConfigValidator):
             optim_step_memory (float): Estimated optimizer step memory (bytes).
         """
         is_vl_model = False
-        if "VL" in hf_config.__class__.__name__:
+        if re.search(r"(VL|Glm4v).*Config", hf_config.__class__.__name__) is not None:
             hf_config = hf_config.text_config
             is_vl_model = True
         max_activation_memory = self._calc_fsdp_activation_memory(

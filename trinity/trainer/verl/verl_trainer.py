@@ -24,7 +24,7 @@ from verl.trainer.ppo.ray_trainer import (
     Role,
     create_colocated_worker_cls,
 )
-from verl.utils import hf_processor, hf_tokenizer
+from verl.utils import hf_tokenizer
 from verl.utils.checkpoint.checkpoint_manager import find_latest_ckpt_path
 from verl.utils.debug import marked_timer
 from verl.utils.fs import copy_local_path_from_hdfs
@@ -37,7 +37,7 @@ from trinity.common.config import Config
 from trinity.common.constants import SaveStrategy
 from trinity.common.experience import Experience
 from trinity.trainer.trainer import TrainEngineWrapper
-from trinity.trainer.verl.utils import compute_data_metrics, to_data_proto
+from trinity.trainer.verl.utils import compute_data_metrics, hf_processor, to_data_proto
 from trinity.utils.log import get_logger
 
 

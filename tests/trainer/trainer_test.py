@@ -53,7 +53,7 @@ from trinity.common.models.utils import get_checkpoint_dir_with_step_num
 from trinity.explorer.proxy.client import TrinityClient
 from trinity.manager.state_manager import StateManager
 from trinity.manager.synchronizer import Synchronizer
-from trinity.trainer.tinker_trainer import TinkerTrainerWrapper
+from trinity.trainer.tinker.tinker_trainer import TinkerTrainerWrapper
 
 
 class BaseTrainerCase(RayUnittestBase):
