@@ -1277,9 +1277,7 @@ class CriticWorker(Worker, DistProfilerExtension):
         if getattr(critic_model_config, "model_type", None) == "kimi_vl":
             critic_model_config.text_config.topk_method = "greedy"
 
-        init_context = get_init_weight_context_manager(
-            use_meta_tensor=not critic_model_config.tie_word_embeddings, mesh=self.device_mesh
-        )
+        init_context = get_init_weight_context_manager(use_meta_tensor=False, mesh=self.device_mesh)
 
         # TiledMLP configuration for memory-efficient MLP computation
         tiled_mlp_config = config.model.get("tiled_mlp", {})
