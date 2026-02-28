@@ -42,3 +42,4 @@ The following vision-language model series are currently supported:
 1. Qwen2.5-VL series
 2. Qwen3-VL series
 3. Kimi-VL-A3B-Thinking series
+4. GLM-VL series

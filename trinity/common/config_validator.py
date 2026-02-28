@@ -1,6 +1,5 @@
 import math
 import os
-import re
 import sys
 import time
 from abc import ABC, abstractmethod
@@ -1537,7 +1536,7 @@ class GPUMemoryValidator(ConfigValidator):
             optim_step_memory (float): Estimated optimizer step memory (bytes).
         """
         is_vl_model = False
-        if re.search(r"(VL|Glm4v).*Config", hf_config.__class__.__name__) is not None:
+        if getattr(hf_config, "text_config", None) is not None:
             hf_config = hf_config.text_config
             is_vl_model = True
         max_activation_memory = self._calc_fsdp_activation_memory(
