@@ -6,6 +6,7 @@ from datetime import timedelta
 from typing import Any, Optional, Union
 
 import torch
+from packaging.version import parse as parse_version
 from torch.distributed.distributed_c10d import (
     Backend,
     PrefixStore,
@@ -75,7 +76,10 @@ def init_process_group(
     # different systems (e.g. RPC) in case the store is multi-tenant.
     prefix_store = PrefixStore(group_name, store)
 
-    pg_options_param_name = "backend_options" if str(torch.__version__) >= "2.6" else "pg_options"
+    torch_version = parse_version(torch.__version__)
+    pg_options_param_name = (
+        "backend_options" if torch_version >= parse_version("2.6") else "pg_options"
+    )
     pg, _ = _new_process_group_helper(
         group_size=world_size,
         group_rank=rank,

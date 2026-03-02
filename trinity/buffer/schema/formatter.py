@@ -213,6 +213,7 @@ class SFTFormatter(ExperienceFormatter):
                 add_generation_prompt=False,
                 return_tensors="pt",
                 chat_template=self.chat_template,
+                return_dict=False,
             )[0]
             prompt_tokens_ids = self.tokenizer.apply_chat_template(
                 messages[:-1],
@@ -220,6 +221,7 @@ class SFTFormatter(ExperienceFormatter):
                 add_generation_prompt=True,
                 return_tensors="pt",
                 chat_template=self.chat_template,
+                return_dict=False,
             )[0]
             return Experience(
                 tokens=token_ids,
@@ -317,18 +319,21 @@ class DPOFormatter(ExperienceFormatter):
             add_generation_prompt=True,
             return_tensors="pt",
             chat_template=self.chat_template,
+            return_dict=False,
         )[0]
         chosen_tokens = self.tokenizer.apply_chat_template(
             prompt_messages + chosen_messages,
             add_generation_prompt=False,
             return_tensors="pt",
             chat_template=self.chat_template,
+            return_dict=False,
         )[0][len(prompt_tokens) :]
         rejected_tokens = self.tokenizer.apply_chat_template(
             prompt_messages + rejected_messages,
             add_generation_prompt=False,
             return_tensors="pt",
             chat_template=self.chat_template,
+            return_dict=False,
         )[0][len(prompt_tokens) :]
         return Experience(
             tokens=prompt_tokens,

@@ -30,6 +30,11 @@ from codetiming import Timer
 from megatron.core import parallel_state as mpu
 from omegaconf import DictConfig, OmegaConf, open_dict
 
+try:
+    from verl.workers.engine.mindspeed.transformer_impl import repatch
+except ImportError:
+    repatch = None
+
 # patch for verl to support transformers v5
 if not hasattr(sys.modules["transformers"], "AutoModelForVision2Seq"):
     setattr(
@@ -39,10 +44,10 @@ if not hasattr(sys.modules["transformers"], "AutoModelForVision2Seq"):
     )
     sys.modules["transformers"].__all__.append("AutoModelForVision2Seq")
 
-try:
-    from verl.workers.engine.mindspeed.transformer_impl import repatch
-except ImportError:
-    repatch = None
+    import accelerate
+
+    setattr(accelerate, "init_empty_weights", lambda: torch.device("cpu"))
+
 from verl import DataProto
 from verl.models.mcore import get_mcore_weight_converter
 from verl.single_controller.base import Worker

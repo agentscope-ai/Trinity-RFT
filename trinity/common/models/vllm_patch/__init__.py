@@ -15,7 +15,9 @@ def vllm_patch():  # noqa: C901
     if not hasattr(transformers.activations, "PytorchGELUTanh"):
         transformers.activations.PytorchGELUTanh = transformers.activations.GELUTanh
 
-    if transformers.__version__ >= "5.0.0" and vllm.__version__ < "0.16.0":
+    trf_version = parse_version(transformers.__version__)
+    vllm_version = parse_version(vllm.__version__)
+    if trf_version >= parse_version("5.0.0") and vllm_version < parse_version("0.16.0"):
         raise ImportError("Please upgrade vllm to 0.16.0 or above to use transformers>=5.0.0.")
 
 
