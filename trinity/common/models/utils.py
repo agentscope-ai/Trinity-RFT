@@ -263,9 +263,11 @@ def get_verl_checkpoint_info(
 # modified from verl/model_merger/fsdp_model_merger.py
 def load_fsdp_state_dict_from_verl_checkpoint(checkpoint_path: str) -> dict:  # noqa: C901
     """Load state dict from a Verl checkpoint."""
+    # start of patch for verl to support transformers v5
     from trinity.trainer.verl import patch_for_transformers_v5
 
     patch_for_transformers_v5()
+    # end of patch for verl to support transformers v5
 
     from verl.model_merger.base_model_merger import ModelMergerConfig
     from verl.model_merger.fsdp_model_merger import FSDPModelMerger
@@ -304,9 +306,11 @@ def load_huggingface_state_dict(checkpoint_path: str):
 
 
 def get_megatron_converter(checkpoint_path: str):
+    # start of patch for verl to support transformers v5
     from trinity.trainer.verl import patch_for_transformers_v5
 
     patch_for_transformers_v5()
+    # end of patch for verl to support transformers v5
 
     import builtins
     from contextlib import contextmanager
@@ -330,10 +334,12 @@ def get_megatron_converter(checkpoint_path: str):
             torch.distributed.get_rank = original_get_rank
             torch.distributed.get_world_size = original_get_world_size
 
+            # start of patch for verl to support transformers v5
             if not hasattr(self.hf_config, "rope_theta"):
                 rope_theta = self.hf_config.rope_parameters.get("rope_theta", None)
                 if rope_theta is not None:
                     setattr(self.hf_config, "rope_theta", rope_theta)
+            # end of patch for verl to support transformers v5
 
         @contextmanager
         def _redirect_print_to_logger(self):

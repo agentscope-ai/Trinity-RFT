@@ -8,7 +8,7 @@ from packaging.version import parse as parse_version
 from trinity.common.config import InferenceModelConfig
 
 
-def vllm_patch():  # noqa: C901
+def vllm_patch():
     import transformers
 
     # Patch for Kimi-VL-A3B-Thinking

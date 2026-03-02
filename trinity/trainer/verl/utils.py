@@ -254,6 +254,7 @@ def get_latest_hf_checkpoint_path(config: Config):
 
 
 # modified from verl/utils/tokenizer.py:hf_processor
+# bug fix for processor
 def hf_processor(name_or_path, **kwargs):
     """Create a huggingface processor to process multimodal data.
 
@@ -311,3 +312,43 @@ def hf_processor(name_or_path, **kwargs):
     if processor is not None and "Processor" not in processor.__class__.__name__:
         processor = None
     return processor
+
+
+# modified from verl/utils/fsdp_utils.py:apply_fsdp2
+# bug fix for transformers v5
+def apply_fsdp2(model, fsdp_kwargs, config):
+    """model: AutoModelForCausalLM"""
+    import torch.nn as nn
+    from verl.utils.fsdp_utils import (
+        CPUOffloadPolicy,
+        fully_shard,
+        maybe_patch_fsdp_module,
+    )
+
+    assert (
+        CPUOffloadPolicy is not None
+    ), "PyTorch version >= 2.4 is required for using fully_shard API (FSDP2)"
+
+    default_transformer_cls_names_to_wrap = getattr(model, "_no_split_modules", None)
+    fsdp_transformer_layer_cls_to_wrap = config.get("wrap_policy", {}).get(
+        "transformer_layer_cls_to_wrap", default_transformer_cls_names_to_wrap
+    )
+
+    if isinstance(fsdp_transformer_layer_cls_to_wrap, str):
+        fsdp_transformer_layer_cls_to_wrap = [fsdp_transformer_layer_cls_to_wrap]
+
+    assert len(fsdp_transformer_layer_cls_to_wrap) > 0
+
+    modules = []
+    for name, module in model.named_modules():
+        if module.__class__.__name__ in fsdp_transformer_layer_cls_to_wrap or (
+            isinstance(module, nn.Embedding) and not model.config.tie_word_embeddings
+        ):
+            modules.append(module)
+
+    for idx, module in enumerate(modules):
+        with maybe_patch_fsdp_module(module):
+            fully_shard(module, **fsdp_kwargs)
+
+    with maybe_patch_fsdp_module(model):
+        fully_shard(model, **fsdp_kwargs)  # fsdp2 will not reshard_after_forward for root module

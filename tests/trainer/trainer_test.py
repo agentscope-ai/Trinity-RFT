@@ -900,16 +900,19 @@ class TestTrainerCheckpointSave(unittest.TestCase):
                     huggingface_dir_files = os.listdir(huggingface_dir)
                     self.assertEqual(
                         set(huggingface_dir_files)
-                        - {"generation_config.json", "model.safetensors"},
-                        {
+                        - {
+                            "generation_config.json",
+                            "model.safetensors",
                             "vocab.json",
                             "merges.txt",
                             "added_tokens.json",
+                            "special_tokens_map.json",
+                        },
+                        {
                             "tokenizer.json",
                             "config.json",
                             "chat_template.jinja",
                             "tokenizer_config.json",
-                            "special_tokens_map.json",
                         },
                     )
                 # print(f"Checkpoint check at {checkpoint_iteration} iteration passed.")  # for debug

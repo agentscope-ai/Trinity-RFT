@@ -3,7 +3,7 @@ import sys
 import transformers
 
 
-# patch for verl to support transformers v5
+# start of patch for verl to support transformers v5
 def patch_for_transformers_v5():
     if not hasattr(sys.modules["transformers"], "AutoModelForVision2Seq"):
         setattr(
@@ -15,3 +15,4 @@ def patch_for_transformers_v5():
 
 
 patch_for_transformers_v5()
+# end of patch for verl to support transformers v5

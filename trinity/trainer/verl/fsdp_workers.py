@@ -38,7 +38,7 @@ from torch.distributed.fsdp import FlatParameter
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 from torch.distributed.fsdp.fully_sharded_data_parallel import FSDP_PREFIX
 
-# patch for verl to support transformers v5
+# start of patch for verl to support transformers v5
 if not hasattr(sys.modules["transformers"], "AutoModelForVision2Seq"):
     setattr(
         sys.modules["transformers"],
@@ -46,6 +46,7 @@ if not hasattr(sys.modules["transformers"], "AutoModelForVision2Seq"):
         sys.modules["transformers"].AutoModelForImageTextToText,
     )
     sys.modules["transformers"].__all__.append("AutoModelForVision2Seq")
+# end of patch for verl to support transformers v5
 
 
 from verl import DataProto
@@ -69,7 +70,6 @@ from verl.utils.fs import copy_to_local
 from verl.utils.fsdp_utils import (
     CPUOffloadPolicy,
     MixedPrecisionPolicy,
-    apply_fsdp2,
     fsdp2_load_full_state_dict,
     fsdp_version,
     get_fsdp_wrap_policy,
@@ -108,6 +108,7 @@ from trinity.common.patch import kimi_vl_monkey_patch_decorator
 from trinity.manager.synchronizer import Synchronizer
 from trinity.trainer.verl.fsdp_checkpoint_manager import FSDPCheckpointManager
 from trinity.trainer.verl.monkey_patch import apply_monkey_patch
+from trinity.trainer.verl.utils import apply_fsdp2
 from trinity.utils.distributed import init_process_group
 from trinity.utils.log import get_logger
 
