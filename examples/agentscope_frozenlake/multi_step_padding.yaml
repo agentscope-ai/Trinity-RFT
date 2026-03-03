@@ -1,0 +1,92 @@
+project: "FrozenLake"
+name: "Qwen25-3B-padding"
+checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
+algorithm:
+  algorithm_type: multi_step_grpo
+  repeat_times: 8
+  kl_loss_fn: "low_var_kl"
+  kl_loss_fn_args:
+    kl_coef: 0
+  advantage_fn_args:
+    epsilon: 1e-6
+  optimizer:
+    lr: 1e-6
+  policy_loss_fn_args:
+    clip_range_low: 0.2
+    clip_range_high: 0.28
+data_processor:
+  experience_pipeline:
+    operators: # NOTE
+      - name: multi_step_padding
+        args:
+          max_steps: 10
+model:
+  model_path: ${oc.env:TRINITY_MODEL_PATH,Qwen/Qwen2.5-3B-Instruct}
+  max_response_tokens: 2048
+  min_response_tokens: 0
+  max_model_len: 25600
+  temperature: 0.7
+cluster:
+  node_num: 1
+  gpu_per_node: 8
+buffer:
+  total_epochs: 5
+  batch_size: 64
+  train_batch_size: 5120  # NOTE: 64 * 8 * 10 = batch_size * repeat_times * max_steps
+  explorer_input:
+    taskset:
+      name: frozenlake
+      storage_type: file
+      path: ${oc.env:TRINITY_TASKSET_PATH}
+      split: train
+      workflow_args:
+        env_max_steps: 8
+        agent_max_steps: 10
+        is_slippery: false
+    eval_tasksets:
+      - name: frozenlake
+        storage_type: file
+        path: ${oc.env:TRINITY_TASKSET_PATH}
+        split: test
+        workflow_args:
+          env_max_steps: 8
+          agent_max_steps: 10
+          is_slippery: false
+        repeat_times: 4
+        rollout_args:
+          top_p: 0.8
+          top_k: 20
+    default_workflow_type: 'examples.agentscope_frozenlake.workflow.FrozenLakeWorkflow'
+  trainer_input:
+    experience_buffer:
+      name: frozenlake_experience_buffer
+      storage_type: queue
+      max_read_timeout: 7200
+explorer:
+  eval_on_startup: true
+  eval_interval: 20
+  runner_per_model: 6
+  max_repeat_times_per_runner: 4
+  rollout_model:
+    engine_num: 4
+    tensor_parallel_size: 1
+    enable_chunked_prefill: true
+    enforce_eager: false
+    enable_openai_api: true
+    enable_log_requests: false
+    enable_history: true
+    enable_auto_tool_choice: true
+    tool_call_parser: hermes
+    enable_thinking: true
+    dtype: bfloat16
+    seed: 42
+trainer:
+  save_interval: 50
+  use_dynamic_bsz: true
+  grad_clip: 1.0
+  ulysses_sequence_parallel_size: 2
+synchronizer:
+  sync_method: nccl
+  sync_style: fixed
+  sync_interval: 1
+  sync_timeout: 1200

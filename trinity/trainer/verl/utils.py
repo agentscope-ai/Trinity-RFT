@@ -17,15 +17,35 @@ from trinity.common.experience import (
     gather_action_masks,
     gather_attention_masks,
     gather_response_attrs,
+    gather_statuses,
     gather_token_ids,
     split_dpo_experience_to_single_turn,
 )
+
+
+def print_effective_experience_stats(experiences: List[Experience], logger: Logger) -> None:
+    """Gather effective experience count and the corresponding reweight factor."""
+    statuses = gather_statuses(experiences)
+    effective_experiences = torch.sum(statuses).item()
+    batch_size = len(experiences)
+    if effective_experiences == 0:
+        effective_weight = 1.0
+        logger.info("No effective experiences found, using default weight 1.0")
+    else:
+        effective_weight = float(batch_size / effective_experiences)
+        logger.info(
+            f"Effective experiences: {effective_experiences}, batch size: {batch_size}, effective_weight: {effective_weight}"
+        )
+    return None
 
 
 def to_data_proto(
     experiences: List[Experience], pad_token_id: int, processor: ProcessorMixin, logger: Logger
 ) -> DataProto:  # noqa: C901
     """Convert List[Experience] to verl DataProto."""
+
+    print_effective_experience_stats(experiences, logger)
+
     assert len(experiences) > 0, "No experiences provided."
     if experiences[0].experience_type == "dpo":
         experiences = split_dpo_experience_to_single_turn(experiences)
@@ -49,7 +69,6 @@ def to_data_proto(
         "attention_mask": attention_mask,
         "response_mask": gather_action_masks(experiences, max_response_length),
     }
-
     have_reward = all(exp.reward is not None for exp in experiences)
     have_token_level_reward = all(exp.token_level_reward is not None for exp in experiences)
     if have_reward or have_token_level_reward:

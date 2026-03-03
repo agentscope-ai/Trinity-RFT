@@ -366,6 +366,9 @@ class Experience:
         else:
             teacher_logprobs = None
 
+        # gather statuses
+        statuses = gather_statuses(experiences)
+
         exps = Experiences(
             eids=eids,
             tokens=tokens,
@@ -379,6 +382,7 @@ class Experience:
             logprobs=logprobs,
             multi_modal_inputs=multi_modal_inputs,
             teacher_logprobs=teacher_logprobs,
+            statuses=statuses,
         )
         if custom_fields is not None:
             for custom_field in custom_fields:
@@ -465,6 +469,7 @@ class Experiences:
     prompt_length: int
     logprobs: Optional[Tensor]  # [batch_size, response_length]
     multi_modal_inputs: Optional[Any]
+    statuses: Optional[Tensor] = None  # [batch_size] # 1 for effective, 0 for placeholder
     custom_fields: List[str] = field(
         default_factory=list
     )  # Custom fields to include in the gathered experiences
@@ -603,6 +608,16 @@ def gather_response_attrs(
 def gather_multi_modal_inputs(experiences) -> Dict[str, Tensor]:
     keys = experiences[0].multi_modal_inputs.keys()
     return {key: [exp.multi_modal_inputs[key] for exp in experiences] for key in keys}
+
+
+def gather_statuses(experiences) -> Tensor:
+    statuses = []
+    for exp in experiences:
+        if exp.info.get("status", None) == "placeholder":
+            statuses.append(0)
+        else:
+            statuses.append(1)
+    return torch.tensor(statuses, dtype=torch.bool)
 
 
 def group_by(

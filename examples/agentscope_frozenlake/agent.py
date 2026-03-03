@@ -26,6 +26,7 @@ class FrozenLakeAgent:
             formatter=OpenAIChatFormatter(),
             max_iters=2,
         )
+        self.agent.set_console_output_enabled(False)
         self.response_structure = FrozenLakeAction
         self.current_step = 0
         self.last_action = None
