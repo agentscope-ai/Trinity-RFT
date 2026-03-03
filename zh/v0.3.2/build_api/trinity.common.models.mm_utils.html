@@ -612,6 +612,7 @@ document.write(`
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.is_qwen_like_processor"><code class="docutils literal notranslate"><span class="pre">is_qwen_like_processor()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.build_multi_modal_data"><code class="docutils literal notranslate"><span class="pre">build_multi_modal_data()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.build_mm_input_for_training"><code class="docutils literal notranslate"><span class="pre">build_mm_input_for_training()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.build_mm_message"><code class="docutils literal notranslate"><span class="pre">build_mm_message()</span></code></a></li>
@@ -632,7 +633,8 @@ document.write(`
 <p>Utilities for processing multi-modal data (images/videos) for specific vision-language models.</p>
 <p>Supported models:
 - Qwen2.5-VL, Qwen3-VL series
-- Kimi VL series</p>
+- Kimi VL series
+- GLM VL series</p>
 <p>Provides functions to:
 1. Parse prompts with media tags (&lt;image&gt;/&lt;video&gt;)
 2. Validate multi-modal content in conversations
@@ -640,9 +642,14 @@ document.write(`
 4. Construct model-compatible message formats</p>
 <div class="admonition note">
 <p class="admonition-title">备注</p>
-<p>Only processors with class names containing both (&quot;Qwen&quot; OR &quot;Kimi&quot;) AND &quot;Processor&quot; are supported.
+<p>Only processors with class names containing both (&quot;Qwen&quot;, &quot;Kimi&quot; OR &quot;Glm&quot;) AND &quot;Processor&quot; are supported.
 Relies on <cite>qwen_vl_utils.process_vision_info</cite> for media extraction.</p>
 </div>
+<dl class="py function">
+<dt class="sig sig-object py" id="trinity.common.models.mm_utils.is_qwen_like_processor">
+<span class="sig-prename descclassname"><span class="pre">trinity.common.models.mm_utils.</span></span><span class="sig-name descname"><span class="pre">is_qwen_like_processor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">processor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/trinity/common/models/mm_utils.html#is_qwen_like_processor"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.models.mm_utils.is_qwen_like_processor" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="trinity.common.models.mm_utils.build_multi_modal_data">
 <span class="sig-prename descclassname"><span class="pre">trinity.common.models.mm_utils.</span></span><span class="sig-name descname"><span class="pre">build_multi_modal_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">processor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">messages</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/trinity/common/models/mm_utils.html#build_multi_modal_data"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.models.mm_utils.build_multi_modal_data" title="Link to this definition">#</a></dt>
@@ -653,7 +660,7 @@ Returns structured media inputs compatible with vLLM's multi-modal API.</p>
 <dt class="field-odd">参数<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>processor</strong> -- Vision-language processor instance (must have class name containing
-(&quot;Qwen&quot; OR &quot;Kimi&quot;) AND &quot;Processor&quot;).</p></li>
+(&quot;Qwen&quot;, &quot;Kimi&quot; OR &quot;Glm&quot;) AND &quot;Processor&quot;).</p></li>
 <li><p><strong>messages</strong> -- List of conversation messages in model-expected format. Each message's &quot;content&quot;
 may be a string or list of content items (text/image/video dictionaries).</p></li>
 </ul>
@@ -694,7 +701,7 @@ Handles padding and tensor conversion for training workflows.</p>
 <dt class="field-odd">参数<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>processor</strong> -- Vision-language processor instance (must have class name containing
-(&quot;Qwen&quot; OR &quot;Kimi&quot;) AND &quot;Processor&quot;).</p></li>
+(&quot;Qwen&quot;, &quot;Kimi&quot; OR &quot;Glm&quot;) AND &quot;Processor&quot;).</p></li>
 <li><p><strong>prompt</strong> -- Plain text prompt WITHOUT media tags (e.g., &quot;Describe this image&quot;).
 Media placement is handled via <cite>multi_modal_data</cite>, not prompt tags.</p></li>
 <li><p><strong>multi_modal_data</strong> -- Dictionary from <cite>build_multi_modal_data()</cite> containing:
@@ -853,6 +860,7 @@ False otherwise.</p>
   </div>
   <nav class="bd-toc-nav page-toc">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.is_qwen_like_processor"><code class="docutils literal notranslate"><span class="pre">is_qwen_like_processor()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.build_multi_modal_data"><code class="docutils literal notranslate"><span class="pre">build_multi_modal_data()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.build_mm_input_for_training"><code class="docutils literal notranslate"><span class="pre">build_mm_input_for_training()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.build_mm_message"><code class="docutils literal notranslate"><span class="pre">build_mm_message()</span></code></a></li>

@@ -7,6 +7,7 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
+   trinity.trainer.tinker.tinker_trainer
    trinity.trainer.tinker.utils
 
 Module contents

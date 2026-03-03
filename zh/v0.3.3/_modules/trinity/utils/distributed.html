@@ -1066,6 +1066,9 @@ document.write(`
     <span class="n">pg_options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">device_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function is used to initialize the process group. It requires torch &gt;= 2.6.0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;nccl&quot;</span><span class="p">,</span> <span class="s2">&quot;Only nccl backend is supported for now.&quot;</span>
 
     <span class="kn">from</span><span class="w"> </span><span class="nn">torch.distributed.distributed_c10d</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_nccl_available</span>
@@ -1090,8 +1093,6 @@ document.write(`
     <span class="c1"># Use a PrefixStore to avoid accidental overrides of keys used by</span>
     <span class="c1"># different systems (e.g. RPC) in case the store is multi-tenant.</span>
     <span class="n">prefix_store</span> <span class="o">=</span> <span class="n">PrefixStore</span><span class="p">(</span><span class="n">group_name</span><span class="p">,</span> <span class="n">store</span><span class="p">)</span>
-
-    <span class="n">pg_options_param_name</span> <span class="o">=</span> <span class="s2">&quot;backend_options&quot;</span> <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="s2">&quot;2.6&quot;</span> <span class="k">else</span> <span class="s2">&quot;pg_options&quot;</span>
     <span class="n">pg</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_new_process_group_helper</span><span class="p">(</span>
         <span class="n">group_size</span><span class="o">=</span><span class="n">world_size</span><span class="p">,</span>
         <span class="n">group_rank</span><span class="o">=</span><span class="n">rank</span><span class="p">,</span>
@@ -1101,7 +1102,7 @@ document.write(`
         <span class="n">group_name</span><span class="o">=</span><span class="n">group_name</span><span class="p">,</span>
         <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span>
         <span class="n">device_id</span><span class="o">=</span><span class="n">device_id</span><span class="p">,</span>
-        <span class="o">**</span><span class="p">{</span><span class="n">pg_options_param_name</span><span class="p">:</span> <span class="n">pg_options</span><span class="p">},</span>
+        <span class="o">**</span><span class="p">{</span><span class="s2">&quot;backend_options&quot;</span><span class="p">:</span> <span class="n">pg_options</span><span class="p">},</span>
     <span class="p">)</span>
 
     <span class="n">_world</span><span class="o">.</span><span class="n">pg_group_ranks</span><span class="p">[</span><span class="n">pg</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">world_size</span><span class="p">)}</span>

@@ -1040,7 +1040,7 @@ document.write(`
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.lora_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_dummy_lora</span>
 
 <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.verl_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">FSDPConfig</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.trainer.verl.verl_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">FSDPConfig</span>
 
 
 <div class="viewcode-block" id="ConfigValidator">
@@ -2221,7 +2221,7 @@ document.write(`
 
         <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">trainer_type</span> <span class="o">==</span> <span class="s2">&quot;verl&quot;</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">trainer_config</span><span class="p">:</span>
-                <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.verl_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">veRLConfig</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.trainer.verl.verl_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">veRLConfig</span>
 
                 <span class="n">trainer_config_schema</span> <span class="o">=</span> <span class="n">OmegaConf</span><span class="o">.</span><span class="n">structured</span><span class="p">(</span><span class="n">veRLConfig</span><span class="p">)</span>
                 <span class="n">trainer_config</span> <span class="o">=</span> <span class="n">OmegaConf</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
@@ -2233,7 +2233,7 @@ document.write(`
                     <span class="s2">&quot;`trainer_config_path` is deprecated; please use `trainer_config` instead.&quot;</span>
                 <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.verl_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">veRLConfig</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.trainer.verl.verl_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">veRLConfig</span>
 
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;`trainer_config` is not provided, using default trainer config.&quot;</span><span class="p">)</span>
                 <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">trainer_config</span> <span class="o">=</span> <span class="n">veRLConfig</span><span class="p">()</span>
@@ -2463,7 +2463,7 @@ document.write(`
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: If estimated memory usage exceeds safe limits and suggestions are not bypassed.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.verl_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">veRLConfig</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.trainer.verl.verl_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">veRLConfig</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">pytorch_env_flag</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;PYTORCH_CUDA_ALLOC_CONF&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;expandable_segments:True&quot;</span>
@@ -2641,7 +2641,7 @@ document.write(`
 <span class="sd">            optim_step_memory (float): Estimated optimizer step memory (bytes).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">is_vl_model</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">if</span> <span class="s2">&quot;VL&quot;</span> <span class="ow">in</span> <span class="n">hf_config</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">hf_config</span><span class="p">,</span> <span class="s2">&quot;text_config&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">hf_config</span> <span class="o">=</span> <span class="n">hf_config</span><span class="o">.</span><span class="n">text_config</span>
             <span class="n">is_vl_model</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">max_activation_memory</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_calc_fsdp_activation_memory</span><span class="p">(</span>

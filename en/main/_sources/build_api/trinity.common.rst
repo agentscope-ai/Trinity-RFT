@@ -22,7 +22,6 @@ Submodules
    trinity.common.config_validator
    trinity.common.constants
    trinity.common.experience
-   trinity.common.verl_config
 
 Module contents
 ---------------

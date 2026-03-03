@@ -7,6 +7,7 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
+   trinity.common.patch.glm4v
    trinity.common.patch.kimi
 
 Module contents

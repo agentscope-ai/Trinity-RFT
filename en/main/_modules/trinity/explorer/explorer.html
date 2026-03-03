@@ -713,6 +713,7 @@ window.addEventListener("load", load);</script>
 </details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../../build_api/trinity.trainer.html">trinity.trainer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../build_api/trinity.trainer.tinker.html">trinity.trainer.tinker package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.trainer.tinker.tinker_trainer.html">trinity.trainer.tinker.tinker_trainer module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.trainer.tinker.utils.html">trinity.trainer.tinker.utils module</a></li>
 </ul>
 </details></li>
@@ -723,12 +724,13 @@ window.addEventListener("load", load);</script>
 <li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.trainer.verl.megatron_actor.html">trinity.trainer.verl.megatron_actor module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.trainer.verl.megatron_checkpoint_manager.html">trinity.trainer.verl.megatron_checkpoint_manager module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.trainer.verl.megatron_workers.html">trinity.trainer.verl.megatron_workers module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.trainer.verl.monkey_patch.html">trinity.trainer.verl.monkey_patch module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.trainer.verl.utils.html">trinity.trainer.verl.utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.trainer.verl.verl_config.html">trinity.trainer.verl.verl_config module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.trainer.verl.verl_trainer.html">trinity.trainer.verl.verl_trainer module</a></li>
 </ul>
 </details></li>
-<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.trainer.tinker_trainer.html">trinity.trainer.tinker_trainer module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.trainer.trainer.html">trinity.trainer.trainer module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.trainer.verl_trainer.html">trinity.trainer.verl_trainer module</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../../build_api/trinity.algorithm.html">trinity.algorithm package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -815,6 +817,7 @@ window.addEventListener("load", load);</script>
 </ul>
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../build_api/trinity.common.patch.html">trinity.common.patch package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.patch.glm4v.html">trinity.common.patch.glm4v module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.patch.kimi.html">trinity.common.patch.kimi module</a></li>
 </ul>
 </details></li>
@@ -854,7 +857,6 @@ window.addEventListener("load", load);</script>
 <li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.common.config_validator.html">trinity.common.config_validator module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.common.constants.html">trinity.common.constants module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.common.experience.html">trinity.common.experience module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.common.verl_config.html">trinity.common.verl_config module</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../../build_api/trinity.utils.html">trinity.utils package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -1454,7 +1456,8 @@ document.write(`
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">explore_start_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">metric</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;time/explorer_sync_interval&quot;</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">explore_start_time</span><span class="p">}</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">explore_start_time</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">monitor</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">end_step</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">monitor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">monitor</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">end_step</span><span class="p">)</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_finish_explore_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">model_version</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">metric</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;rollout/model_version&quot;</span><span class="p">:</span> <span class="n">model_version</span><span class="p">}</span>
@@ -1462,13 +1465,15 @@ document.write(`
             <span class="n">statuses</span><span class="p">,</span> <span class="n">exps</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">scheduler</span><span class="o">.</span><span class="n">get_results</span><span class="p">(</span>
                 <span class="n">batch_id</span><span class="o">=</span><span class="n">step</span><span class="p">,</span> <span class="n">min_num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">min_wait_num</span>
             <span class="p">)</span>
-        <span class="n">pipeline_metrics</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">experience_pipeline</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">exps</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">taskset</span><span class="o">.</span><span class="n">feedback</span><span class="p">(</span><span class="n">pipeline_metrics</span><span class="p">)</span>
-        <span class="n">metric</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">pipeline_metrics</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">experience_pipeline</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pipeline_metrics</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">experience_pipeline</span><span class="o">.</span><span class="n">process</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">exps</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">taskset</span><span class="o">.</span><span class="n">feedback</span><span class="p">(</span><span class="n">pipeline_metrics</span><span class="p">)</span>
+            <span class="n">metric</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">pipeline_metrics</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">statuses</span><span class="p">:</span>
             <span class="n">metric</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">gather_metrics</span><span class="p">([</span><span class="n">status</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">status</span> <span class="ow">in</span> <span class="n">statuses</span><span class="p">],</span> <span class="s2">&quot;rollout&quot;</span><span class="p">))</span>
             <span class="n">metric</span><span class="p">[</span><span class="s2">&quot;rollout/finished_task_count&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">statuses</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">monitor</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">monitor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">monitor</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_finish_eval_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;eval&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_eval_tasks</span><span class="p">:</span>
@@ -1492,7 +1497,8 @@ document.write(`
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">eval_start_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">metric</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;time/eval&quot;</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">eval_start_time</span><span class="p">})</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">eval_start_time</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">monitor</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">monitor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">monitor</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">metric</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Explorer.shutdown">
 <a class="viewcode-back" href="../../../build_api/trinity.explorer.explorer.html#trinity.explorer.Explorer.shutdown">[docs]</a>

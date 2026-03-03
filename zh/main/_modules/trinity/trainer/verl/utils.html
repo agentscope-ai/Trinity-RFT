@@ -718,6 +718,7 @@ window.addEventListener("load", load);</script>
 </details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../../../build_api/trinity.trainer.html">trinity.trainer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.trainer.tinker.html">trinity.trainer.tinker package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.trainer.tinker.tinker_trainer.html">trinity.trainer.tinker.tinker_trainer module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.trainer.tinker.utils.html">trinity.trainer.tinker.utils module</a></li>
 </ul>
 </details></li>
@@ -728,12 +729,13 @@ window.addEventListener("load", load);</script>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.trainer.verl.megatron_actor.html">trinity.trainer.verl.megatron_actor module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.trainer.verl.megatron_checkpoint_manager.html">trinity.trainer.verl.megatron_checkpoint_manager module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.trainer.verl.megatron_workers.html">trinity.trainer.verl.megatron_workers module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.trainer.verl.monkey_patch.html">trinity.trainer.verl.monkey_patch module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.trainer.verl.utils.html">trinity.trainer.verl.utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.trainer.verl.verl_config.html">trinity.trainer.verl.verl_config module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.trainer.verl.verl_trainer.html">trinity.trainer.verl.verl_trainer module</a></li>
 </ul>
 </details></li>
-<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.trainer.tinker_trainer.html">trinity.trainer.tinker_trainer module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.trainer.trainer.html">trinity.trainer.trainer module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.trainer.verl_trainer.html">trinity.trainer.verl_trainer module</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../../../build_api/trinity.algorithm.html">trinity.algorithm package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -820,6 +822,7 @@ window.addEventListener("load", load);</script>
 </ul>
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.common.patch.html">trinity.common.patch package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.patch.glm4v.html">trinity.common.patch.glm4v module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.patch.kimi.html">trinity.common.patch.kimi module</a></li>
 </ul>
 </details></li>
@@ -859,7 +862,6 @@ window.addEventListener("load", load);</script>
 <li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.common.config_validator.html">trinity.common.config_validator module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.common.constants.html">trinity.common.constants module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.common.experience.html">trinity.common.experience module</a></li>
-<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.common.verl_config.html">trinity.common.verl_config module</a></li>
 </ul>
 </details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../../../build_api/trinity.utils.html">trinity.utils package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -1294,43 +1296,110 @@ document.write(`
 
 
 
-<span class="c1"># modified from verl/workers/fsdp_workers.py:ActorRolloutRefWorker._build_model_optimizer</span>
-<div class="viewcode-block" id="get_model_class">
-<a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.utils.html#trinity.trainer.verl.utils.get_model_class">[文档]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_model_class</span><span class="p">(</span><span class="n">hf_config</span><span class="p">):</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-        <span class="n">AutoModel</span><span class="p">,</span>
-        <span class="n">AutoModelForCausalLM</span><span class="p">,</span>
-        <span class="n">AutoModelForImageTextToText</span><span class="p">,</span>
-        <span class="n">AutoModelForVision2Seq</span><span class="p">,</span>
+<span class="c1"># modified from verl/utils/tokenizer.py:hf_processor</span>
+<span class="c1"># bug fix for processor</span>
+<div class="viewcode-block" id="hf_processor">
+<a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.utils.html#trinity.trainer.verl.utils.hf_processor">[文档]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">hf_processor</span><span class="p">(</span><span class="n">name_or_path</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a huggingface processor to process multimodal data.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        name_or_path (str): The name of the processor.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        transformers.ProcessorMixin: The pretrained processor.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">types</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoConfig</span><span class="p">,</span> <span class="n">AutoProcessor</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">processor</span> <span class="o">=</span> <span class="n">AutoProcessor</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">name_or_path</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="n">AutoConfig</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">name_or_path</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># Bind vlm model&#39;s get_rope_index method to processor</span>
+        <span class="n">processor</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="k">match</span> <span class="n">processor</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">&quot;Qwen2VLProcessor&quot;</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">transformers.models.qwen2_vl</span><span class="w"> </span><span class="kn">import</span> <span class="n">Qwen2VLModel</span>
+
+                <span class="n">processor</span><span class="o">.</span><span class="n">get_rope_index</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">MethodType</span><span class="p">(</span><span class="n">Qwen2VLModel</span><span class="o">.</span><span class="n">get_rope_index</span><span class="p">,</span> <span class="n">processor</span><span class="p">)</span>
+            <span class="k">case</span> <span class="s2">&quot;Qwen2_5_VLProcessor&quot;</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">transformers.models.qwen2_5_vl</span><span class="w"> </span><span class="kn">import</span> <span class="n">Qwen2_5_VLModel</span>
+
+                <span class="n">processor</span><span class="o">.</span><span class="n">get_rope_index</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">MethodType</span><span class="p">(</span>
+                    <span class="n">Qwen2_5_VLModel</span><span class="o">.</span><span class="n">get_rope_index</span><span class="p">,</span> <span class="n">processor</span>
+                <span class="p">)</span>
+            <span class="k">case</span> <span class="s2">&quot;Qwen3VLProcessor&quot;</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">transformers.models.qwen3_vl</span><span class="w"> </span><span class="kn">import</span> <span class="n">Qwen3VLModel</span>
+
+                <span class="n">processor</span><span class="o">.</span><span class="n">get_rope_index</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">MethodType</span><span class="p">(</span><span class="n">Qwen3VLModel</span><span class="o">.</span><span class="n">get_rope_index</span><span class="p">,</span> <span class="n">processor</span><span class="p">)</span>
+            <span class="k">case</span> <span class="s2">&quot;Glm4vImageProcessor&quot;</span> <span class="o">|</span> <span class="s2">&quot;Glm4vProcessor&quot;</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">transformers.models.glm4v</span><span class="w"> </span><span class="kn">import</span> <span class="n">Glm4vModel</span>
+
+                <span class="n">processor</span><span class="o">.</span><span class="n">get_rope_index</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">MethodType</span><span class="p">(</span><span class="n">Glm4vModel</span><span class="o">.</span><span class="n">get_rope_index</span><span class="p">,</span> <span class="n">processor</span><span class="p">)</span>
+            <span class="k">case</span> <span class="s2">&quot;Glm46VProcessor&quot;</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">transformers.models.glm46v</span><span class="w"> </span><span class="kn">import</span> <span class="n">Glm46VModel</span>
+
+                <span class="n">processor</span><span class="o">.</span><span class="n">get_rope_index</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">MethodType</span><span class="p">(</span><span class="n">Glm46VModel</span><span class="o">.</span><span class="n">get_rope_index</span><span class="p">,</span> <span class="n">processor</span><span class="p">)</span>
+            <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported processor type: </span><span class="si">{</span><span class="n">processor</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">processor</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># TODO(haibin.lin): try-catch should be removed after adding transformer version req to setup.py to avoid</span>
+        <span class="c1"># silent failure</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Failed to create processor: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">. This may affect multimodal processing&quot;</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">1</span>
+        <span class="p">)</span>
+    <span class="c1"># Avoid load tokenizer, see:</span>
+    <span class="c1"># https://github.com/huggingface/transformers/blob/v4.49.0/src/transformers/models/auto/processing_auto.py#L344</span>
+    <span class="k">if</span> <span class="n">processor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s2">&quot;Processor&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">processor</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">:</span>
+        <span class="n">processor</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">processor</span></div>
+
+
+
+<span class="c1"># modified from verl/utils/fsdp_utils.py:apply_fsdp2</span>
+<span class="c1"># bug fix for transformers v5</span>
+<div class="viewcode-block" id="apply_fsdp2">
+<a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.utils.html#trinity.trainer.verl.utils.apply_fsdp2">[文档]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">apply_fsdp2</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">fsdp_kwargs</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;model: AutoModelForCausalLM&quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.fsdp_utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+        <span class="n">CPUOffloadPolicy</span><span class="p">,</span>
+        <span class="n">fully_shard</span><span class="p">,</span>
+        <span class="n">maybe_patch_fsdp_module</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="n">has_remote_code</span> <span class="o">=</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hf_config</span><span class="p">,</span> <span class="s2">&quot;auto_map&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span>
-        <span class="n">hf_config</span><span class="o">.</span><span class="n">architectures</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">val</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">hf_config</span><span class="o">.</span><span class="n">auto_map</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+    <span class="k">assert</span> <span class="p">(</span>
+        <span class="n">CPUOffloadPolicy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="p">),</span> <span class="s2">&quot;PyTorch version &gt;= 2.4 is required for using fully_shard API (FSDP2)&quot;</span>
+
+    <span class="n">default_transformer_cls_names_to_wrap</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;_no_split_modules&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">fsdp_transformer_layer_cls_to_wrap</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;wrap_policy&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+        <span class="s2">&quot;transformer_layer_cls_to_wrap&quot;</span><span class="p">,</span> <span class="n">default_transformer_cls_names_to_wrap</span>
     <span class="p">)</span>
-    <span class="k">if</span> <span class="n">has_remote_code</span><span class="p">:</span>
-        <span class="n">auto_class</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
-            <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">hf_config</span><span class="o">.</span><span class="n">auto_map</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">hf_config</span><span class="o">.</span><span class="n">architectures</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">v</span>
-        <span class="p">)</span>
-        <span class="k">match</span> <span class="n">auto_class</span><span class="p">:</span>
-            <span class="k">case</span> <span class="s2">&quot;AutoModelForVision2Seq&quot;</span><span class="p">:</span>
-                <span class="n">model_class</span> <span class="o">=</span> <span class="n">AutoModelForVision2Seq</span>
-            <span class="k">case</span> <span class="s2">&quot;AutoModelForCausalLM&quot;</span><span class="p">:</span>
-                <span class="n">model_class</span> <span class="o">=</span> <span class="n">AutoModelForCausalLM</span>
-            <span class="k">case</span> <span class="s2">&quot;AutoModelForImageTextToText&quot;</span><span class="p">:</span>
-                <span class="n">model_class</span> <span class="o">=</span> <span class="n">AutoModelForImageTextToText</span>
-            <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
-                <span class="n">model_class</span> <span class="o">=</span> <span class="n">AutoModel</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">hf_config</span><span class="p">)</span> <span class="ow">in</span> <span class="n">AutoModelForVision2Seq</span><span class="o">.</span><span class="n">_model_mapping</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="n">model_class</span> <span class="o">=</span> <span class="n">AutoModelForVision2Seq</span>
-        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">hf_config</span><span class="p">)</span> <span class="ow">in</span> <span class="n">AutoModelForCausalLM</span><span class="o">.</span><span class="n">_model_mapping</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="n">model_class</span> <span class="o">=</span> <span class="n">AutoModelForCausalLM</span>
-        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">hf_config</span><span class="p">)</span> <span class="ow">in</span> <span class="n">AutoModelForImageTextToText</span><span class="o">.</span><span class="n">_model_mapping</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="n">model_class</span> <span class="o">=</span> <span class="n">AutoModelForImageTextToText</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">model_class</span> <span class="o">=</span> <span class="n">AutoModel</span>
-    <span class="k">return</span> <span class="n">model_class</span></div>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fsdp_transformer_layer_cls_to_wrap</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">fsdp_transformer_layer_cls_to_wrap</span> <span class="o">=</span> <span class="p">[</span><span class="n">fsdp_transformer_layer_cls_to_wrap</span><span class="p">]</span>
+
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">fsdp_transformer_layer_cls_to_wrap</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+    <span class="n">modules</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">module</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">named_modules</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">module</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="ow">in</span> <span class="n">fsdp_transformer_layer_cls_to_wrap</span> <span class="ow">or</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">model</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">tie_word_embeddings</span>
+        <span class="p">):</span>
+            <span class="n">modules</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">module</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">modules</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">maybe_patch_fsdp_module</span><span class="p">(</span><span class="n">module</span><span class="p">):</span>
+            <span class="n">fully_shard</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="o">**</span><span class="n">fsdp_kwargs</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">maybe_patch_fsdp_module</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+        <span class="n">fully_shard</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">fsdp_kwargs</span><span class="p">)</span>  <span class="c1"># fsdp2 will not reshard_after_forward for root module</span></div>
 
 </pre></div>
 
