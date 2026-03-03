@@ -1003,7 +1003,7 @@ document.write(`
   <h1>trinity.common.models 源代码</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">ray</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">ray.util.placement_group</span><span class="w"> </span><span class="kn">import</span> <span class="n">placement_group</span><span class="p">,</span> <span class="n">placement_group_table</span>
@@ -1011,7 +1011,7 @@ document.write(`
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span><span class="p">,</span> <span class="n">InferenceModelConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">DEBUG_NAMESPACE</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">InferenceModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">InferenceModel</span><span class="p">,</span> <span class="n">ModelWrapper</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
 
 
@@ -1054,10 +1054,13 @@ document.write(`
 <a class="viewcode-back" href="../../../build_api/trinity.common.models.html#trinity.common.models.create_explorer_models">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">create_explorer_models</span><span class="p">(</span>
     <span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">InferenceModel</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">InferenceModel</span><span class="p">]]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create `engine_num` rollout models.</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create rollout_models and auxiliary_models.</span>
 
-<span class="sd">    Each model has `tensor_parallel_size` workers.</span>
+<span class="sd">    Args:</span>
+<span class="sd">        config: The trinity configuration.</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Tuple[List, List[List]]: The rollout_models and auxiliary_models.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
 
@@ -1086,7 +1089,7 @@ document.write(`
             <span class="p">[</span>
                 <span class="n">ray</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">engine_cls</span><span class="p">)</span>
                 <span class="o">.</span><span class="n">options</span><span class="p">(</span>
-                    <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_auxiliary_model_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_auxiliary_model_</span><span class="si">{</span><span class="n">model_config</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">i</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
                     <span class="n">namespace</span><span class="o">=</span><span class="n">namespace</span><span class="p">,</span>
                 <span class="p">)</span>
                 <span class="o">.</span><span class="n">remote</span><span class="p">(</span>
@@ -1147,7 +1150,7 @@ document.write(`
         <span class="n">engines</span> <span class="o">=</span> <span class="n">create_vllm_inference_models</span><span class="p">(</span>
             <span class="n">config</span><span class="o">=</span><span class="n">model_config</span><span class="p">,</span>
             <span class="n">allocator</span><span class="o">=</span><span class="n">allocator</span><span class="p">,</span>
-            <span class="n">actor_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_auxiliary_model_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">actor_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_auxiliary_model_</span><span class="si">{</span><span class="n">model_config</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">auxiliary_engines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">engines</span><span class="p">)</span>
 
@@ -1232,9 +1235,10 @@ document.write(`
             <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_rollout_model_0&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="n">DEBUG_NAMESPACE</span>
         <span class="p">)</span>
         <span class="n">auxiliary_models</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">)):</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">model_config</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">):</span>
             <span class="n">model</span> <span class="o">=</span> <span class="n">ray</span><span class="o">.</span><span class="n">get_actor</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_auxiliary_model_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">_0&quot;</span><span class="p">,</span> <span class="n">namespace</span><span class="o">=</span><span class="n">DEBUG_NAMESPACE</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_auxiliary_model_</span><span class="si">{</span><span class="n">model_config</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">i</span><span class="si">}</span><span class="s2">_0&quot;</span><span class="p">,</span>
+                <span class="n">namespace</span><span class="o">=</span><span class="n">DEBUG_NAMESPACE</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="n">auxiliary_models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
@@ -1243,6 +1247,52 @@ document.write(`
             <span class="s2">&quot;`trinity debug --module inference_model --config config_path` in another process.&quot;</span>
         <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
     <span class="k">return</span> <span class="n">rollout_model</span><span class="p">,</span> <span class="n">auxiliary_models</span></div>
+
+
+
+<div class="viewcode-block" id="get_auxiliary_model_wrappers">
+<a class="viewcode-back" href="../../../build_api/trinity.common.models.html#trinity.common.models.get_auxiliary_model_wrappers">[文档]</a>
+<span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_auxiliary_model_wrappers</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">ModelWrapper</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get auxiliary models.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Dict[str| int, List[ModelWrapper]]: A dictionary mapping auxiliary model</span>
+<span class="sd">            index to a list of auxiliary model actor handlers.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">:</span>
+        <span class="c1"># if no auxiliary model is configured</span>
+        <span class="c1"># return an empty dict to avoid unnecessary ray calls</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
+    <span class="n">auxiliary_models</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">ModelWrapper</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">keys</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">fetch_tasks</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">model_config</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">model_config</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="n">i</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">model_config</span><span class="o">.</span><span class="n">engine_num</span><span class="p">):</span>
+            <span class="n">keys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="n">fetch_tasks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">asyncio</span><span class="o">.</span><span class="n">to_thread</span><span class="p">(</span>
+                    <span class="n">ray</span><span class="o">.</span><span class="n">get_actor</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_auxiliary_model_</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="n">namespace</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">ray_namespace</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+
+    <span class="c1"># Run lookups off the event loop to avoid blocking when many models exist.</span>
+    <span class="n">actors</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="n">fetch_tasks</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">actor</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">actors</span><span class="p">):</span>
+        <span class="n">auxiliary_models</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ModelWrapper</span><span class="p">(</span><span class="n">actor</span><span class="p">))</span>
+
+    <span class="c1"># call prepare on all auxiliary models to make sure they are ready before returning</span>
+    <span class="n">prepare_tasks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">model_wrappers</span> <span class="ow">in</span> <span class="n">auxiliary_models</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">model_wrapper</span> <span class="ow">in</span> <span class="n">model_wrappers</span><span class="p">:</span>
+            <span class="n">prepare_tasks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model_wrapper</span><span class="o">.</span><span class="n">prepare</span><span class="p">())</span>
+    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="n">prepare_tasks</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">auxiliary_models</span><span class="p">)</span></div>
 
 </pre></div>
 

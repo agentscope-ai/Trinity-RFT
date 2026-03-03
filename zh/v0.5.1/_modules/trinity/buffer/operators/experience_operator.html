@@ -1031,10 +1031,13 @@ document.write(`
 <span></span><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">OperatorConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.experience</span><span class="w"> </span><span class="kn">import</span> <span class="n">Experience</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">openai</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncOpenAI</span>
 
 
 <div class="viewcode-block" id="ExperienceOperator">
@@ -1043,6 +1046,9 @@ document.write(`
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Base class for all experience operators in the Trinity framework.</span>
 <span class="sd">    Operators are used to process experiences and perform some transformations based on them.</span>
+
+<span class="sd">    This interface will be deprecated in the future in favor of ExperienceOperatorV1, which supports asynchronous processing and access to auxiliary models.</span>
+<span class="sd">    Do not implement new operators based on this interface. Please use ExperienceOperatorV1 instead.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="ExperienceOperator.process">
@@ -1059,36 +1065,130 @@ document.write(`
 <span class="sd">        &quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="ExperienceOperator.create_operators">
-<a class="viewcode-back" href="../../../../build_api/trinity.buffer.operators.experience_operator.html#trinity.buffer.operators.ExperienceOperator.create_operators">[文档]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">create_operators</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">operator_configs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OperatorConfig</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">ExperienceOperator</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a list of ExperienceOperator instances based on the provided operator configurations.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            operator_configs (List[OperatorConfig]): List of operator configurations.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            List[ExperienceOperator]: List of instantiated ExperienceOperator objects.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Import here to avoid circular import</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.operators</span><span class="w"> </span><span class="kn">import</span> <span class="n">EXPERIENCE_OPERATORS</span>
-
-        <span class="n">operators</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">config</span> <span class="ow">in</span> <span class="n">operator_configs</span><span class="p">:</span>
-            <span class="n">operator_class</span> <span class="o">=</span> <span class="n">EXPERIENCE_OPERATORS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">operator_class</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown operator: </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="n">operators</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">operator_class</span><span class="p">(</span><span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">args</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">operators</span></div>
-
-
 <div class="viewcode-block" id="ExperienceOperator.close">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.operators.experience_operator.html#trinity.buffer.operators.ExperienceOperator.close">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Close the operator if it has any resources to release.&quot;&quot;&quot;</span>
         <span class="k">pass</span></div>
 </div>
+
+
+
+<div class="viewcode-block" id="ExperienceOperatorV1">
+<a class="viewcode-back" href="../../../../build_api/trinity.buffer.operators.experience_operator.html#trinity.buffer.operators.ExperienceOperatorV1">[文档]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ExperienceOperatorV1</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An enhanced version of ExperienceOperator that runs asynchronously and has access to auxiliary models.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ExperienceOperatorV1.set_auxiliary_model">
+<a class="viewcode-back" href="../../../../build_api/trinity.buffer.operators.experience_operator.html#trinity.buffer.operators.ExperienceOperatorV1.set_auxiliary_model">[文档]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_auxiliary_model</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">auxiliary_models</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="s2">&quot;AsyncOpenAI&quot;</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the auxiliary models for the operator.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_models</span> <span class="o">=</span> <span class="n">auxiliary_models</span> <span class="ow">or</span> <span class="p">{}</span></div>
+
+
+<div class="viewcode-block" id="ExperienceOperatorV1.prepare">
+<a class="viewcode-back" href="../../../../build_api/trinity.buffer.operators.experience_operator.html#trinity.buffer.operators.ExperienceOperatorV1.prepare">[文档]</a>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Prepare the operator if it has any asynchronous initialization.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="ExperienceOperatorV1.process">
+<a class="viewcode-back" href="../../../../build_api/trinity.buffer.operators.experience_operator.html#trinity.buffer.operators.ExperienceOperatorV1.process">[文档]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exps</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">],</span> <span class="n">Dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process a list of experiences and return a transformed list.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            exps (List[Experience]): List of experiences to process, which contains</span>
+<span class="sd">                all experiences generated by the Explorer in one explore step.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">            Tuple[List[Experience], Dict]: A tuple containing the processed list of experiences and a dictionary of metrics.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="ExperienceOperatorV1.close">
+<a class="viewcode-back" href="../../../../build_api/trinity.buffer.operators.experience_operator.html#trinity.buffer.operators.ExperienceOperatorV1.close">[文档]</a>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Close the operator if it has any resources to release.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ExperienceOperatorV1Wrapper">
+<a class="viewcode-back" href="../../../../build_api/trinity.buffer.operators.experience_operator.html#trinity.buffer.operators.ExperienceOperatorV1Wrapper">[文档]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ExperienceOperatorV1Wrapper</span><span class="p">(</span><span class="n">ExperienceOperatorV1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Adapt a legacy ExperienceOperator to the ExperienceOperatorV1 async interface.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ExperienceOperatorV1Wrapper.__init__">
+<a class="viewcode-back" href="../../../../build_api/trinity.buffer.operators.experience_operator.html#trinity.buffer.operators.ExperienceOperatorV1Wrapper.__init__">[文档]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">operator</span><span class="p">:</span> <span class="n">ExperienceOperator</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">operator</span> <span class="o">=</span> <span class="n">operator</span></div>
+
+
+<div class="viewcode-block" id="ExperienceOperatorV1Wrapper.process">
+<a class="viewcode-back" href="../../../../build_api/trinity.buffer.operators.experience_operator.html#trinity.buffer.operators.ExperienceOperatorV1Wrapper.process">[文档]</a>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exps</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">],</span> <span class="n">Dict</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">exps</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ExperienceOperatorV1Wrapper.close">
+<a class="viewcode-back" href="../../../../build_api/trinity.buffer.operators.experience_operator.html#trinity.buffer.operators.ExperienceOperatorV1Wrapper.close">[文档]</a>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">operator</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ensure_v1_operator">
+<a class="viewcode-back" href="../../../../build_api/trinity.buffer.operators.experience_operator.html#trinity.buffer.operators.ensure_v1_operator">[文档]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ensure_v1_operator</span><span class="p">(</span><span class="n">operator</span><span class="p">:</span> <span class="n">ExperienceOperator</span> <span class="o">|</span> <span class="n">ExperienceOperatorV1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ExperienceOperatorV1</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Ensure the operator exposes ExperienceOperatorV1 interface.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">operator</span><span class="p">,</span> <span class="n">ExperienceOperatorV1</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">operator</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">operator</span><span class="p">,</span> <span class="n">ExperienceOperator</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">ExperienceOperatorV1Wrapper</span><span class="p">(</span><span class="n">operator</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported operator instance type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">operator</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="create_operators">
+<a class="viewcode-back" href="../../../../build_api/trinity.buffer.operators.experience_operator.html#trinity.buffer.operators.create_operators">[文档]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_operators</span><span class="p">(</span>
+    <span class="n">operator_configs</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">OperatorConfig</span><span class="p">],</span>
+    <span class="n">auxiliary_models</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="s2">&quot;AsyncOpenAI&quot;</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">ExperienceOperatorV1</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a list of ExperienceOperatorV1 instances based on the provided operator configurations.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        operator_configs (List[OperatorConfig]): List of operator configurations.</span>
+<span class="sd">        auxiliary_models (Dict[str | int, List[&quot;AsyncOpenAI&quot;]], optional): A dictionary of auxiliary</span>
+<span class="sd">            models that can be used by the operators. The keys are model identifiers and the values</span>
+<span class="sd">            are lists of openai.AsyncOpenAI instances. Defaults to None.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List[ExperienceOperatorV1]: List of instantiated ExperienceOperatorV1 objects.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.operators</span><span class="w"> </span><span class="kn">import</span> <span class="n">EXPERIENCE_OPERATORS</span>
+
+    <span class="n">operators</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">config</span> <span class="ow">in</span> <span class="n">operator_configs</span><span class="p">:</span>
+        <span class="n">operator_class</span> <span class="o">=</span> <span class="n">EXPERIENCE_OPERATORS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">operator_class</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown operator: </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span>
+            <span class="nb">issubclass</span><span class="p">(</span><span class="n">operator_class</span><span class="p">,</span> <span class="n">ExperienceOperatorV1</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">operator_class</span><span class="p">,</span> <span class="n">ExperienceOperator</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown operator type: </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="n">operator</span> <span class="o">=</span> <span class="n">ensure_v1_operator</span><span class="p">(</span><span class="n">operator_class</span><span class="p">(</span><span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">args</span><span class="p">))</span>
+        <span class="n">operator</span><span class="o">.</span><span class="n">set_auxiliary_model</span><span class="p">(</span><span class="n">auxiliary_models</span><span class="p">)</span>
+        <span class="n">operators</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">operator</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">operators</span></div>
 
 </pre></div>
 

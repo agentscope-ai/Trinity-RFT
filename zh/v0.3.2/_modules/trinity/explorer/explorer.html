@@ -1199,10 +1199,6 @@ document.write(`
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Preparation before running.&quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="c1"># prepare experience pipeline</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">experience_pipeline</span><span class="p">:</span>
-                <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">experience_pipeline</span><span class="o">.</span><span class="n">prepare</span><span class="o">.</span><span class="n">remote</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Experience pipeline is ready.&quot;</span><span class="p">)</span>
             <span class="c1"># make sure all rollout models are ready</span>
             <span class="n">run_api_ref</span> <span class="o">=</span> <span class="p">[</span><span class="n">model</span><span class="o">.</span><span class="n">prepare</span><span class="o">.</span><span class="n">remote</span><span class="p">()</span> <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">]</span>
             <span class="n">run_api_ref</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
@@ -1210,7 +1206,10 @@ document.write(`
             <span class="p">)</span>
             <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="n">run_api_ref</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;All models are ready.&quot;</span><span class="p">)</span>
-
+            <span class="c1"># prepare experience pipeline</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">experience_pipeline</span><span class="p">:</span>
+                <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">experience_pipeline</span><span class="o">.</span><span class="n">prepare</span><span class="o">.</span><span class="n">remote</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Experience pipeline is ready.&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_nccl_sync</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">!=</span> <span class="s2">&quot;tinker&quot;</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;serve&quot;</span><span class="p">:</span>
                     <span class="c1"># In serving mode, each engine will setup its own process group</span>
@@ -1220,6 +1219,7 @@ document.write(`
                         <span class="mi">0</span>
                     <span class="p">]</span><span class="o">.</span><span class="n">get_available_address</span><span class="o">.</span><span class="n">remote</span><span class="p">()</span>
                     <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_weight_sync_group</span><span class="p">(</span><span class="n">master_address</span><span class="p">,</span> <span class="n">master_port</span><span class="p">)</span>
+
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">!=</span> <span class="s2">&quot;serve&quot;</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">scheduler</span> <span class="o">=</span> <span class="n">Scheduler</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">)</span>
                 <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">scheduler</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
@@ -1489,6 +1489,13 @@ document.write(`
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">monitor</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">monitor</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">monitor</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">handlers</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">:</span>
+            <span class="n">handlers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">shutdown</span><span class="o">.</span><span class="n">remote</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">auxiliary_model_list</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">auxiliary_model_list</span><span class="p">:</span>
+                <span class="n">handlers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">shutdown</span><span class="o">.</span><span class="n">remote</span><span class="p">())</span>
+        <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="n">handlers</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;Explorer (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">) shutdown successfully at step </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span><span class="si">}</span><span class="s2">.&quot;</span>
         <span class="p">)</span></div>
@@ -1505,6 +1512,8 @@ document.write(`
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Init experience pipeline for the explorer.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;bench&quot;</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
+        <span class="c1"># place the pipeline on the same node as the explorer to</span>
+        <span class="c1"># avoid unnecessary data transfer between nodes</span>
         <span class="n">node_id</span> <span class="o">=</span> <span class="n">ray</span><span class="o">.</span><span class="n">get_runtime_context</span><span class="p">()</span><span class="o">.</span><span class="n">get_node_id</span><span class="p">()</span>
         <span class="k">return</span> <span class="p">(</span>
             <span class="n">ray</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">ExperiencePipeline</span><span class="p">)</span>
