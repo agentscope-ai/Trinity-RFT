@@ -63,14 +63,16 @@ class vLLMRolloutModel(BaseInferenceModel):
             os.environ["VLLM_CACHE_ROOT"] = os.path.expanduser(
                 f"~/.cache/vllm/{config.bundle_indices}"
             )
+        self.tokenization_kwargs = {
+            "truncate_prompt_tokens": config.max_prompt_tokens
+            if config.enable_prompt_truncation
+            else None
+        }
         self.default_sampling_params = vllm.SamplingParams(
             n=1,
             temperature=config.temperature,
             max_tokens=config.max_response_tokens,
             min_tokens=config.min_response_tokens,
-            truncate_prompt_tokens=(
-                config.max_prompt_tokens if config.enable_prompt_truncation else None
-            ),
             skip_special_tokens=True,
             include_stop_str_in_output=False,
             output_kind=RequestOutputKind.FINAL_ONLY,
@@ -78,6 +80,7 @@ class vLLMRolloutModel(BaseInferenceModel):
             top_p=config.top_p,
             top_k=config.top_k,
             ignore_eos=config.ignore_eos,
+            **(self.tokenization_kwargs if self.vllm_version <= parse_version("0.16.0") else {}),
         )
         self.ray_namespace = config.ray_namespace
         self.request_id = 0
@@ -417,11 +420,17 @@ class vLLMRolloutModel(BaseInferenceModel):
     async def _generate_internal(self, prompt: Any, lora_request=None, **kwargs) -> Any:
         # Send the request to the LLM engine.
         self.request_id += 1
+        generate_kwargs = (
+            {"tokenization_kwargs": self.tokenization_kwargs}
+            if self.vllm_version > parse_version("0.16.0")
+            else {}
+        )
         stream = self.async_llm.generate(
             request_id=str(self.request_id),
             prompt=prompt,
             sampling_params=self._create_sampling_params(**kwargs),
             lora_request=lora_request,
+            **generate_kwargs,
         )
 
         # Consume the stream until the request is finished.

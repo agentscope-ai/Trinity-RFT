@@ -1,9 +1,76 @@
+import importlib
 import sys
+from typing import Dict, Optional, Set
 
 import torch
 from transformers.modeling_utils import PreTrainedModel
 
 from trinity.utils.log import get_logger
+
+# Map model types to their specific implementation modules.
+# To extend support for a new model, simply add an entry here.
+MODEL_TYPE_TO_MODULE_MAP: Dict[str, str] = {
+    "qwen2_5_vl": "verl.models.transformers.qwen2_vl",
+    "qwen2_vl": "verl.models.transformers.qwen2_vl",
+    "qwen3_vl": "verl.models.transformers.qwen3_vl",
+    "qwen3_vl_moe": "verl.models.transformers.qwen3_vl",
+    "qwen3_5": "trinity.common.patch.qwen3_5",
+    "qwen3_5_moe": "trinity.common.patch.qwen3_5",
+    "glm4v": "verl.models.transformers.glm4v",
+}
+
+DEFAULT_MODULE_PATH = "verl.models.transformers.dense_common"
+VALID_BACKENDS: Set[str] = {"triton", "torch"}
+
+
+# modified from verl.models.transformers.monkey_patch.patch_forward_with_backends
+def patch_forward_with_backends(
+    model: PreTrainedModel,
+    use_fused_kernels: bool = False,
+    fused_kernels_backend: Optional[str] = None,
+) -> None:
+    """
+    Monkey-patch the model's forward method with optimized backend implementations.
+
+    Args:
+        model: The model to patch.
+        use_fused_kernels: Whether to enable fused kernels.
+        fused_kernels_backend: The backend to use ('triton' or 'torch').
+    """
+    logger = get_logger(__name__)
+
+    # 1. Validation & Early Exit
+    if not use_fused_kernels:
+        return
+
+    if fused_kernels_backend not in VALID_BACKENDS:
+        logger.warning(
+            f"Skipping patch for {model.__class__.__name__}: "
+            f"Invalid backend '{fused_kernels_backend}'. Choose from {VALID_BACKENDS}."
+        )
+        return
+
+    # 2. Resolve Module Path
+    model_type: str = getattr(model.config, "model_type", None)
+    module_path = MODEL_TYPE_TO_MODULE_MAP.get(model_type, DEFAULT_MODULE_PATH)
+
+    # 3. Dynamic Import
+    try:
+        backend_module = importlib.import_module(module_path)
+    except ImportError as e:
+        logger.error(f"Failed to import {module_path} for {model.__class__.__name__}: {e}")
+        return
+
+    # 4. Select and Apply Forward Function
+    func_name = f"forward_with_{fused_kernels_backend}_backend"
+    patched_forward = getattr(backend_module, func_name, None)
+
+    if patched_forward is None:
+        logger.error(f"Function '{func_name}' not found in {module_path}")
+        return
+
+    model.__class__.forward = patched_forward
+    logger.info(f"Applied {fused_kernels_backend.upper()} backend for {model.__class__.__name__}")
 
 
 # modified from verl.models.transformers.monkey_patch.apply_monkey_patch
@@ -33,7 +100,6 @@ def apply_monkey_patch(  # noqa: C901
     """
     from verl.models.transformers.monkey_patch import (
         _ulysses_flash_attention_forward,
-        patch_forward_with_backends,
         patch_vlm_for_ulysses_input_slicing,
     )
     from verl.utils.import_utils import is_trl_available
@@ -126,6 +192,53 @@ def apply_monkey_patch(  # noqa: C901
         if ulysses_sp_size > 1:
             patch_vlm_for_ulysses_input_slicing(Qwen3VLTextModel)
             patch_vlm_for_ulysses_input_slicing(Qwen3VLMoeTextModel)
+
+    elif model.config.model_type in ["qwen3_5", "qwen3_5_moe"]:
+        from transformers.models.qwen3_5.modeling_qwen3_5 import Qwen3_5TextModel
+        from transformers.models.qwen3_5_moe.modeling_qwen3_5_moe import (
+            Qwen3_5MoeTextModel,
+        )
+
+        # Step 1: bug fix in transformers==5.2.0
+        # see https://github.com/huggingface/transformers/pull/44382
+        if "Qwen3_5TextDecoderLayer" in model._no_split_modules:
+            model._no_split_modules.remove("Qwen3_5TextDecoderLayer")
+            model.model._no_split_modules.remove("Qwen3_5TextDecoderLayer")
+        if "Qwen3_5MoeTextDecoderLayer" in model._no_split_modules:
+            model._no_split_modules.remove("Qwen3_5MoeTextDecoderLayer")
+            model.model._no_split_modules.remove("Qwen3_5MoeTextDecoderLayer")
+
+        # see https://github.com/huggingface/transformers/pull/44399
+        if is_transformers_version_in_range(max_version="5.2.0"):
+            from trinity.common.patch.qwen3_5 import qwen35_text_forward
+
+            Qwen3_5TextModel.forward = qwen35_text_forward
+            Qwen3_5MoeTextModel.forward = qwen35_text_forward
+
+        # Step 2: patch input for multimodal sequence parallelism
+        if ulysses_sp_size > 1:
+            patch_vlm_for_ulysses_input_slicing(Qwen3_5TextModel)
+            patch_vlm_for_ulysses_input_slicing(Qwen3_5MoeTextModel)
+
+            from trinity.common.patch.qwen3_5 import (
+                ulysses_gated_delta_net_forward_decorator,
+            )
+
+            for layer in model.model.language_model.layers:
+                if layer.layer_type == "linear_attention":
+                    layer.linear_attn.forward = ulysses_gated_delta_net_forward_decorator(
+                        layer.linear_attn.forward
+                    )
+
+        # Step 3: patch verl.utils.flops_counter
+        from verl.utils.flops_counter import ESTIMATE_FUNC, _estimate_qwen2_flops
+
+        ESTIMATE_FUNC.update(
+            {
+                "qwen3_5": _estimate_qwen2_flops,
+                "qwen3_5_moe": _estimate_qwen2_flops,
+            }
+        )
 
     elif model.config.model_type == "glm4v":
         # Step 1: patch model to support image-text mixed data
