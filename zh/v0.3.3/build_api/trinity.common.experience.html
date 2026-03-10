@@ -16,30 +16,33 @@
     document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
     document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
   </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-<link href="../_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-
-  
-  <link href="../_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="../_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=3c74b3bc" />
   
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
-  <script src="../_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="../_static/documentation_options.js?v=c79d47ac"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script src="../_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=fab101a9"></script>
     <script src="../_static/translations.js?v=beaddf03"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'build_api/trinity.common.experience';</script>
     <link rel="index" title="索引" href="../genindex.html" />
@@ -48,6 +51,7 @@
     <link rel="prev" title="trinity.common.constants module" href="trinity.common.constants.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="zh-CN"/>
+  <meta name="docsearch:version" content="0.5.1" />
   </head>
   
   
@@ -55,27 +59,16 @@
 
   
   
-  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">跳转至主要内容</a></div>
   
   <div id="pst-scroll-pixel-helper"></div>
   
   <button type="button" class="btn rounded-pill" id="pst-back-to-top">
-    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+    <i class="fa-solid fa-arrow-up"></i>回到顶部</button>
 
   
-  <input type="checkbox"
-          class="sidebar-toggle"
-          id="pst-primary-sidebar-checkbox"/>
-  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
-  
-  <input type="checkbox"
-          class="sidebar-toggle"
-          id="pst-secondary-sidebar-checkbox"/>
-  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
-  
-  <div class="search-button__wrapper">
-    <div class="search-button__overlay"></div>
-    <div class="search-button__search-container">
+  <dialog id="pst-search-dialog">
+    
 <form class="bd-search d-flex align-items-center"
       action="../search.html"
       method="get">
@@ -83,7 +76,6 @@
   <input type="search"
          class="form-control"
          name="q"
-         id="search-input"
          placeholder="Search..."
          aria-label="Search..."
          autocomplete="off"
@@ -91,11 +83,11 @@
          autocapitalize="off"
          spellcheck="false"/>
   <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
-</form></div>
-  </div>
+</form>
+  </dialog>
 
   <div class="pst-async-banner-revealer d-none">
-  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="版本警告"></aside>
 </div>
 
   
@@ -108,7 +100,8 @@
       
       
       
-      <div class="bd-sidebar-primary bd-sidebar">
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
         
 
   
@@ -138,7 +131,7 @@
     
     
     <img src="../_static/logo.svg" class="logo__image only-light" alt="Trinity-RFT 0.5.1 文档 - Home"/>
-    <script>document.write(`<img src="../_static/logo.svg" class="logo__image only-dark" alt="Trinity-RFT 0.5.1 文档 - Home"/>`);</script>
+    <img src="../_static/logo.svg" class="logo__image only-dark pst-js-only" alt="Trinity-RFT 0.5.1 文档 - Home"/>
   
   
 </a></div>
@@ -172,15 +165,11 @@
 </div>
         <div class="sidebar-primary-item">
 
- <script>
- document.write(`
-   <button class="btn search-button-field search-button__button" title="搜索" aria-label="搜索" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
-    <span class="search-button__default-text">搜索</span>
-    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
-   </button>
- `);
- </script></div>
+<button class="btn search-button-field search-button__button pst-js-only" title="搜索" aria-label="搜索" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">搜索</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button></div>
         <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
     <div class="bd-toc-item navbar-nav active">
         <p aria-level="2" class="caption" role="heading"><span class="caption-text">教程</span></p>
@@ -423,9 +412,14 @@
   
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
   </div>
-  
-  <div id="rtd-footer-container"></div>
 
 
       </div>
@@ -559,7 +553,7 @@
 
 
 <button onclick="toggleFullScreen()"
-  class="btn btn-sm btn-fullscreen-button"
+  class="btn btn-sm btn-fullscreen-button pst-navbar-icon"
   title="全屏模式"
   data-bs-placement="bottom" data-bs-toggle="tooltip"
 >
@@ -573,25 +567,17 @@
 
 
 
-<script>
-document.write(`
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
-    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
-    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
-  </button>
-`);
-</script>
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="亮色"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="暗色"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button>
 
 
-<script>
-document.write(`
-  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="搜索" aria-label="搜索" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="搜索" aria-label="搜索" data-bs-placement="bottom" data-bs-toggle="tooltip">
     <i class="fa-solid fa-magnifying-glass fa-lg"></i>
-  </button>
-`);
-</script>
-<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+</button>
+<button class="sidebar-toggle secondary-toggle btn btn-sm pst-navbar-icon" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
     <span class="fa-solid fa-list"></span>
 </button>
 </div></div>
@@ -662,31 +648,12 @@ document.write(`
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experience.custom_fields"><code class="docutils literal notranslate"><span class="pre">Experience.custom_fields</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experience.serialize"><code class="docutils literal notranslate"><span class="pre">Experience.serialize()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experience.deserialize"><code class="docutils literal notranslate"><span class="pre">Experience.deserialize()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experience.serialize_many"><code class="docutils literal notranslate"><span class="pre">Experience.serialize_many()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experience.deserialize_many"><code class="docutils literal notranslate"><span class="pre">Experience.deserialize_many()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experience.to_dict"><code class="docutils literal notranslate"><span class="pre">Experience.to_dict()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experience.gather"><code class="docutils literal notranslate"><span class="pre">Experience.gather()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.split_dpo_experience_to_single_turn"><code class="docutils literal notranslate"><span class="pre">split_dpo_experience_to_single_turn()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences"><code class="docutils literal notranslate"><span class="pre">Experiences</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.__init__"><code class="docutils literal notranslate"><span class="pre">Experiences.__init__()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.eids"><code class="docutils literal notranslate"><span class="pre">Experiences.eids</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.tokens"><code class="docutils literal notranslate"><span class="pre">Experiences.tokens</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.rewards"><code class="docutils literal notranslate"><span class="pre">Experiences.rewards</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.token_level_rewards"><code class="docutils literal notranslate"><span class="pre">Experiences.token_level_rewards</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.advantages"><code class="docutils literal notranslate"><span class="pre">Experiences.advantages</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.returns"><code class="docutils literal notranslate"><span class="pre">Experiences.returns</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.attention_masks"><code class="docutils literal notranslate"><span class="pre">Experiences.attention_masks</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.action_masks"><code class="docutils literal notranslate"><span class="pre">Experiences.action_masks</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.prompt_length"><code class="docutils literal notranslate"><span class="pre">Experiences.prompt_length</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.logprobs"><code class="docutils literal notranslate"><span class="pre">Experiences.logprobs</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.multi_modal_inputs"><code class="docutils literal notranslate"><span class="pre">Experiences.multi_modal_inputs</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.custom_fields"><code class="docutils literal notranslate"><span class="pre">Experiences.custom_fields</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.teacher_logprobs"><code class="docutils literal notranslate"><span class="pre">Experiences.teacher_logprobs</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.batch_size"><code class="docutils literal notranslate"><span class="pre">Experiences.batch_size</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.gather_experiences"><code class="docutils literal notranslate"><span class="pre">Experiences.gather_experiences()</span></code></a></li>
-</ul>
-</li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.empty_experiences"><code class="docutils literal notranslate"><span class="pre">empty_experiences()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.gather_token_ids"><code class="docutils literal notranslate"><span class="pre">gather_token_ids()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.gather_action_masks"><code class="docutils literal notranslate"><span class="pre">gather_action_masks()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.gather_attention_masks"><code class="docutils literal notranslate"><span class="pre">gather_attention_masks()</span></code></a></li>
@@ -944,136 +911,31 @@ document.write(`
 <dd></dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="trinity.common.experience.Experience.serialize_many">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">serialize_many</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiences</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#trinity.common.experience.Experience" title="trinity.common.experience.Experience"><span class="pre">Experience</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bytes</span></span></span><a class="reference internal" href="../_modules/trinity/common/experience.html#Experience.serialize_many"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.experience.Experience.serialize_many" title="Link to this definition">#</a></dt>
+<dd><p>Serialize a list of experiences into a compact bytes payload.</p>
+<p>Tensor fields are packed with safetensors while non-tensor fields are packed
+as metadata via pickle.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.common.experience.Experience.deserialize_many">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">deserialize_many</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bytes</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#trinity.common.experience.Experience" title="trinity.common.experience.Experience"><span class="pre">Experience</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/trinity/common/experience.html#Experience.deserialize_many"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.experience.Experience.deserialize_many" title="Link to this definition">#</a></dt>
+<dd><p>Deserialize bytes into a list of experiences.</p>
+<p>Supports both new batched payloads and legacy single-experience pickle payloads.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="trinity.common.experience.Experience.to_dict">
 <span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="../_modules/trinity/common/experience.html#Experience.to_dict"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.experience.Experience.to_dict" title="Link to this definition">#</a></dt>
 <dd><p>Convert the experience to a dictionary.</p>
 </dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="trinity.common.experience.Experience.gather">
-<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">gather</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiences</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#trinity.common.experience.Experience" title="trinity.common.experience.Experience"><span class="pre">Experience</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad_token_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_fields</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#trinity.common.experience.CustomField" title="trinity.common.experience.CustomField"><span class="pre">CustomField</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#trinity.common.experience.Experiences" title="trinity.common.experience.Experiences"><span class="pre">Experiences</span></a></span></span><a class="reference internal" href="../_modules/trinity/common/experience.html#Experience.gather"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.experience.Experience.gather" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="trinity.common.experience.split_dpo_experience_to_single_turn">
 <span class="sig-prename descclassname"><span class="pre">trinity.common.experience.</span></span><span class="sig-name descname"><span class="pre">split_dpo_experience_to_single_turn</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiences</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#trinity.common.experience.Experience" title="trinity.common.experience.Experience"><span class="pre">Experience</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#trinity.common.experience.Experience" title="trinity.common.experience.Experience"><span class="pre">Experience</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/trinity/common/experience.html#split_dpo_experience_to_single_turn"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.experience.split_dpo_experience_to_single_turn" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="trinity.common.experience.Experiences">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">trinity.common.experience.</span></span><span class="sig-name descname"><span class="pre">Experiences</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">eids:</span> <span class="pre">~typing.List[~trinity.common.experience.EID],</span> <span class="pre">tokens:</span> <span class="pre">~torch.Tensor,</span> <span class="pre">rewards:</span> <span class="pre">~torch.Tensor,</span> <span class="pre">token_level_rewards:</span> <span class="pre">~torch.Tensor,</span> <span class="pre">advantages:</span> <span class="pre">~torch.Tensor</span> <span class="pre">|</span> <span class="pre">None,</span> <span class="pre">returns:</span> <span class="pre">~torch.Tensor</span> <span class="pre">|</span> <span class="pre">None,</span> <span class="pre">attention_masks:</span> <span class="pre">~torch.Tensor,</span> <span class="pre">action_masks:</span> <span class="pre">~torch.Tensor</span> <span class="pre">|</span> <span class="pre">None,</span> <span class="pre">prompt_length:</span> <span class="pre">int,</span> <span class="pre">logprobs:</span> <span class="pre">~torch.Tensor</span> <span class="pre">|</span> <span class="pre">None,</span> <span class="pre">multi_modal_inputs:</span> <span class="pre">~typing.Any</span> <span class="pre">|</span> <span class="pre">None,</span> <span class="pre">custom_fields:</span> <span class="pre">~typing.List[str]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">teacher_logprobs:</span> <span class="pre">~torch.Tensor</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/common/experience.html#Experiences"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.experience.Experiences" title="Link to this definition">#</a></dt>
-<dd><p>基类：<code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>A container for a batch of experiences, for high performance communication usage.</p>
-<p class="rubric">示例</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span>            <span class="o">|&lt;-</span> <span class="n">prompt_length</span> <span class="o">-&gt;|</span>               <span class="o">|</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">tokens</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;P&#39;</span> <span class="n">represents</span> <span class="n">prompt</span><span class="p">,</span> <span class="s1">&#39;O&#39;</span> <span class="n">represents</span> <span class="n">output</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">exp1</span><span class="p">:</span>       <span class="o">|........</span><span class="n">PPPPPPPPPPP</span><span class="o">|</span><span class="n">OOOOOOOOOO</span><span class="o">.....|</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">exp2</span><span class="p">:</span>       <span class="o">|......</span><span class="n">PPPPPPPPPPPPP</span><span class="o">|</span><span class="n">OOOOOOO</span><span class="o">........|</span>
-<span class="gp">&gt;&gt;&gt;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">attention_masks</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;.&#39;</span> <span class="n">represents</span> <span class="kc">False</span> <span class="ow">and</span> <span class="s1">&#39;1&#39;</span> <span class="n">represents</span> <span class="kc">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">exp1</span><span class="p">:</span>       <span class="o">|.......</span><span class="mf">.11111111111</span><span class="o">|</span><span class="mf">1111111111.</span><span class="o">....|</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">exp2</span><span class="p">:</span>       <span class="o">|.....</span><span class="mf">.1111111111111</span><span class="o">|</span><span class="mf">1111111.</span><span class="o">.......|</span>
-</pre></div>
-</div>
-<dl class="py method">
-<dt class="sig sig-object py" id="trinity.common.experience.Experiences.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">eids:</span> <span class="pre">~typing.List[~trinity.common.experience.EID],</span> <span class="pre">tokens:</span> <span class="pre">~torch.Tensor,</span> <span class="pre">rewards:</span> <span class="pre">~torch.Tensor,</span> <span class="pre">token_level_rewards:</span> <span class="pre">~torch.Tensor,</span> <span class="pre">advantages:</span> <span class="pre">~torch.Tensor</span> <span class="pre">|</span> <span class="pre">None,</span> <span class="pre">returns:</span> <span class="pre">~torch.Tensor</span> <span class="pre">|</span> <span class="pre">None,</span> <span class="pre">attention_masks:</span> <span class="pre">~torch.Tensor,</span> <span class="pre">action_masks:</span> <span class="pre">~torch.Tensor</span> <span class="pre">|</span> <span class="pre">None,</span> <span class="pre">prompt_length:</span> <span class="pre">int,</span> <span class="pre">logprobs:</span> <span class="pre">~torch.Tensor</span> <span class="pre">|</span> <span class="pre">None,</span> <span class="pre">multi_modal_inputs:</span> <span class="pre">~typing.Any</span> <span class="pre">|</span> <span class="pre">None,</span> <span class="pre">custom_fields:</span> <span class="pre">~typing.List[str]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">teacher_logprobs:</span> <span class="pre">~torch.Tensor</span> <span class="pre">|</span> <span class="pre">None</span> <span class="pre">=</span> <span class="pre">None</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#trinity.common.experience.Experiences.__init__" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="trinity.common.experience.Experiences.eids">
-<span class="sig-name descname"><span class="pre">eids</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#trinity.common.experience.EID" title="trinity.common.experience.EID"><span class="pre">EID</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#trinity.common.experience.Experiences.eids" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="trinity.common.experience.Experiences.tokens">
-<span class="sig-name descname"><span class="pre">tokens</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#trinity.common.experience.Experiences.tokens" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="trinity.common.experience.Experiences.rewards">
-<span class="sig-name descname"><span class="pre">rewards</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#trinity.common.experience.Experiences.rewards" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="trinity.common.experience.Experiences.token_level_rewards">
-<span class="sig-name descname"><span class="pre">token_level_rewards</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#trinity.common.experience.Experiences.token_level_rewards" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="trinity.common.experience.Experiences.advantages">
-<span class="sig-name descname"><span class="pre">advantages</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#trinity.common.experience.Experiences.advantages" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="trinity.common.experience.Experiences.returns">
-<span class="sig-name descname"><span class="pre">returns</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#trinity.common.experience.Experiences.returns" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="trinity.common.experience.Experiences.attention_masks">
-<span class="sig-name descname"><span class="pre">attention_masks</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span></em><a class="headerlink" href="#trinity.common.experience.Experiences.attention_masks" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="trinity.common.experience.Experiences.action_masks">
-<span class="sig-name descname"><span class="pre">action_masks</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#trinity.common.experience.Experiences.action_masks" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="trinity.common.experience.Experiences.prompt_length">
-<span class="sig-name descname"><span class="pre">prompt_length</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#trinity.common.experience.Experiences.prompt_length" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="trinity.common.experience.Experiences.logprobs">
-<span class="sig-name descname"><span class="pre">logprobs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#trinity.common.experience.Experiences.logprobs" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="trinity.common.experience.Experiences.multi_modal_inputs">
-<span class="sig-name descname"><span class="pre">multi_modal_inputs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Any</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#trinity.common.experience.Experiences.multi_modal_inputs" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="trinity.common.experience.Experiences.custom_fields">
-<span class="sig-name descname"><span class="pre">custom_fields</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#trinity.common.experience.Experiences.custom_fields" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="trinity.common.experience.Experiences.teacher_logprobs">
-<span class="sig-name descname"><span class="pre">teacher_logprobs</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#trinity.common.experience.Experiences.teacher_logprobs" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="trinity.common.experience.Experiences.batch_size">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">batch_size</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#trinity.common.experience.Experiences.batch_size" title="Link to this definition">#</a></dt>
-<dd><p>Get the batch size.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="trinity.common.experience.Experiences.gather_experiences">
-<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">gather_experiences</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">experiences</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#trinity.common.experience.Experience" title="trinity.common.experience.Experience"><span class="pre">Experience</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad_token_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_fields</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#trinity.common.experience.CustomField" title="trinity.common.experience.CustomField"><span class="pre">CustomField</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#trinity.common.experience.Experiences" title="trinity.common.experience.Experiences"><span class="pre">Experiences</span></a></span></span><a class="reference internal" href="../_modules/trinity/common/experience.html#Experiences.gather_experiences"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.experience.Experiences.gather_experiences" title="Link to this definition">#</a></dt>
-<dd><p>Gather a batch of experiences from a list of experiences.</p>
-<p>This method will automatically pad the <cite>tokens</cite> and <cite>logprobs</cite> of input experiences to the same length.</p>
-<dl class="field-list simple">
-<dt class="field-odd">参数<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>experiences</strong> (<em>list</em><em>[</em><a class="reference internal" href="#trinity.common.experience.Experience" title="trinity.common.experience.Experience"><em>Experience</em></a><em>]</em>) -- A list of experiences to gather.</p></li>
-<li><p><strong>pad_token_id</strong> (<em>int</em>) -- The token ID to use for padding. Default is 0.</p></li>
-<li><p><strong>custom_fields</strong> (<em>Optional</em><em>[</em><em>List</em><em>[</em><a class="reference internal" href="#trinity.common.experience.CustomField" title="trinity.common.experience.CustomField"><em>CustomField</em></a><em>]</em><em>]</em>) -- Custom fields to include in the gathered experiences.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="trinity.common.experience.empty_experiences">
-<span class="sig-prename descclassname"><span class="pre">trinity.common.experience.</span></span><span class="sig-name descname"><span class="pre">empty_experiences</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">custom_fields</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#trinity.common.experience.CustomField" title="trinity.common.experience.CustomField"><span class="pre">CustomField</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#trinity.common.experience.Experiences" title="trinity.common.experience.Experiences"><span class="pre">Experiences</span></a></span></span><a class="reference internal" href="../_modules/trinity/common/experience.html#empty_experiences"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.experience.empty_experiences" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
@@ -1135,7 +997,7 @@ preserving all fields.</p>
 <div class="prev-next-area">
     <a class="left-prev"
        href="trinity.common.constants.html"
-       title="previous page">
+       title="上一页">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">上一页</p>
@@ -1144,7 +1006,7 @@ preserving all fields.</p>
     </a>
     <a class="right-next"
        href="trinity.common.verl_config.html"
-       title="next page">
+       title="下一页">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">下一页</p>
         <p class="prev-next-title">trinity.common.verl_config module</p>
@@ -1158,14 +1020,16 @@ preserving all fields.</p>
             
             
               
-                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
 
 
-  <div class="sidebar-secondary-item">
-  <div class="page-toc tocsection onthispage">
+  <div class="sidebar-secondary-item"><div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
     <i class="fa-solid fa-list"></i> 目录
   </div>
-  <nav class="bd-toc-nav page-toc">
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.EID"><code class="docutils literal notranslate"><span class="pre">EID</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.EID.batch"><code class="docutils literal notranslate"><span class="pre">EID.batch</span></code></a></li>
@@ -1215,31 +1079,12 @@ preserving all fields.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experience.custom_fields"><code class="docutils literal notranslate"><span class="pre">Experience.custom_fields</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experience.serialize"><code class="docutils literal notranslate"><span class="pre">Experience.serialize()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experience.deserialize"><code class="docutils literal notranslate"><span class="pre">Experience.deserialize()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experience.serialize_many"><code class="docutils literal notranslate"><span class="pre">Experience.serialize_many()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experience.deserialize_many"><code class="docutils literal notranslate"><span class="pre">Experience.deserialize_many()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experience.to_dict"><code class="docutils literal notranslate"><span class="pre">Experience.to_dict()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experience.gather"><code class="docutils literal notranslate"><span class="pre">Experience.gather()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.split_dpo_experience_to_single_turn"><code class="docutils literal notranslate"><span class="pre">split_dpo_experience_to_single_turn()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences"><code class="docutils literal notranslate"><span class="pre">Experiences</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.__init__"><code class="docutils literal notranslate"><span class="pre">Experiences.__init__()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.eids"><code class="docutils literal notranslate"><span class="pre">Experiences.eids</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.tokens"><code class="docutils literal notranslate"><span class="pre">Experiences.tokens</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.rewards"><code class="docutils literal notranslate"><span class="pre">Experiences.rewards</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.token_level_rewards"><code class="docutils literal notranslate"><span class="pre">Experiences.token_level_rewards</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.advantages"><code class="docutils literal notranslate"><span class="pre">Experiences.advantages</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.returns"><code class="docutils literal notranslate"><span class="pre">Experiences.returns</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.attention_masks"><code class="docutils literal notranslate"><span class="pre">Experiences.attention_masks</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.action_masks"><code class="docutils literal notranslate"><span class="pre">Experiences.action_masks</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.prompt_length"><code class="docutils literal notranslate"><span class="pre">Experiences.prompt_length</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.logprobs"><code class="docutils literal notranslate"><span class="pre">Experiences.logprobs</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.multi_modal_inputs"><code class="docutils literal notranslate"><span class="pre">Experiences.multi_modal_inputs</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.custom_fields"><code class="docutils literal notranslate"><span class="pre">Experiences.custom_fields</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.teacher_logprobs"><code class="docutils literal notranslate"><span class="pre">Experiences.teacher_logprobs</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.batch_size"><code class="docutils literal notranslate"><span class="pre">Experiences.batch_size</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.Experiences.gather_experiences"><code class="docutils literal notranslate"><span class="pre">Experiences.gather_experiences()</span></code></a></li>
-</ul>
-</li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.empty_experiences"><code class="docutils literal notranslate"><span class="pre">empty_experiences()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.gather_token_ids"><code class="docutils literal notranslate"><span class="pre">gather_token_ids()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.gather_action_masks"><code class="docutils literal notranslate"><span class="pre">gather_action_masks()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.experience.gather_attention_masks"><code class="docutils literal notranslate"><span class="pre">gather_attention_masks()</span></code></a></li>
@@ -1296,8 +1141,8 @@ preserving all fields.</p>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="../_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
-<script src="../_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
 
   <footer class="bd-footer">
   </footer>

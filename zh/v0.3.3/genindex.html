@@ -15,30 +15,33 @@
     document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
     document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
   </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="_static/styles/theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-<link href="_static/styles/bootstrap.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-<link href="_static/styles/pydata-sphinx-theme.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-
-  
-  <link href="_static/vendor/fontawesome/6.5.2/css/all.min.css?digest=dfe6caa3a7d634c4db9b" rel="stylesheet" />
-  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-solid-900.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-brands-400.woff2" />
-<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.5.2/webfonts/fa-regular-400.woff2" />
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
-    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=eba8b062" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/sphinx-book-theme.css?v=3c74b3bc" />
   
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b" />
-<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b" />
-  <script src="_static/vendor/fontawesome/6.5.2/js/all.min.js?digest=dfe6caa3a7d634c4db9b"></script>
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
     <script src="_static/documentation_options.js?v=c79d47ac"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
-    <script src="_static/scripts/sphinx-book-theme.js?v=887ef09a"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?v=fab101a9"></script>
     <script src="_static/translations.js?v=beaddf03"></script>
     <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
     <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
@@ -474,12 +477,14 @@ mermaid.initialize(
     }
 );
 
-window.addEventListener("load", load);</script>
+window.addEventListener("load", load);
+window.runMermaid = runMermaid;</script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'genindex';</script>
     <link rel="index" title="索引" href="#" />
     <link rel="search" title="搜索" href="search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="zh-CN"/>
+  <meta name="docsearch:version" content="0.5.1" />
   </head>
   
   
@@ -487,27 +492,16 @@ window.addEventListener("load", load);</script>
 
   
   
-  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">跳转至主要内容</a></div>
   
   <div id="pst-scroll-pixel-helper"></div>
   
   <button type="button" class="btn rounded-pill" id="pst-back-to-top">
-    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+    <i class="fa-solid fa-arrow-up"></i>回到顶部</button>
 
   
-  <input type="checkbox"
-          class="sidebar-toggle"
-          id="pst-primary-sidebar-checkbox"/>
-  <label class="overlay overlay-primary" for="pst-primary-sidebar-checkbox"></label>
-  
-  <input type="checkbox"
-          class="sidebar-toggle"
-          id="pst-secondary-sidebar-checkbox"/>
-  <label class="overlay overlay-secondary" for="pst-secondary-sidebar-checkbox"></label>
-  
-  <div class="search-button__wrapper">
-    <div class="search-button__overlay"></div>
-    <div class="search-button__search-container">
+  <dialog id="pst-search-dialog">
+    
 <form class="bd-search d-flex align-items-center"
       action="search.html"
       method="get">
@@ -515,7 +509,6 @@ window.addEventListener("load", load);</script>
   <input type="search"
          class="form-control"
          name="q"
-         id="search-input"
          placeholder="Search..."
          aria-label="Search..."
          autocomplete="off"
@@ -523,11 +516,11 @@ window.addEventListener("load", load);</script>
          autocapitalize="off"
          spellcheck="false"/>
   <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
-</form></div>
-  </div>
+</form>
+  </dialog>
 
   <div class="pst-async-banner-revealer d-none">
-  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="版本警告"></aside>
 </div>
 
   
@@ -542,7 +535,8 @@ window.addEventListener("load", load);</script>
       
         
       
-      <div class="bd-sidebar-primary bd-sidebar">
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
         
 
   
@@ -572,7 +566,7 @@ window.addEventListener("load", load);</script>
     
     
     <img src="_static/logo.svg" class="logo__image only-light" alt="Trinity-RFT 0.5.1 文档 - Home"/>
-    <script>document.write(`<img src="_static/logo.svg" class="logo__image only-dark" alt="Trinity-RFT 0.5.1 文档 - Home"/>`);</script>
+    <img src="_static/logo.svg" class="logo__image only-dark pst-js-only" alt="Trinity-RFT 0.5.1 文档 - Home"/>
   
   
 </a></div>
@@ -606,15 +600,11 @@ window.addEventListener("load", load);</script>
 </div>
         <div class="sidebar-primary-item">
 
- <script>
- document.write(`
-   <button class="btn search-button-field search-button__button" title="搜索" aria-label="搜索" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="fa-solid fa-magnifying-glass"></i>
-    <span class="search-button__default-text">搜索</span>
-    <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
-   </button>
- `);
- </script></div>
+<button class="btn search-button-field search-button__button pst-js-only" title="搜索" aria-label="搜索" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">搜索</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button></div>
         <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
     <div class="bd-toc-item navbar-nav active">
         <p aria-level="2" class="caption" role="heading"><span class="caption-text">教程</span></p>
@@ -857,9 +847,14 @@ window.addEventListener("load", load);</script>
   
   
   <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
   </div>
-  
-  <div id="rtd-footer-container"></div>
 
 
       </div>
@@ -945,7 +940,7 @@ window.addEventListener("load", load);</script>
 
 
 <button onclick="toggleFullScreen()"
-  class="btn btn-sm btn-fullscreen-button"
+  class="btn btn-sm btn-fullscreen-button pst-navbar-icon"
   title="全屏模式"
   data-bs-placement="bottom" data-bs-toggle="tooltip"
 >
@@ -959,24 +954,16 @@ window.addEventListener("load", load);</script>
 
 
 
-<script>
-document.write(`
-  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light"></i>
-    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark"></i>
-    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"></i>
-  </button>
-`);
-</script>
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="亮色"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="暗色"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button>
 
 
-<script>
-document.write(`
-  <button class="btn btn-sm pst-navbar-icon search-button search-button__button" title="搜索" aria-label="搜索" data-bs-placement="bottom" data-bs-toggle="tooltip">
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="搜索" aria-label="搜索" data-bs-placement="bottom" data-bs-toggle="tooltip">
     <i class="fa-solid fa-magnifying-glass fa-lg"></i>
-  </button>
-`);
-</script>
+</button>
 
 </div></div>
       
@@ -1217,10 +1204,10 @@ document.write(`
 </li>
       <li><a href="build_api/trinity.common.config.html#trinity.common.config.DataProcessorConfig.__init__">__init__() （trinity.common.config.DataProcessorConfig 方法）</a>
 </li>
-      <li><a href="build_api/trinity.common.config.html#trinity.common.config.DynamicTimeoutConfig.__init__">__init__() （trinity.common.config.DynamicTimeoutConfig 方法）</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="build_api/trinity.common.config.html#trinity.common.config.DynamicTimeoutConfig.__init__">__init__() （trinity.common.config.DynamicTimeoutConfig 方法）</a>
+</li>
       <li><a href="build_api/trinity.common.config.html#trinity.common.config.ExperienceBufferConfig.__init__">__init__() （trinity.common.config.ExperienceBufferConfig 方法）</a>
 </li>
       <li><a href="build_api/trinity.common.config.html#trinity.common.config.ExperiencePipelineConfig.__init__">__init__() （trinity.common.config.ExperiencePipelineConfig 方法）</a>
@@ -1276,8 +1263,6 @@ document.write(`
       <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.EID.__init__">__init__() （trinity.common.experience.EID 方法）</a>
 </li>
       <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experience.__init__">__init__() （trinity.common.experience.Experience 方法）</a>
-</li>
-      <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experiences.__init__">__init__() （trinity.common.experience.Experiences 方法）</a>
 </li>
       <li><a href="build_api/trinity.common.models.model.html#trinity.common.models.model.BaseInferenceModel.__init__">__init__() （trinity.common.models.model.BaseInferenceModel 方法）</a>
 </li>
@@ -1433,8 +1418,6 @@ document.write(`
 </li>
       <li><a href="build_api/trinity.buffer.writer.sql_writer.html#trinity.buffer.writer.sql_writer.SQLWriter.acquire">acquire() （trinity.buffer.writer.sql_writer.SQLWriter 方法）</a>
 </li>
-      <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experiences.action_masks">action_masks（trinity.common.experience.Experiences 属性）</a>
-</li>
       <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experience.action_mask">action_mask（trinity.common.experience.Experience 属性）</a>
 </li>
       <li><a href="build_api/trinity.manager.html#trinity.manager.Synchronizer.add_module">add_module() （trinity.manager.Synchronizer 方法）</a>
@@ -1454,8 +1437,6 @@ document.write(`
       <li><a href="build_api/trinity.algorithm.advantage_fn.advantage_fn.html#trinity.algorithm.advantage_fn.advantage_fn.AdvantageFn">AdvantageFn（trinity.algorithm.advantage_fn.advantage_fn 中的类）</a>
 </li>
       <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experience.advantages">advantages（trinity.common.experience.Experience 属性）</a>
-</li>
-      <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experiences.advantages">advantages（trinity.common.experience.Experiences 属性）</a>
 </li>
       <li><a href="build_api/trinity.common.workflows.agentscope.react.react_workflow.html#trinity.common.workflows.agentscope.react.react_workflow.AgentScopeReActWorkflow">AgentScopeReActWorkflow（trinity.common.workflows.agentscope.react.react_workflow 中的类）</a>
 </li>
@@ -1477,10 +1458,10 @@ document.write(`
 </li>
       <li><a href="build_api/trinity.common.config.html#trinity.common.config.StageConfig.algorithm">algorithm（trinity.common.config.StageConfig 属性）</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="build_api/trinity.buffer.selector.difficulty_estimator.html#trinity.buffer.selector.difficulty_estimator.BaseBetaPREstimator.alphas">alphas（trinity.buffer.selector.difficulty_estimator.BaseBetaPREstimator 属性）</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="build_api/trinity.common.models.model.html#trinity.common.models.model.ModelWrapper.api_key">api_key（trinity.common.models.model.ModelWrapper 属性）</a>
 </li>
       <li><a href="build_api/trinity.common.models.model.html#trinity.common.models.model.BaseInferenceModel.apply_chat_template">apply_chat_template() （trinity.common.models.model.BaseInferenceModel 方法）</a>
@@ -1528,8 +1509,6 @@ document.write(`
       <li><a href="build_api/trinity.common.workflows.workflow.html#trinity.common.workflows.workflow.AsyncSimpleWorkflow">AsyncSimpleWorkflow（trinity.common.workflows.workflow 中的类）</a>
 </li>
       <li><a href="build_api/trinity.common.workflows.step_wise_workflow.html#trinity.common.workflows.step_wise_workflow.AsyncStepWiseRewardWorkflow">AsyncStepWiseRewardWorkflow（trinity.common.workflows.step_wise_workflow 中的类）</a>
-</li>
-      <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experiences.attention_masks">attention_masks（trinity.common.experience.Experiences 属性）</a>
 </li>
       <li><a href="build_api/trinity.common.config.html#trinity.common.config.DataJuicerServiceConfig.auto_start">auto_start（trinity.common.config.DataJuicerServiceConfig 属性）</a>
 </li>
@@ -1582,8 +1561,6 @@ document.write(`
       <li><a href="build_api/trinity.common.config.html#trinity.common.config.StorageConfig.batch_size">batch_size（trinity.common.config.StorageConfig 属性）</a>
 </li>
       <li><a href="build_api/trinity.common.config.html#trinity.common.config.TasksetConfig.batch_size">batch_size（trinity.common.config.TasksetConfig 属性）</a>
-</li>
-      <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experiences.batch_size">batch_size（trinity.common.experience.Experiences 属性）</a>
 </li>
       <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.EID.batch">batch（trinity.common.experience.EID 属性）</a>
 </li>
@@ -2013,8 +1990,6 @@ document.write(`
 </li>
       <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experience.custom_fields">custom_fields（trinity.common.experience.Experience 属性）</a>
 </li>
-      <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experiences.custom_fields">custom_fields（trinity.common.experience.Experiences 属性）</a>
-</li>
       <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.CustomField">CustomField（trinity.common.experience 中的类）</a>
 </li>
   </ul></td>
@@ -2139,10 +2114,10 @@ document.write(`
 </li>
       <li><a href="build_api/trinity.utils.monitor.html#trinity.utils.monitor.MlflowMonitor.default_args">default_args()（trinity.utils.monitor.MlflowMonitor 类方法）</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="build_api/trinity.utils.monitor.html#trinity.utils.monitor.Monitor.default_args">default_args()（trinity.utils.monitor.Monitor 类方法）</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="build_api/trinity.utils.monitor.html#trinity.utils.monitor.SwanlabMonitor.default_args">default_args()（trinity.utils.monitor.SwanlabMonitor 类方法）</a>
 </li>
       <li><a href="build_api/trinity.utils.monitor.html#trinity.utils.monitor.WandbMonitor.default_args">default_args()（trinity.utils.monitor.WandbMonitor 类方法）</a>
@@ -2229,6 +2204,8 @@ document.write(`
 </li>
       <li><a href="build_api/trinity.service.data_juicer.client.html#trinity.service.data_juicer.client.deserialize_arrow_to_dataset">deserialize_arrow_to_dataset()（在 trinity.service.data_juicer.client 模块中）</a>
 </li>
+      <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experience.deserialize_many">deserialize_many()（trinity.common.experience.Experience 类方法）</a>
+</li>
       <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.CustomField.destination_field">destination_field（trinity.common.experience.CustomField 属性）</a>
 </li>
       <li><a href="build_api/trinity.common.config.html#trinity.common.config.MonitorConfig.detailed_stats">detailed_stats（trinity.common.config.MonitorConfig 属性）</a>
@@ -2265,13 +2242,9 @@ document.write(`
 <h2 id="E">E</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experiences.eids">eids（trinity.common.experience.Experiences 属性）</a>
-</li>
       <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.EID">EID（trinity.common.experience 中的类）</a>
 </li>
       <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experience.eid">eid（trinity.common.experience.Experience 属性）</a>
-</li>
-      <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.empty_experiences">empty_experiences()（在 trinity.common.experience 模块中）</a>
 </li>
       <li><a href="build_api/trinity.common.config.html#trinity.common.config.InferenceModelConfig.enable_auto_tool_choice">enable_auto_tool_choice（trinity.common.config.InferenceModelConfig 属性）</a>
 </li>
@@ -2349,10 +2322,10 @@ document.write(`
 </li>
       <li><a href="build_api/trinity.common.config.html#trinity.common.config.TrainerInput.experience_buffer">experience_buffer（trinity.common.config.TrainerInput 属性）</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="build_api/trinity.buffer.schema.sql_schema.html#trinity.buffer.schema.sql_schema.DPODataModel.experience_bytes">experience_bytes（trinity.buffer.schema.sql_schema.DPODataModel 属性）</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="build_api/trinity.buffer.schema.sql_schema.html#trinity.buffer.schema.sql_schema.ExperienceModel.experience_bytes">experience_bytes（trinity.buffer.schema.sql_schema.ExperienceModel 属性）</a>
 </li>
       <li><a href="build_api/trinity.buffer.schema.sql_schema.html#trinity.buffer.schema.sql_schema.SFTDataModel.experience_bytes">experience_bytes（trinity.buffer.schema.sql_schema.SFTDataModel 属性）</a>
@@ -2382,8 +2355,6 @@ document.write(`
       <li><a href="build_api/trinity.buffer.pipelines.html#trinity.buffer.pipelines.ExperiencePipeline">ExperiencePipeline（trinity.buffer.pipelines 中的类）</a>
 </li>
       <li><a href="build_api/trinity.buffer.pipelines.experience_pipeline.html#trinity.buffer.pipelines.experience_pipeline.ExperiencePipeline">ExperiencePipeline（trinity.buffer.pipelines.experience_pipeline 中的类）</a>
-</li>
-      <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experiences">Experiences（trinity.common.experience 中的类）</a>
 </li>
       <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experience">Experience（trinity.common.experience 中的类）</a>
 </li>
@@ -2543,15 +2514,11 @@ document.write(`
 <h2 id="G">G</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experience.gather">gather()（trinity.common.experience.Experience 类方法）</a>
-</li>
       <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.gather_action_masks">gather_action_masks()（在 trinity.common.experience 模块中）</a>
 </li>
       <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.gather_attention_masks">gather_attention_masks()（在 trinity.common.experience 模块中）</a>
 </li>
       <li><a href="build_api/trinity.utils.monitor.html#trinity.utils.monitor.gather_eval_metrics">gather_eval_metrics()（在 trinity.utils.monitor 模块中）</a>
-</li>
-      <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experiences.gather_experiences">gather_experiences()（trinity.common.experience.Experiences 类方法）</a>
 </li>
       <li><a href="build_api/trinity.utils.monitor.html#trinity.utils.monitor.gather_metrics">gather_metrics()（在 trinity.utils.monitor 模块中）</a>
 </li>
@@ -2659,10 +2626,10 @@ document.write(`
 </li>
       <li><a href="build_api/trinity.trainer.verl.utils.html#trinity.trainer.verl.utils.get_latest_hf_checkpoint_path">get_latest_hf_checkpoint_path()（在 trinity.trainer.verl.utils 模块中）</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="build_api/trinity.manager.html#trinity.manager.Synchronizer.get_latest_model_version">get_latest_model_version() （trinity.manager.Synchronizer 方法）</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="build_api/trinity.manager.synchronizer.html#trinity.manager.synchronizer.Synchronizer.get_latest_model_version">get_latest_model_version() （trinity.manager.synchronizer.Synchronizer 方法）</a>
 </li>
       <li><a href="build_api/trinity.common.models.utils.html#trinity.common.models.utils.get_latest_state_dict">get_latest_state_dict()（在 trinity.common.models.utils 模块中）</a>
@@ -3086,8 +3053,6 @@ document.write(`
       <li><a href="build_api/trinity.common.config.html#trinity.common.config.ModelConfig.logprobs">logprobs（trinity.common.config.ModelConfig 属性）</a>
 </li>
       <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experience.logprobs">logprobs（trinity.common.experience.Experience 属性）</a>
-</li>
-      <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experiences.logprobs">logprobs（trinity.common.experience.Experiences 属性）</a>
 </li>
       <li><a href="build_api/trinity.common.config.html#trinity.common.config.Config.log">log（trinity.common.config.Config 属性）</a>
 </li>
@@ -3586,8 +3551,6 @@ document.write(`
 </li>
       <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experience.multi_modal_inputs">multi_modal_inputs（trinity.common.experience.Experience 属性）</a>
 </li>
-      <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experiences.multi_modal_inputs">multi_modal_inputs（trinity.common.experience.Experiences 属性）</a>
-</li>
       <li><a href="build_api/trinity.algorithm.algorithm.html#trinity.algorithm.algorithm.MultiStepGRPOAlgorithm">MultiStepGRPOAlgorithm（trinity.algorithm.algorithm 中的类）</a>
 </li>
       <li><a href="build_api/trinity.common.workflows.workflow.html#trinity.common.workflows.workflow.MultiTurnWorkflow">MultiTurnWorkflow（trinity.common.workflows.workflow 中的类）</a>
@@ -3862,8 +3825,6 @@ document.write(`
 </li>
       <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experience.prompt_length">prompt_length（trinity.common.experience.Experience 属性）</a>
 </li>
-      <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experiences.prompt_length">prompt_length（trinity.common.experience.Experiences 属性）</a>
-</li>
       <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experience.prompt_text">prompt_text（trinity.common.experience.Experience 属性）</a>
 </li>
       <li><a href="build_api/trinity.common.config.html#trinity.common.config.FormatConfig.prompt_type">prompt_type（trinity.common.config.FormatConfig 属性）</a>
@@ -4082,10 +4043,10 @@ document.write(`
 </li>
       <li><a href="build_api/trinity.common.workflows.html#trinity.common.workflows.Workflow.resettable">resettable（trinity.common.workflows.Workflow 属性）</a>
 </li>
-      <li><a href="build_api/trinity.common.workflows.workflow.html#trinity.common.workflows.workflow.Workflow.resettable">resettable（trinity.common.workflows.workflow.Workflow 属性）</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="build_api/trinity.common.workflows.workflow.html#trinity.common.workflows.workflow.Workflow.resettable">resettable（trinity.common.workflows.workflow.Workflow 属性）</a>
+</li>
       <li><a href="build_api/trinity.common.config.html#trinity.common.config.FormatConfig.response_key">response_key（trinity.common.config.FormatConfig 属性）</a>
 </li>
       <li><a href="build_api/trinity.common.workflows.agentscope.react.templates.html#trinity.common.workflows.agentscope.react.templates.Template.response_structure">response_structure（trinity.common.workflows.agentscope.react.templates.Template 属性）</a>
@@ -4101,8 +4062,6 @@ document.write(`
       <li><a href="build_api/trinity.buffer.utils.html#trinity.buffer.utils.retry_session">retry_session()（在 trinity.buffer.utils 模块中）</a>
 </li>
       <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experience.returns">returns（trinity.common.experience.Experience 属性）</a>
-</li>
-      <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experiences.returns">returns（trinity.common.experience.Experiences 属性）</a>
 </li>
       <li><a href="build_api/trinity.buffer.storage.queue.html#trinity.buffer.storage.queue.AsyncPriorityQueue.reuse_cooldown_time">reuse_cooldown_time（trinity.buffer.storage.queue.AsyncPriorityQueue 属性）</a>
 </li>
@@ -4143,8 +4102,6 @@ document.write(`
       <li><a href="build_api/trinity.buffer.operators.mappers.reward_shaping_mapper.html#trinity.buffer.operators.mappers.reward_shaping_mapper.RewardShapingMapper">RewardShapingMapper（trinity.buffer.operators.mappers.reward_shaping_mapper 中的类）</a>
 </li>
       <li><a href="build_api/trinity.buffer.operators.filters.reward_filter.html#trinity.buffer.operators.filters.reward_filter.RewardSTDFilter">RewardSTDFilter（trinity.buffer.operators.filters.reward_filter 中的类）</a>
-</li>
-      <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experiences.rewards">rewards（trinity.common.experience.Experiences 属性）</a>
 </li>
       <li><a href="build_api/trinity.buffer.schema.sql_schema.html#trinity.buffer.schema.sql_schema.ExperienceModel.reward">reward（trinity.buffer.schema.sql_schema.ExperienceModel 属性）</a>
 </li>
@@ -4441,6 +4398,8 @@ document.write(`
       <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experience.serialize">serialize() （trinity.common.experience.Experience 方法）</a>
 </li>
       <li><a href="build_api/trinity.service.data_juicer.client.html#trinity.service.data_juicer.client.serialize_dataset_to_arrow">serialize_dataset_to_arrow()（在 trinity.service.data_juicer.client 模块中）</a>
+</li>
+      <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experience.serialize_many">serialize_many()（trinity.common.experience.Experience 类方法）</a>
 </li>
       <li><a href="build_api/trinity.explorer.html#trinity.explorer.Explorer.serve">serve() （trinity.explorer.Explorer 方法）</a>
 </li>
@@ -5092,8 +5051,6 @@ document.write(`
 </li>
       <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experience.teacher_logprobs">teacher_logprobs（trinity.common.experience.Experience 属性）</a>
 </li>
-      <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experiences.teacher_logprobs">teacher_logprobs（trinity.common.experience.Experiences 属性）</a>
-</li>
       <li><a href="build_api/trinity.common.config.html#trinity.common.config.GenerationConfig.temperature">temperature（trinity.common.config.GenerationConfig 属性）</a>
 </li>
       <li><a href="build_api/trinity.common.config.html#trinity.common.config.InferenceModelConfig.temperature">temperature（trinity.common.config.InferenceModelConfig 属性）</a>
@@ -5146,8 +5103,6 @@ document.write(`
 </li>
       <li><a href="build_api/trinity.common.workflows.workflow.html#trinity.common.workflows.workflow.Task.to_workflow">to_workflow() （trinity.common.workflows.workflow.Task 方法）</a>
 </li>
-      <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experiences.token_level_rewards">token_level_rewards（trinity.common.experience.Experiences 属性）</a>
-</li>
       <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experience.token_level_reward">token_level_reward（trinity.common.experience.Experience 属性）</a>
 </li>
       <li><a href="build_api/trinity.common.models.utils.html#trinity.common.models.utils.tokenize_and_mask_messages_default">tokenize_and_mask_messages_default()（在 trinity.common.models.utils 模块中）</a>
@@ -5161,8 +5116,6 @@ document.write(`
       <li><a href="build_api/trinity.common.config.html#trinity.common.config.StorageConfig.tokenizer_path">tokenizer_path（trinity.common.config.StorageConfig 属性）</a>
 </li>
       <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experience.tokens">tokens（trinity.common.experience.Experience 属性）</a>
-</li>
-      <li><a href="build_api/trinity.common.experience.html#trinity.common.experience.Experiences.tokens">tokens（trinity.common.experience.Experiences 属性）</a>
 </li>
       <li><a href="build_api/trinity.common.config.html#trinity.common.config.InferenceModelConfig.tool_call_parser">tool_call_parser（trinity.common.config.InferenceModelConfig 属性）</a>
 </li>
@@ -6599,8 +6552,8 @@ document.write(`
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script src="_static/scripts/bootstrap.js?digest=dfe6caa3a7d634c4db9b"></script>
-<script src="_static/scripts/pydata-sphinx-theme.js?digest=dfe6caa3a7d634c4db9b"></script>
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
 
   <footer class="bd-footer">
   </footer>
