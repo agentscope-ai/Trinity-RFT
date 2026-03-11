@@ -216,9 +216,9 @@ class MegatronCheckpointManager(OldMegatronCheckpointManager):
         return metadata
 
     # TODO: removed after upgrading verl > 0.7.0; https://github.com/verl-project/verl/pull/5154
-    def load_checkpoint(
+    def load_checkpoint(  # noqa: C901
         self, local_path: str, hdfs_path: str = None, del_local_after_load=False
-    ):  # noqa: C901
+    ):
         if local_path is not None:
             assert os.path.exists(local_path), f"Checkpoint path {local_path} does not exist."
 

@@ -11,9 +11,9 @@ from typing import Dict, List, Optional
 
 import ray
 import torch
-from omegaconf import OmegaConf
 import transformers
 from accelerate import init_empty_weights
+from omegaconf import OmegaConf
 from verl.trainer.ppo.core_algos import agg_loss
 from verl.trainer.ppo.metric_utils import (
     compute_throughout_metrics,
@@ -26,7 +26,7 @@ from verl.trainer.ppo.ray_trainer import (
     Role,
     create_colocated_worker_cls,
 )
-from verl.utils import hf_tokenizer, hf_processor
+from verl.utils import hf_processor, hf_tokenizer
 from verl.utils.checkpoint.checkpoint_manager import find_latest_ckpt_path
 from verl.utils.debug import marked_timer
 from verl.utils.fs import copy_local_path_from_hdfs
@@ -201,9 +201,13 @@ class VerlPPOTrainerWrapper(RayPPOTrainer, TrainEngineWrapper):
         # processor for multimodal LLM, could be None
         processor = hf_processor(local_path, trust_remote_code=trust_remote_code, use_fast=True)
 
-        hf_config = transformers.AutoConfig.from_pretrained(local_path, trust_remote_code=trust_remote_code)
+        hf_config = transformers.AutoConfig.from_pretrained(
+            local_path, trust_remote_code=trust_remote_code
+        )
         with init_empty_weights():
-            self.empty_model = transformers.AutoModel.from_config(hf_config, trust_remote_code=trust_remote_code)
+            self.empty_model = transformers.AutoModel.from_config(
+                hf_config, trust_remote_code=trust_remote_code
+            )
 
         from verl.single_controller.ray import RayWorkerGroup
 
@@ -454,7 +458,9 @@ class VerlPPOTrainerWrapper(RayPPOTrainer, TrainEngineWrapper):
         self.actor_rollout_wg.upload_state_dict(self.global_steps)
 
     async def train_step(self, batch_exps: List[Experience]) -> Dict:  # noqa C901
-        batch = to_data_proto(batch_exps, self.tokenizer.pad_token_id, self.empty_model, self.logger)
+        batch = to_data_proto(
+            batch_exps, self.tokenizer.pad_token_id, self.empty_model, self.logger
+        )
         metrics = {}
         self.global_steps += 1
         timing_raw = {}

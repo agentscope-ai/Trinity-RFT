@@ -262,7 +262,6 @@ def get_latest_hf_checkpoint_path(config: Config):
     return hf_checkpoint_dir
 
 
-
 # modified from verl/utils/fsdp_utils.py:apply_fsdp2
 # bug fix for transformers v5
 def apply_fsdp2(model, fsdp_kwargs, config):
