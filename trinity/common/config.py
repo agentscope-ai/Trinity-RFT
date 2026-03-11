@@ -424,9 +424,7 @@ class DataProcessorConfig:
     # 1. For task. Data preprocessing from raw dataset to the task set
     task_pipeline: Optional[TaskPipelineConfig] = None
     # 2. For experience. Data processing for rollouts
-    experience_pipeline: Optional[ExperiencePipelineConfig] = field(
-        default_factory=ExperiencePipelineConfig
-    )
+    experience_pipeline: ExperiencePipelineConfig = field(default_factory=ExperiencePipelineConfig)
 
 
 @dataclass

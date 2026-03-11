@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 """Test cases for Storage modules."""
 import os
+import pickle
 import unittest
 
 import torch
 
 from trinity.buffer.schema.sql_schema import ExperienceModel
-from trinity.common.experience import EID, CustomField, Experience, Experiences
+from trinity.common.experience import EID, CustomField, Experience
 
 db_url = os.path.join(os.path.dirname(__file__), "tmp", "test.db")
 dataset_path = os.path.join(os.path.dirname(__file__), "data")
@@ -79,7 +80,99 @@ class TestExperience(unittest.TestCase):
         self.assertTrue(torch.equal(exp.tokens, exp2.tokens))
         self.assertEqual(exp.reward, exp2.reward)
         self.assertEqual(exp.prompt_length, exp2.prompt_length)
-        self.assertEqual(exp.experience_type, exp2.experience_type)
+
+    def test_serialize_many_deserialize_many(self):
+        exp1 = Experience(
+            eid=EID(batch=1, task=1, run=1, step=1),
+            tokens=torch.tensor([1, 2, 3], dtype=torch.int32),
+            logprobs=torch.tensor([0.1, 0.2], dtype=torch.float32),
+            reward=1.0,
+            prompt_length=1,
+            info={"source": "a"},
+            metrics={"m": 1.0},
+            multi_modal_inputs={"image": torch.randn(2, 3)},
+            custom_fields=[
+                CustomField(
+                    source_field="foo",
+                    destination_field="bar",
+                    data_type=torch.float32,
+                )
+            ],
+        )
+        exp2 = Experience(
+            eid=EID(batch=1, task=1, run=2, step=1),
+            tokens=torch.tensor([4, 5, 6, 7], dtype=torch.int32),
+            reward=2.0,
+            prompt_length=2,
+            info={"source": "b"},
+            metrics={"m": 2.0},
+        )
+
+        data = Experience.serialize_many([exp1, exp2])
+        restored = Experience.deserialize_many(data)
+
+        self.assertEqual(len(restored), 2)
+        self.assertTrue(torch.equal(restored[0].tokens, exp1.tokens))
+        self.assertTrue(torch.equal(restored[0].logprobs, exp1.logprobs))
+        self.assertEqual(restored[0].reward, exp1.reward)
+        self.assertEqual(restored[0].info, exp1.info)
+        self.assertEqual(restored[0].metrics, exp1.metrics)
+        self.assertIsNotNone(restored[0].multi_modal_inputs)
+        self.assertIn("image", restored[0].multi_modal_inputs)
+        self.assertTrue(
+            torch.equal(restored[0].multi_modal_inputs["image"], exp1.multi_modal_inputs["image"])
+        )
+        self.assertEqual(len(restored[0].custom_fields), 1)
+        self.assertEqual(restored[0].custom_fields[0].destination_field, "bar")
+
+        self.assertTrue(torch.equal(restored[1].tokens, exp2.tokens))
+        self.assertEqual(restored[1].reward, exp2.reward)
+        self.assertEqual(restored[1].prompt_length, exp2.prompt_length)
+
+    def test_serialize_many_with_shared_multimodal_tensor(self):
+        shared_pixel_values = torch.randn(2, 3)
+        shared_image_grid_thw = torch.tensor([1, 2, 3], dtype=torch.int64)
+        exps = []
+
+        for i in range(4):
+            exps.append(
+                Experience(
+                    eid=EID(batch=1, task=1, run=i, step=1),
+                    tokens=torch.tensor([1, 2, 3], dtype=torch.int32),
+                    prompt_length=1,
+                    multi_modal_inputs={
+                        "pixel_values": shared_pixel_values,
+                        "image_grid_thw": shared_image_grid_thw,
+                    },
+                )
+            )
+
+        data = Experience.serialize_many(exps)
+        restored = Experience.deserialize_many(data)
+
+        self.assertEqual(len(restored), 4)
+        for exp in restored:
+            self.assertIsNotNone(exp.multi_modal_inputs)
+            self.assertTrue(
+                torch.equal(exp.multi_modal_inputs["pixel_values"], shared_pixel_values)
+            )
+            self.assertTrue(
+                torch.equal(exp.multi_modal_inputs["image_grid_thw"], shared_image_grid_thw)
+            )
+
+    def test_deserialize_legacy_pickle_payload(self):
+        exp = Experience(tokens=torch.tensor([1, 2, 3]), reward=1.23, prompt_length=1)
+        legacy_data = pickle.dumps(exp)
+        restored = Experience.deserialize(legacy_data)
+        self.assertTrue(torch.equal(restored.tokens, exp.tokens))
+        self.assertEqual(restored.reward, exp.reward)
+
+    def test_deserialize_single_rejects_batch_payload(self):
+        exp1 = Experience(tokens=torch.tensor([1, 2, 3]), prompt_length=1)
+        exp2 = Experience(tokens=torch.tensor([4, 5, 6]), prompt_length=1)
+        payload = Experience.serialize_many([exp1, exp2])
+        with self.assertRaises(ValueError):
+            Experience.deserialize(payload)
 
     def test_to_dict(self):
         tokens = torch.tensor([1, 2, 3])
@@ -93,77 +186,6 @@ class TestExperience(unittest.TestCase):
         self.assertEqual(d["prompt_text"], "hi")
         self.assertEqual(d["response_text"], "yo")
         self.assertEqual(d["reward"], 2.5)
-
-    def test_gather(self):
-        # test empty gathering
-        batch = Experiences.gather_experiences([])
-        self.assertEqual(batch.tokens.numel(), 0)
-        self.assertEqual(batch.rewards.numel(), 0)
-        self.assertEqual(batch.eids, [])
-
-        # test single experience gathering
-        exp = Experience(tokens=torch.tensor([1, 2, 3]), reward=1.0, prompt_length=1)
-        batch = Experiences.gather_experiences([exp])
-        self.assertEqual(batch.batch_size, 1)
-        self.assertTrue(
-            torch.equal(batch.tokens[0], torch.tensor([0, 1, 2, 3], dtype=torch.int64)[-3:])
-        )
-        self.assertEqual(batch.prompt_length, 1)
-        self.assertEqual(batch.rewards[0], 1.0)
-
-        # test multiple experiences gathering
-        exps = [
-            Experience(tokens=torch.tensor([1, 2]), reward=0.1, prompt_length=1),
-            Experience(tokens=torch.tensor([3, 4, 5]), reward=0.2, prompt_length=2),
-        ]
-        batch = Experiences.gather_experiences(exps)
-        self.assertEqual(batch.batch_size, 2)
-        self.assertEqual(batch.prompt_length, 2)
-        self.assertEqual(batch.tokens.shape[1], 3)
-        self.assertEqual(batch.rewards[0], 0.1)
-        self.assertEqual(batch.rewards[1], 0.2)
-
-    def test_gather_with_token_level_reward(self):
-        # test empty gathering
-        batch = Experiences.gather_experiences([])
-        self.assertEqual(batch.tokens.numel(), 0)
-        self.assertEqual(batch.rewards.numel(), 0)
-        self.assertEqual(batch.token_level_rewards.numel(), 0)
-        self.assertEqual(batch.eids, [])
-
-        # test single experience gathering
-        exp = Experience(
-            tokens=torch.tensor([1, 2, 3]),
-            token_level_reward=torch.tensor([0, 1.0]),
-            prompt_length=1,
-        )
-        batch = Experiences.gather_experiences([exp])
-        self.assertEqual(batch.batch_size, 1)
-        self.assertTrue(
-            torch.equal(batch.tokens[0], torch.tensor([0, 1, 2, 3], dtype=torch.int64)[-3:])
-        )
-        self.assertEqual(batch.prompt_length, 1)
-        self.assertIsNone(batch.rewards)
-        self.assertTrue(torch.equal(batch.token_level_rewards[0], torch.tensor([0, 1.0])))
-
-        # test multiple experiences gathering
-        exps = [
-            Experience(
-                tokens=torch.tensor([1, 2]), token_level_reward=torch.tensor([0.1]), prompt_length=1
-            ),
-            Experience(
-                tokens=torch.tensor([3, 4, 5]),
-                token_level_reward=torch.tensor([0.2]),
-                prompt_length=2,
-            ),
-        ]
-        batch = Experiences.gather_experiences(exps)
-        self.assertEqual(batch.batch_size, 2)
-        self.assertEqual(batch.prompt_length, 2)
-        self.assertEqual(batch.tokens.shape[1], 3)
-        self.assertIsNone(batch.rewards)
-        self.assertTrue(torch.equal(batch.token_level_rewards[0], torch.tensor([0.1])))
-        self.assertTrue(torch.equal(batch.token_level_rewards[1], torch.tensor([0.2])))
 
     def test_action_mask_and_logprobs_type(self):
         exp = Experience(tokens=[1, 2, 3], logprobs=[0.1, 0.2, 0.3], prompt_length=1)
@@ -263,183 +285,6 @@ class TestExperienceConversion(unittest.TestCase):
         self.assertEqual(new_experience.reward, reward)
         self.assertTrue(torch.equal(new_experience.logprobs, logprobs))
         self.assertTrue(torch.equal(new_experience.action_mask, experience.action_mask))
-
-    def test_batch_conversion(self):
-        exps = [
-            Experience(
-                tokens=torch.tensor([1, 2]),
-                prompt_length=1,
-                reward=float(0.1),
-                logprobs=torch.tensor([0.1]),
-                advantages=torch.tensor([0.1]),
-                returns=torch.tensor([0.4]),
-            ),
-            Experience(
-                tokens=torch.tensor([1, 2, 3]),
-                prompt_length=2,
-                reward=float(0.2),
-                logprobs=torch.tensor([0.1]),
-                advantages=torch.tensor([0.3]),
-                returns=torch.tensor([0.2]),
-            ),
-        ]
-        batch = Experiences.gather_experiences(exps)
-        self.assertEqual(batch.batch_size, 2)
-        self.assertEqual(batch.prompt_length, 2)
-        prompt_length = batch.prompt_length
-        for i in range(batch.batch_size):
-            self.assertEqual(batch.rewards[i], exps[i].reward)
-            self.assertTrue(
-                torch.all(
-                    batch.tokens[i][
-                        prompt_length
-                        - exps[i].prompt_length : prompt_length
-                        - exps[i].prompt_length
-                        + exps[i].tokens.size(0)
-                    ]
-                    == exps[i].tokens
-                )
-            )
-            self.assertTrue(
-                torch.all(
-                    batch.logprobs[i][: exps[i].tokens.size(0) - exps[i].prompt_length]
-                    == exps[i].logprobs
-                )
-            )
-            self.assertTrue(
-                torch.all(
-                    batch.action_masks[i][: exps[i].tokens.size(0) - exps[i].prompt_length]
-                    == exps[i].action_mask
-                )
-            )
-            self.assertTrue(
-                torch.all(
-                    batch.advantages[i][: exps[i].tokens.size(0) - exps[i].prompt_length]
-                    == exps[i].advantages
-                )
-            )
-            self.assertTrue(
-                torch.all(
-                    batch.returns[i][: exps[i].tokens.size(0) - exps[i].prompt_length]
-                    == exps[i].returns
-                )
-            )
-
-    def test_multiturn_experience_batch_converstion(self):
-        exps = [
-            Experience(
-                tokens=torch.tensor([1, 2, 3, 4, 5, 6]),
-                reward=float(0.3),
-                logprobs=torch.tensor([0, 0.1, 0.2, 0.3]),
-                prompt_length=2,
-                action_mask=torch.tensor([1, 0, 1, 1]),
-                advantages=torch.tensor([0.1, 0, 0.2, 0.3]),
-                returns=torch.tensor([0.5, 0, 0.7, 0.8]),
-            ),
-            Experience(
-                tokens=torch.tensor([1, 2, 3, 4]),
-                reward=float(0.4),
-                logprobs=torch.tensor([0, 0.1]),
-                prompt_length=2,
-                action_mask=torch.tensor([1, 1]),
-                advantages=torch.tensor([0.2, 0.3]),
-                returns=torch.tensor([0.6, 0.9]),
-            ),
-        ]
-        batch = Experiences.gather_experiences(exps)
-        self.assertEqual(batch.batch_size, 2)
-        self.assertEqual(batch.prompt_length, 2)
-        prompt_length = batch.prompt_length
-        for i in range(batch.batch_size):
-            self.assertEqual(batch.rewards[i], exps[i].reward)
-            self.assertTrue(
-                torch.all(
-                    batch.tokens[i][
-                        prompt_length
-                        - exps[i].prompt_length : prompt_length
-                        - exps[i].prompt_length
-                        + exps[i].tokens.size(0)
-                    ]
-                    == exps[i].tokens
-                )
-            )
-            self.assertTrue(
-                torch.all(
-                    batch.logprobs[i][: exps[i].tokens.size(0) - exps[i].prompt_length]
-                    == exps[i].logprobs
-                )
-            )
-            self.assertTrue(
-                torch.all(
-                    batch.action_masks[i][: exps[i].tokens.size(0) - exps[i].prompt_length]
-                    == exps[i].action_mask
-                )
-            )
-            self.assertTrue(
-                torch.all(
-                    batch.advantages[i][: exps[i].tokens.size(0) - exps[i].prompt_length]
-                    == exps[i].advantages
-                )
-            )
-            self.assertTrue(
-                torch.all(
-                    batch.returns[i][: exps[i].tokens.size(0) - exps[i].prompt_length]
-                    == exps[i].returns
-                )
-            )
-
-    def test_dpo_experience_batch_conversion(self):
-        exps = [
-            Experience(
-                tokens=torch.tensor([1, 2]),
-                chosen=torch.tensor([3, 4]),
-                rejected=torch.tensor([5, 6]),
-            ),
-            Experience(
-                tokens=torch.tensor([7, 8, 9]),
-                chosen=torch.tensor([10, 11]),
-                rejected=torch.tensor([12, 13]),
-            ),
-        ]
-        batch = Experiences.gather_experiences(exps)
-        self.assertEqual(batch.batch_size, 4)
-        self.assertEqual(batch.prompt_length, 3)
-        prompt_length = batch.prompt_length
-        for i in range(batch.batch_size):
-            j = i // 2
-            self.assertTrue(
-                torch.all(
-                    batch.tokens[i][
-                        prompt_length
-                        - exps[j].prompt_length : prompt_length
-                        - exps[j].prompt_length
-                        + exps[j].tokens.size(0)
-                    ]
-                    == exps[j].tokens
-                )
-            )
-
-    def test_gather_experiences_with_custom_fields(self):
-        # test multiple experiences gathering
-        exps = [
-            Experience(
-                tokens=torch.tensor([1, 2]), reward=0.1, prompt_length=1, info={"a": 1.0, "b": 3}
-            ),
-            Experience(
-                tokens=torch.tensor([3, 4, 5]), reward=0.2, prompt_length=2, info={"a": 2, "c": 4}
-            ),
-        ]
-        batch = Experiences.gather_experiences(
-            exps, custom_fields=[CustomField("a", "a", torch.float32)]
-        )
-        self.assertEqual(batch.batch_size, 2)
-        self.assertEqual(batch.prompt_length, 2)
-        self.assertEqual(batch.tokens.shape[1], 3)
-        self.assertEqual(batch.rewards[0], 0.1)
-        self.assertEqual(batch.rewards[1], 0.2)
-        self.assertIn("a", batch.custom_fields)
-        self.assertEqual(batch.a[0], 1.0)
-        self.assertEqual(batch.a[1], 2.0)
 
 
 if __name__ == "__main__":

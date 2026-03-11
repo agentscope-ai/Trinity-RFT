@@ -4,7 +4,7 @@ from typing import List
 
 import torch
 
-from trinity.buffer.pipelines.experience_pipeline import ExperienceOperator
+from trinity.buffer.operators.experience_operator import create_operators
 from trinity.common.config import OperatorConfig
 from trinity.common.experience import EID, Experience
 
@@ -29,8 +29,8 @@ def get_experiences(task_num: int, repeat_times: int = 1, step_num: int = 1) -> 
     ]
 
 
-class TestRewardShapingMapper(unittest.TestCase):
-    def test_basic_usage(self):
+class TestRewardShapingMapper(unittest.IsolatedAsyncioTestCase):
+    async def test_basic_usage(self):
         # test input cache
         op_configs = [
             OperatorConfig(
@@ -51,7 +51,7 @@ class TestRewardShapingMapper(unittest.TestCase):
                 },
             )
         ]
-        ops = ExperienceOperator.create_operators(op_configs)
+        ops = create_operators(op_configs)
         self.assertEqual(len(ops), 1)
 
         op = ops[0]
@@ -61,7 +61,7 @@ class TestRewardShapingMapper(unittest.TestCase):
         experiences = get_experiences(
             task_num=task_num, repeat_times=repeat_times, step_num=step_num
         )
-        res_exps, metrics = op.process(deepcopy(experiences))
+        res_exps, metrics = await op.process(deepcopy(experiences))
         self.assertEqual(len(res_exps), task_num * repeat_times * step_num)
         self.assertIn("reward_diff/mean", metrics)
         self.assertIn("reward_diff/min", metrics)

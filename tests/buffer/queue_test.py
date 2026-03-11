@@ -169,14 +169,54 @@ class TestQueueBuffer(RayUnittestBaseAsync):
         config = config.to_storage_config()
         writer = QueueWriter(config)
         reader = QueueReader(config)
-        writer.write([{"content": "hello"}])
-        writer.write([{"content": "hi"}])
-        writer.write([{"content": "hello"}])
-        writer.write([{"content": "hi"}])
+        writer.write(
+            [
+                Experience(
+                    tokens=torch.tensor([1, 2, 3]),
+                    prompt_length=2,
+                    info={"model_version": 0, "use_count": 0},
+                )
+            ]
+        )
+        writer.write(
+            [
+                Experience(
+                    tokens=torch.tensor([1, 2, 3]),
+                    prompt_length=2,
+                    info={"model_version": 1, "use_count": 0},
+                )
+            ]
+        )
+        writer.write(
+            [
+                Experience(
+                    tokens=torch.tensor([1, 2, 3]),
+                    prompt_length=2,
+                    info={"model_version": 2, "use_count": 0},
+                )
+            ]
+        )
+        writer.write(
+            [
+                Experience(
+                    tokens=torch.tensor([1, 2, 3]),
+                    prompt_length=2,
+                    info={"model_version": 3, "use_count": 0},
+                )
+            ]
+        )
 
         # should be blocked
         def write_blocking_call():
-            writer.write([{"content": "blocked"}])
+            writer.write(
+                [
+                    Experience(
+                        tokens=torch.tensor([1, 2, 3]),
+                        prompt_length=2,
+                        info={"model_version": 4, "use_count": 0},
+                    )
+                ]
+            )
 
         thread = threading.Thread(target=write_blocking_call)
         thread.start()

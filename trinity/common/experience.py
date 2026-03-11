@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import pickle
+import struct
 import uuid
 from dataclasses import asdict, dataclass, field, fields
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Union
+from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Union
 
 import torch
+from safetensors.torch import load as st_load
+from safetensors.torch import save as st_save
 from torch import Tensor
 
 if TYPE_CHECKING:
@@ -98,6 +101,34 @@ class CustomField:
 
 @dataclass
 class Experience:
+    _SER_MAGIC = b"TRXP"
+    _SER_VERSION = 1
+    _TENSOR_FIELDS = (
+        "tokens",
+        "logprobs",
+        "token_level_reward",
+        "advantages",
+        "returns",
+        "action_mask",
+        "chosen",
+        "rejected",
+        "teacher_logprobs",
+    )
+    _META_FIELDS = (
+        "eid",
+        "reward",
+        "truncate_status",
+        "info",
+        "metrics",
+        "prompt_length",
+        "response_text",
+        "prompt_text",
+        "messages",
+        "tools",
+        "chosen_messages",
+        "rejected_messages",
+    )
+
     eid: EID = field(default_factory=EID)  # Unique identifier for the experience
     tokens: Optional[Tensor] = None  # [seq_length]
     prompt_length: int = 1  # Length of the prompt in tokens, used for generating attention masks
@@ -259,11 +290,166 @@ class Experience:
 
     def serialize(self) -> bytes:
         """Serialize the experience to bytes."""
-        return pickle.dumps(self)
+        return self.serialize_many([self])
 
     @classmethod
     def deserialize(cls, data: bytes) -> Experience:
-        return pickle.loads(data)
+        experiences = cls.deserialize_many(data)
+        if len(experiences) != 1:
+            raise ValueError(
+                f"Expected a single Experience payload, got batch size {len(experiences)}. "
+                "Use Experience.deserialize_many for batched payloads."
+            )
+        return experiences[0]
+
+    @staticmethod
+    def _serialize_custom_fields(custom_fields: Optional[List[CustomField]]) -> list[dict]:
+        if not custom_fields:
+            return []
+        return [
+            {
+                "source_field": field.source_field,
+                "destination_field": field.destination_field,
+                "data_type": str(field.data_type),
+            }
+            for field in custom_fields
+        ]
+
+    @staticmethod
+    def _deserialize_custom_fields(serialized_fields: Optional[List[dict]]) -> List[CustomField]:
+        if not serialized_fields:
+            return []
+        custom_fields = []
+        for field_dict in serialized_fields:
+            dtype_name = field_dict["data_type"].replace("torch.", "")
+            dtype = getattr(torch, dtype_name)
+            custom_fields.append(
+                CustomField(
+                    source_field=field_dict["source_field"],
+                    destination_field=field_dict["destination_field"],
+                    data_type=dtype,
+                )
+            )
+        return custom_fields
+
+    @classmethod
+    def serialize_many(cls, experiences: List[Experience]) -> bytes:
+        """Serialize a list of experiences into a compact bytes payload.
+
+        Tensor fields are packed with safetensors while non-tensor fields are packed
+        as metadata via pickle.
+        """
+        metadata = {"version": cls._SER_VERSION, "num_items": len(experiences), "items": []}
+        tensor_data = {}
+
+        for index, exp in enumerate(experiences):
+            item_meta = {}
+            for field_name in cls._META_FIELDS:
+                value = getattr(exp, field_name)
+                if field_name == "eid" and value is not None:
+                    item_meta[field_name] = value.to_dict() if isinstance(value, EID) else value
+                else:
+                    item_meta[field_name] = value
+
+            item_meta["custom_fields"] = cls._serialize_custom_fields(exp.custom_fields)
+
+            for field_name in cls._TENSOR_FIELDS:
+                value = getattr(exp, field_name)
+                if value is None:
+                    continue
+                tensor_data[f"{index}:{field_name}"] = value.detach().cpu().contiguous()
+
+            if exp.multi_modal_inputs is None:
+                item_meta["multi_modal_input_keys"] = []
+            else:
+                mm_keys = list(exp.multi_modal_inputs.keys())
+                item_meta["multi_modal_input_keys"] = mm_keys
+                for key in mm_keys:
+                    value = exp.multi_modal_inputs[key]
+                    tensor_data[f"{index}:multi_modal_inputs:{key}"] = (
+                        value.detach()
+                        .cpu()
+                        .contiguous()
+                        .clone()  # clone to avoid shared memory issues
+                    )
+
+            metadata["items"].append(item_meta)
+
+        metadata_bytes = pickle.dumps(metadata, protocol=pickle.HIGHEST_PROTOCOL)
+        tensor_bytes = st_save(tensor_data)
+        header = (
+            cls._SER_MAGIC
+            + struct.pack("<B", cls._SER_VERSION)
+            + struct.pack("<Q", len(metadata_bytes))
+            + struct.pack("<Q", len(tensor_bytes))
+        )
+        return header + metadata_bytes + tensor_bytes
+
+    @classmethod
+    def deserialize_many(cls, data: bytes) -> List[Experience]:
+        """Deserialize bytes into a list of experiences.
+
+        Supports both new batched payloads and legacy single-experience pickle payloads.
+        """
+        if not data.startswith(cls._SER_MAGIC):
+            legacy = pickle.loads(data)
+            if isinstance(legacy, list):
+                return legacy
+            return [legacy]
+
+        offset = len(cls._SER_MAGIC)
+        version = struct.unpack("<B", data[offset : offset + 1])[0]
+        offset += 1
+        if version != cls._SER_VERSION:
+            raise ValueError(
+                f"Unsupported Experience serialization version: {version}, expected {cls._SER_VERSION}."
+            )
+
+        metadata_len = struct.unpack("<Q", data[offset : offset + 8])[0]
+        offset += 8
+        tensor_len = struct.unpack("<Q", data[offset : offset + 8])[0]
+        offset += 8
+
+        metadata_bytes = data[offset : offset + metadata_len]
+        offset += metadata_len
+        tensor_bytes = data[offset : offset + tensor_len]
+
+        metadata = pickle.loads(metadata_bytes)
+        tensor_data = st_load(tensor_bytes)
+
+        experiences = []
+        for index, item_meta in enumerate(metadata["items"]):
+            init_kwargs = {
+                "eid": item_meta.get("eid"),
+                "reward": item_meta.get("reward"),
+                "truncate_status": item_meta.get("truncate_status"),
+                "info": item_meta.get("info"),
+                "metrics": item_meta.get("metrics"),
+                "prompt_length": item_meta.get("prompt_length", 1),
+                "response_text": item_meta.get("response_text"),
+                "prompt_text": item_meta.get("prompt_text"),
+                "messages": item_meta.get("messages"),
+                "tools": item_meta.get("tools"),
+                "chosen_messages": item_meta.get("chosen_messages"),
+                "rejected_messages": item_meta.get("rejected_messages"),
+                "custom_fields": cls._deserialize_custom_fields(item_meta.get("custom_fields")),
+            }
+
+            for field_name in cls._TENSOR_FIELDS:
+                tensor_key = f"{index}:{field_name}"
+                init_kwargs[field_name] = tensor_data.get(tensor_key)
+
+            mm_keys = item_meta.get("multi_modal_input_keys", [])
+            if mm_keys:
+                init_kwargs["multi_modal_inputs"] = {
+                    key: tensor_data[f"{index}:multi_modal_inputs:{key}"] for key in mm_keys
+                }
+            else:
+                init_kwargs["multi_modal_inputs"] = None
+
+            experiences.append(cls(**init_kwargs))
+
+        return experiences
 
     def to_dict(self) -> dict:
         """Convert the experience to a dictionary."""
@@ -292,106 +478,6 @@ class Experience:
         if self.truncate_status is not None:
             res["truncate_status"] = self.truncate_status
         return res
-
-    @classmethod
-    def gather(
-        cls,
-        experiences: List[Experience],
-        pad_token_id: int = 0,
-        custom_fields: Optional[List[CustomField]] = None,
-    ) -> Experiences:
-        if len(experiences) == 0:
-            return empty_experiences(custom_fields)
-        exp_type = experiences[0].experience_type
-        if exp_type == "dpo":
-            experiences = split_dpo_experience_to_single_turn(experiences)
-        max_prompt_length = max([exp.prompt_length for exp in experiences])  # type: ignore [type-var]
-        max_response_length = max([len(exp.tokens) - exp.prompt_length for exp in experiences])  # type: ignore [arg-type]
-        eids = [exp.eid for exp in experiences]
-
-        # Gather tokens
-        tokens = gather_token_ids(experiences, max_prompt_length, max_response_length, pad_token_id)
-
-        # Gather rewards
-        if experiences[0].reward is not None:
-            rewards = torch.tensor([exp.reward for exp in experiences], dtype=torch.float)
-        else:
-            rewards = None
-
-        # Gather token level rewards
-        if all(exp.token_level_reward is not None for exp in experiences):
-            token_level_rewards = gather_response_attrs(
-                experiences, "token_level_reward", max_response_length
-            )
-        else:
-            token_level_rewards = None
-
-        # gather action_masks
-        action_masks = gather_action_masks(experiences, max_response_length)
-
-        # gather attention_masks
-        attention_masks = gather_attention_masks(
-            experiences, max_prompt_length, max_response_length
-        )
-
-        # gather logprobs
-        if all(exp.logprobs is not None for exp in experiences):
-            logprobs = gather_response_attrs(experiences, "logprobs", max_response_length)
-        else:
-            logprobs = None
-
-        # gather advantages
-        if all(exp.advantages is not None for exp in experiences):
-            advantages = gather_response_attrs(experiences, "advantages", max_response_length)
-        else:
-            advantages = None
-
-        # gather returns
-        if all(exp.returns is not None for exp in experiences):
-            returns = gather_response_attrs(experiences, "returns", max_response_length)
-        else:
-            returns = None
-
-        # gather multi_modal_inputs
-        if all(exp.multi_modal_inputs is not None for exp in experiences):
-            multi_modal_inputs = gather_multi_modal_inputs(experiences)
-        else:
-            multi_modal_inputs = None
-
-        # gather teacher_logprobs
-        if all(exp.teacher_logprobs is not None for exp in experiences):
-            teacher_logprobs = gather_response_attrs(
-                experiences, "teacher_logprobs", max_response_length
-            )
-        else:
-            teacher_logprobs = None
-
-        exps = Experiences(
-            eids=eids,
-            tokens=tokens,
-            rewards=rewards,
-            token_level_rewards=token_level_rewards,
-            advantages=advantages,
-            returns=returns,
-            attention_masks=attention_masks,
-            action_masks=action_masks,
-            prompt_length=max_prompt_length,
-            logprobs=logprobs,
-            multi_modal_inputs=multi_modal_inputs,
-            teacher_logprobs=teacher_logprobs,
-        )
-        if custom_fields is not None:
-            for custom_field in custom_fields:
-                exps.custom_fields.append(custom_field.destination_field)
-                setattr(
-                    exps,
-                    custom_field.destination_field,
-                    torch.tensor(
-                        [exp.info[custom_field.source_field] for exp in experiences],
-                        dtype=custom_field.data_type,
-                    ),
-                )
-        return exps
 
 
 def split_dpo_experience_to_single_turn(experiences: List[Experience]) -> List[Experience]:
@@ -432,93 +518,6 @@ def split_dpo_experience_to_single_turn(experiences: List[Experience]) -> List[E
             )
         )
     return single_turn_experiences
-
-
-@dataclass
-class Experiences:
-    """A container for a batch of experiences, for high performance communication usage.
-
-    Example:
-
-        >>>             |<- prompt_length ->|               |
-        >>> tokens: ('P' represents prompt, 'O' represents output)
-        >>> exp1:       |........PPPPPPPPPPP|OOOOOOOOOO.....|
-        >>> exp2:       |......PPPPPPPPPPPPP|OOOOOOO........|
-        >>>
-        >>> attention_masks: ('.' represents False and '1' represents True)
-        >>> exp1:       |........11111111111|1111111111.....|
-        >>> exp2:       |......1111111111111|1111111........|
-    """
-
-    eids: List[EID]  # Experience IDs of each experience in the batch
-    tokens: Tensor  # [batch_size, seq_length]
-
-    # At least one of `rewards` or `token_level_rewards` must be provided (not None).
-    # If both are provided, `token_level_rewards` will be used and `rewards` will be ignored.
-    rewards: Tensor  # [batch_size]
-    token_level_rewards: Tensor  # [batch_size, response_length]
-
-    advantages: Optional[Tensor]  # [batch_size, response_length]
-    returns: Optional[Tensor]  # [batch_size, response_length]
-    attention_masks: Tensor  # [batch_size, sequence_length]
-    action_masks: Optional[Tensor]  # [batch_size, response_length]
-    prompt_length: int
-    logprobs: Optional[Tensor]  # [batch_size, response_length]
-    multi_modal_inputs: Optional[Any]
-    custom_fields: List[str] = field(
-        default_factory=list
-    )  # Custom fields to include in the gathered experiences
-    teacher_logprobs: Optional[Tensor] = None  # [batch_size, response_length]
-
-    @property
-    def batch_size(self) -> int:
-        """Get the batch size."""
-        return self.tokens.size(0)
-
-    @classmethod
-    def gather_experiences(
-        cls,
-        experiences: list[Experience],
-        pad_token_id: int = 0,
-        custom_fields: Optional[List[CustomField]] = None,
-    ) -> Experiences:
-        """Gather a batch of experiences from a list of experiences.
-
-        This method will automatically pad the `tokens` and `logprobs` of input experiences to the same length.
-
-        Args:
-            experiences (list[Experience]): A list of experiences to gather.
-            pad_token_id (int): The token ID to use for padding. Default is 0.
-            custom_fields (Optional[List[CustomField]]): Custom fields to include in the gathered experiences.
-        """
-        if len(experiences) == 0:
-            return empty_experiences(custom_fields)
-        return experiences[0].__class__.gather(
-            experiences, pad_token_id=pad_token_id, custom_fields=custom_fields
-        )
-
-
-def empty_experiences(custom_fields: Optional[List[CustomField]]) -> Experiences:
-    exps = Experiences(
-        tokens=torch.empty(0, dtype=torch.int32),
-        rewards=torch.empty(0, dtype=torch.float32),
-        token_level_rewards=torch.empty(0, dtype=torch.float32),
-        advantages=torch.empty(0, dtype=torch.float32),
-        returns=torch.empty(0, dtype=torch.float32),
-        attention_masks=torch.empty(0, dtype=torch.bool),
-        action_masks=torch.empty(0, dtype=torch.bool),
-        logprobs=torch.empty(0, dtype=torch.float32),
-        prompt_length=torch.empty(0, dtype=torch.int32),
-        eids=[],
-        multi_modal_inputs=torch.empty(0, dtype=torch.float32),
-    )
-    if custom_fields is not None:
-        for custom_field in custom_fields:
-            exps.custom_fields.append(custom_field.destination_field)
-            setattr(
-                exps, custom_field.destination_field, torch.empty(0, dtype=custom_field.data_type)
-            )
-    return exps
 
 
 def gather_token_ids(

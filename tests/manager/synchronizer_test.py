@@ -71,7 +71,7 @@ def explorer_monkey_patch(explore_step_time_list: List[int]):
             )
             for _ in range(self.config.buffer.train_batch_size)
         ]
-        await self.experience_pipeline.process.remote(dummy_exps)
+        await self.experience_pipeline.process.remote(Experience.serialize_many(dummy_exps))
         self.monitor.log(metric, step=step)
 
     Explorer.explore_step = new_explore_step

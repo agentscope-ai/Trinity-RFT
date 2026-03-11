@@ -85,6 +85,10 @@ class InferenceModel(ABC):
         """Get the model path"""
         return self.config.model_path
 
+    async def shutdown(self) -> None:
+        """Shutdown the model and release resources."""
+        pass
+
 
 class BaseInferenceModel(InferenceModel):
     """Base class for inference models containing common logic."""
@@ -249,7 +253,6 @@ class ModelWrapper:
     def __init__(
         self,
         model: InferenceModel,
-        engine_type: str = "vllm",
         enable_lora: bool = False,
         enable_history: bool = False,
     ):
@@ -257,15 +260,10 @@ class ModelWrapper:
 
         Args:
             model (InferenceModel): The inference model Ray actor.
-            engine_type (str): The type of the model engine. Default to "vllm".
             enable_lora (bool): Whether to enable LoRA. Default to False.
             enable_history (bool): Whether to enable history recording. Default to False.
         """
-        assert (
-            engine_type.startswith("vllm") or engine_type == "tinker"
-        ), "Only vLLM and tinker model is supported for now."
         self.model = model
-        self.engine_type = engine_type
         self.config: InferenceModelConfig = None  # init during prepare
         self._model_name: str = None
         self.api_address: str = None
@@ -286,6 +284,7 @@ class ModelWrapper:
         self.config = await self.model.get_model_config.remote()
         self._model_name = self.config.name
         self._api_key = await self.model.get_api_key.remote()
+        self._engine_type = self.config.engine_type
         self._generate_kwargs = {
             "temperature": self.config.temperature,
             "top_p": self.config.top_p,
@@ -299,7 +298,7 @@ class ModelWrapper:
         if self.api_address is None:
             self.logger.info("API server is not enabled for inference model.")
             return
-        if self.engine_type == "tinker":
+        if self._engine_type == "tinker":
             return
         max_retries = 30
         interval = 2  # seconds
@@ -473,7 +472,7 @@ class ModelWrapper:
             base_url=f"{self.api_address}/v1",
             api_key=self._api_key,
         )
-        if self.engine_type == "tinker":
+        if self._engine_type == "tinker":
             # ! TODO: because tinker's OpenAI API interface is in beta,
             # we need to use original API in thinker instead.
             def chat_completions(*args, **kwargs):
@@ -499,15 +498,15 @@ class ModelWrapper:
 
             def record_chat_completions(*args, **kwargs):
                 logprobs = kwargs.pop("logprobs", True)
-                extra_body = kwargs.pop("extra_body", {})
+                extra_body = dict(kwargs.pop("extra_body", {}))
                 if self.config.enable_thinking is not None:
-                    if "chat_template_kwargs" not in extra_body:
-                        extra_body["chat_template_kwargs"] = {}
-                    extra_body["chat_template_kwargs"][
-                        "enable_thinking"
-                    ] = self.config.enable_thinking
+                    chat_template_kwargs = dict(extra_body.get("chat_template_kwargs", {}))
+                    chat_template_kwargs["enable_thinking"] = self.config.enable_thinking
+                    extra_body["chat_template_kwargs"] = chat_template_kwargs
                 extra_body["return_token_ids"] = True
                 response = ori_create(*args, extra_body=extra_body, logprobs=logprobs, **kwargs)
+                if kwargs.get("stream", False):
+                    return HistoryRecordingStream(response, self.history, is_async=False)
                 self.history.extend(convert_api_output_to_experience(response))
                 return response
 
@@ -536,7 +535,7 @@ class ModelWrapper:
             api_key=self._api_key,
         )
 
-        if self.engine_type == "tinker":
+        if self._engine_type == "tinker":
             # ! TODO: because tinker's OpenAI API interface is in beta,
             # we need to use original API in thinker instead.
             async def chat_completions(*args, **kwargs):
@@ -560,17 +559,17 @@ class ModelWrapper:
 
             async def record_chat_completions(*args, **kwargs):
                 logprobs = kwargs.pop("logprobs", True)
-                extra_body = kwargs.pop("extra_body", {})
+                extra_body = dict(kwargs.pop("extra_body", {}))
                 if self.config.enable_thinking is not None:
-                    if "chat_template_kwargs" not in extra_body:
-                        extra_body["chat_template_kwargs"] = {}
-                    extra_body["chat_template_kwargs"][
-                        "enable_thinking"
-                    ] = self.config.enable_thinking
+                    chat_template_kwargs = dict(extra_body.get("chat_template_kwargs", {}))
+                    chat_template_kwargs["enable_thinking"] = self.config.enable_thinking
+                    extra_body["chat_template_kwargs"] = chat_template_kwargs
                 extra_body["return_token_ids"] = True
                 response = await ori_create(
                     *args, extra_body=extra_body, logprobs=logprobs, **kwargs
                 )
+                if kwargs.get("stream", False):
+                    return HistoryRecordingStream(response, self.history, is_async=True)
                 self.history.extend(convert_api_output_to_experience(response))
                 return response
 
@@ -632,7 +631,93 @@ class ModelWrapper:
 def convert_api_output_to_experience(
     output,
 ) -> List[Experience]:
-    """Convert the API output to a list of experiences."""
+    """Convert non-stream/stream API outputs to a list of experiences."""
+    if hasattr(output, "choices"):
+        return _convert_completion_output_to_experience(output)
+    return _convert_stream_chunks_to_experience(output)
+
+
+class HistoryRecordingStream:
+    def __init__(self, stream, history: List[Experience], is_async: bool = False) -> None:
+        self._stream = stream
+        self._history = history
+        self._chunks = []
+        self._recorded = False
+        self._is_async = is_async
+        if is_async:
+            self._iterator = stream.__aiter__()
+        else:
+            self._iterator = iter(stream)
+
+    # --- Sync methods ---
+    def __iter__(self):
+        if self._is_async:
+            raise TypeError("Use 'async for' for async streams.")
+        return self
+
+    def __next__(self):
+        if self._is_async:
+            raise TypeError("Use 'async for' for async streams.")
+        try:
+            chunk = next(self._iterator)
+        except StopIteration:
+            self._record_history_once()
+            raise
+        self._chunks.append(chunk)
+        return chunk
+
+    def close(self) -> None:
+        if self._is_async:
+            raise TypeError("Use 'aclose' for async streams.")
+        self._record_history_once()
+        close_fn = getattr(self._stream, "close", None)
+        if callable(close_fn):
+            close_fn()
+
+    # --- Async methods ---
+    def __aiter__(self):
+        if not self._is_async:
+            raise TypeError("Use 'for' for sync streams.")
+        return self
+
+    async def __anext__(self):
+        if not self._is_async:
+            raise TypeError("Use 'for' for sync streams.")
+        try:
+            chunk = await self._iterator.__anext__()
+        except StopAsyncIteration:
+            self._record_history_once()
+            raise
+        self._chunks.append(chunk)
+        return chunk
+
+    async def aclose(self) -> None:
+        if not self._is_async:
+            raise TypeError("Use 'close' for sync streams.")
+        self._record_history_once()
+        close_fn = getattr(self._stream, "aclose", None)
+        if callable(close_fn):
+            close_result = close_fn()
+            if hasattr(close_result, "__await__"):
+                await close_result
+            return
+        close_fn = getattr(self._stream, "close", None)
+        if callable(close_fn):
+            close_fn()
+
+    def _record_history_once(self) -> None:
+        if self._recorded:
+            return
+        self._recorded = True
+        if self._chunks:
+            self._history.extend(convert_api_output_to_experience(self._chunks))
+
+    def __getattr__(self, name: str):
+        return getattr(self._stream, name)
+
+
+def _convert_completion_output_to_experience(output) -> List[Experience]:
+    """Convert non-stream chat completion output to experiences."""
     return [
         Experience(
             tokens=torch.cat(
@@ -643,10 +728,72 @@ def convert_api_output_to_experience(
             ),
             logprobs=extract_logprobs(choice),
             prompt_length=len(output.prompt_token_ids),
-            response_text=choice.message.content,
+            response_text=getattr(choice.message, "content", None),
         )
         for choice in output.choices
     ]
+
+
+def _convert_stream_chunks_to_experience(chunks: Sequence[Any]) -> List[Experience]:
+    """Convert streamed chat completion chunks to experiences."""
+    prompt_token_ids: Optional[List[int]] = None
+    by_choice: Dict[int, Dict[str, Any]] = {}
+
+    for chunk in chunks:
+        if prompt_token_ids is None and hasattr(chunk, "prompt_token_ids"):
+            chunk_prompt_token_ids = getattr(chunk, "prompt_token_ids", None)
+            if chunk_prompt_token_ids is not None:
+                prompt_token_ids = list(chunk_prompt_token_ids)
+
+        for choice in getattr(chunk, "choices", []) or []:
+            idx = getattr(choice, "index", 0)
+            if idx not in by_choice:
+                by_choice[idx] = {
+                    "token_ids": [],
+                    "logprobs": [],
+                    "response_text_parts": [],
+                }
+            data = by_choice[idx]
+
+            token_ids = getattr(choice, "token_ids", None)
+            if token_ids is not None:
+                data["token_ids"].extend(token_ids)
+
+            choice_logprobs = getattr(choice, "logprobs", None)
+            if (
+                choice_logprobs is not None
+                and getattr(choice_logprobs, "content", None) is not None
+            ):
+                for token_logprob in choice_logprobs.content:
+                    data["logprobs"].append(token_logprob.logprob)
+                    if token_ids is None:
+                        token_id = getattr(token_logprob, "token_id", None)
+                        if token_id is not None:
+                            data["token_ids"].append(token_id)
+
+            delta = getattr(choice, "delta", None)
+            if delta is not None:
+                delta_content = getattr(delta, "content", None)
+                if isinstance(delta_content, str) and len(delta_content) > 0:
+                    data["response_text_parts"].append(delta_content)
+
+    prompt_token_ids = prompt_token_ids or []
+    exps: List[Experience] = []
+    for idx in sorted(by_choice.keys()):
+        data = by_choice[idx]
+        response_token_ids = data["token_ids"]
+        if len(response_token_ids) == 0:
+            continue
+        response_text = "".join(data["response_text_parts"])
+        exps.append(
+            Experience(
+                tokens=torch.tensor(prompt_token_ids + response_token_ids, dtype=torch.int32),
+                logprobs=torch.tensor(data["logprobs"], dtype=torch.float32),
+                prompt_length=len(prompt_token_ids),
+                response_text=response_text,
+            )
+        )
+    return exps
 
 
 def extract_logprobs(choice) -> Tensor:

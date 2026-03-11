@@ -71,7 +71,7 @@ class TestExperiencePipeline(RayUnittestBaseAsync):
         task_num = 8
         repeat_times = 4
         experiences = get_experiences(task_num=task_num, repeat_times=repeat_times)
-        metrics = await pipeline.process.remote(experiences)
+        metrics = await pipeline.process.remote(Experience.serialize_many(experiences))
         self.assertEqual(
             metrics["experience_pipeline/experience_count"], task_num * (repeat_times - 1)
         )  # first experience of each task will be filtered out by the reward filter
@@ -116,7 +116,7 @@ class TestExperiencePipeline(RayUnittestBaseAsync):
                 "taskset_id": 0,
                 "index": exp.eid.task,
             }
-        metrics = await pipeline.process.remote(experiences)
+        metrics = await pipeline.process.remote(Experience.serialize_many(experiences))
         self.assertIn(SELECTOR_METRIC, metrics)
         selector_metrics = metrics[SELECTOR_METRIC]
         self.assertEqual(len(selector_metrics), 1)

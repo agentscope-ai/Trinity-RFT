@@ -1,6 +1,6 @@
 import asyncio
 from collections import defaultdict
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 import ray
 from ray.util.placement_group import placement_group, placement_group_table
@@ -8,7 +8,7 @@ from ray.util.scheduling_strategies import PlacementGroupSchedulingStrategy
 
 from trinity.common.config import Config, InferenceModelConfig
 from trinity.common.constants import DEBUG_NAMESPACE
-from trinity.common.models.model import InferenceModel
+from trinity.common.models.model import InferenceModel, ModelWrapper
 from trinity.utils.log import get_logger
 
 
@@ -49,10 +49,13 @@ class _BundleAllocator:
 
 def create_explorer_models(
     config: Config,
-) -> Tuple[List[InferenceModel], List[List[InferenceModel]]]:
-    """Create `engine_num` rollout models.
+) -> Tuple[List, List[List]]:
+    """Create rollout_models and auxiliary_models.
 
-    Each model has `tensor_parallel_size` workers.
+    Args:
+        config: The trinity configuration.
+    Returns:
+        Tuple[List, List[List]]: The rollout_models and auxiliary_models.
     """
     logger = get_logger(__name__)
 
@@ -81,7 +84,7 @@ def create_explorer_models(
             [
                 ray.remote(engine_cls)
                 .options(
-                    name=f"{config.explorer.name}_auxiliary_model_{i}_{j}",
+                    name=f"{config.explorer.name}_auxiliary_model_{model_config.name or i}_{j}",
                     namespace=namespace,
                 )
                 .remote(
@@ -142,7 +145,7 @@ def create_explorer_models(
         engines = create_vllm_inference_models(
             config=model_config,
             allocator=allocator,
-            actor_name=f"{config.explorer.name}_auxiliary_model_{i}",
+            actor_name=f"{config.explorer.name}_auxiliary_model_{model_config.name or i}",
         )
         auxiliary_engines.append(engines)
 
@@ -218,9 +221,10 @@ def get_debug_explorer_model(config: Config) -> Tuple[InferenceModel, List[Infer
             f"{config.explorer.name}_rollout_model_0", namespace=DEBUG_NAMESPACE
         )
         auxiliary_models = []
-        for i in range(len(config.explorer.auxiliary_models)):
+        for i, model_config in enumerate(config.explorer.auxiliary_models):
             model = ray.get_actor(
-                f"{config.explorer.name}_auxiliary_model_{i}_0", namespace=DEBUG_NAMESPACE
+                f"{config.explorer.name}_auxiliary_model_{model_config.name or i}_0",
+                namespace=DEBUG_NAMESPACE,
             )
             auxiliary_models.append(model)
     except ValueError:
@@ -229,3 +233,46 @@ def get_debug_explorer_model(config: Config) -> Tuple[InferenceModel, List[Infer
             "`trinity debug --module inference_model --config config_path` in another process."
         ) from None
     return rollout_model, auxiliary_models
+
+
+async def get_auxiliary_model_wrappers(config: Config) -> Dict[str | int, List[ModelWrapper]]:
+    """Get auxiliary models.
+
+    Returns:
+        Dict[str| int, List[ModelWrapper]]: A dictionary mapping auxiliary model
+            index to a list of auxiliary model actor handlers.
+    """
+    if not config.explorer.auxiliary_models:
+        # if no auxiliary model is configured
+        # return an empty dict to avoid unnecessary ray calls
+        return {}
+
+    auxiliary_models: Dict[str | int, List[ModelWrapper]] = defaultdict(list)
+    keys: List[str | int] = []
+    fetch_tasks = []
+
+    for i, model_config in enumerate(config.explorer.auxiliary_models):
+        key = model_config.name or i
+        for j in range(model_config.engine_num):
+            keys.append(key)
+            fetch_tasks.append(
+                asyncio.to_thread(
+                    ray.get_actor,
+                    f"{config.explorer.name}_auxiliary_model_{key}_{j}",
+                    namespace=config.ray_namespace,
+                )
+            )
+
+    # Run lookups off the event loop to avoid blocking when many models exist.
+    actors = await asyncio.gather(*fetch_tasks)
+    for key, actor in zip(keys, actors):
+        auxiliary_models[key].append(ModelWrapper(actor))
+
+    # call prepare on all auxiliary models to make sure they are ready before returning
+    prepare_tasks = []
+    for model_wrappers in auxiliary_models.values():
+        for model_wrapper in model_wrappers:
+            prepare_tasks.append(model_wrapper.prepare())
+    await asyncio.gather(*prepare_tasks)
+
+    return dict(auxiliary_models)

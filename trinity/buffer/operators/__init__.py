@@ -1,4 +1,8 @@
-from trinity.buffer.operators.experience_operator import ExperienceOperator
+from trinity.buffer.operators.experience_operator import (
+    ExperienceOperator,
+    ExperienceOperatorV1,
+    create_operators,
+)
 from trinity.utils.registry import Registry
 
 EXPERIENCE_OPERATORS: Registry = Registry(
@@ -15,5 +19,7 @@ EXPERIENCE_OPERATORS: Registry = Registry(
 
 __all__ = [
     "ExperienceOperator",
+    "ExperienceOperatorV1",
+    "create_operators",
     "EXPERIENCE_OPERATORS",
 ]

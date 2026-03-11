@@ -70,9 +70,7 @@ class ModelWrapperTest(RayUnittestBaseAsync):
         self.config.check_and_update()
 
         self.engines, self.auxiliary_engines = create_explorer_models(self.config)
-        self.model_wrapper = ModelWrapper(
-            self.engines[0], engine_type="vllm", enable_history=self.enable_history
-        )
+        self.model_wrapper = ModelWrapper(self.engines[0], enable_history=self.enable_history)
 
     async def test_generate(self):
         await prepare_engines(self.engines, self.auxiliary_engines)
@@ -188,7 +186,7 @@ class TestModelLen(RayUnittestBaseAsync):
         self.config.check_and_update()
 
         self.engines, self.auxiliary_engines = create_explorer_models(self.config)
-        self.model_wrapper = ModelWrapper(self.engines[0], engine_type="vllm", enable_history=True)
+        self.model_wrapper = ModelWrapper(self.engines[0], enable_history=True)
         self.tokenizer = AutoTokenizer.from_pretrained(self.config.model.model_path)
 
     async def test_model_len(self):
@@ -257,7 +255,7 @@ class TestModelLenWithoutPromptTruncation(RayUnittestBaseAsync):
         self.config.check_and_update()
 
         self.engines, self.auxiliary_engines = create_explorer_models(self.config)
-        self.model_wrapper = ModelWrapper(self.engines[0], engine_type="vllm", enable_history=True)
+        self.model_wrapper = ModelWrapper(self.engines[0], enable_history=True)
 
     async def test_model_len(self):
         await prepare_engines(self.engines, self.auxiliary_engines)
@@ -305,7 +303,7 @@ class TestMessageProcess(RayUnittestBaseAsync):
         self.config.explorer.rollout_model.enable_openai_api = True
         self.config.check_and_update()
         self.engines, self.auxiliary_engines = create_explorer_models(self.config)
-        self.model_wrapper = ModelWrapper(self.engines[0], engine_type="vllm", enable_history=True)
+        self.model_wrapper = ModelWrapper(self.engines[0], enable_history=True)
 
     async def test_truncation_status(self):
         """Test truncation status for multi-turn conversations."""
@@ -380,10 +378,8 @@ class TestAPIServer(RayUnittestBaseAsync):
 
         self.config.check_and_update()
         self.engines, self.auxiliary_engines = create_explorer_models(self.config)
-        self.model_wrapper = ModelWrapper(self.engines[0], engine_type="vllm", enable_history=True)
-        self.model_wrapper_no_history = ModelWrapper(
-            self.engines[0], engine_type="vllm", enable_history=False
-        )
+        self.model_wrapper = ModelWrapper(self.engines[0], enable_history=True)
+        self.model_wrapper_no_history = ModelWrapper(self.engines[0], enable_history=False)
 
     async def test_api(self):
         await prepare_engines(self.engines, self.auxiliary_engines)
@@ -395,9 +391,14 @@ class TestAPIServer(RayUnittestBaseAsync):
             {"role": "user", "content": "What is your name?"},
         ]
         model_id = openai_client.models.list().data[0].id
-        response = openai_client.chat.completions.create(model=model_id, messages=messages, n=1)
-        self.assertEqual(1, len(response.choices))
-        self.assertTrue(len(response.choices[0].message.content) > 0)
+        response = openai_client.chat.completions.create(
+            model=model_id, messages=messages, n=1, stream=True
+        )
+        content = ""
+        for chunk in response:
+            content += chunk.choices[0].delta.content
+            self.assertTrue(len(chunk.choices) == 1)
+        self.assertTrue(len(content) > 0)
         response = openai_client.chat.completions.create(
             model=model_id,
             messages=messages,
@@ -417,6 +418,7 @@ class TestAPIServer(RayUnittestBaseAsync):
         self.assertTrue(len(response.choices[0].token_ids) > 0)
         exps = self.model_wrapper.extract_experience_from_history()
         self.assertEqual(len(exps), 3)
+        self.assertEqual(exps[0].response_text, content)
         response = openai_client.chat.completions.create(
             model=model_id,
             messages=messages,
@@ -512,7 +514,7 @@ class TestLogprobs(RayUnittestBaseAsync):
 
         self.config.check_and_update()
         self.engines, self.auxiliary_engines = create_explorer_models(self.config)
-        self.model_wrapper = ModelWrapper(self.engines[0], engine_type="vllm", enable_history=True)
+        self.model_wrapper = ModelWrapper(self.engines[0], enable_history=True)
 
     async def test_logprobs_api(self):
         await prepare_engines(self.engines, self.auxiliary_engines)
@@ -707,12 +709,8 @@ class TestAsyncAPIServer(RayUnittestBaseAsync):
 
     async def _setup_engines(self):
         self.engines, self.auxiliary_engines = create_explorer_models(self.config)
-        self.model_wrapper = ModelWrapper(
-            self.engines[0], engine_type=self.engine_type, enable_history=True
-        )
-        self.model_wrapper_no_history = ModelWrapper(
-            self.engines[0], engine_type=self.engine_type, enable_history=False
-        )
+        self.model_wrapper = ModelWrapper(self.engines[0], enable_history=True)
+        self.model_wrapper_no_history = ModelWrapper(self.engines[0], enable_history=False)
 
     async def test_api_async(self):
         await prepare_engines(self.engines, self.auxiliary_engines)
@@ -753,16 +751,23 @@ class TestAsyncAPIServer(RayUnittestBaseAsync):
             model=model_id,
             messages=messages,
             n=4,
+            stream=True,
             temperature=0.5,
             logprobs=True,
             top_logprobs=0,
+            max_tokens=10,
         )
+        contents = ["", "", "", ""]
+        async for chunk in response:
+            for choice in chunk.choices:
+                contents[choice.index] += choice.delta.content
         exps = self.model_wrapper.extract_experience_from_history()
         self.assertEqual(len(exps), 4)
         for exp in exps:
             self.assertTrue(len(exp.tokens) > 0)
             self.assertTrue(len(exp.logprobs) > 0)
             self.assertTrue(exp.prompt_length + len(exp.logprobs) == len(exp.tokens))
+            self.assertTrue(exp.response_text in contents)
         self.assertEqual(len(self.model_wrapper.extract_experience_from_history()), 0)
         response = await openai_client.chat.completions.create(
             model=model_id,
@@ -955,10 +960,8 @@ class TestAPIServerToolCall(RayUnittestBaseAsync):
 
         self.config.check_and_update()
         self.engines, self.auxiliary_engines = create_explorer_models(self.config)
-        self.model_wrapper = ModelWrapper(self.engines[0], engine_type="vllm", enable_history=True)
-        self.model_wrapper_no_history = ModelWrapper(
-            self.engines[0], engine_type="vllm", enable_history=False
-        )
+        self.model_wrapper = ModelWrapper(self.engines[0], enable_history=True)
+        self.model_wrapper_no_history = ModelWrapper(self.engines[0], enable_history=False)
 
     async def test_api_tool_calls(self):
         """Tests the full conversation flow of a tool call via the OpenAI API.
@@ -1238,7 +1241,7 @@ class TestSuperLongGeneration(RayUnittestBaseAsync):
 
         self.config.check_and_update()
         self.engines, self.auxiliary_engines = create_explorer_models(self.config)
-        self.model_wrapper = ModelWrapper(self.engines[0], engine_type="vllm", enable_history=True)
+        self.model_wrapper = ModelWrapper(self.engines[0], enable_history=True)
 
     async def test_generate(self):
         base_dir = os.path.dirname(__file__)
@@ -1290,7 +1293,7 @@ class TestTinkerAPI(RayUnittestBaseAsync):
 
         self.config.check_and_update()
         self.engines, self.auxiliary_engines = create_explorer_models(self.config)
-        self.model_wrapper = ModelWrapper(self.engines[0], engine_type="vllm", enable_history=True)
+        self.model_wrapper = ModelWrapper(self.engines[0], enable_history=True)
 
     async def test_tinker_api(self):
         from tinker import types

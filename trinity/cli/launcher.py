@@ -32,56 +32,63 @@ def bench(config: Config) -> None:
     from trinity.explorer.explorer import Explorer
 
     config.explorer.name = "benchmark"
+    explorer = Explorer.get_actor(config)
     try:
-        explorer = Explorer.get_actor(config)
         ray.get(explorer.prepare.remote())
         ray.get(explorer.benchmark.remote())
         logger.info("Benchmark finished.")
-        ray.get(explorer.shutdown.remote())
     except Exception:
         logger.error(f"Benchmark failed:\n{traceback.format_exc()}")
+    finally:
+        ray.get(explorer.shutdown.remote())
 
 
 def explore(config: Config) -> None:
     """Run explorer."""
     from trinity.explorer.explorer import Explorer
 
+    explorer = Explorer.get_actor(config)
+
     try:
-        explorer = Explorer.get_actor(config)
         ray.get(explorer.prepare.remote())
         ray.get(explorer.sync_weight.remote())
         ray.get(explorer.explore.remote())
-        ray.get(explorer.shutdown.remote())
     except Exception:
         logger.error(f"Explorer failed:\n{traceback.format_exc()}")
+    finally:
+        ray.get(explorer.shutdown.remote())
 
 
 def train(config: Config) -> None:
     """Run trainer."""
     from trinity.trainer.trainer import Trainer
 
+    trainer = Trainer.get_actor(config)
+
     try:
-        trainer = Trainer.get_actor(config)
         ray.get(trainer.prepare.remote())
         ray.get(trainer.sync_weight.remote())
         ray.get(trainer.train.remote())
-        ray.get(trainer.shutdown.remote())
     except Exception:
         logger.error(f"Trainer failed:\n{traceback.format_exc()}")
+    finally:
+        ray.get(trainer.shutdown.remote())
 
 
 def serve(config: Config) -> None:
     """Run explorer in server mode."""
     from trinity.explorer.explorer import Explorer
 
+    explorer = Explorer.get_actor(config)
+
     try:
-        explorer = Explorer.get_actor(config)
         ray.get(explorer.prepare.remote())
         ray.get(explorer.sync_weight.remote())
         ray.get(explorer.serve.remote())
-        ray.get(explorer.shutdown.remote())
     except Exception:
         logger.error(f"Explorer failed:\n{traceback.format_exc()}")
+    finally:
+        ray.get(explorer.shutdown.remote())
 
 
 def both(config: Config) -> None:
@@ -97,9 +104,9 @@ def both(config: Config) -> None:
     from trinity.explorer.explorer import Explorer
     from trinity.trainer.trainer import Trainer
 
+    explorer = Explorer.get_actor(config)
+    trainer = Trainer.get_actor(config)
     try:
-        explorer = Explorer.get_actor(config)
-        trainer = Trainer.get_actor(config)
         ray.get([explorer.__ray_ready__.remote(), trainer.__ray_ready__.remote()])
         ray.get(
             [
@@ -140,13 +147,14 @@ def both(config: Config) -> None:
                 "==============================================================="
             )
             ray.wait(wait_ref, timeout=config.synchronizer.sync_timeout)
+    except Exception:
+        logger.error(f"Explorer or Trainer failed:\n{traceback.format_exc()}")
+    finally:
         ray.wait(
             [explorer.shutdown.remote(), trainer.shutdown.remote()],
             timeout=config.synchronizer.sync_timeout,
             num_returns=2,
         )
-    except Exception:
-        logger.error(f"Explorer or Trainer failed:\n{traceback.format_exc()}")
 
 
 MODE_MAP = {

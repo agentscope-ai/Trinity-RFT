@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List, Set
 
 from sqlalchemy.orm import sessionmaker
 
@@ -73,3 +73,39 @@ class HistoryRecorder:
             # The session commit is handled by the `retry_session` context manager.
             updated_experiences = [record.to_experience() for record in records]
             return updated_experiences
+
+
+class MemoryHistoryRecorder:
+    """
+    In-memory version of HistoryRecorder for high-performance reward update and history recording.
+    All data is stored in memory, and can be flushed to persistent storage as needed.
+    """
+
+    def __init__(self):
+        self.logger = get_logger()
+        # msg_id -> Experience
+        self._exp_map: Dict[str, Experience] = {}
+        # Set of msg_id that are not consumed
+        self._unconsumed: Set[str] = set()
+
+    def record_history(self, experiences: List[Experience]) -> None:
+        """Save experiences in memory."""
+        for exp in experiences:
+            self._exp_map[exp.eid.suffix] = exp
+            if getattr(exp, "consumed", 0) == 0:
+                self._unconsumed.add(exp.eid.suffix)
+
+    def update_reward(
+        self, reward: float, msg_ids: list, run_id: int, task_id: str
+    ) -> List[Experience]:
+        """Update reward for given response IDs and return the updated experiences."""
+        updated = []
+        for msg_id in msg_ids:
+            if msg_id in self._unconsumed and msg_id in self._exp_map:
+                exp = self._exp_map.pop(msg_id)
+                exp.reward = reward
+                exp.eid.run = run_id
+                exp.eid.task = task_id
+                self._unconsumed.remove(msg_id)
+                updated.append(exp)
+        return updated

@@ -21,8 +21,13 @@ from tests.tools import (
     get_unittest_dataset_config,
 )
 from trinity.buffer import get_buffer_reader
+from trinity.buffer.operators import ExperienceOperatorV1
 from trinity.cli.launcher import explore, run_stage
-from trinity.common.config import ExperienceBufferConfig, InferenceModelConfig
+from trinity.common.config import (
+    ExperienceBufferConfig,
+    InferenceModelConfig,
+    OperatorConfig,
+)
 from trinity.common.constants import StorageType
 from trinity.explorer.explorer import Explorer
 from trinity.explorer.proxy.client import TrinityClient
@@ -115,11 +120,38 @@ class TestExplorerEvalDetailedStats(BaseExplorerCase):
                 )
 
 
+class DummyOperatorWithAuxiliaryModel(ExperienceOperatorV1):
+    def __init__(self) -> None:
+        super().__init__()
+
+    async def prepare(self) -> None:
+        import openai
+
+        await super().prepare()
+        # make sure the auxiliary model wrapper is correctly passed
+        assert len(self.auxiliary_models) == 1
+        assert "aux_model" in self.auxiliary_models
+        assert len(self.auxiliary_models["aux_model"]) == 2
+        assert isinstance(self.auxiliary_models["aux_model"][0], openai.AsyncOpenAI)
+
+    async def process(self, exps: list) -> tuple:
+        # call the auxiliary model to make sure the model wrapper is correctly passed to the operator
+        messages = [{"role": "user", "content": "Hello"}]
+        responses = []
+        for model in self.auxiliary_models["aux_model"]:
+            response = await model.chat.completions.create(
+                model=model.model_path, messages=messages
+            )
+            responses.append(response)
+        return exps, {}
+
+
 class TestExplorerGSM8KRULERNoEval(BaseExplorerCase):
     def test_explorer(self):
         self.config.explorer.rollout_model.engine_num = 2
         self.config.explorer.auxiliary_models = [
             InferenceModelConfig(
+                name="aux_model",
                 model_path=get_api_model_path(),
                 tensor_parallel_size=1,
                 engine_num=2,
@@ -134,6 +166,12 @@ class TestExplorerGSM8KRULERNoEval(BaseExplorerCase):
         self.config.algorithm.advantage_fn_args = {
             "std_threshold": 0.0001,
         }
+        self.config.data_processor.experience_pipeline.operators.append(
+            OperatorConfig(
+                name="tests.explorer.explorer_test.DummyOperatorWithAuxiliaryModel",
+                args={},
+            )
+        )
         self.config.check_and_update()
         explore(self.config)
         parser = TensorBoardParser(os.path.join(self.config.monitor.cache_dir, "tensorboard"))
@@ -193,7 +231,7 @@ def run_serve(config):
     run_stage(config)
 
 
-def run_agent(proxy_url, model_path: str):
+def run_agent(proxy_url, model_path: str, stream: bool):
     proxy_client = TrinityClient(proxy_url=proxy_url)
     openai_client = proxy_client.get_openai_client()
     contents = [
@@ -208,17 +246,43 @@ def run_agent(proxy_url, model_path: str):
         "What is the best way to learn programming?",
         "Describe the process of photosynthesis.",
     ]
-    response = openai_client.chat.completions.create(
-        model=model_path,
-        messages=[{"role": "user", "content": random.choice(contents)}],
-    )
-    proxy_client.feedback(reward=2.0, msg_ids=[response.id])
-    return response.choices[0].message.content
+    if stream:
+        stream_response = openai_client.chat.completions.create(
+            model=model_path,
+            messages=[{"role": "user", "content": random.choice(contents)}],
+            stream=True,
+        )
+        response_id = None
+        text_parts = []
+        for chunk in stream_response:
+            if response_id is None and getattr(chunk, "id", None):
+                response_id = chunk.id
+            if not getattr(chunk, "choices", None):
+                continue
+            delta = chunk.choices[0].delta
+            if delta is None:
+                continue
+            content = getattr(delta, "content", None)
+            if content:
+                text_parts.append(content)
+
+        if response_id is not None:
+            proxy_client.feedback(reward=2.0, msg_ids=[response_id])
+        return "".join(text_parts)
+    else:
+        response = openai_client.chat.completions.create(
+            model=model_path,
+            messages=[{"role": "user", "content": random.choice(contents)}],
+            stream=False,
+        )
+        proxy_client.feedback(reward=2.0, msg_ids=[response.id])
+        return response.choices[0].message.content
 
 
 class ServeTest(RayUnittestBaseAsync):
     def setUp(self):
         self.config = get_template_config()
+        self.config.name = f"explorer-test-{datetime.now().strftime('%Y%m%d%H%M%S')}"
         self.config.mode = "serve"
         self.config.model.model_path = get_model_path()
         self.config.explorer.rollout_model.engine_type = "vllm"
@@ -274,7 +338,7 @@ class ServeTest(RayUnittestBaseAsync):
         apps = []
         for i in range(task_num):
             app_process = multiprocessing.Process(
-                target=run_agent, args=(server_url, self.config.model.model_path)
+                target=run_agent, args=(server_url, self.config.model.model_path, i % 2 == 0)
             )
             apps.append(app_process)
             app_process.start()
@@ -300,9 +364,6 @@ class ServeTest(RayUnittestBaseAsync):
                 break
             await asyncio.sleep(3)
 
-        serve_process.terminate()
-        serve_process.join(timeout=10)
-
         # check buffer
         self.config.buffer.trainer_input.experience_buffer.max_read_timeout = 5
         buffer_reader = get_buffer_reader(
@@ -315,6 +376,8 @@ class ServeTest(RayUnittestBaseAsync):
             self.assertTrue(exp.prompt_length > 0)
             self.assertTrue(exp.reward == 2.0)
         self.assertEqual(len(exps), task_num)
+        serve_process.terminate()
+        serve_process.join(timeout=10)
 
     def tearDown(self):
         shutil.rmtree(self.config.checkpoint_job_dir, ignore_errors=True)

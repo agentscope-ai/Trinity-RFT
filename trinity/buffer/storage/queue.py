@@ -368,13 +368,14 @@ class QueueStorage:
         """The length of the queue."""
         return self.queue.qsize()
 
-    async def put_batch(self, exp_list: List) -> None:
+    async def put_batch(self, exp_bytes: bytes) -> None:
         """Put batch of experience."""
+        exp_list = Experience.deserialize_many(exp_bytes)
         await self.queue.put(exp_list)
         if self.writer is not None:
             self.writer.write(exp_list)
 
-    async def get_batch(self, batch_size: int, timeout: float, min_model_version: int = 0) -> List:
+    async def get_batch(self, batch_size: int, timeout: float, min_model_version: int = 0) -> bytes:
         """Get batch of experience."""
         await self.queue.set_min_model_version(min_model_version)
         start_time = time.time()
@@ -403,8 +404,8 @@ class QueueStorage:
                     )
                     batch = list(self.exp_pool)
                     self.exp_pool.clear()
-                    return batch
-        return result
+                    return Experience.serialize_many(batch)
+        return Experience.serialize_many(result)
 
     @classmethod
     def get_wrapper(cls, config: StorageConfig):

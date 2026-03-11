@@ -466,7 +466,7 @@ class MultiTurnWorkflowTest(unittest.IsolatedAsyncioTestCase):
         self.config.explorer.rollout_model.enable_history = True  # self.enable_history
         self.config.check_and_update()
         self.engines, self.auxiliary_engines = create_explorer_models(self.config)
-        self.model_wrapper = ModelWrapper(self.engines[0], engine_type="vllm", enable_history=True)
+        self.model_wrapper = ModelWrapper(self.engines[0], enable_history=True)
 
     async def test_multi_turn_workflow(self):
         await asyncio.gather(*[engine.prepare.remote() for engine in self.engines])
@@ -505,7 +505,7 @@ class StateRecordingWorkflow(Workflow):
 class TestWorkflowStateRecording(unittest.IsolatedAsyncioTestCase):
     async def test_workflow_state_recording(self):
         model = MagicMock()
-        model_wrapper = ModelWrapper(model, engine_type="vllm")
+        model_wrapper = ModelWrapper(model)
 
         task = Task(
             workflow=StateRecordingWorkflow,
@@ -620,7 +620,7 @@ class TestAgentScopeWorkflowAdapter(unittest.IsolatedAsyncioTestCase):
 
 
 class DummyModelWrapper:
-    def __init__(self, model, engine_type="vllm", **kwargs):
+    def __init__(self, model, **kwargs):
         pass
 
     async def prepare(self):

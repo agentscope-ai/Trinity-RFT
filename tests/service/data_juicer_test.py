@@ -206,7 +206,7 @@ class TestDataJuicerExperiencePipeline(unittest.IsolatedAsyncioTestCase):
                 info={"model_version": 0},
             ),
         ]
-        metrics = await pipeline.process.remote(exps)
+        metrics = await pipeline.process.remote(Experience.serialize_many(exps))
         self.assertIsInstance(metrics, dict)
         reader = get_buffer_reader(config.buffer.trainer_input.experience_buffer)
         filtered_exps = reader.read(batch_size=2)
