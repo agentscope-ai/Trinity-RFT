@@ -97,17 +97,19 @@ def to_data_proto(
 
             get_rope_index_sig = inspect.signature(model.get_rope_index)
             get_rope_index_kwargs = {}
-            for key in mm_inputs.keys():
-                if key in get_rope_index_sig.parameters:
-                    if key == "mm_token_type_ids":
-                        data = torch.zeros_like(input_ids)
+            for key in get_rope_index_sig.parameters:
+                if key in {"self", "input_ids", "attention_mask", "kwargs"}:
+                    continue
+                elif key == "mm_token_type_ids":
+                    pad_data = torch.zeros_like(input_ids)
+                    if key in mm_inputs:
+                        data = mm_inputs.pop(key)
                         start = max_prompt_length - exp.prompt_length
-                        end = start + mm_inputs[key].size(1)
-                        data[:, start:end] = mm_inputs[key]
-                        get_rope_index_kwargs[key] = data
-                    else:
-                        get_rope_index_kwargs[key] = mm_inputs[key]
-            mm_inputs.pop("mm_token_type_ids", None)
+                        end = start + data.size(1)
+                        pad_data[:, start:end] = data
+                    get_rope_index_kwargs[key] = pad_data
+                else:
+                    get_rope_index_kwargs[key] = mm_inputs.get(key, None)
 
             vision_position_ids, _ = model.get_rope_index(
                 input_ids=input_ids,
