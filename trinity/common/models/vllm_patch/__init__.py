@@ -17,19 +17,22 @@ def vllm_patch():
 
     trf_version = parse_version(transformers.__version__)
     vllm_version = parse_version(vllm.__version__)
-    if trf_version >= parse_version("5.0.0") and vllm_version < parse_version("0.16.0"):
-        raise ImportError("Please upgrade vllm to 0.16.0 or above to use transformers>=5.0.0.")
+    if trf_version >= parse_version("5.0.0"):
+        if vllm_version < parse_version("0.16.0"):
+            raise ImportError("Please upgrade vllm to 0.16.0 or above to use transformers>=5.0.0.")
 
-    from transformers.configuration_utils import PreTrainedConfig
+        from transformers.configuration_utils import PreTrainedConfig
 
-    original_init = PreTrainedConfig.__init__
+        original_init = PreTrainedConfig.__init__
 
-    def new_init(self, *args, **kwargs):
-        if "ignore_keys_at_rope_validation" in kwargs:
-            kwargs["ignore_keys_at_rope_validation"] = set(kwargs["ignore_keys_at_rope_validation"])
-        original_init(self, *args, **kwargs)
+        def new_init(self, *args, **kwargs):
+            if "ignore_keys_at_rope_validation" in kwargs:
+                kwargs["ignore_keys_at_rope_validation"] = set(
+                    kwargs["ignore_keys_at_rope_validation"]
+                )
+            original_init(self, *args, **kwargs)
 
-    PreTrainedConfig.__init__ = new_init
+        PreTrainedConfig.__init__ = new_init
 
 
 def get_vllm_version():

@@ -129,6 +129,8 @@ class MegatronConfig:
     use_distributed_optimizer: bool = True
     use_dist_checkpointing: bool = False
     dist_checkpointing_path: Optional[str] = None
+    dist_ckpt_optim_fully_reshardable: bool = False
+    distrib_optim_fully_reshardable_mem_efficient: bool = False
     seed: int = 42
     override_ddp_config: dict = field(default_factory=dict)
     override_transformer_config: OverrideTransformerConfig = field(

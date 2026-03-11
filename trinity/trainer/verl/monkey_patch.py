@@ -209,7 +209,7 @@ def apply_monkey_patch(  # noqa: C901
             model.model._no_split_modules.remove("Qwen3_5MoeTextDecoderLayer")
 
         # see https://github.com/huggingface/transformers/pull/44399
-        if is_transformers_version_in_range(max_version="5.2.0"):
+        if is_transformers_version_in_range(max_version="5.3.0"):
             from trinity.common.patch.qwen3_5 import qwen35_text_forward
 
             Qwen3_5TextModel.forward = qwen35_text_forward

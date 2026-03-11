@@ -6,7 +6,7 @@ from typing import List
 
 import numpy as np
 import torch
-from transformers import ProcessorMixin
+from transformers import PreTrainedModel
 from verl import DataProto
 from verl.trainer.ppo.metric_utils import _compute_response_info
 from verl.utils.checkpoint.checkpoint_manager import find_latest_ckpt_path
@@ -23,7 +23,7 @@ from trinity.common.experience import (
 
 
 def to_data_proto(
-    experiences: List[Experience], pad_token_id: int, processor: ProcessorMixin, logger: Logger
+    experiences: List[Experience], pad_token_id: int, model: PreTrainedModel, logger: Logger
 ) -> DataProto:  # noqa: C901
     """Convert List[Experience] to verl DataProto."""
     assert len(experiences) > 0, "No experiences provided."
@@ -84,7 +84,8 @@ def to_data_proto(
         if all(getattr(exp, attr, None) is not None for exp in experiences):
             batch_dict[attr] = gather_response_attrs(experiences, attr, max_response_length)
 
-    if processor is not None:
+    if hasattr(model, "get_rope_index"):
+        # used for multi-modal model
         import inspect
 
         # Adapted from verl/experimental/agent_loop/agent_loop.py
@@ -94,13 +95,21 @@ def to_data_proto(
             input_ids = batch_dict["input_ids"][idx].unsqueeze(0)
             attention_mask = batch_dict["attention_mask"][idx].unsqueeze(0)
 
-            get_rope_index_sig = inspect.signature(processor.get_rope_index)
+            get_rope_index_sig = inspect.signature(model.get_rope_index)
             get_rope_index_kwargs = {}
             for key in mm_inputs.keys():
                 if key in get_rope_index_sig.parameters:
-                    get_rope_index_kwargs[key] = mm_inputs[key]
+                    if key == "mm_token_type_ids":
+                        data = torch.zeros_like(input_ids)
+                        start = max_prompt_length - exp.prompt_length
+                        end = start + mm_inputs[key].size(1)
+                        data[:, start:end] = mm_inputs[key]
+                        get_rope_index_kwargs[key] = data
+                    else:
+                        get_rope_index_kwargs[key] = mm_inputs[key]
+            mm_inputs.pop("mm_token_type_ids", None)
 
-            vision_position_ids, _ = processor.get_rope_index(
+            vision_position_ids, _ = model.get_rope_index(
                 input_ids=input_ids,
                 attention_mask=attention_mask,
                 **get_rope_index_kwargs,
@@ -252,66 +261,6 @@ def get_latest_hf_checkpoint_path(config: Config):
         raise ValueError(f"No huggingface checkpoint found in {hf_checkpoint_dir}")
     return hf_checkpoint_dir
 
-
-# modified from verl/utils/tokenizer.py:hf_processor
-# bug fix for processor
-def hf_processor(name_or_path, **kwargs):
-    """Create a huggingface processor to process multimodal data.
-
-    Args:
-        name_or_path (str): The name of the processor.
-
-    Returns:
-        transformers.ProcessorMixin: The pretrained processor.
-    """
-    import types
-    import warnings
-
-    from transformers import AutoConfig, AutoProcessor
-
-    try:
-        processor = AutoProcessor.from_pretrained(name_or_path, **kwargs)
-        config = AutoConfig.from_pretrained(name_or_path, **kwargs)
-
-        # Bind vlm model's get_rope_index method to processor
-        processor.config = config
-        match processor.__class__.__name__:
-            case "Qwen2VLProcessor":
-                from transformers.models.qwen2_vl import Qwen2VLModel
-
-                processor.get_rope_index = types.MethodType(Qwen2VLModel.get_rope_index, processor)
-            case "Qwen2_5_VLProcessor":
-                from transformers.models.qwen2_5_vl import Qwen2_5_VLModel
-
-                processor.get_rope_index = types.MethodType(
-                    Qwen2_5_VLModel.get_rope_index, processor
-                )
-            case "Qwen3VLProcessor":
-                from transformers.models.qwen3_vl import Qwen3VLModel
-
-                processor.get_rope_index = types.MethodType(Qwen3VLModel.get_rope_index, processor)
-            case "Glm4vImageProcessor" | "Glm4vProcessor":
-                from transformers.models.glm4v import Glm4vModel
-
-                processor.get_rope_index = types.MethodType(Glm4vModel.get_rope_index, processor)
-            case "Glm46VProcessor":
-                from transformers.models.glm46v import Glm46VModel
-
-                processor.get_rope_index = types.MethodType(Glm46VModel.get_rope_index, processor)
-            case _:
-                raise ValueError(f"Unsupported processor type: {processor.__class__.__name__}")
-    except Exception as e:
-        processor = None
-        # TODO(haibin.lin): try-catch should be removed after adding transformer version req to setup.py to avoid
-        # silent failure
-        warnings.warn(
-            f"Failed to create processor: {e}. This may affect multimodal processing", stacklevel=1
-        )
-    # Avoid load tokenizer, see:
-    # https://github.com/huggingface/transformers/blob/v4.49.0/src/transformers/models/auto/processing_auto.py#L344
-    if processor is not None and "Processor" not in processor.__class__.__name__:
-        processor = None
-    return processor
 
 
 # modified from verl/utils/fsdp_utils.py:apply_fsdp2
