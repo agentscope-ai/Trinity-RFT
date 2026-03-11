@@ -9,6 +9,7 @@ Submodules
 
    trinity.common.patch.glm4v
    trinity.common.patch.kimi
+   trinity.common.patch.qwen3_5
 
 Module contents
 ---------------

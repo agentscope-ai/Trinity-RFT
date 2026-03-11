@@ -809,6 +809,7 @@ window.runMermaid = runMermaid;</script>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.common.patch.html">trinity.common.patch package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.patch.glm4v.html">trinity.common.patch.glm4v module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.patch.kimi.html">trinity.common.patch.kimi module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.patch.qwen3_5.html">trinity.common.patch.qwen3_5 module</a></li>
 </ul>
 </details></li>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.common.rewards.html">trinity.common.rewards package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
@@ -1014,12 +1015,82 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>Source code for trinity.trainer.verl.monkey_patch</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">importlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">transformers.modeling_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">PreTrainedModel</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
+
+<span class="c1"># Map model types to their specific implementation modules.</span>
+<span class="c1"># To extend support for a new model, simply add an entry here.</span>
+<span class="n">MODEL_TYPE_TO_MODULE_MAP</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;qwen2_5_vl&quot;</span><span class="p">:</span> <span class="s2">&quot;verl.models.transformers.qwen2_vl&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;qwen2_vl&quot;</span><span class="p">:</span> <span class="s2">&quot;verl.models.transformers.qwen2_vl&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;qwen3_vl&quot;</span><span class="p">:</span> <span class="s2">&quot;verl.models.transformers.qwen3_vl&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;qwen3_vl_moe&quot;</span><span class="p">:</span> <span class="s2">&quot;verl.models.transformers.qwen3_vl&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;qwen3_5&quot;</span><span class="p">:</span> <span class="s2">&quot;trinity.common.patch.qwen3_5&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;qwen3_5_moe&quot;</span><span class="p">:</span> <span class="s2">&quot;trinity.common.patch.qwen3_5&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;glm4v&quot;</span><span class="p">:</span> <span class="s2">&quot;verl.models.transformers.glm4v&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">DEFAULT_MODULE_PATH</span> <span class="o">=</span> <span class="s2">&quot;verl.models.transformers.dense_common&quot;</span>
+<span class="n">VALID_BACKENDS</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;triton&quot;</span><span class="p">,</span> <span class="s2">&quot;torch&quot;</span><span class="p">}</span>
+
+
+<span class="c1"># modified from verl.models.transformers.monkey_patch.patch_forward_with_backends</span>
+<div class="viewcode-block" id="patch_forward_with_backends">
+<a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.monkey_patch.html#trinity.trainer.verl.monkey_patch.patch_forward_with_backends">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">patch_forward_with_backends</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">PreTrainedModel</span><span class="p">,</span>
+    <span class="n">use_fused_kernels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">fused_kernels_backend</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Monkey-patch the model&#39;s forward method with optimized backend implementations.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        model: The model to patch.</span>
+<span class="sd">        use_fused_kernels: Whether to enable fused kernels.</span>
+<span class="sd">        fused_kernels_backend: The backend to use (&#39;triton&#39; or &#39;torch&#39;).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+    <span class="c1"># 1. Validation &amp; Early Exit</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">use_fused_kernels</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="k">if</span> <span class="n">fused_kernels_backend</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">VALID_BACKENDS</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Skipping patch for </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;Invalid backend &#39;</span><span class="si">{</span><span class="n">fused_kernels_backend</span><span class="si">}</span><span class="s2">&#39;. Choose from </span><span class="si">{</span><span class="n">VALID_BACKENDS</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="c1"># 2. Resolve Module Path</span>
+    <span class="n">model_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;model_type&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">module_path</span> <span class="o">=</span> <span class="n">MODEL_TYPE_TO_MODULE_MAP</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">model_type</span><span class="p">,</span> <span class="n">DEFAULT_MODULE_PATH</span><span class="p">)</span>
+
+    <span class="c1"># 3. Dynamic Import</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">backend_module</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">module_path</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to import </span><span class="si">{</span><span class="n">module_path</span><span class="si">}</span><span class="s2"> for </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="c1"># 4. Select and Apply Forward Function</span>
+    <span class="n">func_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;forward_with_</span><span class="si">{</span><span class="n">fused_kernels_backend</span><span class="si">}</span><span class="s2">_backend&quot;</span>
+    <span class="n">patched_forward</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">backend_module</span><span class="p">,</span> <span class="n">func_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">patched_forward</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Function &#39;</span><span class="si">{</span><span class="n">func_name</span><span class="si">}</span><span class="s2">&#39; not found in </span><span class="si">{</span><span class="n">module_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">return</span>
+
+    <span class="n">model</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="n">forward</span> <span class="o">=</span> <span class="n">patched_forward</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Applied </span><span class="si">{</span><span class="n">fused_kernels_backend</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s2"> backend for </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
 
 
 <span class="c1"># modified from verl.models.transformers.monkey_patch.apply_monkey_patch</span>
@@ -1051,7 +1122,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.models.transformers.monkey_patch</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
         <span class="n">_ulysses_flash_attention_forward</span><span class="p">,</span>
-        <span class="n">patch_forward_with_backends</span><span class="p">,</span>
         <span class="n">patch_vlm_for_ulysses_input_slicing</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.import_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_trl_available</span>
@@ -1144,6 +1214,53 @@ window.runMermaid = runMermaid;</script>
         <span class="k">if</span> <span class="n">ulysses_sp_size</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">patch_vlm_for_ulysses_input_slicing</span><span class="p">(</span><span class="n">Qwen3VLTextModel</span><span class="p">)</span>
             <span class="n">patch_vlm_for_ulysses_input_slicing</span><span class="p">(</span><span class="n">Qwen3VLMoeTextModel</span><span class="p">)</span>
+
+    <span class="k">elif</span> <span class="n">model</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">model_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;qwen3_5&quot;</span><span class="p">,</span> <span class="s2">&quot;qwen3_5_moe&quot;</span><span class="p">]:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">transformers.models.qwen3_5.modeling_qwen3_5</span><span class="w"> </span><span class="kn">import</span> <span class="n">Qwen3_5TextModel</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">transformers.models.qwen3_5_moe.modeling_qwen3_5_moe</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">Qwen3_5MoeTextModel</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Step 1: bug fix in transformers==5.2.0</span>
+        <span class="c1"># see https://github.com/huggingface/transformers/pull/44382</span>
+        <span class="k">if</span> <span class="s2">&quot;Qwen3_5TextDecoderLayer&quot;</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">_no_split_modules</span><span class="p">:</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">_no_split_modules</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">&quot;Qwen3_5TextDecoderLayer&quot;</span><span class="p">)</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">_no_split_modules</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">&quot;Qwen3_5TextDecoderLayer&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;Qwen3_5MoeTextDecoderLayer&quot;</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">_no_split_modules</span><span class="p">:</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">_no_split_modules</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">&quot;Qwen3_5MoeTextDecoderLayer&quot;</span><span class="p">)</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">_no_split_modules</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">&quot;Qwen3_5MoeTextDecoderLayer&quot;</span><span class="p">)</span>
+
+        <span class="c1"># see https://github.com/huggingface/transformers/pull/44399</span>
+        <span class="k">if</span> <span class="n">is_transformers_version_in_range</span><span class="p">(</span><span class="n">max_version</span><span class="o">=</span><span class="s2">&quot;5.3.0&quot;</span><span class="p">):</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.patch.qwen3_5</span><span class="w"> </span><span class="kn">import</span> <span class="n">qwen35_text_forward</span>
+
+            <span class="n">Qwen3_5TextModel</span><span class="o">.</span><span class="n">forward</span> <span class="o">=</span> <span class="n">qwen35_text_forward</span>
+            <span class="n">Qwen3_5MoeTextModel</span><span class="o">.</span><span class="n">forward</span> <span class="o">=</span> <span class="n">qwen35_text_forward</span>
+
+        <span class="c1"># Step 2: patch input for multimodal sequence parallelism</span>
+        <span class="k">if</span> <span class="n">ulysses_sp_size</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">patch_vlm_for_ulysses_input_slicing</span><span class="p">(</span><span class="n">Qwen3_5TextModel</span><span class="p">)</span>
+            <span class="n">patch_vlm_for_ulysses_input_slicing</span><span class="p">(</span><span class="n">Qwen3_5MoeTextModel</span><span class="p">)</span>
+
+            <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.patch.qwen3_5</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                <span class="n">ulysses_gated_delta_net_forward_decorator</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">language_model</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">==</span> <span class="s2">&quot;linear_attention&quot;</span><span class="p">:</span>
+                    <span class="n">layer</span><span class="o">.</span><span class="n">linear_attn</span><span class="o">.</span><span class="n">forward</span> <span class="o">=</span> <span class="n">ulysses_gated_delta_net_forward_decorator</span><span class="p">(</span>
+                        <span class="n">layer</span><span class="o">.</span><span class="n">linear_attn</span><span class="o">.</span><span class="n">forward</span>
+                    <span class="p">)</span>
+
+        <span class="c1"># Step 3: patch verl.utils.flops_counter</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.flops_counter</span><span class="w"> </span><span class="kn">import</span> <span class="n">ESTIMATE_FUNC</span><span class="p">,</span> <span class="n">_estimate_qwen2_flops</span>
+
+        <span class="n">ESTIMATE_FUNC</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">&quot;qwen3_5&quot;</span><span class="p">:</span> <span class="n">_estimate_qwen2_flops</span><span class="p">,</span>
+                <span class="s2">&quot;qwen3_5_moe&quot;</span><span class="p">:</span> <span class="n">_estimate_qwen2_flops</span><span class="p">,</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
 
     <span class="k">elif</span> <span class="n">model</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">model_type</span> <span class="o">==</span> <span class="s2">&quot;glm4v&quot;</span><span class="p">:</span>
         <span class="c1"># Step 1: patch model to support image-text mixed data</span>
