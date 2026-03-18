@@ -60,13 +60,14 @@ def patch_forward_with_backends(
     except ImportError as e:
         logger.error(f"Failed to import {module_path} for {model.__class__.__name__}: {e}")
         return
-    
+
     # 4. Fix VLM sequence parallelism bug with optimized backend in veRL.
     # fix torch
     if fused_kernels_backend == "torch":
         from verl.utils.experimental.torch_functional import FusedLinearForPPO
 
         original_torch_backend_forward = FusedLinearForPPO.forward
+
         def torch_backend_forward(
             self,
             hidden_states: torch.FloatTensor,
@@ -92,16 +93,19 @@ def patch_forward_with_backends(
                 input_ids,
                 temperature,
             )
-            
+
         FusedLinearForPPO.forward = torch_backend_forward
     else:  # triton
         from verl.utils.kernel import linear_cross_entropy
+
         original_linear_cross_entropy = linear_cross_entropy.linear_cross_entropy
+
         def triton_backend_forward(
             hidden: torch.Tensor,
             weight: torch.Tensor,
             labels: torch.Tensor,
-            *args, **kwargs,
+            *args,
+            **kwargs,
         ):
             if hidden.size(1) < labels.size(1):
                 from verl.utils.ulysses import (
@@ -114,9 +118,7 @@ def patch_forward_with_backends(
                 labels = slice_input_tensor(labels, dim=1, padding=False)
             assert hidden.size(1) == labels.size(1)
 
-            return original_linear_cross_entropy(
-                hidden, weight, labels, *args, **kwargs
-            )
+            return original_linear_cross_entropy(hidden, weight, labels, *args, **kwargs)
 
         linear_cross_entropy.linear_cross_entropy = triton_backend_forward
 
