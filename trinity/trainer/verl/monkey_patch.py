@@ -60,8 +60,67 @@ def patch_forward_with_backends(
     except ImportError as e:
         logger.error(f"Failed to import {module_path} for {model.__class__.__name__}: {e}")
         return
+    
+    # 4. Fix VLM sequence parallelism bug with optimized backend in veRL.
+    # fix torch
+    if fused_kernels_backend == "torch":
+        from verl.utils.experimental.torch_functional import FusedLinearForPPO
 
-    # 4. Select and Apply Forward Function
+        original_torch_backend_forward = FusedLinearForPPO.forward
+        def torch_backend_forward(
+            self,
+            hidden_states: torch.FloatTensor,
+            vocab_weights: torch.FloatTensor,
+            input_ids: torch.LongTensor,
+            temperature: float = 1.0,
+        ) -> tuple[torch.FloatTensor, torch.FloatTensor]:
+            if hidden_states.size(1) < input_ids.size(1):
+                from verl.utils.ulysses import (
+                    get_ulysses_sequence_parallel_world_size,
+                    slice_input_tensor,
+                )
+
+                ulysses_sp_size = get_ulysses_sequence_parallel_world_size()
+                assert ulysses_sp_size > 1
+                input_ids = slice_input_tensor(input_ids, dim=1, padding=False)
+            assert hidden_states.size(1) == input_ids.size(1)
+
+            return original_torch_backend_forward(
+                self,
+                hidden_states,
+                vocab_weights,
+                input_ids,
+                temperature,
+            )
+            
+        FusedLinearForPPO.forward = torch_backend_forward
+    else:  # triton
+        from verl.utils.kernel import linear_cross_entropy
+        original_linear_cross_entropy = linear_cross_entropy.linear_cross_entropy
+        def triton_backend_forward(
+            hidden: torch.Tensor,
+            weight: torch.Tensor,
+            labels: torch.Tensor,
+            *args, **kwargs,
+        ):
+            if hidden.size(1) < labels.size(1):
+                from verl.utils.ulysses import (
+                    get_ulysses_sequence_parallel_world_size,
+                    slice_input_tensor,
+                )
+
+                ulysses_sp_size = get_ulysses_sequence_parallel_world_size()
+                assert ulysses_sp_size > 1
+                labels = slice_input_tensor(labels, dim=1, padding=False)
+            assert hidden.size(1) == labels.size(1)
+
+            return original_linear_cross_entropy(
+                hidden, weight, labels, *args, **kwargs
+            )
+
+        linear_cross_entropy.linear_cross_entropy = triton_backend_forward
+
+    # 5. Select and Apply Forward Function
     func_name = f"forward_with_{fused_kernels_backend}_backend"
     patched_forward = getattr(backend_module, func_name, None)
 

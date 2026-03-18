@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 from functools import wraps
-from typing import Optional
+from typing import Any, Optional
 
 import torch
+import torch.distributed as dist
+from torch import Tensor
 from transformers.models.qwen3_5.modeling_qwen3_5 import (
     BaseModelOutputWithPast,
     Cache,
@@ -16,6 +18,50 @@ from transformers.models.qwen3_5.modeling_qwen3_5 import (
     create_causal_mask,
     merge_with_config_defaults,
 )
+from verl.utils.ulysses import all_gather_tensor
+
+
+class Slice(torch.autograd.Function):
+    @staticmethod
+    def forward(
+        ctx: Any,
+        group: dist.ProcessGroup,
+        global_tensor: Tensor,
+        dim: int,
+        grad_scaler: bool = True,
+        async_op=False,
+    ) -> Tensor:
+        ctx.group = group
+        ctx.dim = dim
+        ctx.grad_scaler = grad_scaler
+        ctx.async_op = async_op
+
+        sp_world_size = dist.get_world_size(group=group)
+        ctx.sp_world_size = sp_world_size
+
+        sp_rank = dist.get_rank(group=group)
+        ctx.sp_rank = sp_rank
+
+        # slice the input tensor
+        parts = global_tensor.size(dim) // sp_world_size
+        slc = [slice(None)] * len(global_tensor.shape)
+        slc[dim] = slice(sp_rank * parts, (sp_rank + 1) * parts)
+        return global_tensor[tuple(slc)].contiguous()
+
+    @staticmethod
+    def backward(ctx, grad_outputs: Tensor) -> Any:
+        if ctx.grad_scaler:
+            grad_outputs = grad_outputs / ctx.sp_world_size
+
+        output = all_gather_tensor(grad_outputs, ctx.group, ctx.async_op)
+        return (
+            None,
+            torch.cat(output.split(grad_outputs.size(0), dim=0), dim=ctx.dim).contiguous(),
+            None,
+            None,
+            None,
+            None,
+        )
 
 
 # TODO: may optimize this function
@@ -29,8 +75,8 @@ def ulysses_gated_delta_net_forward_decorator(func):
     ):
         from verl.utils.ulysses import (
             gather_outputs_and_unpad,
+            get_ulysses_sequence_parallel_group,
             get_ulysses_sequence_parallel_world_size,
-            slice_input_tensor,
         )
 
         ulysses_sp_size = get_ulysses_sequence_parallel_world_size()
@@ -40,7 +86,8 @@ def ulysses_gated_delta_net_forward_decorator(func):
         output = func(hidden_states, cache_params, cache_position, attention_mask)
 
         if ulysses_sp_size > 1:
-            output = slice_input_tensor(output, dim=1, padding=False)
+            group = get_ulysses_sequence_parallel_group()
+            output = Slice.apply(group, output, 1)
         return output
 
     return wrapper

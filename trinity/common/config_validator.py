@@ -856,11 +856,13 @@ class BufferConfigValidator(ConfigValidator):
         if (
             not config.model.tinker.enable
             and config.mode in {"train", "both"}
-            and config.buffer.train_batch_size % config.cluster.trainer_gpu_num != 0
+            and config.buffer.train_batch_size
+            % (config.cluster.trainer_gpu_num // config.trainer.ulysses_sequence_parallel_size)
+            != 0
         ):
             raise ValueError(
                 f"batch_size ({config.buffer.train_batch_size}) must be "
-                f"divisible by ({config.cluster.trainer_gpu_num})."
+                f"divisible by ({config.cluster.trainer_gpu_num // config.trainer.ulysses_sequence_parallel_size})."
             )
 
         # create buffer.cache_dir at <checkpoint_root_dir>/<project>/<name>/buffer
