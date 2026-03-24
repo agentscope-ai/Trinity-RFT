@@ -407,18 +407,30 @@ class veRLConfig:
         component_name: str,
         model_config: Union[ActorModel, CriticModel],
         fsdp_config: FSDPConfig,
+        train_batch_size: int,
         world_size: int,
         sp_attr: str = "ulysses_sequence_parallel_size",
     ) -> None:
         if obj.strategy.startswith("fsdp"):
             # check sequence parallelism
             sp_size = getattr(obj, sp_attr, 1)
+            if sp_size < 1:
+                sp_size = 1
+                logger.warning(f"{component_name} sequence parallel size is set to 1.")
+            setattr(obj, sp_attr, sp_size)
+
             if world_size % sp_size != 0:
                 raise ValueError(
                     f"The number of trainer GPUs ({world_size}) must be "
                     f"divisible by `{component_name}.{sp_attr}` ({sp_size}). "
                     f"Please change `trainer.{sp_attr}` or "
                     f"`{component_name}.{sp_attr}` in verl config to a reasonable value."
+                )
+            if train_batch_size % (world_size // sp_size) != 0:
+                raise ValueError(
+                    f"The batch size ({train_batch_size}) must be divisible by "
+                    f"the number of GPUs ({world_size}) divided by the sequence "
+                    f"parallelism size ({sp_size})."
                 )
 
             try:
@@ -542,6 +554,7 @@ class veRLConfig:
             component_name="actor",
             model_config=actor_model_config,
             fsdp_config=actor_config.fsdp_config,
+            train_batch_size=config.buffer.train_batch_size,
             world_size=config.cluster.trainer_gpu_num,
         )
         self._adjust_token_len_if_needed(
@@ -564,6 +577,7 @@ class veRLConfig:
             component_name="ref",
             model_config=actor_model_config,
             fsdp_config=ref_config.fsdp_config,
+            train_batch_size=config.buffer.train_batch_size,
             world_size=config.cluster.trainer_gpu_num,
         )
         self._adjust_token_len_if_needed(
@@ -595,6 +609,7 @@ class veRLConfig:
             component_name="critic",
             model_config=self.critic.model,
             fsdp_config=self.critic.model.fsdp_config,
+            train_batch_size=config.buffer.train_batch_size,
             world_size=config.cluster.trainer_gpu_num,
         )
         self._adjust_token_len_if_needed(

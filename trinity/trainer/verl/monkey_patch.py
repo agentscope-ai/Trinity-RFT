@@ -23,6 +23,110 @@ DEFAULT_MODULE_PATH = "verl.models.transformers.dense_common"
 VALID_BACKENDS: Set[str] = {"triton", "torch"}
 
 
+def patch_fused_kernels(fused_kernels_backend: str):
+    """Fix VLM sequence parallelism bug with optimized backend in veRL."""
+
+    # fix torch
+    if fused_kernels_backend == "torch":
+        from verl.utils.experimental.torch_functional import FusedLinearForPPO
+
+        # Make patch idempotent: store the original forward once and avoid re-wrapping.
+        if getattr(FusedLinearForPPO, "_is_patched", False):
+            # Already patched; nothing to do.
+            return
+
+        if not hasattr(FusedLinearForPPO, "_original_forward"):
+            FusedLinearForPPO._original_forward = FusedLinearForPPO.forward
+        original_torch_backend_forward = FusedLinearForPPO._original_forward
+
+        def torch_backend_forward(
+            self,
+            hidden_states: torch.FloatTensor,
+            vocab_weights: torch.FloatTensor,
+            input_ids: torch.LongTensor,
+            temperature: float = 1.0,
+        ) -> tuple[torch.FloatTensor, torch.FloatTensor]:
+            if hidden_states.size(1) < input_ids.size(1):
+                from verl.utils.ulysses import (
+                    get_ulysses_sequence_parallel_world_size,
+                    slice_input_tensor,
+                )
+
+                ulysses_sp_size = get_ulysses_sequence_parallel_world_size()
+                if ulysses_sp_size <= 1:
+                    raise ValueError(
+                        f"Expected Ulysses sequence parallel world size > 1, "
+                        f"but got {ulysses_sp_size}."
+                    )
+                input_ids = slice_input_tensor(input_ids, dim=1, padding=False)
+
+            if hidden_states.size(1) != input_ids.size(1):
+                raise ValueError(
+                    "hidden_states and input_ids must have the same sequence length "
+                    f"along dimension 1, but got hidden_states.size(1) = "
+                    f"{hidden_states.size(1)} and input_ids.size(1) = "
+                    f"{input_ids.size(1)}."
+                )
+
+            return original_torch_backend_forward(
+                self,
+                hidden_states,
+                vocab_weights,
+                input_ids,
+                temperature,
+            )
+
+        FusedLinearForPPO.forward = torch_backend_forward
+        FusedLinearForPPO._is_patched = True
+    else:  # triton
+        from verl.utils.kernel import linear_cross_entropy
+
+        # Make patch idempotent: store the original function once and avoid re-wrapping.
+        if getattr(linear_cross_entropy, "_is_patched", False):
+            # Already patched; nothing to do.
+            return
+
+        if not hasattr(linear_cross_entropy, "_linear_cross_entropy"):
+            # This is the first time we're patching this function.
+            # Store a reference to the original function.
+            linear_cross_entropy._linear_cross_entropy = linear_cross_entropy.linear_cross_entropy
+        original_linear_cross_entropy = linear_cross_entropy._linear_cross_entropy
+
+        def triton_backend_forward(
+            hidden: torch.Tensor,
+            weight: torch.Tensor,
+            labels: torch.Tensor,
+            *args,
+            **kwargs,
+        ):
+            if hidden.size(1) < labels.size(1):
+                from verl.utils.ulysses import (
+                    get_ulysses_sequence_parallel_world_size,
+                    slice_input_tensor,
+                )
+
+                ulysses_sp_size = get_ulysses_sequence_parallel_world_size()
+                if ulysses_sp_size <= 1:
+                    raise ValueError(
+                        f"Expected Ulysses sequence parallel world size > 1, "
+                        f"but got {ulysses_sp_size}."
+                    )
+                labels = slice_input_tensor(labels, dim=1, padding=False)
+
+            if hidden.size(1) != labels.size(1):
+                raise ValueError(
+                    "hidden and labels must have the same sequence length "
+                    f"along dimension 1, but got hidden.size(1) = "
+                    f"{hidden.size(1)} and labels.size(1) = "
+                    f"{labels.size(1)}."
+                )
+
+            return original_linear_cross_entropy(hidden, weight, labels, *args, **kwargs)
+
+        linear_cross_entropy.linear_cross_entropy = triton_backend_forward
+        linear_cross_entropy._is_patched = True
+
+
 # modified from verl.models.transformers.monkey_patch.patch_forward_with_backends
 def patch_forward_with_backends(
     model: PreTrainedModel,
@@ -50,77 +154,19 @@ def patch_forward_with_backends(
         )
         return
 
-    # 2. Resolve Module Path
+    # 2. Fix VLM sequence parallelism bug with optimized backend in veRL.
+    patch_fused_kernels(fused_kernels_backend)
+
+    # 3. Resolve Module Path
     model_type: str = getattr(model.config, "model_type", None)
     module_path = MODEL_TYPE_TO_MODULE_MAP.get(model_type, DEFAULT_MODULE_PATH)
 
-    # 3. Dynamic Import
+    # 4. Dynamic Import
     try:
         backend_module = importlib.import_module(module_path)
     except ImportError as e:
         logger.error(f"Failed to import {module_path} for {model.__class__.__name__}: {e}")
         return
-
-    # 4. Fix VLM sequence parallelism bug with optimized backend in veRL.
-    # fix torch
-    if fused_kernels_backend == "torch":
-        from verl.utils.experimental.torch_functional import FusedLinearForPPO
-
-        original_torch_backend_forward = FusedLinearForPPO.forward
-
-        def torch_backend_forward(
-            self,
-            hidden_states: torch.FloatTensor,
-            vocab_weights: torch.FloatTensor,
-            input_ids: torch.LongTensor,
-            temperature: float = 1.0,
-        ) -> tuple[torch.FloatTensor, torch.FloatTensor]:
-            if hidden_states.size(1) < input_ids.size(1):
-                from verl.utils.ulysses import (
-                    get_ulysses_sequence_parallel_world_size,
-                    slice_input_tensor,
-                )
-
-                ulysses_sp_size = get_ulysses_sequence_parallel_world_size()
-                assert ulysses_sp_size > 1
-                input_ids = slice_input_tensor(input_ids, dim=1, padding=False)
-            assert hidden_states.size(1) == input_ids.size(1)
-
-            return original_torch_backend_forward(
-                self,
-                hidden_states,
-                vocab_weights,
-                input_ids,
-                temperature,
-            )
-
-        FusedLinearForPPO.forward = torch_backend_forward
-    else:  # triton
-        from verl.utils.kernel import linear_cross_entropy
-
-        original_linear_cross_entropy = linear_cross_entropy.linear_cross_entropy
-
-        def triton_backend_forward(
-            hidden: torch.Tensor,
-            weight: torch.Tensor,
-            labels: torch.Tensor,
-            *args,
-            **kwargs,
-        ):
-            if hidden.size(1) < labels.size(1):
-                from verl.utils.ulysses import (
-                    get_ulysses_sequence_parallel_world_size,
-                    slice_input_tensor,
-                )
-
-                ulysses_sp_size = get_ulysses_sequence_parallel_world_size()
-                assert ulysses_sp_size > 1
-                labels = slice_input_tensor(labels, dim=1, padding=False)
-            assert hidden.size(1) == labels.size(1)
-
-            return original_linear_cross_entropy(hidden, weight, labels, *args, **kwargs)
-
-        linear_cross_entropy.linear_cross_entropy = triton_backend_forward
 
     # 5. Select and Apply Forward Function
     func_name = f"forward_with_{fused_kernels_backend}_backend"

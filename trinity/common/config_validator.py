@@ -853,17 +853,6 @@ class BufferConfigValidator(ConfigValidator):
             config.buffer.train_batch_size = (
                 config.buffer.batch_size * config.algorithm.repeat_times
             )
-        if (
-            not config.model.tinker.enable
-            and config.mode in {"train", "both"}
-            and config.buffer.train_batch_size
-            % (config.cluster.trainer_gpu_num // config.trainer.ulysses_sequence_parallel_size)
-            != 0
-        ):
-            raise ValueError(
-                f"batch_size ({config.buffer.train_batch_size}) must be "
-                f"divisible by ({config.cluster.trainer_gpu_num // config.trainer.ulysses_sequence_parallel_size})."
-            )
 
         # create buffer.cache_dir at <checkpoint_root_dir>/<project>/<name>/buffer
         config.buffer.cache_dir = os.path.abspath(os.path.join(config.checkpoint_job_dir, "buffer"))
@@ -1130,6 +1119,13 @@ class TrainerConfigValidator(ConfigValidator):
             return
 
         if config.trainer.trainer_type == "verl":
+            if config.trainer.ulysses_sequence_parallel_size < 1:
+                self.logger.warning(
+                    "Ulysses sequence parallel size is set to 1 "
+                    f"because {config.trainer.ulysses_sequence_parallel_size} is invalid."
+                )
+                config.trainer.ulysses_sequence_parallel_size = 1
+
             if config.trainer.trainer_config:
                 from trinity.trainer.verl.verl_config import veRLConfig
 
