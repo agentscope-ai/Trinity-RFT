@@ -120,6 +120,14 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
     """
 
     def __init__(self, config: DictConfig, role: str, **kwargs):
+        # bug fix patch for seqlen_balancing in verl
+        from verl.utils import seqlen_balancing
+
+        from trinity.trainer.verl.utils import rearrange_micro_batches
+
+        seqlen_balancing.rearrange_micro_batches = rearrange_micro_batches
+        # end bug fix patch
+
         Worker.__init__(self)
 
         self.config = config
@@ -1131,6 +1139,14 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
 
 class CriticWorker(Worker, DistProfilerExtension):
     def __init__(self, config: FSDPCriticConfig):
+        # bug fix patch for seqlen_balancing in verl
+        from verl.utils import seqlen_balancing
+
+        from trinity.trainer.verl.utils import rearrange_micro_batches
+
+        seqlen_balancing.rearrange_micro_batches = rearrange_micro_batches
+        # end bug fix patch
+
         Worker.__init__(self)
         omega_profiler_config = config.get("profiler", {})
         profiler_config = omega_conf_to_dataclass(
