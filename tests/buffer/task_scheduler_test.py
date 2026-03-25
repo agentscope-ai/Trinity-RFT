@@ -9,7 +9,7 @@ from tests.tools import get_template_config, get_unittest_dataset_config
 from trinity.buffer.reader import READER
 from trinity.buffer.reader.file_reader import TaskFileReader
 from trinity.buffer.task_scheduler import TasksetScheduler, get_taskset_scheduler
-from trinity.common.config import FormatConfig, TaskSelectorConfig, TasksetConfig
+from trinity.common.config import DataSelectorConfig, FormatConfig, TasksetConfig
 from trinity.common.workflows.workflow import Task
 
 
@@ -250,7 +250,7 @@ class TestTaskScheduler(unittest.IsolatedAsyncioTestCase):
         ]
     )
     async def test_task_scheduler(
-        self, buffer_config_kwargs, task_selector_kwargs, batch_tasks_orders
+        self, buffer_config_kwargs, data_selector_kwargs, batch_tasks_orders
     ) -> None:
         config = get_template_config()
         config.mode = "explore"
@@ -276,8 +276,8 @@ class TestTaskScheduler(unittest.IsolatedAsyncioTestCase):
                 ),
                 default_workflow_type="math_workflow",
                 default_reward_fn_type="math_reward",
-                task_selector=TaskSelectorConfig(
-                    **task_selector_kwargs,
+                data_selector=DataSelectorConfig(
+                    **data_selector_kwargs,
                 ),
             ),
             TasksetConfig(
@@ -298,8 +298,8 @@ class TestTaskScheduler(unittest.IsolatedAsyncioTestCase):
                 ),
                 default_workflow_type="math_workflow",
                 default_reward_fn_type="math_reward",
-                task_selector=TaskSelectorConfig(
-                    **task_selector_kwargs,
+                data_selector=DataSelectorConfig(
+                    **data_selector_kwargs,
                 ),
             ),
         ]

@@ -36,10 +36,10 @@ from trinity.common.config import (
     AlgorithmConfig,
     BufferConfig,
     Config,
+    DataSelectorConfig,
     ExperienceBufferConfig,
     ExplorerInput,
     StageConfig,
-    TaskSelectorConfig,
     TrainerInput,
 )
 from trinity.common.constants import (
@@ -92,7 +92,7 @@ class TestTrainerCountdown(BaseTrainerCase):
         }
         self.config.model.rope_theta = 10000
         self.config.buffer.explorer_input.taskset = get_unittest_dataset_config("countdown")
-        self.config.buffer.explorer_input.taskset.task_selector = TaskSelectorConfig(
+        self.config.buffer.explorer_input.taskset.data_selector = DataSelectorConfig(
             selector_type="shuffle", seed=42
         )
         eval_tasksets = self.config.buffer.explorer_input.eval_tasksets

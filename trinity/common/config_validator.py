@@ -930,10 +930,11 @@ class BufferConfigValidator(ConfigValidator):
             _fill_taskset_config(taskset, i)
 
             # check if selector is supported
-            selector = SELECTORS.get(taskset.task_selector.selector_type)
+            selector = SELECTORS.get(taskset.data_selector.selector_type)
             if selector is None:
                 raise ValueError(
-                    f"Selector {taskset.task_selector.selector_type} is not supported."
+                    f"Selector `{taskset.data_selector.selector_type}` "
+                    f"in {taskset.name} is not supported."
                 )
 
         for idx, taskset in enumerate(explorer_input.eval_tasksets):
@@ -1007,6 +1008,16 @@ class BufferConfigValidator(ConfigValidator):
                     f"`buffer.trainer_input.auxiliary_buffers[{aux_name}].path` is required, "
                     f"please set it to the path of the auxiliary buffer."
                 )
+
+        from trinity.buffer.selector import SELECTORS
+
+        # check if selector is supported
+        selector = SELECTORS.get(experience_buffer.data_selector.selector_type)
+        if selector is None:
+            raise ValueError(
+                f"Selector {experience_buffer.data_selector.selector_type} "
+                "in `experience_buffer` is not supported."
+            )
 
         if config.mode == "train":
             assert (

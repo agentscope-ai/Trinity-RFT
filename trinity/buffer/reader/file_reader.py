@@ -35,6 +35,8 @@ class _HFBatchReader:
     ):
         self.dataset = dataset
         self.dataset_size = len(dataset)
+        if self.dataset_size == 0:
+            raise ValueError(f"Dataset [{name}] is empty and cannot be read in batches.")
         self.name = name
         self.current_batch_size = None
         self.drop_last = drop_last
@@ -42,7 +44,7 @@ class _HFBatchReader:
         self.current_offset = offset
 
         # convert epochs/steps to sample number
-        if total_steps:
+        if total_steps is not None:
             self.total_samples = default_batch_size * total_steps
         else:
             self.total_samples = self.dataset_size * total_epochs
@@ -94,9 +96,61 @@ class _HFBatchReader:
 class BaseFileReader(BufferReader):
     async def read_async(self, batch_size: Optional[int] = None, **kwargs):
         try:
-            return self.read(batch_size)
+            return self.read(batch_size, **kwargs)
         except StopIteration as e:
             raise StopAsyncIteration from e
+
+
+class _DatasetFileReader(BaseFileReader):
+    def __init__(self, config: StorageConfig):
+        self.config = config
+        self.name = config.name
+        self.read_batch_size = config.batch_size
+        self.formatter, self.dataset = self._init_formatter_and_dataset(config)
+        self._init_selector(config)
+
+    def _init_formatter_and_dataset(self, config: StorageConfig):
+        raise NotImplementedError
+
+    def _init_selector(self, config: StorageConfig):
+        if config.data_selector is not None:
+            from trinity.buffer.selector import SELECTORS
+            from trinity.buffer.selector.selector import BaseSelector
+
+            self.selector: BaseSelector = SELECTORS.get(config.data_selector.selector_type)(
+                self.dataset, config.data_selector
+            )
+        else:
+            self.selector = None
+
+    def _read_samples(self, batch_size: int) -> Tuple[List, List]:
+        if self.selector is not None:
+            indices = self.selector.get_indices(batch_size)
+            samples = self.dataset.select_batch(indices)
+            return samples, indices
+        return self.dataset.read_batch(batch_size)
+
+    def state_dict(self):
+        if self.selector is not None:
+            return self.selector.state_dict()
+        return {"current_index": self.dataset.current_offset}
+
+    def load_state_dict(self, state_dict):
+        if self.selector is not None:
+            self.selector.load_state_dict(state_dict)
+        else:
+            self.dataset.current_offset = state_dict["current_index"]
+
+    def __len__(self):
+        return self.dataset.dataset_size
+
+    def _convert_batch(self, samples: List, indices: List) -> List:
+        raise NotImplementedError
+
+    def read(self, batch_size: Optional[int] = None, **kwargs) -> List:
+        batch_size = batch_size or self.read_batch_size
+        samples, indices = self._read_samples(batch_size)
+        return self._convert_batch(samples, indices)
 
 
 class FileReader(BaseFileReader):
@@ -109,7 +163,7 @@ class FileReader(BaseFileReader):
             self.reader = TaskFileReader(config)
 
     def read(self, batch_size: Optional[int] = None, **kwargs) -> List:
-        return self.reader.read(batch_size)
+        return self.reader.read(batch_size, **kwargs)
 
     def state_dict(self):
         return self.reader.state_dict()
@@ -125,15 +179,17 @@ class FileReader(BaseFileReader):
         return self.reader.__len__()
 
 
-class ExperienceFileReader(BaseFileReader):
+class ExperienceFileReader(_DatasetFileReader):
     """Reader for SFT / DPO file data."""
 
     def __init__(self, config: StorageConfig):
-        self.formatter = FORMATTER.get(config.schema_type)(
+        super().__init__(config)
+
+    def _init_formatter_and_dataset(self, config: StorageConfig):
+        formatter = FORMATTER.get(config.schema_type)(
             tokenizer_path=config.tokenizer_path, format_config=config.format
         )
-        self.read_batch_size = config.batch_size
-        self.dataset = _HFBatchReader(
+        dataset = _HFBatchReader(
             load_dataset(config.path, name=config.subset_name, split=config.split),
             name=config.name,
             default_batch_size=self.read_batch_size,
@@ -142,82 +198,41 @@ class ExperienceFileReader(BaseFileReader):
             total_steps=config.total_steps,
             enable_progress_bar=config.enable_progress_bar,
         )
-        self.selector = None
+        return formatter, dataset
 
-    def read(self, batch_size: Optional[int] = None, **kwargs) -> List:
-        samples, _ = self.dataset.read_batch(batch_size or self.read_batch_size)
+    def _convert_batch(self, samples: List, indices: List) -> List:
         exp_list = []
         for sample in samples:
             experience = self.formatter.format(sample)
             exp_list.append(experience)
         return exp_list
 
-    def state_dict(self):
-        return {"current_index": self.dataset.current_offset}
 
-    def load_state_dict(self, state_dict):
-        self.dataset.current_offset = state_dict["current_index"]
-
-    def __len__(self):
-        return self.dataset.dataset_size
-
-
-class TaskFileReader(BaseFileReader):
+class TaskFileReader(_DatasetFileReader):
     """A Reader for task file data."""
 
     def __init__(self, config: StorageConfig):
-        self.config = config
-        self.name = config.name
-        self.epoch = 0
         datasets.disable_caching()
-        self.read_batch_size = config.batch_size
-        self.dataset = _HFBatchReader(
-            load_dataset(self.config.path, name=self.config.subset_name, split=self.config.split),
-            name=self.config.name,
+        super().__init__(config)
+
+    def _init_formatter_and_dataset(self, config):
+        formatter = FORMATTER.get("task")(config)
+        dataset = _HFBatchReader(
+            load_dataset(config.path, name=config.subset_name, split=config.split),
+            name=config.name,
             default_batch_size=self.read_batch_size,
-            total_epochs=self.config.total_epochs if not self.config.is_eval else 1,
-            offset=self.config.index,
-            drop_last=not self.config.is_eval,
-            total_steps=self.config.total_steps if not self.config.is_eval else None,
-            enable_progress_bar=self.config.enable_progress_bar,
+            total_epochs=config.total_epochs if not config.is_eval else 1,
+            offset=config.index,
+            drop_last=not config.is_eval,
+            total_steps=config.total_steps if not config.is_eval else None,
+            enable_progress_bar=config.enable_progress_bar,
         )
-        self.formatter = FORMATTER.get("task")(config)
-        if self.config.task_selector is not None:
-            from trinity.buffer.selector import SELECTORS
-            from trinity.buffer.selector.selector import BaseSelector
+        return formatter, dataset
 
-            self.selector: BaseSelector = SELECTORS.get(self.config.task_selector.selector_type)(
-                self.dataset, self.config.task_selector
-            )
-        else:
-            self.selector = None
-
-    def _get_tasks(self, samples: List, indices: List) -> List:
+    def _convert_batch(self, samples: List, indices: List) -> List:
         tasks = []
         for sample, index in zip(samples, indices):
             task = self.formatter.format(sample)
             task.index["index"] = int(index)
             tasks.append(task)
         return tasks
-
-    def read(self, batch_size: Optional[int] = None, **kwargs) -> List:
-        batch_size = batch_size or self.read_batch_size
-        if self.selector is not None:
-            indices = self.selector.get_indices(batch_size)
-            samples = self.dataset.select_batch(indices)
-        else:
-            samples, indices = self.dataset.read_batch(batch_size)
-        return self._get_tasks(samples, indices)
-
-    def state_dict(self):
-        if self.selector is not None:
-            return self.selector.state_dict()
-        return {"current_index": self.dataset.current_offset}
-
-    def load_state_dict(self, state_dict):
-        if self.selector is not None:
-            self.selector.load_state_dict(state_dict)
-        self.dataset.current_offset = state_dict["current_index"]
-
-    def __len__(self):
-        return self.dataset.dataset_size

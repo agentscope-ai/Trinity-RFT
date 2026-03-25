@@ -24,7 +24,7 @@ def get_taskset_scheduler(explorer_state: Dict, config: Config) -> "TasksetSched
         TasksetSchedulerBase: The taskset scheduler instance
     """
     taskset_configs = config.buffer.explorer_input.tasksets
-    if len(taskset_configs) == 1 and taskset_configs[0].task_selector.selector_type == "sequential":
+    if len(taskset_configs) == 1 and taskset_configs[0].data_selector.selector_type == "sequential":
         return SimpleTasksetScheduler(explorer_state, config)
     else:
         return TasksetScheduler(explorer_state, config)
@@ -70,7 +70,7 @@ class SimpleTasksetScheduler(TasksetSchedulerBase):
         )
         taskset_config = deepcopy(self.config.buffer.explorer_input.tasksets[0])
         taskset_config.index = index
-        taskset_config.task_selector = None  # disable selection
+        taskset_config.data_selector = None  # disable selection
         self.reader = get_buffer_reader(taskset_config)
 
     async def read_async(self) -> List:

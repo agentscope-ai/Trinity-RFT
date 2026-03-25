@@ -73,51 +73,39 @@ def tokenize_and_mask_messages_default(
         If the assumption is not met, the function may produce incorrect results.
         Please check the chat template before using this method.
     """
-
-    tokens = tokenizer.apply_chat_template(
-        messages,
+    common_kwargs = dict(
         tools=tools,
         chat_template=chat_template,
-        add_generation_prompt=False,
         enable_thinking=enable_thinking,
         padding=False,
         truncation=True,
-        return_tensors="pt",
         add_special_tokens=False,
-        return_dict=False,
     )
-    assistant_token_mask = torch.zeros(tokens.shape[1], dtype=torch.int)
+
+    generation_messages = []
+    response_messages = []
     for idx, message in enumerate(messages):
         if message["role"] == "assistant":
-            prompt_token_ids = tokenizer.apply_chat_template(
-                messages[:idx],
-                tools=tools,
-                chat_template=chat_template,
-                add_generation_prompt=True,
-                enable_thinking=enable_thinking,
-                padding=False,
-                truncation=True,
-                return_tensors="pt",
-                add_special_tokens=False,
-                return_dict=False,
-            )
-            prompt_length = prompt_token_ids.shape[1]
-            prompt_response_token_ids = tokenizer.apply_chat_template(
-                messages[: idx + 1],
-                tools=tools,
-                chat_template=chat_template,
-                add_generation_prompt=False,
-                enable_thinking=enable_thinking,
-                padding=False,
-                truncation=True,
-                return_tensors="pt",
-                add_special_tokens=False,
-                return_dict=False,
-            )
-            prompt_response_length = prompt_response_token_ids.shape[1]
-            assistant_token_mask[prompt_length:prompt_response_length] = 1
+            generation_messages.append(messages[:idx])
+            response_messages.append(messages[: idx + 1])
+        elif idx == len(messages) - 1:
+            response_messages.append(messages)
+    prompt_token_ids_list = tokenizer.apply_chat_template(
+        generation_messages,
+        add_generation_prompt=True,
+        **common_kwargs,
+    )["input_ids"]
+    response_token_ids_list = tokenizer.apply_chat_template(
+        response_messages,
+        add_generation_prompt=False,
+        **common_kwargs,
+    )["input_ids"]
+    assistant_token_mask = torch.zeros(len(response_token_ids_list[-1]), dtype=torch.int)
+    for prompt_token_ids, response_token_ids in zip(prompt_token_ids_list, response_token_ids_list):
+        assistant_token_mask[len(prompt_token_ids) : len(response_token_ids)] = 1
+
     prompt_length = torch.argmax(assistant_token_mask).item()
-    return tokens[0], assistant_token_mask, prompt_length
+    return torch.tensor(response_token_ids_list[-1]), assistant_token_mask, prompt_length
 
 
 def get_action_mask_method(chat_template: Optional[str] = None) -> Callable:
