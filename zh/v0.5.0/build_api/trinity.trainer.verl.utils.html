@@ -623,6 +623,7 @@
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.utils.compute_data_metrics"><code class="docutils literal notranslate"><span class="pre">compute_data_metrics()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.utils.get_latest_hf_checkpoint_path"><code class="docutils literal notranslate"><span class="pre">get_latest_hf_checkpoint_path()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.utils.apply_fsdp2"><code class="docutils literal notranslate"><span class="pre">apply_fsdp2()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.utils.rearrange_micro_batches"><code class="docutils literal notranslate"><span class="pre">rearrange_micro_batches()</span></code></a></li>
 </ul>
             </nav>
         </div>
@@ -686,6 +687,32 @@ for each metric category.</p>
 <dd><p>model: AutoModelForCausalLM</p>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="trinity.trainer.verl.utils.rearrange_micro_batches">
+<span class="sig-prename descclassname"><span class="pre">trinity.trainer.verl.utils.</span></span><span class="sig-name descname"><span class="pre">rearrange_micro_batches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">batch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_token_len</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dp_group</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_batches_divided_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">same_micro_num_in_dp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_num_micro_batch</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_dynamic_bsz_balance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/trainer/verl/utils.html#rearrange_micro_batches"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.trainer.verl.utils.rearrange_micro_batches" title="Link to this definition">#</a></dt>
+<dd><p>Split a batch into micro-batches by total token count, with optional DP sync and padding.</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>batch</strong> (<em>TensorDict</em>) -- must include &quot;attention_mask&quot; (B*S); other fields are sliced similarly.</p></li>
+<li><p><strong>max_token_len</strong> (<em>int</em>) -- max sum of attention_mask per micro-batch.</p></li>
+<li><p><strong>dp_group</strong> (<em>optional</em>) -- torch.distributed group for data-parallel sync.</p></li>
+<li><p><strong>num_batches_divided_by</strong> (<em>optional</em>) -- virtual pipeline parallel size, for megatron.</p></li>
+<li><p><strong>same_micro_num_in_dp</strong> (<em>bool</em>) -- if True and dp_group set, pad all ranks to the same count.</p></li>
+<li><p><strong>min_num_micro_batch</strong> (<em>int</em><em>, </em><em>optional</em>) -- force at least this many splits (pads empty ones).</p></li>
+<li><p><strong>use_dynamic_bsz_balance</strong> (<em>bool</em><em>, </em><em>optional</em>) -- balance the computational workload between micro-batches</p></li>
+</ul>
+</dd>
+<dt class="field-even">返回<span class="colon">:</span></dt>
+<dd class="field-even"><p>the micro-batches.
+List[List[int]]: index lists mapping each micro-batch back to original positions.</p>
+</dd>
+<dt class="field-odd">返回类型<span class="colon">:</span></dt>
+<dd class="field-odd"><p>List[TensorDict]</p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 
@@ -739,6 +766,7 @@ for each metric category.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.utils.compute_data_metrics"><code class="docutils literal notranslate"><span class="pre">compute_data_metrics()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.utils.get_latest_hf_checkpoint_path"><code class="docutils literal notranslate"><span class="pre">get_latest_hf_checkpoint_path()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.utils.apply_fsdp2"><code class="docutils literal notranslate"><span class="pre">apply_fsdp2()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.utils.rearrange_micro_batches"><code class="docutils literal notranslate"><span class="pre">rearrange_micro_batches()</span></code></a></li>
 </ul>
   </nav></div>
 

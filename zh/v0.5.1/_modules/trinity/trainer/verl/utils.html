@@ -1331,6 +1331,96 @@ window.runMermaid = runMermaid;</script>
     <span class="k">with</span> <span class="n">maybe_patch_fsdp_module</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
         <span class="n">fully_shard</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">fsdp_kwargs</span><span class="p">)</span>  <span class="c1"># fsdp2 will not reshard_after_forward for root module</span></div>
 
+
+
+<span class="c1"># modified from verl/utils/seqlen_balancing.py:rearrange_micro_batches</span>
+<div class="viewcode-block" id="rearrange_micro_batches">
+<a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.utils.html#trinity.trainer.verl.utils.rearrange_micro_batches">[文档]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">rearrange_micro_batches</span><span class="p">(</span>
+    <span class="n">batch</span><span class="p">,</span>
+    <span class="n">max_token_len</span><span class="p">,</span>
+    <span class="n">dp_group</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">num_batches_divided_by</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">same_micro_num_in_dp</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">min_num_micro_batch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">use_dynamic_bsz_balance</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Split a batch into micro-batches by total token count, with optional DP sync and padding.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        batch (TensorDict): must include &quot;attention_mask&quot; (B*S); other fields are sliced similarly.</span>
+<span class="sd">        max_token_len (int): max sum of attention_mask per micro-batch.</span>
+<span class="sd">        dp_group (optional): torch.distributed group for data-parallel sync.</span>
+<span class="sd">        num_batches_divided_by (optional): virtual pipeline parallel size, for megatron.</span>
+<span class="sd">        same_micro_num_in_dp (bool): if True and dp_group set, pad all ranks to the same count.</span>
+<span class="sd">        min_num_micro_batch (int, optional): force at least this many splits (pads empty ones).</span>
+<span class="sd">        use_dynamic_bsz_balance (bool, optional): balance the computational workload between micro-batches</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        List[TensorDict]: the micro-batches.</span>
+<span class="sd">        List[List[int]]: index lists mapping each micro-batch back to original positions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">distributed</span> <span class="k">as</span> <span class="n">dist</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">tensordict_utils</span> <span class="k">as</span> <span class="n">tu</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.device</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_device_name</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.seqlen_balancing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+        <span class="n">calculate_workload</span><span class="p">,</span>
+        <span class="n">ceildiv</span><span class="p">,</span>
+        <span class="n">get_seqlen_balanced_partitions</span><span class="p">,</span>
+        <span class="n">roundup_divisible</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># this is per local micro_bsz</span>
+    <span class="n">input_ids</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;input_ids&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">is_nested</span><span class="p">:</span>
+        <span class="n">seq_len_effective</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">offsets</span><span class="p">()</span><span class="o">.</span><span class="n">diff</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">seq_len_effective</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;attention_mask&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">max_seq_len</span> <span class="o">=</span> <span class="n">seq_len_effective</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+    <span class="k">assert</span> <span class="p">(</span>
+        <span class="n">max_token_len</span> <span class="o">&gt;=</span> <span class="n">max_seq_len</span>
+    <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;max_token_len must be greater than the sequence length. Got </span><span class="si">{</span><span class="n">max_token_len</span><span class="si">=}</span><span class="s2"> and </span><span class="si">{</span><span class="n">max_seq_len</span><span class="si">=}</span><span class="s2">&quot;</span>
+    <span class="n">total_seqlen</span> <span class="o">=</span> <span class="n">seq_len_effective</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+    <span class="c1"># NOTE: num_microbatches &lt;= batch_size, so take the min of this two.</span>
+    <span class="n">num_micro_batches</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">seq_len_effective</span><span class="p">),</span> <span class="n">ceildiv</span><span class="p">(</span><span class="n">total_seqlen</span><span class="p">,</span> <span class="n">max_token_len</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">min_num_micro_batch</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># used to support pp</span>
+        <span class="n">num_micro_batches</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">min_num_micro_batch</span><span class="p">,</span> <span class="n">num_micro_batches</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">dist</span><span class="o">.</span><span class="n">is_initialized</span><span class="p">()</span> <span class="ow">and</span> <span class="n">same_micro_num_in_dp</span><span class="p">:</span>
+        <span class="n">num_micro_batches</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">num_micro_batches</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">get_device_name</span><span class="p">())</span>
+        <span class="n">dist</span><span class="o">.</span><span class="n">all_reduce</span><span class="p">(</span><span class="n">num_micro_batches</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">dist</span><span class="o">.</span><span class="n">ReduceOp</span><span class="o">.</span><span class="n">MAX</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">dp_group</span><span class="p">)</span>
+        <span class="n">num_micro_batches</span> <span class="o">=</span> <span class="n">num_micro_batches</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">num_batches_divided_by</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">num_micro_batches</span> <span class="o">=</span> <span class="n">roundup_divisible</span><span class="p">(</span><span class="n">num_micro_batches</span><span class="p">,</span> <span class="n">num_batches_divided_by</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">num_micro_batches</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq_len_effective</span><span class="p">)</span>
+
+    <span class="c1"># note that seq_len_effective is a GPU tensor. We need to make it a list to avoid D2H!</span>
+    <span class="n">workloads</span> <span class="o">=</span> <span class="n">calculate_workload</span><span class="p">(</span><span class="n">seq_len_effective</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">micro_bsz_idx</span> <span class="o">=</span> <span class="n">get_seqlen_balanced_partitions</span><span class="p">(</span><span class="n">workloads</span><span class="p">,</span> <span class="n">num_micro_batches</span><span class="p">,</span> <span class="n">equal_size</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">use_dynamic_bsz_balance</span><span class="p">:</span>
+        <span class="c1"># Use the sum of squared sequence lengths to approximate attention computation workload</span>
+        <span class="n">micro_bsz_idx</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span>
+            <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">partition</span><span class="p">:</span> <span class="p">(</span>
+                <span class="nb">sum</span><span class="p">(</span><span class="n">workloads</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">partition</span><span class="p">),</span>
+                <span class="n">partition</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">partition</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="c1"># Place smaller micro-batches at both ends to reduce the bubbles exposed during the warm-up and cool-down.</span>
+        <span class="n">micro_bsz_idx</span> <span class="o">=</span> <span class="n">micro_bsz_idx</span><span class="p">[::</span><span class="mi">2</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">micro_bsz_idx</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
+
+    <span class="n">micro_batches</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">partition</span> <span class="ow">in</span> <span class="n">micro_bsz_idx</span><span class="p">:</span>
+        <span class="n">curr_micro_batch</span> <span class="o">=</span> <span class="n">tu</span><span class="o">.</span><span class="n">index_select_tensor_dict</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">partition</span><span class="p">)</span>
+        <span class="n">micro_batches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_micro_batch</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">micro_batches</span><span class="p">,</span> <span class="n">micro_bsz_idx</span></div>
+
 </pre></div>
 
                 </article>

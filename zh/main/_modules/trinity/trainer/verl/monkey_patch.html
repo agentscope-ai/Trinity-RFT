@@ -1045,6 +1045,113 @@ window.runMermaid = runMermaid;</script>
 <span class="n">VALID_BACKENDS</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;triton&quot;</span><span class="p">,</span> <span class="s2">&quot;torch&quot;</span><span class="p">}</span>
 
 
+<div class="viewcode-block" id="patch_fused_kernels">
+<a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.monkey_patch.html#trinity.trainer.verl.monkey_patch.patch_fused_kernels">[文档]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">patch_fused_kernels</span><span class="p">(</span><span class="n">fused_kernels_backend</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fix VLM sequence parallelism bug with optimized backend in veRL.&quot;&quot;&quot;</span>
+
+    <span class="c1"># fix torch</span>
+    <span class="k">if</span> <span class="n">fused_kernels_backend</span> <span class="o">==</span> <span class="s2">&quot;torch&quot;</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.experimental.torch_functional</span><span class="w"> </span><span class="kn">import</span> <span class="n">FusedLinearForPPO</span>
+
+        <span class="c1"># Make patch idempotent: store the original forward once and avoid re-wrapping.</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">FusedLinearForPPO</span><span class="p">,</span> <span class="s2">&quot;_is_patched&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="c1"># Already patched; nothing to do.</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">FusedLinearForPPO</span><span class="p">,</span> <span class="s2">&quot;_original_forward&quot;</span><span class="p">):</span>
+            <span class="n">FusedLinearForPPO</span><span class="o">.</span><span class="n">_original_forward</span> <span class="o">=</span> <span class="n">FusedLinearForPPO</span><span class="o">.</span><span class="n">forward</span>
+        <span class="n">original_torch_backend_forward</span> <span class="o">=</span> <span class="n">FusedLinearForPPO</span><span class="o">.</span><span class="n">_original_forward</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">torch_backend_forward</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">hidden_states</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span>
+            <span class="n">vocab_weights</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span>
+            <span class="n">input_ids</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span><span class="p">,</span>
+            <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">hidden_states</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.ulysses</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                    <span class="n">get_ulysses_sequence_parallel_world_size</span><span class="p">,</span>
+                    <span class="n">slice_input_tensor</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="n">ulysses_sp_size</span> <span class="o">=</span> <span class="n">get_ulysses_sequence_parallel_world_size</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">ulysses_sp_size</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Expected Ulysses sequence parallel world size &gt; 1, &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;but got </span><span class="si">{</span><span class="n">ulysses_sp_size</span><span class="si">}</span><span class="s2">.&quot;</span>
+                    <span class="p">)</span>
+                <span class="n">input_ids</span> <span class="o">=</span> <span class="n">slice_input_tensor</span><span class="p">(</span><span class="n">input_ids</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">hidden_states</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;hidden_states and input_ids must have the same sequence length &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;along dimension 1, but got hidden_states.size(1) = &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">hidden_states</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> and input_ids.size(1) = &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">input_ids</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">original_torch_backend_forward</span><span class="p">(</span>
+                <span class="bp">self</span><span class="p">,</span>
+                <span class="n">hidden_states</span><span class="p">,</span>
+                <span class="n">vocab_weights</span><span class="p">,</span>
+                <span class="n">input_ids</span><span class="p">,</span>
+                <span class="n">temperature</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">FusedLinearForPPO</span><span class="o">.</span><span class="n">forward</span> <span class="o">=</span> <span class="n">torch_backend_forward</span>
+        <span class="n">FusedLinearForPPO</span><span class="o">.</span><span class="n">_is_patched</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>  <span class="c1"># triton</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.kernel</span><span class="w"> </span><span class="kn">import</span> <span class="n">linear_cross_entropy</span>
+
+        <span class="c1"># Make patch idempotent: store the original function once and avoid re-wrapping.</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">linear_cross_entropy</span><span class="p">,</span> <span class="s2">&quot;_is_patched&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="c1"># Already patched; nothing to do.</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">linear_cross_entropy</span><span class="p">,</span> <span class="s2">&quot;_linear_cross_entropy&quot;</span><span class="p">):</span>
+            <span class="c1"># This is the first time we&#39;re patching this function.</span>
+            <span class="c1"># Store a reference to the original function.</span>
+            <span class="n">linear_cross_entropy</span><span class="o">.</span><span class="n">_linear_cross_entropy</span> <span class="o">=</span> <span class="n">linear_cross_entropy</span><span class="o">.</span><span class="n">linear_cross_entropy</span>
+        <span class="n">original_linear_cross_entropy</span> <span class="o">=</span> <span class="n">linear_cross_entropy</span><span class="o">.</span><span class="n">_linear_cross_entropy</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">triton_backend_forward</span><span class="p">(</span>
+            <span class="n">hidden</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+            <span class="n">weight</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+            <span class="n">labels</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+            <span class="o">*</span><span class="n">args</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="k">if</span> <span class="n">hidden</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">labels</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.ulysses</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                    <span class="n">get_ulysses_sequence_parallel_world_size</span><span class="p">,</span>
+                    <span class="n">slice_input_tensor</span><span class="p">,</span>
+                <span class="p">)</span>
+
+                <span class="n">ulysses_sp_size</span> <span class="o">=</span> <span class="n">get_ulysses_sequence_parallel_world_size</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">ulysses_sp_size</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Expected Ulysses sequence parallel world size &gt; 1, &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;but got </span><span class="si">{</span><span class="n">ulysses_sp_size</span><span class="si">}</span><span class="s2">.&quot;</span>
+                    <span class="p">)</span>
+                <span class="n">labels</span> <span class="o">=</span> <span class="n">slice_input_tensor</span><span class="p">(</span><span class="n">labels</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">hidden</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="n">labels</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;hidden and labels must have the same sequence length &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;along dimension 1, but got hidden.size(1) = &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">hidden</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2"> and labels.size(1) = &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">labels</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">original_linear_cross_entropy</span><span class="p">(</span><span class="n">hidden</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="n">linear_cross_entropy</span><span class="o">.</span><span class="n">linear_cross_entropy</span> <span class="o">=</span> <span class="n">triton_backend_forward</span>
+        <span class="n">linear_cross_entropy</span><span class="o">.</span><span class="n">_is_patched</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+
 <span class="c1"># modified from verl.models.transformers.monkey_patch.patch_forward_with_backends</span>
 <div class="viewcode-block" id="patch_forward_with_backends">
 <a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.monkey_patch.html#trinity.trainer.verl.monkey_patch.patch_forward_with_backends">[文档]</a>
@@ -1074,18 +1181,21 @@ window.runMermaid = runMermaid;</script>
         <span class="p">)</span>
         <span class="k">return</span>
 
-    <span class="c1"># 2. Resolve Module Path</span>
+    <span class="c1"># 2. Fix VLM sequence parallelism bug with optimized backend in veRL.</span>
+    <span class="n">patch_fused_kernels</span><span class="p">(</span><span class="n">fused_kernels_backend</span><span class="p">)</span>
+
+    <span class="c1"># 3. Resolve Module Path</span>
     <span class="n">model_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;model_type&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
     <span class="n">module_path</span> <span class="o">=</span> <span class="n">MODEL_TYPE_TO_MODULE_MAP</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">model_type</span><span class="p">,</span> <span class="n">DEFAULT_MODULE_PATH</span><span class="p">)</span>
 
-    <span class="c1"># 3. Dynamic Import</span>
+    <span class="c1"># 4. Dynamic Import</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">backend_module</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span><span class="n">module_path</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to import </span><span class="si">{</span><span class="n">module_path</span><span class="si">}</span><span class="s2"> for </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="k">return</span>
 
-    <span class="c1"># 4. Select and Apply Forward Function</span>
+    <span class="c1"># 5. Select and Apply Forward Function</span>
     <span class="n">func_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;forward_with_</span><span class="si">{</span><span class="n">fused_kernels_backend</span><span class="si">}</span><span class="s2">_backend&quot;</span>
     <span class="n">patched_forward</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">backend_module</span><span class="p">,</span> <span class="n">func_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 

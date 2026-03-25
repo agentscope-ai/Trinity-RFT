@@ -1492,18 +1492,30 @@ window.runMermaid = runMermaid;</script>
         <span class="n">component_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">model_config</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ActorModel</span><span class="p">,</span> <span class="n">CriticModel</span><span class="p">],</span>
         <span class="n">fsdp_config</span><span class="p">:</span> <span class="n">FSDPConfig</span><span class="p">,</span>
+        <span class="n">train_batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">world_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">sp_attr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ulysses_sequence_parallel_size&quot;</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">obj</span><span class="o">.</span><span class="n">strategy</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;fsdp&quot;</span><span class="p">):</span>
             <span class="c1"># check sequence parallelism</span>
             <span class="n">sp_size</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">sp_attr</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">sp_size</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">sp_size</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">component_name</span><span class="si">}</span><span class="s2"> sequence parallel size is set to 1.&quot;</span><span class="p">)</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">sp_attr</span><span class="p">,</span> <span class="n">sp_size</span><span class="p">)</span>
+
             <span class="k">if</span> <span class="n">world_size</span> <span class="o">%</span> <span class="n">sp_size</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                     <span class="sa">f</span><span class="s2">&quot;The number of trainer GPUs (</span><span class="si">{</span><span class="n">world_size</span><span class="si">}</span><span class="s2">) must be &quot;</span>
                     <span class="sa">f</span><span class="s2">&quot;divisible by `</span><span class="si">{</span><span class="n">component_name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">sp_attr</span><span class="si">}</span><span class="s2">` (</span><span class="si">{</span><span class="n">sp_size</span><span class="si">}</span><span class="s2">). &quot;</span>
                     <span class="sa">f</span><span class="s2">&quot;Please change `trainer.</span><span class="si">{</span><span class="n">sp_attr</span><span class="si">}</span><span class="s2">` or &quot;</span>
                     <span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">component_name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">sp_attr</span><span class="si">}</span><span class="s2">` in verl config to a reasonable value.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">train_batch_size</span> <span class="o">%</span> <span class="p">(</span><span class="n">world_size</span> <span class="o">//</span> <span class="n">sp_size</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;The batch size (</span><span class="si">{</span><span class="n">train_batch_size</span><span class="si">}</span><span class="s2">) must be divisible by &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;the number of GPUs (</span><span class="si">{</span><span class="n">world_size</span><span class="si">}</span><span class="s2">) divided by the sequence &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;parallelism size (</span><span class="si">{</span><span class="n">sp_size</span><span class="si">}</span><span class="s2">).&quot;</span>
                 <span class="p">)</span>
 
             <span class="k">try</span><span class="p">:</span>
@@ -1629,6 +1641,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">component_name</span><span class="o">=</span><span class="s2">&quot;actor&quot;</span><span class="p">,</span>
             <span class="n">model_config</span><span class="o">=</span><span class="n">actor_model_config</span><span class="p">,</span>
             <span class="n">fsdp_config</span><span class="o">=</span><span class="n">actor_config</span><span class="o">.</span><span class="n">fsdp_config</span><span class="p">,</span>
+            <span class="n">train_batch_size</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">train_batch_size</span><span class="p">,</span>
             <span class="n">world_size</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">trainer_gpu_num</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_adjust_token_len_if_needed</span><span class="p">(</span>
@@ -1651,6 +1664,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">component_name</span><span class="o">=</span><span class="s2">&quot;ref&quot;</span><span class="p">,</span>
             <span class="n">model_config</span><span class="o">=</span><span class="n">actor_model_config</span><span class="p">,</span>
             <span class="n">fsdp_config</span><span class="o">=</span><span class="n">ref_config</span><span class="o">.</span><span class="n">fsdp_config</span><span class="p">,</span>
+            <span class="n">train_batch_size</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">train_batch_size</span><span class="p">,</span>
             <span class="n">world_size</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">trainer_gpu_num</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_adjust_token_len_if_needed</span><span class="p">(</span>
@@ -1682,6 +1696,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">component_name</span><span class="o">=</span><span class="s2">&quot;critic&quot;</span><span class="p">,</span>
             <span class="n">model_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">critic</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>
             <span class="n">fsdp_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">critic</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">fsdp_config</span><span class="p">,</span>
+            <span class="n">train_batch_size</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">train_batch_size</span><span class="p">,</span>
             <span class="n">world_size</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">trainer_gpu_num</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_adjust_token_len_if_needed</span><span class="p">(</span>
