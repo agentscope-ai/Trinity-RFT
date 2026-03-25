@@ -43,7 +43,14 @@ class Slice(torch.autograd.Function):
         ctx.sp_rank = sp_rank
 
         # slice the input tensor
-        parts = global_tensor.size(dim) // sp_world_size
+        dim_size = global_tensor.size(dim)
+        if dim_size % sp_world_size != 0:
+            raise ValueError(
+                f"Cannot evenly slice tensor of size {dim_size} along dim {dim} "
+                f"across {sp_world_size} ranks. This would truncate data. "
+                "Ensure the dimension size is divisible by the SP world size."
+            )
+        parts = dim_size // sp_world_size
         slc = [slice(None)] * len(global_tensor.shape)
         slc[dim] = slice(sp_rank * parts, (sp_rank + 1) * parts)
         return global_tensor[tuple(slc)].contiguous()
