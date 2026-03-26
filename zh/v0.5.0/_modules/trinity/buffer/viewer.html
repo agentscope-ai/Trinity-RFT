@@ -1012,10 +1012,9 @@ window.runMermaid = runMermaid;</script>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">streamlit</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">st</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">streamlit.components.v1</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">components</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.orm</span><span class="w"> </span><span class="kn">import</span> <span class="n">sessionmaker</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoTokenizer</span>
 
@@ -1045,7 +1044,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="SQLExperienceViewer.get_experiences">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.viewer.html#trinity.buffer.viewer.SQLExperienceViewer.get_experiences">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_experiences</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Viewing experiences from offset </span><span class="si">{</span><span class="n">offset</span><span class="si">}</span><span class="s2"> with limit </span><span class="si">{</span><span class="n">limit</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Viewing experiences from offset </span><span class="si">%s</span><span class="s2"> with limit </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">limit</span><span class="p">)</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
             <span class="n">query</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="p">)</span><span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="n">limit</span><span class="p">)</span>
             <span class="n">results</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
@@ -1064,13 +1063,16 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="SQLExperienceViewer.run_viewer">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.viewer.html#trinity.buffer.viewer.SQLExperienceViewer.run_viewer">[文档]</a>
     <span class="nd">@staticmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">run_viewer</span><span class="p">(</span><span class="n">model_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">db_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">run_viewer</span><span class="p">(</span>
+        <span class="n">model_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">db_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">schema_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Start the Streamlit viewer.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            model_path (str): Path to the tokenizer/model directory.</span>
 <span class="sd">            db_url (str): Database URL for the experience database.</span>
 <span class="sd">            table_name (str): Name of the experience table in the database.</span>
+<span class="sd">            schema_type (str): Schema type of the experience table.</span>
 <span class="sd">            port (int): Port number to run the Streamlit app on.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
@@ -1090,6 +1092,8 @@ window.runMermaid = runMermaid;</script>
             <span class="n">db_url</span><span class="p">,</span>
             <span class="s2">&quot;--table&quot;</span><span class="p">,</span>
             <span class="n">table_name</span><span class="p">,</span>
+            <span class="s2">&quot;--schema&quot;</span><span class="p">,</span>
+            <span class="n">schema_type</span><span class="p">,</span>
             <span class="s2">&quot;--tokenizer&quot;</span><span class="p">,</span>
             <span class="n">model_path</span><span class="p">,</span>
         <span class="p">]</span>
@@ -1112,12 +1116,27 @@ window.runMermaid = runMermaid;</script>
 
 
 
+<div class="viewcode-block" id="render_token_detail_html">
+<a class="viewcode-back" href="../../../build_api/trinity.buffer.viewer.html#trinity.buffer.viewer.render_token_detail_html">[文档]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">render_token_detail_html</span><span class="p">(</span><span class="n">html</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Render token detail in the adaptive expanded panel style.&quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">st</span><span class="o">.</span><span class="n">container</span><span class="p">(</span><span class="n">border</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**🔍 Response Tokens Detail:**&quot;</span><span class="p">)</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">html</span><span class="p">(</span><span class="n">html</span><span class="p">)</span></div>
+
+
+
 <div class="viewcode-block" id="render_experience">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.viewer.html#trinity.buffer.viewer.render_experience">[文档]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">render_experience</span><span class="p">(</span><span class="n">exp</span><span class="p">:</span> <span class="n">Experience</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">render_experience</span><span class="p">(</span><span class="n">exp</span><span class="p">:</span> <span class="n">Experience</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Render a single experience sequence in Streamlit.&quot;&quot;&quot;</span>
     <span class="n">token_ids</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">tokens</span>
-    <span class="n">logprobs</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">logprobs</span>
+    <span class="k">if</span> <span class="n">token_ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Experience tokens are required for visualization.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">exp</span><span class="o">.</span><span class="n">logprobs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">logprobs</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">logprobs</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">logprobs</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">token_ids</span><span class="p">)</span>
     <span class="n">action_mask</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">action_mask</span>
 
     <span class="n">prompt_length</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">prompt_length</span>
@@ -1125,25 +1144,17 @@ window.runMermaid = runMermaid;</script>
     <span class="n">prompt_token_ids</span> <span class="o">=</span> <span class="n">token_ids</span><span class="p">[:</span><span class="n">prompt_length</span><span class="p">]</span>  <span class="c1"># type: ignore [index]</span>
     <span class="n">response_token_ids</span> <span class="o">=</span> <span class="n">token_ids</span><span class="p">[</span><span class="n">prompt_length</span><span class="p">:]</span>  <span class="c1"># type: ignore [index]</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">decode_token_ids</span><span class="p">(</span><span class="n">tokenizer_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">token_id_list</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">tokenizer_obj</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">token_id_list</span><span class="p">))</span>
+
     <span class="c1"># Decode tokens</span>
-    <span class="n">prompt_text</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">tokenizer</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">prompt_token_ids</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">,</span> <span class="s2">&quot;decode&quot;</span><span class="p">)</span>
-        <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">tid</span><span class="p">)</span> <span class="k">for</span> <span class="n">tid</span> <span class="ow">in</span> <span class="n">prompt_token_ids</span><span class="p">])</span>
-    <span class="p">)</span>
-    <span class="n">response_text</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">tokenizer</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">response_token_ids</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">,</span> <span class="s2">&quot;decode&quot;</span><span class="p">)</span>
-        <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">tid</span><span class="p">)</span> <span class="k">for</span> <span class="n">tid</span> <span class="ow">in</span> <span class="n">response_token_ids</span><span class="p">])</span>
-    <span class="p">)</span>
+    <span class="n">prompt_text</span> <span class="o">=</span> <span class="n">decode_token_ids</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">,</span> <span class="n">prompt_token_ids</span><span class="p">)</span>
+    <span class="n">response_text</span> <span class="o">=</span> <span class="n">decode_token_ids</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">,</span> <span class="n">response_token_ids</span><span class="p">)</span>
 
     <span class="c1"># Get each response token text</span>
     <span class="n">response_tokens</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">tid</span> <span class="ow">in</span> <span class="n">response_token_ids</span><span class="p">:</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">,</span> <span class="s2">&quot;decode&quot;</span><span class="p">):</span>
-            <span class="n">token_text</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">decode</span><span class="p">([</span><span class="n">tid</span><span class="p">])</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">token_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">tid</span><span class="si">}</span><span class="s2">]&quot;</span>
+        <span class="n">token_text</span> <span class="o">=</span> <span class="n">decode_token_ids</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">,</span> <span class="p">[</span><span class="n">tid</span><span class="p">])</span>
         <span class="n">response_tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token_text</span><span class="p">)</span>
 
     <span class="c1"># HTML escape function</span>
@@ -1176,77 +1187,69 @@ window.runMermaid = runMermaid;</script>
     <span class="n">info</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**Info:**&quot;</span><span class="p">)</span>
     <span class="n">info</span><span class="o">.</span><span class="n">json</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">info</span> <span class="ow">or</span> <span class="p">{},</span> <span class="n">expanded</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-    <span class="c1"># Response Tokens Detail section using components.html</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**🔍 Response Tokens Detail:**&quot;</span><span class="p">)</span>
-
     <span class="c1"># Build HTML only for Response Tokens Detail</span>
     <span class="n">html</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">    &lt;!DOCTYPE html&gt;</span>
-<span class="s2">    &lt;html&gt;</span>
-<span class="s2">    &lt;head&gt;</span>
-<span class="s2">        &lt;meta charset=&quot;UTF-8&quot;&gt;</span>
-<span class="s2">        &lt;style&gt;</span>
-<span class="s2">            * {</span>
-<span class="s2">                margin: 0;</span>
-<span class="s2">                padding: 0;</span>
-<span class="s2">                box-sizing: border-box;</span>
-<span class="s2">            }</span>
+<span class="s2">    &lt;style&gt;</span>
+<span class="s2">        .token-detail-root * {</span>
+<span class="s2">            margin: 0;</span>
+<span class="s2">            padding: 0;</span>
+<span class="s2">            box-sizing: border-box;</span>
+<span class="s2">        }</span>
 
-<span class="s2">            body {</span>
-<span class="s2">                font-family: -apple-system, BlinkMacSystemFont, &#39;Segoe UI&#39;, &#39;Roboto&#39;, sans-serif;</span>
-<span class="s2">                padding: 10px;</span>
-<span class="s2">            }</span>
+<span class="s2">        .token-detail-root {</span>
+<span class="s2">            font-family: -apple-system, BlinkMacSystemFont, &#39;Segoe UI&#39;, &#39;Roboto&#39;, sans-serif;</span>
+<span class="s2">            padding: 10px;</span>
+<span class="s2">        }</span>
 
-<span class="s2">            .token-container {</span>
-<span class="s2">                display: flex;</span>
-<span class="s2">                flex-wrap: wrap;</span>
-<span class="s2">                gap: 5px;</span>
-<span class="s2">                padding: 15px;</span>
-<span class="s2">                background-color: white;</span>
-<span class="s2">                border-radius: 5px;</span>
-<span class="s2">            }</span>
+<span class="s2">        .token-detail-root .token-container {</span>
+<span class="s2">            display: flex;</span>
+<span class="s2">            flex-wrap: wrap;</span>
+<span class="s2">            gap: 5px;</span>
+<span class="s2">            padding: 15px;</span>
+<span class="s2">            background-color: white;</span>
+<span class="s2">            border-radius: 5px;</span>
+<span class="s2">        }</span>
 
-<span class="s2">            .token-box {</span>
-<span class="s2">                display: inline-flex;</span>
-<span class="s2">                flex-direction: column;</span>
-<span class="s2">                align-items: center;</span>
-<span class="s2">                padding: 8px 12px;</span>
-<span class="s2">                border-radius: 5px;</span>
-<span class="s2">                border: 1px solid #ddd;</span>
-<span class="s2">                min-width: 60px;</span>
-<span class="s2">                transition: transform 0.2s, box-shadow 0.2s;</span>
-<span class="s2">            }</span>
+<span class="s2">        .token-detail-root .token-box {</span>
+<span class="s2">            display: inline-flex;</span>
+<span class="s2">            flex-direction: column;</span>
+<span class="s2">            align-items: center;</span>
+<span class="s2">            padding: 8px 12px;</span>
+<span class="s2">            border-radius: 5px;</span>
+<span class="s2">            border: 1px solid #ddd;</span>
+<span class="s2">            min-width: 60px;</span>
+<span class="s2">            transition: transform 0.2s, box-shadow 0.2s;</span>
+<span class="s2">        }</span>
 
-<span class="s2">            .token-box:hover {</span>
-<span class="s2">                transform: scale(1.5);</span>
-<span class="s2">                box-shadow: 0 4px 8px rgba(0,0,0,0.2);</span>
-<span class="s2">                z-index: 10;</span>
-<span class="s2">            }</span>
+<span class="s2">        .token-detail-root .token-box:hover {</span>
+<span class="s2">            transform: scale(1.5);</span>
+<span class="s2">            box-shadow: 0 4px 8px rgba(0,0,0,0.2);</span>
+<span class="s2">            z-index: 10;</span>
+<span class="s2">        }</span>
 
-<span class="s2">            .token-text {</span>
-<span class="s2">                font-family: &#39;Courier New&#39;, monospace;</span>
-<span class="s2">                font-size: 14px;</span>
-<span class="s2">                font-weight: bold;</span>
-<span class="s2">                margin-bottom: 5px;</span>
-<span class="s2">                text-align: center;</span>
-<span class="s2">                word-break: break-all;</span>
-<span class="s2">                max-width: 100px;</span>
-<span class="s2">            }</span>
+<span class="s2">        .token-detail-root .token-text {</span>
+<span class="s2">            font-family: &#39;Courier New&#39;, monospace;</span>
+<span class="s2">            font-size: 14px;</span>
+<span class="s2">            font-weight: bold;</span>
+<span class="s2">            margin-bottom: 5px;</span>
+<span class="s2">            text-align: center;</span>
+<span class="s2">            word-break: break-all;</span>
+<span class="s2">            max-width: 100px;</span>
+<span class="s2">        }</span>
 
-<span class="s2">            .token-logprob {</span>
-<span class="s2">                font-size: 11px;</span>
-<span class="s2">                color: #555;</span>
-<span class="s2">                font-family: &#39;Courier New&#39;, monospace;</span>
-<span class="s2">                text-align: center;</span>
-<span class="s2">            }</span>
-<span class="s2">        &lt;/style&gt;</span>
-<span class="s2">    &lt;/head&gt;</span>
-<span class="s2">    &lt;body&gt;</span>
+<span class="s2">        .token-detail-root .token-logprob {</span>
+<span class="s2">            font-size: 11px;</span>
+<span class="s2">            color: #555;</span>
+<span class="s2">            font-family: &#39;Courier New&#39;, monospace;</span>
+<span class="s2">            text-align: center;</span>
+<span class="s2">        }</span>
+<span class="s2">    &lt;/style&gt;</span>
+<span class="s2">    &lt;div class=&quot;token-detail-root&quot;&gt;</span>
 <span class="s2">        &lt;div class=&quot;token-container&quot;&gt;</span>
 <span class="s2">    &quot;&quot;&quot;</span>
 
     <span class="c1"># Add each response token</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">token_text</span><span class="p">,</span> <span class="n">logprob</span><span class="p">,</span> <span class="n">mask</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">response_tokens</span><span class="p">,</span> <span class="n">logprobs</span><span class="p">,</span> <span class="n">action_mask</span><span class="p">)):</span>  <span class="c1"># type: ignore [arg-type]</span>
+    <span class="k">for</span> <span class="n">token_text</span><span class="p">,</span> <span class="n">logprob</span><span class="p">,</span> <span class="n">mask</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">response_tokens</span><span class="p">,</span> <span class="n">logprobs</span><span class="p">,</span> <span class="n">action_mask</span><span class="p">):</span>  <span class="c1"># type: ignore [arg-type]</span>
         <span class="n">bg_color</span> <span class="o">=</span> <span class="n">get_color_for_action_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
 
         <span class="c1"># Handle special character display</span>
@@ -1261,12 +1264,10 @@ window.runMermaid = runMermaid;</script>
 <span class="s2">        &quot;&quot;&quot;</span>
     <span class="n">html</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">        &lt;/div&gt;</span>
-<span class="s2">    &lt;/body&gt;</span>
-<span class="s2">    &lt;/html&gt;</span>
+<span class="s2">    &lt;/div&gt;</span>
 <span class="s2">    &quot;&quot;&quot;</span>
 
-    <span class="c1"># Use components.html for token details only</span>
-    <span class="n">components</span><span class="o">.</span><span class="n">html</span><span class="p">(</span><span class="n">html</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">scrolling</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+    <span class="n">render_token_detail_html</span><span class="p">(</span><span class="n">html</span><span class="p">)</span></div>
 
 
 
@@ -1285,8 +1286,16 @@ window.runMermaid = runMermaid;</script>
         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Name of the experience table.&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+        <span class="s2">&quot;--schema&quot;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;experience&quot;</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;experience&quot;</span><span class="p">,</span> <span class="s2">&quot;sft&quot;</span><span class="p">),</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Schema type of the experience table.&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--tokenizer&quot;</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to the tokenizer.&quot;</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span></div>
@@ -1299,12 +1308,11 @@ window.runMermaid = runMermaid;</script>
     <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args</span><span class="p">()</span>
 
     <span class="c1"># Initialize SQLExperienceViewer</span>
-    <span class="n">config</span> <span class="o">=</span> <span class="n">StorageConfig</span><span class="p">(</span>
-        <span class="n">name</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">table</span><span class="p">,</span>
-        <span class="n">path</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">db_url</span><span class="p">,</span>
-        <span class="n">schema_type</span><span class="o">=</span><span class="s2">&quot;experience&quot;</span><span class="p">,</span>
-        <span class="n">storage_type</span><span class="o">=</span><span class="s2">&quot;sql&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">StorageConfig</span><span class="p">()</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">table</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">db_url</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">schema_type</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">schema</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">storage_type</span> <span class="o">=</span> <span class="s2">&quot;sql&quot;</span>
     <span class="n">viewer</span> <span class="o">=</span> <span class="n">SQLExperienceViewer</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
 
     <span class="n">st</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;🎯 Trinity-RFT Experience Visualizer&quot;</span><span class="p">)</span>
@@ -1333,7 +1341,6 @@ window.runMermaid = runMermaid;</script>
     <span class="n">experiences_per_page</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">slider</span><span class="p">(</span>
         <span class="s2">&quot;Experiences per page&quot;</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">5</span>
     <span class="p">)</span>
-
     <span class="c1"># Calculate total pages</span>
     <span class="n">total_pages</span> <span class="o">=</span> <span class="p">(</span><span class="n">total_seq_num</span> <span class="o">+</span> <span class="n">experiences_per_page</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="n">experiences_per_page</span>
 
