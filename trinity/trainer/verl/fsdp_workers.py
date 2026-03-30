@@ -618,6 +618,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                     num_training_steps=total_steps,
                     min_lr_ratio=min_lr_ratio,
                     num_cycles=num_cycles,
+                    init_lr_ratio=min_lr_ratio,
                 )
             else:
                 raise NotImplementedError(f"LR scheduler type {lr_scheduler_type} is not supported")

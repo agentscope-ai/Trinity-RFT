@@ -100,6 +100,7 @@ class SFTFormatter(ExperienceFormatter):
         self.tools_key = format_config.tools_key
         self.image_key = format_config.image_key
         self.video_key = format_config.video_key
+        self.enable_thinking = format_config.enable_thinking
         if self.image_key is not None or self.video_key is not None:
             assert (
                 self.enable_concatenated_multi_turn is False
@@ -150,7 +151,7 @@ class SFTFormatter(ExperienceFormatter):
             )
         if isinstance(tools, str):
             try:
-                tools = json.loads(tools)
+                tools = json.loads(tools) if tools else None
             except json.JSONDecodeError:
                 self.logger.error(
                     "[SFT Data Error] Failed to decode 'tools' JSON. Please check your data format."
@@ -162,6 +163,7 @@ class SFTFormatter(ExperienceFormatter):
                 messages=messages,
                 tools=tools,
                 chat_template=self.chat_template,
+                enable_thinking=self.enable_thinking,
             )
             return Experience(
                 tokens=token_ids,

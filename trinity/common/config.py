@@ -70,6 +70,7 @@ class FormatConfig:
 
     # for sft / dpo, if None, use model.custom_chat_template
     chat_template: Optional[str] = None
+    enable_thinking: Optional[bool] = None
 
 
 @dataclass
@@ -475,6 +476,7 @@ class ModelConfig:
     enable_prompt_truncation: bool = True
     # repetition penalty for response generation
     repetition_penalty: float = 1.0
+    enable_thinking: Optional[bool] = None
 
     # lora config
     lora_configs: Optional[List[LoRAConfig]] = None

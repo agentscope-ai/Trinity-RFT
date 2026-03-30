@@ -144,7 +144,6 @@ explorer:
     enable_auto_tool_choice: true  # 允许模型生成 `tool_calls`
     tool_call_parser: hermes       # 指定格式化解析工具调用输出的解析器
     reasoning_parser: deepseek_r1  # 有助于解析模型的思维过程
-    enable_thinking: true          # 是否启用模型深度思考能力（主要针对 Qwen3 系列模型）
 ```
 
 #### 多步训练算法

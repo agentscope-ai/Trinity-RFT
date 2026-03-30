@@ -137,7 +137,6 @@ explorer:
     enable_auto_tool_choice: true  # Allow model to generate `tool_calls`
     tool_call_parser: hermes       # Specify parser for tool call outputs
     reasoning_parser: deepseek_r1  # Helps parse model reasoning process
-    enable_thinking: true          # Enable thinking (mainly for Qwen3 series models)
 ```
 
 #### Multi-Step Training Algorithm
