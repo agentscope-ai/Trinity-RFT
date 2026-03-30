@@ -1,10 +1,9 @@
 import argparse
 import sys
 from pathlib import Path
-from typing import List
+from typing import Any, List
 
 import streamlit as st
-import streamlit.components.v1 as components
 from sqlalchemy.orm import sessionmaker
 from transformers import AutoTokenizer
 
@@ -27,7 +26,7 @@ class SQLExperienceViewer:
         self.session = sessionmaker(bind=self.engine)
 
     def get_experiences(self, offset: int, limit: int = 10) -> List[Experience]:
-        self.logger.info(f"Viewing experiences from offset {offset} with limit {limit}.")
+        self.logger.info("Viewing experiences from offset %s with limit %s.", offset, limit)
         with self.session() as session:
             query = session.query(self.table_model_cls).offset(offset).limit(limit)
             results = query.all()
@@ -40,13 +39,16 @@ class SQLExperienceViewer:
         return count
 
     @staticmethod
-    def run_viewer(model_path: str, db_url: str, table_name: str, port: int):
+    def run_viewer(
+        model_path: str, db_url: str, table_name: str, schema_type: str, port: int
+    ) -> None:
         """Start the Streamlit viewer.
 
         Args:
             model_path (str): Path to the tokenizer/model directory.
             db_url (str): Database URL for the experience database.
             table_name (str): Name of the experience table in the database.
+            schema_type (str): Schema type of the experience table.
             port (int): Port number to run the Streamlit app on.
         """
 
@@ -66,6 +68,8 @@ class SQLExperienceViewer:
             db_url,
             "--table",
             table_name,
+            "--schema",
+            schema_type,
             "--tokenizer",
             model_path,
         ]
@@ -83,10 +87,22 @@ def get_color_for_action_mask(action_mask_value: int) -> str:
         return "#ffcdd2"
 
 
-def render_experience(exp: Experience, tokenizer):
+def render_token_detail_html(html: str) -> None:
+    """Render token detail in the adaptive expanded panel style."""
+    with st.container(border=True):
+        st.markdown("**🔍 Response Tokens Detail:**")
+        st.html(html)
+
+
+def render_experience(exp: Experience, tokenizer: Any) -> None:
     """Render a single experience sequence in Streamlit."""
     token_ids = exp.tokens
-    logprobs = exp.logprobs
+    if token_ids is None:
+        raise ValueError("Experience tokens are required for visualization.")
+    if exp.logprobs is not None:
+        logprobs = exp.logprobs
+    else:
+        logprobs = [0.0] * len(token_ids)
     action_mask = exp.action_mask
 
     prompt_length = exp.prompt_length
@@ -94,25 +110,17 @@ def render_experience(exp: Experience, tokenizer):
     prompt_token_ids = token_ids[:prompt_length]  # type: ignore [index]
     response_token_ids = token_ids[prompt_length:]  # type: ignore [index]
 
+    def decode_token_ids(tokenizer_obj: Any, token_id_list: Any) -> str:
+        return str(tokenizer_obj.decode(token_id_list))
+
     # Decode tokens
-    prompt_text = (
-        tokenizer.decode(prompt_token_ids)
-        if hasattr(tokenizer, "decode")
-        else "".join([str(tid) for tid in prompt_token_ids])
-    )
-    response_text = (
-        tokenizer.decode(response_token_ids)
-        if hasattr(tokenizer, "decode")
-        else "".join([str(tid) for tid in response_token_ids])
-    )
+    prompt_text = decode_token_ids(tokenizer, prompt_token_ids)
+    response_text = decode_token_ids(tokenizer, response_token_ids)
 
     # Get each response token text
     response_tokens = []
     for tid in response_token_ids:
-        if hasattr(tokenizer, "decode"):
-            token_text = tokenizer.decode([tid])
-        else:
-            token_text = f"[{tid}]"
+        token_text = decode_token_ids(tokenizer, [tid])
         response_tokens.append(token_text)
 
     # HTML escape function
@@ -145,77 +153,69 @@ def render_experience(exp: Experience, tokenizer):
     info.markdown("**Info:**")
     info.json(exp.info or {}, expanded=False)
 
-    # Response Tokens Detail section using components.html
-    st.markdown("**🔍 Response Tokens Detail:**")
-
     # Build HTML only for Response Tokens Detail
     html = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
+    <style>
+        .token-detail-root * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-            body {
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-                padding: 10px;
-            }
+        .token-detail-root {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            padding: 10px;
+        }
 
-            .token-container {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 5px;
-                padding: 15px;
-                background-color: white;
-                border-radius: 5px;
-            }
+        .token-detail-root .token-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 5px;
+        }
 
-            .token-box {
-                display: inline-flex;
-                flex-direction: column;
-                align-items: center;
-                padding: 8px 12px;
-                border-radius: 5px;
-                border: 1px solid #ddd;
-                min-width: 60px;
-                transition: transform 0.2s, box-shadow 0.2s;
-            }
+        .token-detail-root .token-box {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            min-width: 60px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
 
-            .token-box:hover {
-                transform: scale(1.5);
-                box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-                z-index: 10;
-            }
+        .token-detail-root .token-box:hover {
+            transform: scale(1.5);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
 
-            .token-text {
-                font-family: 'Courier New', monospace;
-                font-size: 14px;
-                font-weight: bold;
-                margin-bottom: 5px;
-                text-align: center;
-                word-break: break-all;
-                max-width: 100px;
-            }
+        .token-detail-root .token-text {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-align: center;
+            word-break: break-all;
+            max-width: 100px;
+        }
 
-            .token-logprob {
-                font-size: 11px;
-                color: #555;
-                font-family: 'Courier New', monospace;
-                text-align: center;
-            }
-        </style>
-    </head>
-    <body>
+        .token-detail-root .token-logprob {
+            font-size: 11px;
+            color: #555;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+        }
+    </style>
+    <div class="token-detail-root">
         <div class="token-container">
     """
 
     # Add each response token
-    for i, (token_text, logprob, mask) in enumerate(zip(response_tokens, logprobs, action_mask)):  # type: ignore [arg-type]
+    for token_text, logprob, mask in zip(response_tokens, logprobs, action_mask):  # type: ignore [arg-type]
         bg_color = get_color_for_action_mask(mask)
 
         # Handle special character display
@@ -230,12 +230,10 @@ def render_experience(exp: Experience, tokenizer):
         """
     html += """
         </div>
-    </body>
-    </html>
+    </div>
     """
 
-    # Use components.html for token details only
-    components.html(html, height=200, scrolling=True)
+    render_token_detail_html(html)
 
 
 def parse_args():
@@ -251,8 +249,16 @@ def parse_args():
         help="Name of the experience table.",
     )
     parser.add_argument(
+        "--schema",
+        type=str,
+        default="experience",
+        choices=("experience", "sft"),
+        help="Schema type of the experience table.",
+    )
+    parser.add_argument(
         "--tokenizer",
         type=str,
+        required=True,
         help="Path to the tokenizer.",
     )
     return parser.parse_args()
@@ -262,12 +268,11 @@ def main():
     args = parse_args()
 
     # Initialize SQLExperienceViewer
-    config = StorageConfig(
-        name=args.table,
-        path=args.db_url,
-        schema_type="experience",
-        storage_type="sql",
-    )
+    config = StorageConfig()
+    config.name = args.table
+    config.path = args.db_url
+    config.schema_type = args.schema
+    config.storage_type = "sql"
     viewer = SQLExperienceViewer(config)
 
     st.title("🎯 Trinity-RFT Experience Visualizer")
@@ -296,7 +301,6 @@ def main():
     experiences_per_page = st.sidebar.slider(
         "Experiences per page", min_value=1, max_value=20, value=5
     )
-
     # Calculate total pages
     total_pages = (total_seq_num + experiences_per_page - 1) // experiences_per_page
 
