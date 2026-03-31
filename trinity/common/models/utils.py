@@ -73,6 +73,9 @@ def tokenize_and_mask_messages_default(
         If the assumption is not met, the function may produce incorrect results.
         Please check the chat template before using this method.
     """
+    if len(messages) == 0:
+        raise ValueError("Messages should not be empty")
+
     common_kwargs = dict(
         tools=tools,
         chat_template=chat_template,
@@ -80,27 +83,54 @@ def tokenize_and_mask_messages_default(
         padding=False,
         truncation=True,
         add_special_tokens=False,
+        tokenize=True,
+        return_dict=True,
     )
 
     generation_messages = []
     response_messages = []
-    for idx, message in enumerate(messages):
+
+    start_idx = 0
+    if "<think>" in (chat_template or tokenizer.chat_template):
+        # find last user message for thinking template
+        for idx in range(len(messages) - 1, -1, -1):
+            message = messages[idx]
+            if message["role"] == "user":
+                start_idx = idx
+                break
+
+    for idx in range(start_idx, len(messages)):
+        message = messages[idx]
         if message["role"] == "assistant":
             generation_messages.append(messages[:idx])
             response_messages.append(messages[: idx + 1])
         elif idx == len(messages) - 1:
             response_messages.append(messages)
-    prompt_token_ids_list = tokenizer.apply_chat_template(
-        generation_messages,
-        add_generation_prompt=True,
-        **common_kwargs,
-    )["input_ids"]
+
+    # response_messages contains at least one message, so response_token_ids_list is not empty
     response_token_ids_list = tokenizer.apply_chat_template(
         response_messages,
         add_generation_prompt=False,
         **common_kwargs,
     )["input_ids"]
     assistant_token_mask = torch.zeros(len(response_token_ids_list[-1]), dtype=torch.int)
+
+    if len(generation_messages) == 0:  # no assistant message
+        return torch.tensor(response_token_ids_list[-1]), assistant_token_mask, 0
+
+    first_generation_message_empty_flag = len(generation_messages[0]) == 0
+    if first_generation_message_empty_flag:
+        # the first message is from assistant, so generation_messages[0] is empty
+        generation_messages[0] = response_messages[0]
+    prompt_token_ids_list = tokenizer.apply_chat_template(
+        generation_messages,
+        add_generation_prompt=True,
+        **common_kwargs,
+    )["input_ids"]
+    if first_generation_message_empty_flag:
+        # the first message is from assistant, so set the first prompt_token_ids to empty
+        prompt_token_ids_list[0] = []
+
     for prompt_token_ids, response_token_ids in zip(prompt_token_ids_list, response_token_ids_list):
         assistant_token_mask[len(prompt_token_ids) : len(response_token_ids)] = 1
 
