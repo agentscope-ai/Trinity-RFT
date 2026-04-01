@@ -48,7 +48,7 @@ python examples/bots/ref_eval_collect.py \
 --ref-eval-path <your/path/to/bots_ref_eval_log.jsonl> \
 --ref-eval-key <column name, e.g., qwen2.5_1.5b_pass_rate>
 ```
-记得修改`bots.yaml`中的`task_selector.feature_keys`字段。
+记得修改`bots.yaml`中的`data_selector.feature_keys`字段。
 
 ##### 第三步：训练
 执行以下命令启动训练：

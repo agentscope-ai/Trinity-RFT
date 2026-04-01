@@ -232,6 +232,7 @@ class TasksetConfig:
     rollout_args: GenerationConfig = field(default_factory=GenerationConfig)
     workflow_args: dict = field(default_factory=dict)
     reward_fn_args: dict = field(default_factory=dict)
+    task_selector: Optional[DataSelectorConfig] = None  # deprecated, use `data_selector` instead
     data_selector: DataSelectorConfig = field(default_factory=DataSelectorConfig)
 
     # used for StorageType.FILE

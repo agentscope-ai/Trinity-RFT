@@ -50,7 +50,7 @@ python examples/bots/ref_eval_collect.py \
 --ref-eval-path <your/path/to/bots_ref_eval_log.jsonl> \
 --ref-eval-key <column name, e.g., qwen2.5_1.5b_pass_rate>
 ```
-Remember to update `task_selector.feature_keys` in `bots.yaml`.
+Remember to update `data_selector.feature_keys` in `bots.yaml`.
 
 ##### Step 3: Training
 Launch training by executing:

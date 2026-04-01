@@ -212,7 +212,7 @@ buffer:
       - name: my_taskset
         storage_type: file
         path: ./path/to/tasks
-        task_selector:
+        data_selector:
           selector_type: difficulty_based
           feature_keys: ["correct", "uncertainty"]
           kwargs:

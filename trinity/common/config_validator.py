@@ -930,6 +930,11 @@ class BufferConfigValidator(ConfigValidator):
             _fill_taskset_config(taskset, i)
 
             # check if selector is supported
+            if taskset.task_selector is not None:
+                taskset.data_selector = taskset.task_selector  # for backward compatibility
+                self.logger.warning(
+                    "[DEPRECATED] Please use `data_selector` instead of `task_selector`."
+                )
             selector = SELECTORS.get(taskset.data_selector.selector_type)
             if selector is None:
                 raise ValueError(

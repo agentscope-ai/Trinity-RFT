@@ -130,7 +130,7 @@ class SFTFormatter(ExperienceFormatter):
         self,
         messages: List[Dict],
         tools: Optional[List[Dict] | str] = None,
-    ) -> Experience:
+    ) -> Experience:  # TODO: add prompt_text and response_text to Experience
         """Convert messages and tools into an Experience object.
 
         Args:

@@ -60,7 +60,7 @@ To match the default training setup of veRL, we set `synchronizer.sync_style=fix
 | `data.max_response_length` | `model.max_response_tokens` | - |
 | `data.filter_overlong_prompts` | `model.enable_prompt_truncation` | Explained later |
 | `data.truncation` | - | Equivalent to `right` |
-| `data.shuffle` | `buffer.explorer_input.taskset.task_selector.selector_type:shuffle` | Taskset-specific |
+| `data.shuffle` | `buffer.explorer_input.taskset.data_selector.selector_type:shuffle` | Taskset-specific |
 
 💡 Detailed explanation:
 
