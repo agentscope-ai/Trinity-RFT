@@ -653,11 +653,11 @@ class veRLConfig:
         set_if_none(actor_optim, "lr_decay_style", optim_config.lr_scheduler_type)
         set_if_none(actor_optim, "min_lr_ratio", optim_config.min_lr_ratio)
         set_if_none(actor_optim, "min_lr", optim_config.min_lr_ratio * optim_config.lr)
-        set_if_none(critic_optim, "lr_warmup_init", 0.0)
+        set_if_none(critic_optim, "lr_warmup_init", critic_optim.lr * 0.01)
         set_if_none(critic_optim, "lr_decay_steps", self.trainer.total_training_steps)
         set_if_none(critic_optim, "lr_decay_style", "constant")
-        set_if_none(critic_optim, "min_lr_ratio", 0.0)
-        set_if_none(critic_optim, "min_lr", 0.0)
+        set_if_none(critic_optim, "min_lr_ratio", 0.01)
+        set_if_none(critic_optim, "min_lr", critic_optim.lr * 0.01)
         # fix optimizer type for fsdp
         if config.trainer.trainer_strategy.startswith("fsdp"):
             optim_map = {

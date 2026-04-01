@@ -90,7 +90,7 @@ class OptimizerConfig:
     lr: float = 1e-6
     lr_warmup_steps: int = -1
     lr_warmup_steps_ratio: float = 0.0
-    min_lr_ratio: float = 0.0
+    min_lr_ratio: float = 0.01
     warmup_style: Optional[str] = None  # deprecated !
     lr_scheduler_type: str = "constant"
     optimizer_type: str = "adam"
