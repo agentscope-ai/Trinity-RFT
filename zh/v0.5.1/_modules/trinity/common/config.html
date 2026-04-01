@@ -1091,7 +1091,8 @@ window.runMermaid = runMermaid;</script>
     <span class="n">enable_concatenated_multi_turn</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="c1"># for sft / dpo, if None, use model.custom_chat_template</span>
-    <span class="n">chat_template</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="n">chat_template</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">enable_thinking</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 
@@ -1117,7 +1118,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">lr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-6</span>
     <span class="n">lr_warmup_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
     <span class="n">lr_warmup_steps_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
-    <span class="n">min_lr_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">min_lr_ratio</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.01</span>
     <span class="n">warmup_style</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># deprecated !</span>
     <span class="n">lr_scheduler_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;constant&quot;</span>
     <span class="n">optimizer_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;adam&quot;</span>
@@ -1145,11 +1146,11 @@ window.runMermaid = runMermaid;</script>
 
 
 
-<div class="viewcode-block" id="TaskSelectorConfig">
-<a class="viewcode-back" href="../../../build_api/trinity.common.config.html#trinity.common.config.TaskSelectorConfig">[文档]</a>
+<div class="viewcode-block" id="DataSelectorConfig">
+<a class="viewcode-back" href="../../../build_api/trinity.common.config.html#trinity.common.config.DataSelectorConfig">[文档]</a>
 <span class="nd">@Experimental</span>
 <span class="nd">@dataclass</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">TaskSelectorConfig</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DataSelectorConfig</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Data selector config.&quot;&quot;&quot;</span>
 
     <span class="n">selector_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;sequential&quot;</span>
@@ -1236,7 +1237,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">rollout_args</span><span class="p">:</span> <span class="n">GenerationConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">GenerationConfig</span><span class="p">)</span>
     <span class="n">workflow_args</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
     <span class="n">reward_fn_args</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
-    <span class="n">task_selector</span><span class="p">:</span> <span class="n">TaskSelectorConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">TaskSelectorConfig</span><span class="p">)</span>
+    <span class="n">data_selector</span><span class="p">:</span> <span class="n">DataSelectorConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">DataSelectorConfig</span><span class="p">)</span>
 
     <span class="c1"># enable progress bar (tqdm) for _HFBatchReader</span>
     <span class="n">enable_progress_bar</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
@@ -1280,7 +1281,8 @@ window.runMermaid = runMermaid;</script>
     <span class="n">rollout_args</span><span class="p">:</span> <span class="n">GenerationConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">GenerationConfig</span><span class="p">)</span>
     <span class="n">workflow_args</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
     <span class="n">reward_fn_args</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
-    <span class="n">task_selector</span><span class="p">:</span> <span class="n">TaskSelectorConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">TaskSelectorConfig</span><span class="p">)</span>
+    <span class="n">task_selector</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DataSelectorConfig</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># deprecated, use `data_selector` instead</span>
+    <span class="n">data_selector</span><span class="p">:</span> <span class="n">DataSelectorConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">DataSelectorConfig</span><span class="p">)</span>
 
     <span class="c1"># used for StorageType.FILE</span>
     <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span>
@@ -1315,7 +1317,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
             <span class="n">storage_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">storage_type</span><span class="p">,</span>
             <span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
-            <span class="n">task_selector</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">task_selector</span><span class="p">,</span>
+            <span class="n">data_selector</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data_selector</span><span class="p">,</span>
             <span class="n">repeat_times</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeat_times</span><span class="p">,</span>
             <span class="n">split</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">split</span><span class="p">,</span>
             <span class="n">subset_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">subset_name</span><span class="p">,</span>
@@ -1364,6 +1366,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">subset_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="nb">format</span><span class="p">:</span> <span class="n">FormatConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">FormatConfig</span><span class="p">)</span>
     <span class="n">enable_progress_bar</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">data_selector</span><span class="p">:</span> <span class="n">DataSelectorConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">DataSelectorConfig</span><span class="p">)</span>
 
     <span class="c1"># ! DO NOT SET, automatically set</span>
     <span class="n">schema_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1387,6 +1390,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
             <span class="n">storage_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">storage_type</span><span class="p">,</span>
             <span class="n">path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
+            <span class="n">data_selector</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">data_selector</span><span class="p">,</span>
             <span class="n">capacity</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">capacity</span><span class="p">,</span>
             <span class="n">max_read_timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_read_timeout</span><span class="p">,</span>
             <span class="n">replay_buffer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">replay_buffer</span><span class="p">,</span>
@@ -1549,6 +1553,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">enable_prompt_truncation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="c1"># repetition penalty for response generation</span>
     <span class="n">repetition_penalty</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="n">enable_thinking</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="c1"># lora config</span>
     <span class="n">lora_configs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">LoRAConfig</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>

@@ -1651,7 +1651,7 @@ window.runMermaid = runMermaid;</script>
             <span class="s2">&quot;enable_prompt_truncation&quot;</span><span class="p">,</span>
         <span class="p">]</span>
         <span class="n">rope_args</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;rope_scaling&quot;</span><span class="p">,</span> <span class="s2">&quot;rope_theta&quot;</span><span class="p">]</span>
-        <span class="n">model_args</span> <span class="o">=</span> <span class="n">rollout_args</span> <span class="o">+</span> <span class="n">length_args</span> <span class="o">+</span> <span class="n">rope_args</span>
+        <span class="n">model_args</span> <span class="o">=</span> <span class="n">rollout_args</span> <span class="o">+</span> <span class="n">length_args</span> <span class="o">+</span> <span class="n">rope_args</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;enable_thinking&quot;</span><span class="p">]</span>
 
         <span class="c1"># rollout model</span>
         <span class="k">for</span> <span class="n">args</span> <span class="ow">in</span> <span class="n">model_args</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;model_path&quot;</span><span class="p">,</span> <span class="s2">&quot;trust_remote_code&quot;</span><span class="p">]:</span>
@@ -1839,7 +1839,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">assert</span> <span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_interval</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;`sync_interval` must be positive.&quot;</span>
 
-        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">!=</span> <span class="s2">&quot;bench&quot;</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">algorithm_type</span> <span class="o">!=</span> <span class="s2">&quot;dpo&quot;</span><span class="p">:</span>  <span class="c1"># TODO</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">!=</span> <span class="s2">&quot;bench&quot;</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">algorithm_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;dpo&quot;</span><span class="p">,</span> <span class="s2">&quot;sft&quot;</span><span class="p">}:</span>  <span class="c1"># TODO</span>
             <span class="c1"># check eval_interval</span>
             <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">eval_interval</span> <span class="o">%</span> <span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_interval</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">eval_interval</span> <span class="o">=</span> <span class="p">(</span>
@@ -2015,10 +2015,16 @@ window.runMermaid = runMermaid;</script>
             <span class="n">_fill_taskset_config</span><span class="p">(</span><span class="n">taskset</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
 
             <span class="c1"># check if selector is supported</span>
-            <span class="n">selector</span> <span class="o">=</span> <span class="n">SELECTORS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">taskset</span><span class="o">.</span><span class="n">task_selector</span><span class="o">.</span><span class="n">selector_type</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">taskset</span><span class="o">.</span><span class="n">task_selector</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">taskset</span><span class="o">.</span><span class="n">data_selector</span> <span class="o">=</span> <span class="n">taskset</span><span class="o">.</span><span class="n">task_selector</span>  <span class="c1"># for backward compatibility</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">&quot;[DEPRECATED] Please use `data_selector` instead of `task_selector`.&quot;</span>
+                <span class="p">)</span>
+            <span class="n">selector</span> <span class="o">=</span> <span class="n">SELECTORS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">taskset</span><span class="o">.</span><span class="n">data_selector</span><span class="o">.</span><span class="n">selector_type</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">selector</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Selector </span><span class="si">{</span><span class="n">taskset</span><span class="o">.</span><span class="n">task_selector</span><span class="o">.</span><span class="n">selector_type</span><span class="si">}</span><span class="s2"> is not supported.&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Selector `</span><span class="si">{</span><span class="n">taskset</span><span class="o">.</span><span class="n">data_selector</span><span class="o">.</span><span class="n">selector_type</span><span class="si">}</span><span class="s2">` &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;in </span><span class="si">{</span><span class="n">taskset</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> is not supported.&quot;</span>
                 <span class="p">)</span>
 
         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">taskset</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">explorer_input</span><span class="o">.</span><span class="n">eval_tasksets</span><span class="p">):</span>
@@ -2083,6 +2089,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">experience_buffer</span><span class="o">.</span><span class="n">tokenizer_path</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">model_path</span>
         <span class="n">set_if_none</span><span class="p">(</span><span class="n">experience_buffer</span><span class="p">,</span> <span class="s2">&quot;ray_namespace&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">ray_namespace</span><span class="p">)</span>
         <span class="n">set_if_none</span><span class="p">(</span><span class="n">experience_buffer</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="s2">&quot;chat_template&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">custom_chat_template</span><span class="p">)</span>
+        <span class="n">set_if_none</span><span class="p">(</span><span class="n">experience_buffer</span><span class="o">.</span><span class="n">format</span><span class="p">,</span> <span class="s2">&quot;enable_thinking&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">enable_thinking</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">aux_name</span><span class="p">,</span> <span class="n">aux_buffer</span> <span class="ow">in</span> <span class="n">trainer_input</span><span class="o">.</span><span class="n">auxiliary_buffers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">aux_buffer</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">train_batch_size</span>
             <span class="n">aux_buffer</span><span class="o">.</span><span class="n">tokenizer_path</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">model_path</span>
@@ -2092,6 +2099,16 @@ window.runMermaid = runMermaid;</script>
                     <span class="sa">f</span><span class="s2">&quot;`buffer.trainer_input.auxiliary_buffers[</span><span class="si">{</span><span class="n">aux_name</span><span class="si">}</span><span class="s2">].path` is required, &quot;</span>
                     <span class="sa">f</span><span class="s2">&quot;please set it to the path of the auxiliary buffer.&quot;</span>
                 <span class="p">)</span>
+
+        <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.selector</span><span class="w"> </span><span class="kn">import</span> <span class="n">SELECTORS</span>
+
+        <span class="c1"># check if selector is supported</span>
+        <span class="n">selector</span> <span class="o">=</span> <span class="n">SELECTORS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">experience_buffer</span><span class="o">.</span><span class="n">data_selector</span><span class="o">.</span><span class="n">selector_type</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">selector</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Selector </span><span class="si">{</span><span class="n">experience_buffer</span><span class="o">.</span><span class="n">data_selector</span><span class="o">.</span><span class="n">selector_type</span><span class="si">}</span><span class="s2"> &quot;</span>
+                <span class="s2">&quot;in `experience_buffer` is not supported.&quot;</span>
+            <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
             <span class="k">assert</span> <span class="p">(</span>
