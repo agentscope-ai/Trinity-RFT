@@ -13,10 +13,10 @@ from trinity.common.models.vllm_patch import get_vllm_version
 def patch_vllm_prompt_logprobs(model_runner: GPUModelRunner):  # noqa: C901
     """Patch vLLM model runner to support prompt logprobs extraction."""
     version = get_vllm_version()
-    if version < parse_version("0.10.2") or version > parse_version("0.18.0"):
+    if version < parse_version("0.10.2") or version > parse_version("0.19.0"):
         raise ValueError(
             f"Unsupported vllm version: {vllm.__version__}. "
-            "This patch requires vllm version >= 0.10.2, <= 0.18.0."
+            "This patch requires vllm version >= 0.10.2, <= 0.19.0."
         )
     is_v0102 = version == parse_version("0.10.2")
 

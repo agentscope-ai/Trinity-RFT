@@ -13,7 +13,7 @@
 # limitations under the License.
 """
 FSDP Checkpoint Manager.
-Modified from https://github.com/volcengine/verl/blob/v0.7.0/verl/utils/checkpoint/fsdp_checkpoint_manager.py
+Modified from https://github.com/volcengine/verl/blob/v0.7.1/verl/utils/checkpoint/fsdp_checkpoint_manager.py
 """
 
 import json
@@ -82,6 +82,16 @@ class FSDPCheckpointManager(OldFSDPCheckpointManager):
         self.latest_extra_state_save_step = None
         self.latest_hf_model_save_step = None
         self.latest_tokenizer_save_step = None
+
+    def _is_latest_registered_checkpoint(self, path: str) -> bool:
+        if not self.previous_saved_paths:
+            return False
+        return os.path.abspath(path) == os.path.abspath(self.previous_saved_paths[-1])
+
+    def register_checkpoint(self, new_path: str, max_ckpt_to_keep: Optional[int]):
+        if self._is_latest_registered_checkpoint(new_path):
+            return
+        super().register_checkpoint(new_path, max_ckpt_to_keep)
 
     def _upload_state_dict(self, state_dict: Union[dict, None], global_step: int):
         """
@@ -418,16 +428,16 @@ class FSDPCheckpointManager(OldFSDPCheckpointManager):
         """
         Modified from verl.utils.checkpoint.fsdp_checkpoint_manager.py:save_checkpoint
 
-        Saves the model checkpoint to disk, optionally uploads it to a remote Synchronizer,
-        and uses background threads to prevent blocking the main training loop.
+        Saves the model checkpoint to disk and uses background threads to prevent
+        blocking the main training loop.
 
         Main improvements over the base class:
         - Uses separate threads for saving model/optimizer/extras.
-        - Implements synchronization with a remote actor. If the model is not trained (`global_step == 0`) or continues from a breakpoint, `Synchonizer` will be notified and the model will not be saved.
+        - Registers background work with CheckpointMonitor so trainer-side coordination
+          can wait on state-dict and checkpoint completion.
 
         Args:
             local_path (str): Local directory path to save the checkpoint.
-            hdfs_path (str, optional): HDFS path for saving the checkpoint (not implemented here).
             global_step (int): Current training step.
             max_ckpt_to_keep (int, optional): Maximum number of checkpoints to keep locally.
             save_as_hf (bool): Whether to force save the model in Hugging Face format.
@@ -437,24 +447,15 @@ class FSDPCheckpointManager(OldFSDPCheckpointManager):
 
         # record the previous global step
         self.previous_global_step = global_step
-        local_path = local_mkdir_safe(local_path)
 
-        # remove previous local_path, only rank 0 should do this
-        if (
-            self.rank == 0
-            and max_ckpt_to_keep
-            and isinstance(max_ckpt_to_keep, int)
-            and max_ckpt_to_keep > 0
-            and len(self.previous_saved_paths) >= max_ckpt_to_keep  # type: ignore
-            and local_path != self.previous_saved_paths[-1]  # type: ignore
-        ):  # last step may save twice
-            keep_start = len(self.previous_saved_paths) - max_ckpt_to_keep + 1  # type: ignore
-            self.logger.info(
-                "Checkpoint manager is removing previous checkpoints at "
-                + str(self.previous_saved_paths[:keep_start])  # type: ignore
-            )
-            self.remove_previous_save_local_path(self.previous_saved_paths[:keep_start])  # type: ignore
-            self.previous_saved_paths = self.previous_saved_paths[keep_start:]  # type: ignore
+        skip_retention_rotation = self.rank == 0 and self._is_latest_registered_checkpoint(
+            local_path
+        )
+
+        if self.rank == 0 and not skip_retention_rotation:
+            self.ensure_checkpoint_capacity(max_ckpt_to_keep)
+
+        local_path = local_mkdir_safe(local_path)
 
         torch.distributed.barrier()
 
@@ -504,10 +505,8 @@ class FSDPCheckpointManager(OldFSDPCheckpointManager):
                 checkpoint_thread_count=checkpoint_thread_count,
             )
         )
-        if (
-            len(self.previous_saved_paths) == 0 or local_path != self.previous_saved_paths[-1]
-        ):  # last step may save twice
-            self.previous_saved_paths.append(local_path)
+        if self.rank == 0:
+            self.register_checkpoint(local_path, max_ckpt_to_keep)
 
     def wait_on_save_thread(self) -> None:
         """

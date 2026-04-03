@@ -187,11 +187,13 @@ def apply_monkey_patch(  # noqa: C901
     use_remove_padding: bool = True,
     use_fused_kernels: bool = False,
     fused_kernels_backend: str = None,
+    use_prefix_grouper: bool = False,
     use_tiled_mlp: bool = False,
     tiled_mlp_shards: int = 4,
 ):
     """
-    Apply monkey patch to the models for ulysses sequence parallel, fused kernel, and tiled MLP.
+    Apply monkey patch to the models for ulysses sequence parallel, fused kernel, prefix grouper,
+    and tiled MLP.
 
     In the end of this function forward function of the model is patched for fused kernel.
     If the model is not supported with fused kernel, please return after patch.
@@ -207,6 +209,7 @@ def apply_monkey_patch(  # noqa: C901
     """
     from verl.models.transformers.monkey_patch import (
         _ulysses_flash_attention_forward,
+        apply_prefix_grouper_patch,
         patch_vlm_for_ulysses_input_slicing,
     )
     from verl.utils.import_utils import is_trl_available
@@ -220,6 +223,9 @@ def apply_monkey_patch(  # noqa: C901
 
         model_type = getattr(model.config, "model_type", None)
         apply_tiled_mlp_monkey_patch(num_shards=tiled_mlp_shards, model_type=model_type)
+
+    if use_prefix_grouper:
+        apply_prefix_grouper_patch()
 
     """Replace _flash_attention_forward to _ulysses_flash_attention_forward"""
     module = sys.modules[model.__module__]

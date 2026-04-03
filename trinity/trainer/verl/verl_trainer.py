@@ -18,6 +18,7 @@ from verl.trainer.ppo.core_algos import agg_loss
 from verl.trainer.ppo.metric_utils import (
     compute_throughout_metrics,
     compute_timing_metrics,
+    compute_variance_proxy_metrics,
 )
 from verl.trainer.ppo.ray_trainer import (
     RayClassWithInitArgs,
@@ -440,9 +441,14 @@ class VerlPPOTrainerWrapper(RayPPOTrainer, TrainEngineWrapper):
     def _create_dataloader(self, train_dataset, val_dataset, collate_fn, train_sampler):
         # Do not use verl's dataloader
         self.train_dataloader = None
+        self.val_dataloader = None
         self.total_training_steps = self.config.trainer.total_training_steps or sys.maxsize
-        self.config.actor_rollout_ref.actor.optim.total_training_steps = self.total_training_steps
-        self.config.critic.optim.total_training_steps = self.total_training_steps
+        if OmegaConf.select(self.config, "actor_rollout_ref.actor.optim") is not None:
+            self.config.actor_rollout_ref.actor.optim.total_training_steps = (
+                self.total_training_steps
+            )
+        if OmegaConf.select(self.config, "critic.optim") is not None:
+            self.config.critic.optim.total_training_steps = self.total_training_steps
 
     async def save_state_dict(self):  # checkpoint sync
         actor_local_path = os.path.join(
@@ -475,6 +481,16 @@ class VerlPPOTrainerWrapper(RayPPOTrainer, TrainEngineWrapper):
             batch.meta_info["global_token_num"] = torch.sum(
                 batch.batch["attention_mask"], dim=-1
             ).tolist()
+            images_seqlens_all = []
+            for multi_modal_input in batch.non_tensor_batch.get("multi_modal_inputs", []):
+                if "image_grid_thw" not in multi_modal_input:
+                    continue
+                images_seqlens = multi_modal_input.get("images_seqlens", None)
+                if images_seqlens is None:
+                    continue
+                images_seqlens_all.extend(images_seqlens.tolist())
+            if images_seqlens_all:
+                batch.meta_info["images_seqlens"] = images_seqlens_all
 
             # Operating Mode Selection:
             # - Bypass mode: Sets old_log_probs = rollout_log_probs (2 policies: π_rollout, π_θ)
@@ -592,6 +608,8 @@ class VerlPPOTrainerWrapper(RayPPOTrainer, TrainEngineWrapper):
         metrics.update(
             compute_throughout_metrics(batch=batch, timing_raw=timing_raw, n_gpus=n_gpus)
         )
+        gradient_norm = metrics.get("actor/grad_norm", None)
+        metrics.update(compute_variance_proxy_metrics(batch=batch, gradient_norm=gradient_norm))
 
         return metrics
 

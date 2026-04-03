@@ -13,13 +13,12 @@
 # limitations under the License.
 """
 The main entry point to run the PPO algorithm.
-Modified from https://github.com/volcengine/verl/blob/v0.7.0/verl/workers/fsdp_workers.py
+Modified from https://github.com/volcengine/verl/blob/v0.7.1/verl/workers/fsdp_workers.py
 """
 
 import datetime
 import json
 import os
-import sys
 import warnings
 from contextlib import contextmanager
 from dataclasses import asdict
@@ -37,18 +36,6 @@ from torch.distributed.device_mesh import init_device_mesh
 from torch.distributed.fsdp import FlatParameter
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 from torch.distributed.fsdp.fully_sharded_data_parallel import FSDP_PREFIX
-
-# start of patch for verl to support transformers v5
-if not hasattr(sys.modules["transformers"], "AutoModelForVision2Seq"):
-    setattr(
-        sys.modules["transformers"],
-        "AutoModelForVision2Seq",
-        sys.modules["transformers"].AutoModelForImageTextToText,
-    )
-    sys.modules["transformers"].__all__.append("AutoModelForVision2Seq")
-# end of patch for verl to support transformers v5
-
-
 from verl import DataProto
 from verl.single_controller.base import Worker
 from verl.single_controller.base.decorator import (
@@ -310,6 +297,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
         use_liger=False,
         role="actor",
         enable_activation_offload=False,
+        use_prefix_grouper=False,
         use_tiled_mlp=False,
         tiled_mlp_shards=4,
     ):
@@ -433,6 +421,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                 ulysses_sp_size=self.ulysses_sequence_parallel_size,
                 use_fused_kernels=use_fused_kernels,
                 fused_kernels_backend=fused_kernels_backend,
+                use_prefix_grouper=use_prefix_grouper,
                 use_tiled_mlp=use_tiled_mlp,
                 tiled_mlp_shards=tiled_mlp_shards,
             )
@@ -644,6 +633,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
         use_shm = self.config.model.get("use_shm", False)
         use_fused_kernels = self.config.model.get("use_fused_kernels", False)
         trust_remote_code = self.config.model.get("trust_remote_code", False)
+        use_prefix_grouper = self.config.actor.get("use_prefix_grouper", False)
 
         if self._is_actor:
             # we need the model for actor
@@ -675,6 +665,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                 use_liger=self.config.model.get("use_liger", False),
                 role="actor",
                 enable_activation_offload=self.config.model.get("enable_activation_offload", False),
+                use_prefix_grouper=use_prefix_grouper,
                 use_tiled_mlp=use_tiled_mlp,
                 tiled_mlp_shards=tiled_mlp_shards,
             )
@@ -698,6 +689,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
             with open_dict(self.config.actor):
                 self.config.actor.use_remove_padding = use_remove_padding
                 self.config.actor.use_fused_kernels = use_fused_kernels
+                self.config.actor.use_prefix_grouper = use_prefix_grouper
             self.actor = DataParallelPPOActor(
                 config=self.config.actor,
                 actor_module=self.actor_module_fsdp,
@@ -731,6 +723,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                 trust_remote_code=trust_remote_code,
                 use_liger=self.config.model.get("use_liger", False),
                 role="ref",
+                use_prefix_grouper=use_prefix_grouper,
                 use_tiled_mlp=ref_use_tiled_mlp,
                 tiled_mlp_shards=ref_tiled_mlp_shards,
             )[0]
@@ -738,6 +731,8 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
             with open_dict(self.config.ref):
                 self.config.ref.use_remove_padding = use_remove_padding
                 self.config.ref.use_fused_kernels = use_fused_kernels
+                if use_prefix_grouper:
+                    self.config.ref.use_prefix_grouper = use_prefix_grouper
             self.ref_policy = DataParallelPPOActor(
                 config=self.config.ref, actor_module=self.ref_module_fsdp
             )
@@ -868,6 +863,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
             data = data.to(
                 "cpu"
             )  # data will to device with each micro batch on actor.update_policy
+            data.meta_info.setdefault("pad_token_id", self.tokenizer.pad_token_id)
 
             # perform training
             with Timer(name="update_policy", logger=None) as timer:
@@ -930,6 +926,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
         data.meta_info["max_token_len"] = config_source.log_prob_max_token_len_per_gpu
         data.meta_info["use_dynamic_bsz"] = config_source.log_prob_use_dynamic_bsz
         data.meta_info["temperature"] = self.config.rollout.temperature
+        data.meta_info.setdefault("pad_token_id", self.tokenizer.pad_token_id)
         # perform recompute log_prob
         calculate_entropy = not is_lora
         with self.ulysses_sharding_manager:
@@ -941,6 +938,8 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                 tensors = {"ref_log_prob": outputs["log_probs"]}
             if calculate_entropy:
                 tensors["entropys"] = outputs["entropys"]
+            if "sum_pi_squared" in outputs:
+                tensors["sum_pi_squared"] = outputs["sum_pi_squared"]
             output = DataProto.from_dict(
                 tensors=tensors,
                 meta_info={"temperature": self.config.rollout.temperature},
@@ -977,6 +976,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
         data.meta_info["temperature"] = self.config.rollout.temperature
         data.meta_info["max_token_len"] = self.config.ref.log_prob_max_token_len_per_gpu
         data.meta_info["use_dynamic_bsz"] = self.config.ref.log_prob_use_dynamic_bsz
+        data.meta_info.setdefault("pad_token_id", self.tokenizer.pad_token_id)
         with self.ulysses_sharding_manager:
             data = data.to(
                 "cpu"

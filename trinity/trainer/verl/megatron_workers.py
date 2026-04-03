@@ -13,13 +13,13 @@
 # limitations under the License.
 """
 The main entry point to run the PPO algorithm.
-Modified from https://github.com/volcengine/verl/blob/v0.7.0/verl/workers/megatron_workers.py
+Modified from https://github.com/volcengine/verl/blob/v0.7.1/verl/workers/megatron_workers.py
 """
 
 import datetime
 import os
-import sys
 import time
+from contextlib import nullcontext
 
 import psutil
 import ray
@@ -36,20 +36,6 @@ try:
     from verl.workers.engine.mindspeed.transformer_impl import repatch
 except ImportError:
     repatch = None
-
-# start of patch for verl to support transformers v5
-if not hasattr(sys.modules["transformers"], "AutoModelForVision2Seq"):
-    setattr(
-        sys.modules["transformers"],
-        "AutoModelForVision2Seq",
-        sys.modules["transformers"].AutoModelForImageTextToText,
-    )
-    sys.modules["transformers"].__all__.append("AutoModelForVision2Seq")
-
-    import accelerate
-
-    setattr(accelerate, "init_empty_weights", lambda: torch.device("cpu"))
-# end of patch for verl to support transformers v5
 
 from verl import DataProto
 from verl.models.mcore import get_mcore_weight_converter
@@ -117,6 +103,7 @@ class MegatronWorker(Worker):
         override_transformer_config,
         trust_remote_code=False,
         megatron_config=None,
+        enable_mtp=False,
     ):
         from transformers import AutoConfig
         from verl.models.mcore import hf_to_mcore_config
@@ -170,6 +157,19 @@ class MegatronWorker(Worker):
         # end of patch for verl to support transformers v5
 
         self.share_embeddings_and_output_weights = getattr(hf_config, "tie_word_embeddings", False)
+
+        if enable_mtp:
+            assert (
+                getattr(hf_config, "num_nextn_predict_layers", 0) > 0
+            ), "MTP requires at least one nextn_predict_layer"
+            assert megatron_config.use_mbridge, "MTP requires use_mbridge to be True"
+            override_transformer_config[
+                "mtp_loss_scaling_factor"
+            ] = self.config.model.mtp.mtp_loss_scaling_factor
+        elif hasattr(hf_config, "num_nextn_predict_layers"):
+            hf_config.num_nextn_predict_layers = 0
+
+        self.enable_mtp = enable_mtp
         update_model_config(hf_config, override_config_kwargs=override_config_kwargs)
         self.architectures = getattr(hf_config, "architectures", None)
         if self.rank == 0:
@@ -207,6 +207,10 @@ class MegatronWorker(Worker):
 
                 # In case of invalid overrides, we need to make sure some critical params are set correctly
                 provider.params_dtype = dtype
+
+                # Keep dtype flags aligned with upstream 0.7.1 Megatron-Bridge setup.
+                provider.fp16 = fp16
+                provider.bf16 = bf16
 
                 # Pass distributed info
                 provider.tensor_model_parallel_size = megatron_config.tensor_model_parallel_size
@@ -351,6 +355,7 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
         self._is_offload_param = False
         self._is_offload_grad = False
         self._is_offload_optimizer = False
+        self._hf_export_conversion_tasks = None
 
         # normalize config
         if self._is_actor:
@@ -409,6 +414,7 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
             override_transformer_config,
             self.config.model.get("trust_remote_code", False),
             self.config.actor.megatron if not self._is_ref else self.config.ref.megatron,
+            self.config.model.get("mtp", {}).get("enable", False),
         )
         self.generation_config = get_generation_config(
             self.local_path,
@@ -606,9 +612,19 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
                 tf_config=self.tf_config,
                 actor_module=self.actor_module,
                 actor_optimizer=self.actor_optimizer,
+                mtp_config=(
+                    self.config.model.mtp
+                    if self.config.model.get("mtp", {}).get("enable", False)
+                    else None
+                ),
             )
             self.logger.info(f"routing replay layers: {len(RouterReplay.router_instances)}")
             log_gpu_memory_usage("After MegatronPPOActor init", logger=self.logger)
+
+            if self.bridge is not None and not self.vanilla_bridge:
+                self._hf_export_conversion_tasks = self.bridge.get_conversion_tasks(
+                    self.actor.actor_module
+                )
 
         if self._is_ref:
             self.ref_module, self.ref_model_config = self._build_model_optimizer(
@@ -679,7 +695,11 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
             if self.vanilla_bridge:
                 per_tensor_param = self.bridge.export_weights(self.actor.actor_module)
             else:
-                per_tensor_param = self.bridge.export_hf_weights(self.actor.actor_module)
+                per_tensor_param = self.bridge.export_hf_weights(
+                    self.actor.actor_module,
+                    show_progress=False,
+                    conversion_tasks=self._hf_export_conversion_tasks,
+                )
         else:
             per_tensor_param = per_tensor_generator(
                 self.actor.actor_module,
@@ -699,9 +719,13 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
 
             if self._is_offload_param:
                 load_megatron_model_to_gpu(self.actor_module)
+            name_list = []
             for name, weight in self._get_tensor_generator():
+                name_list.append(name)
                 self.state_dict_meta.append((name, str(weight.dtype), tuple(weight.shape)))
                 del weight
+            if torch.distributed.get_rank() == 0:
+                self.logger.info(f"!!!!! name_list: {name_list}")
             if self._is_offload_param:
                 offload_megatron_model_to_cpu(self.actor_module)
             torch.distributed.barrier()
@@ -740,11 +764,14 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
 
         if self._is_offload_param:
             load_megatron_model_to_gpu(self.actor_module)
+        name_list = []
         for name, weight in self._get_tensor_generator():
+            name_list.append(name)
             if torch.distributed.get_rank() == 0:
                 torch.distributed.broadcast(weight, 0, group=self._model_update_group)
             del weight
         if torch.distributed.get_rank() == 0:
+            self.logger.info(f"!!!!! name_list: {name_list}")
             torch.distributed.barrier(group=self._model_update_group)
             torch.cuda.synchronize()
         if self._is_offload_param:
@@ -798,8 +825,9 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
             metrics = self.actor.update_policy(dataloader=dataloader)
         delta_time = timer.last
         global_num_tokens = data.meta_info["global_token_num"]
+        images_seqlens = data.meta_info.get("images_seqlens", None)
         estimated_flops, promised_flops = self.flops_counter.estimate_flops(
-            global_num_tokens, delta_time
+            global_num_tokens, delta_time, images_seqlens=images_seqlens
         )
         metrics["perf/mfu/actor"] = (
             estimated_flops * self.config.actor.ppo_epochs / promised_flops / self.world_size
@@ -838,6 +866,9 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
     @GPUMemoryLogger(role="compute_ref_log_prob", logger=logger)
     @DistProfiler.annotate(color="olive", role="ref_compute_log_prob")
     def compute_ref_log_prob(self, data: DataProto):
+        if self.peft_cls is not None:
+            data.meta_info["is_lora"] = True
+            return self.compute_log_prob(data)
         assert self._is_ref
         if self._ref_is_offload_param:
             load_megatron_model_to_gpu(self.ref_module, load_grad=False)
@@ -870,10 +901,12 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
             log_gpu_memory_usage(
                 "After load actor params and grad during compute_log_prob", logger=self.logger
             )
-        # we should always recompute old_log_probs when it is HybridEngine
-        data.meta_info["micro_batch_size"] = self.config.rollout.log_prob_micro_batch_size_per_gpu
-        data.meta_info["max_token_len"] = self.config.rollout.log_prob_max_token_len_per_gpu
-        data.meta_info["use_dynamic_bsz"] = self.config.rollout.log_prob_use_dynamic_bsz
+        is_lora = data.meta_info.pop("is_lora", False)
+        adapter_ctx = self.peft_cls.disable_adapter(self.actor_module) if is_lora else nullcontext()
+        config_source = self.config.ref if is_lora else self.config.rollout
+        data.meta_info["micro_batch_size"] = config_source.log_prob_micro_batch_size_per_gpu
+        data.meta_info["max_token_len"] = config_source.log_prob_max_token_len_per_gpu
+        data.meta_info["use_dynamic_bsz"] = config_source.log_prob_use_dynamic_bsz
         data.meta_info["temperature"] = self.config.rollout.temperature
 
         if self.enable_routing_replay and self.config.actor.router_replay.mode == "R2":
@@ -882,12 +915,15 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
         if self.enable_routing_replay and self.config.actor.router_replay.mode == "R3":
             RouterReplay.set_global_router_replay_action(RouterReplayAction.REPLAY_FORWARD)
 
-        output, entropys, layers_topk_idx = self.actor.compute_log_prob(
-            data=data, calculate_entropy=True
-        )
+        with adapter_ctx:
+            output, entropys, layers_topk_idx = self.actor.compute_log_prob(
+                data=data, calculate_entropy=not is_lora
+            )
+        tensors = {"ref_log_prob": output} if is_lora else {"old_log_probs": output}
+        if not is_lora:
+            tensors["entropys"] = entropys
         output = DataProto.from_dict(
-            tensors={"old_log_probs": output, "entropys": entropys},
-            meta_info={"temperature": self.config.rollout.temperature},
+            tensors=tensors, meta_info={"temperature": self.config.rollout.temperature}
         )
         if self.config.actor.router_replay.mode == "R2":
             output.batch["routed_experts"] = layers_topk_idx

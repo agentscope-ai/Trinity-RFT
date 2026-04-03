@@ -18,7 +18,7 @@ In megatron actor, the differences are:
 
 Note that our model doesn't have to be `MegatronModule` because we don't share embedding in the last layer
 
-Modified from https://github.com/volcengine/verl/blob/v0.7.0/verl/workers/actor/megatron_actor.py
+Modified from https://github.com/volcengine/verl/blob/v0.7.1/verl/workers/actor/megatron_actor.py
 """
 
 from functools import partial
@@ -42,7 +42,7 @@ from verl.utils.megatron.tensor_parallel import (
     vocab_parallel_entropy,
     vocab_parallel_log_probs_from_logits,
 )
-from verl.utils.megatron_utils import unwrap_model
+from verl.utils.megatron_utils import get_megatron_mtp_loss, unwrap_model
 from verl.utils.profiler import GPUMemoryLogger
 from verl.utils.py_functional import append_to_dict
 from verl.utils.seqlen_balancing import rearrange_micro_batches
@@ -126,6 +126,7 @@ class MegatronPPOActor(OldMegatronPPOActor):
             assert (
                 max_token_len is not None
             ), "max_token_len must be set when use_dynamic_bsz is True"
+            dp_group = mpu.get_data_parallel_group()
             vpp_size = mpu.get_virtual_pipeline_model_parallel_world_size()
             if vpp_size is not None and vpp_size > 1:
                 microbatch_group_size_per_vp_stage = (
@@ -135,6 +136,7 @@ class MegatronPPOActor(OldMegatronPPOActor):
                     batch=mini_batch.batch,
                     num_batches_divided_by=microbatch_group_size_per_vp_stage,
                     max_token_len=max_token_len,
+                    dp_group=dp_group,
                 )
                 assert (
                     len(micro_batches) % self.tf_config.microbatch_group_size_per_vp_stage == 0
@@ -144,7 +146,9 @@ class MegatronPPOActor(OldMegatronPPOActor):
                 )
             else:
                 micro_batches, indices = rearrange_micro_batches(
-                    batch=mini_batch.batch, max_token_len=max_token_len
+                    batch=mini_batch.batch,
+                    max_token_len=max_token_len,
+                    dp_group=dp_group,
                 )
             total_seqlen = max_token_len
         else:
@@ -393,6 +397,7 @@ class MegatronPPOActor(OldMegatronPPOActor):
                     logits_processor=logits_processor,
                     logits_processor_args=logits_processor_args,
                     data_format="thd" if self.config.megatron.use_remove_padding else "bshd",
+                    mtp_config=None if forward_only else getattr(self, "mtp_config", None),
                 )
 
             if forward_only:
@@ -475,6 +480,13 @@ class MegatronPPOActor(OldMegatronPPOActor):
                 )
             self.mini_layer_topk_idx_list = []
 
+        if (
+            not forward_only
+            and getattr(self, "mtp_config", None) is not None
+            and self.mtp_config.enable_train
+        ):
+            losses_reduced["mtp_losses"] = [get_megatron_mtp_loss(n_micro_batch)]
+
         return losses_reduced
 
     @GPUMemoryLogger(role="megatron actor", logger=logger)
@@ -491,8 +503,6 @@ class MegatronPPOActor(OldMegatronPPOActor):
 
         """
         metrics = {}
-        if self.use_torch_profiler and self.prof and self.prof.enable:
-            self.prof.start()
         for data in dataloader:
             if self.config.router_replay.mode in ["R2", "R3"]:
                 RouterReplay.set_global_router_replay_action(RouterReplayAction.REPLAY_FORWARD)
@@ -521,6 +531,10 @@ class MegatronPPOActor(OldMegatronPPOActor):
                 max_token_len=max_token_len,
                 mini_batch_size=self.config.ppo_mini_batch_size,
             )
+            mtp_losses = metric_micro_batch.get("mtp_losses", None)
+            if mtp_losses is not None:
+                for mtp_metrics_dict in mtp_losses:
+                    append_to_dict(metrics, mtp_metrics_dict)
             metric_micro_batch = metric_micro_batch["output"]
             for metric in metric_micro_batch:
                 # Note that o[0] is metrics, o[1] is entropy, o[2] is response_mask
@@ -537,17 +551,13 @@ class MegatronPPOActor(OldMegatronPPOActor):
                 pass
             else:
                 raise NotImplementedError
-            if self.use_torch_profiler and self.prof and self.prof.enable:
-                self.prof.step()
 
             if self.config.router_replay.mode in ["R2", "R3"]:
                 RouterReplay.clear_global_router_replay_action()
                 RouterReplay.clear_global_indices()
 
         # add empty cache after each compute
-        if self.use_torch_profiler and self.prof and self.prof.enable:
-            self.prof.stop_and_save()
-            self.prof.stop_trace()
+        self.actor_optimizer.zero_grad()
         get_torch_device().empty_cache()
         return metrics
 

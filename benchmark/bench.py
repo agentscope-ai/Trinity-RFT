@@ -210,6 +210,8 @@ def prepare_configs(args, rank, current_time):
             config["synchronizer"]["sync_offset"] = args.sync_offset
         if args.sync_style:
             config["synchronizer"]["sync_style"] = args.sync_style
+        if args.trainer_strategy:
+            config["trainer"]["trainer_strategy"] = args.trainer_strategy
 
         with open(config_path, "w") as f:
             yaml.dump(config, f, allow_unicode=True, sort_keys=False)
@@ -319,6 +321,13 @@ if __name__ == "__main__":
         type=str,
         default=None,
         choices=[sync_style.value for sync_style in SyncStyle],
+    )
+    parser.add_argument(
+        "--trainer_strategy",
+        type=str,
+        default=None,
+        choices=["fsdp", "fsdp2", "megatron"],
+        help="Specify the trainer strategy.",
     )
     args = parser.parse_args()
     main(args)
