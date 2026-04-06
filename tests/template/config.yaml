@@ -43,6 +43,7 @@ explorer:
     seed: 42
 trainer:
   trainer_type: verl
+  trainer_strategy: fsdp
   save_interval: 100
   save_hf_checkpoint: never
   grad_clip: 1.0
@@ -55,6 +56,11 @@ trainer:
         checkpoint:
           load_contents: ['model', 'optimizer', 'extra']
           save_contents: ['model', 'optimizer', 'extra']
+        megatron:
+          tensor_model_parallel_size: 2
+      ref:
+        megatron:
+          tensor_model_parallel_size: 2
     critic:
       optim:
         lr: 1e-5
@@ -64,6 +70,8 @@ trainer:
       checkpoint:
         load_contents: ['model', 'optimizer', 'extra']
         save_contents: ['model', 'optimizer', 'extra']
+      megatron:
+        tensor_model_parallel_size: 2
     trainer:
       max_actor_ckpt_to_keep: 1
       max_critic_ckpt_to_keep: 1

@@ -36,7 +36,9 @@ def main(args):
         print(f"Copied {src_path} to {dst_path}")
 
     print("Running pre-commit on the migrated files...")
-    subprocess.run(["pre-commit", "run", "--all-files"])
+    subprocess.run(
+        ["pre-commit", "run", "--all-files"], cwd=Path(__file__).parent.parent.parent, check=True
+    )
 
     # move the files to the build directory and reset git status to keep history clean
     target_dir = trinity_path_prefix / "build" / f"{args.version}"

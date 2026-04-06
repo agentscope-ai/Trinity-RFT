@@ -4,8 +4,13 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 
 from omegaconf import OmegaConf
-from verl.trainer.config.algorithm import RolloutCorrectionConfig
-from verl.workers.config import McoreEngineConfig, PolicyLossConfig, RouterReplayConfig
+from verl.trainer.config import CheckpointConfig, RolloutCorrectionConfig
+from verl.workers.config import (
+    McoreEngineConfig,
+    MtpConfig,
+    PolicyLossConfig,
+    RouterReplayConfig,
+)
 
 from trinity.algorithm import ALGORITHM_TYPE
 from trinity.common.config import Config, SynchronizerConfig, set_if_none
@@ -47,6 +52,9 @@ class ActorModel:
     target_modules: Optional[str] = "all-linear"
     exclude_modules: Optional[str] = None
     lora_adapter_path: Optional[str] = None
+
+    # mtp configs
+    mtp: MtpConfig = field(default_factory=MtpConfig)
 
     # rope configs
     rope_scaling: Optional[dict] = None
@@ -100,11 +108,10 @@ class FSDPConfig:
     mixed_precision: dict = field(default_factory=dict)
 
 
-@dataclass
-class Checkpoint:
-    load_contents: List[str] = field(default_factory=lambda: ["model", "optimizer", "extra"])
-    save_contents: List[str] = field(default_factory=lambda: ["model", "optimizer", "extra"])
-    async_save: bool = False  # TODO: testing async save
+class _CheckpointConfig(CheckpointConfig):
+    mbridge_config: dict[str, Any] = field(
+        default_factory=lambda: dict(distributed_filesystem=True, memory_efficient=True)
+    )
 
 
 @dataclass
@@ -117,6 +124,7 @@ class OverrideTransformerConfig:
 
 @dataclass
 class _McoreEngineConfig(McoreEngineConfig):
+    # use_dist_checkpointing: bool = True
     # whether to use the vanilla mbridge without verl-specific optimizations
     # TODO: failed to run with vanilla_mbridge = False, need to investigate further
     vanilla_mbridge: bool = True
@@ -154,7 +162,7 @@ class Actor:
     ulysses_sequence_parallel_size: Optional[int] = None
     entropy_from_logits_with_chunking: bool = False
     entropy_checkpointing: bool = False
-    checkpoint: Checkpoint = field(default_factory=Checkpoint)
+    checkpoint: _CheckpointConfig = field(default_factory=_CheckpointConfig)
     optim: Optim = field(default_factory=Optim)
     fsdp_config: FSDPConfig = field(default_factory=FSDPConfig)
     megatron: _McoreEngineConfig = field(default_factory=_McoreEngineConfig)
@@ -186,8 +194,8 @@ class Ref:
     ulysses_sequence_parallel_size: Optional[int] = None
     entropy_from_logits_with_chunking: bool = False
     entropy_checkpointing: bool = False
-    checkpoint: Checkpoint = field(
-        default_factory=lambda: Checkpoint(load_contents=["model"], save_contents=["model"])
+    checkpoint: _CheckpointConfig = field(
+        default_factory=lambda: _CheckpointConfig(load_contents=["model"], save_contents=["model"])
     )
     megatron: _McoreEngineConfig = field(default_factory=_McoreEngineConfig)
     profile: ProfileConfig = field(default_factory=ProfileConfig)
@@ -266,7 +274,7 @@ class Critic:
     shuffle: bool = False
     grad_clip: Optional[float] = None
     cliprange_value: float = 0.0
-    checkpoint: Checkpoint = field(default_factory=Checkpoint)
+    checkpoint: _CheckpointConfig = field(default_factory=_CheckpointConfig)
     rollout_n: int = 1
     loss_agg_mode: str = "token-mean"
     megatron: _McoreEngineConfig = field(default_factory=_McoreEngineConfig)

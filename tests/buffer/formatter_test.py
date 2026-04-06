@@ -313,12 +313,13 @@ class TestFormatter(unittest.TestCase):
         self.assertEqual(task.raw_task, sample)
 
     def test_multi_modal_sft_formatter(self):
-        IMAGE_TOKEN_ID = 151655  # only for Qwen2.5 VL, if changed, please update this test
         storage_config = get_unittest_dataset_config("geometry")
 
         formatter = FORMATTER.get("sft")(
             tokenizer_path=get_vision_language_model_path(), format_config=storage_config.format
         )
+        self.assertIsNotNone(formatter.processor)
+        IMAGE_TOKEN_ID = formatter.processor.image_token_id
         ds = load_dataset(storage_config.path, split=storage_config.split)
         count = 0
         for sample in ds:

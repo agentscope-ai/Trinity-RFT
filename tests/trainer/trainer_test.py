@@ -107,10 +107,7 @@ class TestTrainerCountdown(BaseTrainerCase):
         self.config.check_and_update()
         _trainer_config = self.config.trainer.trainer_config
         if self.strategy == "megatron":
-            _trainer_config.actor_rollout_ref.actor.megatron.tensor_model_parallel_size = 2
-            _trainer_config.actor_rollout_ref.ref.megatron.tensor_model_parallel_size = 2
             _trainer_config.critic.strategy = "megatron"
-            _trainer_config.critic.megatron.tensor_model_parallel_size = 2
         _trainer_config.trainer.max_actor_ckpt_to_keep = 2
         _trainer_config.trainer.max_critic_ckpt_to_keep = 2
         both(self.config)
@@ -151,8 +148,6 @@ class TestTrainerCountdown(BaseTrainerCase):
         hf_dir_step_8 = os.listdir(os.path.join(checkpoint_step_8, "actor", "huggingface"))
         self.assertGreater(len(hf_dir_step_4), 0)
         self.assertGreater(len(hf_dir_step_8), 0)
-        self.assertNotIn("model.safetensors", hf_dir_step_4)
-        self.assertNotIn("model.safetensors", hf_dir_step_8)
         # test checkpoint convert
         convert(self.config.checkpoint_job_dir)
         hf_dir_step_4 = os.listdir(os.path.join(checkpoint_step_4, "actor", "huggingface"))
@@ -616,10 +611,7 @@ class TestFullyAsyncMode(unittest.TestCase):
         trainer_config.check_and_update()
         if self.strategy == "megatron":
             _trainer_config = trainer_config.trainer.trainer_config
-            _trainer_config.actor_rollout_ref.actor.megatron.tensor_model_parallel_size = 2
-            _trainer_config.actor_rollout_ref.ref.megatron.tensor_model_parallel_size = 2
             _trainer_config.critic.strategy = "megatron"
-            _trainer_config.critic.megatron.tensor_model_parallel_size = 2
 
         explorer1_config = deepcopy(config)
         explorer1_config.trainer = deepcopy(trainer_config.trainer)
@@ -802,10 +794,6 @@ class TestTrainerCheckpointSave(unittest.TestCase):
     def test_trainer(self):  # noqa: C901
         """Test the checkpoint saving."""
         _trainer_config = self.config.trainer.trainer_config
-        if self.strategy == "megatron":
-            _trainer_config.actor_rollout_ref.actor.megatron.tensor_model_parallel_size = 2
-            _trainer_config.actor_rollout_ref.ref.megatron.tensor_model_parallel_size = 2
-            _trainer_config.critic.megatron.tensor_model_parallel_size = 2
 
         stop_event = multiprocessing.Event()
         trainer_process = multiprocessing.Process(target=run_both, args=(self.config, stop_event))

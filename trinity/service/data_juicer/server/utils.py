@@ -120,7 +120,9 @@ def group_scores(dataset: Dataset) -> Dataset:
         return dataset
     # for perplexity, normalize them with the max value.
     stats_min_max = {}
-    for stats in dataset.features[Fields.stats]:
+    # TODO: this assumes all samples have the same stats keys,
+    # which should be true for the output of Data-Juicer
+    for stats in dataset[Fields.stats][0]:
         all_stats = [
             sample[Fields.stats][stats] for sample in dataset.data if Fields.stats in sample
         ]

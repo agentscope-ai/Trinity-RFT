@@ -344,12 +344,12 @@ def apply_monkey_patch(  # noqa: C901
                     )
 
         # Step 3: patch verl.utils.flops_counter
-        from verl.utils.flops_counter import ESTIMATE_FUNC, _estimate_qwen2_flops
+        from verl.utils.flops_counter import ESTIMATE_FUNC, _estimate_qwen3_vl_flops
 
         ESTIMATE_FUNC.update(
             {
-                "qwen3_5": _estimate_qwen2_flops,
-                "qwen3_5_moe": _estimate_qwen2_flops,
+                "qwen3_5": _estimate_qwen3_vl_flops,
+                "qwen3_5_moe": _estimate_qwen3_vl_flops,
             }
         )
 

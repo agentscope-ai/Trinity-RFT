@@ -88,7 +88,7 @@ class FSDPCheckpointManager(OldFSDPCheckpointManager):
             return False
         return os.path.abspath(path) == os.path.abspath(self.previous_saved_paths[-1])
 
-    def register_checkpoint(self, new_path: str, max_ckpt_to_keep: Optional[int]):
+    def register_checkpoint(self, new_path: str, max_ckpt_to_keep: Optional[int] = None):
         if self._is_latest_registered_checkpoint(new_path):
             return
         super().register_checkpoint(new_path, max_ckpt_to_keep)

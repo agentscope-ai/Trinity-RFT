@@ -48,6 +48,7 @@ from verl.single_controller.base.decorator import (
 from verl.utils.config import omega_conf_to_dataclass
 from verl.utils.device import (
     get_device_id,
+    get_device_name,
     get_nccl_backend,
     get_torch_device,
     set_expandable_segments,
@@ -188,6 +189,44 @@ class MegatronWorker(Worker):
         self.vanilla_bridge = megatron_config.get("vanilla_mbridge", True)
         if megatron_config.use_mbridge:
             if self.vanilla_bridge:
+                # start of patch for mbridge
+                import json
+                from glob import glob
+
+                from mbridge.core.safetensor_io import SafeTensorIO
+                from safetensors import safe_open
+
+                if not getattr(SafeTensorIO, "_is_patched", False):
+
+                    def new_init(self, hf_dir: str):
+                        index_file = os.path.join(hf_dir, "model.safetensors.index.json")
+                        config = AutoConfig.from_pretrained(hf_dir, trust_remote_code=True)
+
+                        self.index = {}
+                        self.origin_index = {}
+                        if os.path.exists(index_file):
+                            with open(index_file, "r") as f:
+                                origin_index = json.load(f)
+                                self.index = origin_index["weight_map"]
+                                self.origin_index = origin_index
+                        else:
+                            src_files = glob(os.path.join(hf_dir, "*.safetensors"))
+                            if len(src_files) == 1:
+                                for file in src_files:
+                                    with safe_open(file, framework="pt", device="cpu") as f:
+                                        filename = os.path.basename(file)
+                                        for key in f.keys():
+                                            self.index[key] = filename
+                        if getattr(config, "tie_word_embeddings", False):
+                            if "lm_head.weight" in self.index.keys():
+                                self.index.pop("lm_head.weight")
+
+                        self.hf_dir = hf_dir
+
+                    SafeTensorIO.__init__ = new_init
+                    SafeTensorIO._is_patched = True
+                # end of patch for mbridge
+
                 from verl.models.mcore.mbridge import AutoBridge
 
                 bridge = AutoBridge.from_config(hf_config, dtype=dtype)
@@ -208,7 +247,7 @@ class MegatronWorker(Worker):
                 # In case of invalid overrides, we need to make sure some critical params are set correctly
                 provider.params_dtype = dtype
 
-                # Keep dtype flags aligned with upstream 0.7.1 Megatron-Bridge setup.
+                # Ensure dtype settings propagate to Megatron-Bridge/TE
                 provider.fp16 = fp16
                 provider.bf16 = bf16
 
@@ -286,7 +325,7 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
             set_numa_affinity()
             rank = int(os.environ["LOCAL_RANK"])
             torch.distributed.init_process_group(
-                backend=get_nccl_backend(),
+                backend=f"cpu:gloo,{get_device_name()}:{get_nccl_backend()}",
                 timeout=datetime.timedelta(seconds=self.config.get("nccl_timeout", 600)),
                 init_method=os.environ.get("DIST_INIT_METHOD", None),
             )
@@ -612,11 +651,7 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
                 tf_config=self.tf_config,
                 actor_module=self.actor_module,
                 actor_optimizer=self.actor_optimizer,
-                mtp_config=(
-                    self.config.model.mtp
-                    if self.config.model.get("mtp", {}).get("enable", False)
-                    else None
-                ),
+                mtp_config=self.config.model.mtp if self.config.model.mtp.enable else None,
             )
             self.logger.info(f"routing replay layers: {len(RouterReplay.router_instances)}")
             log_gpu_memory_usage("After MegatronPPOActor init", logger=self.logger)
@@ -719,13 +754,9 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
 
             if self._is_offload_param:
                 load_megatron_model_to_gpu(self.actor_module)
-            name_list = []
             for name, weight in self._get_tensor_generator():
-                name_list.append(name)
                 self.state_dict_meta.append((name, str(weight.dtype), tuple(weight.shape)))
                 del weight
-            if torch.distributed.get_rank() == 0:
-                self.logger.info(f"!!!!! name_list: {name_list}")
             if self._is_offload_param:
                 offload_megatron_model_to_cpu(self.actor_module)
             torch.distributed.barrier()
@@ -764,14 +795,11 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
 
         if self._is_offload_param:
             load_megatron_model_to_gpu(self.actor_module)
-        name_list = []
         for name, weight in self._get_tensor_generator():
-            name_list.append(name)
             if torch.distributed.get_rank() == 0:
                 torch.distributed.broadcast(weight, 0, group=self._model_update_group)
             del weight
         if torch.distributed.get_rank() == 0:
-            self.logger.info(f"!!!!! name_list: {name_list}")
             torch.distributed.barrier(group=self._model_update_group)
             torch.cuda.synchronize()
         if self._is_offload_param:
