@@ -389,3 +389,20 @@ def rearrange_micro_batches(
         micro_batches.append(curr_micro_batch)
 
     return micro_batches, micro_bsz_idx
+
+
+# bug fix for verl to support transformers v5
+def patch_rope_theta_in_hf_config(hf_config):
+    if not hasattr(hf_config, "rope_theta"):
+        if hasattr(hf_config, "rope_parameters"):
+            rope_parameters = hf_config.rope_parameters
+        elif hasattr(hf_config, "text_config") and hasattr(
+            hf_config.text_config, "rope_parameters"
+        ):
+            rope_parameters = hf_config.text_config.rope_parameters
+        else:
+            rope_parameters = {}
+
+        rope_theta = rope_parameters.get("rope_theta", None)
+        if rope_theta is not None:
+            setattr(hf_config, "rope_theta", rope_theta)

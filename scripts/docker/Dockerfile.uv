@@ -36,17 +36,12 @@ RUN pip install uv && uv venv /opt/venv --python=python3.12
 
 # Install  Trinity-RFT
 RUN . /opt/venv/bin/activate && \
-    uv pip install -e.[mm,dev,tinker] && \
+    uv pip install -e.[mm,dev,tinker,data,agent] && \
     uv pip install vllm==0.19.0 && \
-    uv pip install transformers==5.3.0 && \
-    echo "transformer-engine[pytorch]==2.13.0" > /tmp/overrides.txt && \
-    echo "megatron-core[mlm]==0.16.1" >> /tmp/overrides.txt && \
-    echo "megatron-core==0.16.1" >> /tmp/overrides.txt && \
-    echo "transformers==5.3.0" >> /tmp/overrides.txt && \
-    . /opt/venv/bin/activate && \
     uv pip install flash_attn==2.8.3 --no-build-isolation && \
-    uv pip install -e .[megatron] --no-build-isolation \
-        --override /tmp/overrides.txt && \
+    uv pip install -e .[megatron,qwen3_5] --no-build-isolation && \
+    uv pip install mbridge git+https://github.com/ISEEKYAN/mbridge.git@90c4633a6cdcfe5d29723d7b145d32f6f5e73303 && \
+    uv pip install transformers==5.3.0 && \
     NVCC_APPEND_FLAGS="--threads 4" APEX_PARALLEL_BUILD=8 \
     uv pip install -v --no-build-isolation \
     --config-settings="--build-option=--cpp_ext" \

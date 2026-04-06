@@ -325,6 +325,8 @@ def get_megatron_converter(checkpoint_path: str):
     from verl.model_merger.base_model_merger import ModelMergerConfig
     from verl.model_merger.megatron_model_merger import MegatronModelMerger
 
+    from trinity.trainer.verl.utils import patch_rope_theta_in_hf_config
+
     # modified from verl/model_merger/megatron_model_merger.py
     class MegatronStateDictConverter(MegatronModelMerger):
         def __init__(self, config: ModelMergerConfig):
@@ -342,10 +344,7 @@ def get_megatron_converter(checkpoint_path: str):
             torch.distributed.get_world_size = original_get_world_size
 
             # start of patch for verl to support transformers v5
-            if not hasattr(self.hf_config, "rope_theta"):
-                rope_theta = self.hf_config.rope_parameters.get("rope_theta", None)
-                if rope_theta is not None:
-                    setattr(self.hf_config, "rope_theta", rope_theta)
+            patch_rope_theta_in_hf_config(self.hf_config)
             # end of patch for verl to support transformers v5
 
         @contextmanager

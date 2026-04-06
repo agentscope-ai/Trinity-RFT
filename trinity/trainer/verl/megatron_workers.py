@@ -30,8 +30,6 @@ from codetiming import Timer
 from megatron.core import parallel_state as mpu
 from omegaconf import DictConfig, OmegaConf, open_dict
 
-from trinity.utils.log import get_logger
-
 try:
     from verl.workers.engine.mindspeed.transformer_impl import repatch
 except ImportError:
@@ -91,7 +89,9 @@ from trinity.common.constants import ROLLOUT_WEIGHT_SYNC_GROUP_NAME, SyncMethod
 from trinity.manager.synchronizer import Synchronizer
 from trinity.trainer.verl.megatron_actor import MegatronPPOActor
 from trinity.trainer.verl.megatron_checkpoint_manager import MegatronCheckpointManager
+from trinity.trainer.verl.utils import patch_rope_theta_in_hf_config
 from trinity.utils.distributed import init_process_group
+from trinity.utils.log import get_logger
 
 
 class MegatronWorker(Worker):
@@ -151,10 +151,7 @@ class MegatronWorker(Worker):
             hf_config.rope_theta = self.config.model.rope_theta
 
         # start of patch for verl to support transformers v5
-        if not hasattr(hf_config, "rope_theta"):
-            rope_theta = hf_config.rope_parameters.get("rope_theta", None)
-            if rope_theta is not None:
-                setattr(hf_config, "rope_theta", rope_theta)
+        patch_rope_theta_in_hf_config(hf_config)
         # end of patch for verl to support transformers v5
 
         self.share_embeddings_and_output_weights = getattr(hf_config, "tie_word_embeddings", False)

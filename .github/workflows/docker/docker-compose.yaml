@@ -1,10 +1,10 @@
 services:
   trinity-node-1:
-    image: trinity-rft-unittest:20260403.dev2
+    image: trinity-rft-unittest:20260406.dev2
     cap_add:
       - SYS_PTRACE
     pull_policy: never
-    command: bash -c "source /opt/venv/bin/activate && uv pip install -e .[dev] && ray start --head --dashboard-host 0.0.0.0 --include-dashboard true --block"
+    command: bash -c "source /opt/venv/bin/activate && ray start --head --dashboard-host 0.0.0.0 --include-dashboard true --block"
     environment:
       - HF_ENDPOINT=https://hf-mirror.com
       - HF_HUB_DISABLE_PROGRESS_BARS=1
@@ -15,8 +15,8 @@ services:
       - TRINITY_SFT_DATASET_PATH=/mnt/data
       - TRINITY_MODEL_PATH=/mnt/models/Qwen3-0.6B
       - TRINITY_API_MODEL_PATH=/mnt/models/Qwen3-1.7B
-      - TRINITY_VLM_MODEL_PATH=/mnt/models/Qwen2.5-VL-3B
-      - TRINITY_ALTERNATIVE_VLM_MODEL_PATH=/mnt/models/Qwen3-VL-2B-Instruct
+      - TRINITY_VLM_MODEL_PATH=/mnt/models/Qwen3.5-0.8B
+      - TRINITY_ALTERNATIVE_VLM_MODEL_PATH=/mnt/models/Qwen3.5-0.8B
       - VIRTUAL_ENV=/opt/venv
     working_dir: /workspace
     networks:
@@ -34,17 +34,17 @@ services:
             capabilities: [gpu]
 
   trinity-node-2:
-    image: trinity-rft-unittest:20260403.dev2
+    image: trinity-rft-unittest:20260406.dev2
     cap_add:
       - SYS_PTRACE
     pull_policy: never
-    command: bash -c "source /opt/venv/bin/activate && uv pip install -e .[dev] && ray start --address=trinity-node-1:6379 --block"
+    command: bash -c "source /opt/venv/bin/activate && ray start --address=trinity-node-1:6379 --block"
     environment:
       - HF_ENDPOINT=https://hf-mirror.com
       - HF_HUB_DISABLE_PROGRESS_BARS=1
       - TRINITY_CHECKPOINT_ROOT_DIR=/mnt/checkpoints
       - TRINITY_TASKSET_PATH=/mnt/data
-      - TRINITY_MODEL_PATH=/mnt/models/Qwen3-1.7B
+      - TRINITY_MODEL_PATH=/mnt/models/Qwen3-0.6B
       - VIRTUAL_ENV=/opt/venv
     working_dir: /workspace
     volumes:
