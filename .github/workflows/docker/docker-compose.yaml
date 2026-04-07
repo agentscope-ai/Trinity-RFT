@@ -1,10 +1,10 @@
 services:
   trinity-node-1:
-    image: trinity-rft-unittest:20260406.dev2
+    image: trinity-rft-unittest:20260407
     cap_add:
       - SYS_PTRACE
     pull_policy: never
-    command: bash -c "source /opt/venv/bin/activate && ray start --head --dashboard-host 0.0.0.0 --include-dashboard true --block"
+    command: bash -c "source /opt/venv/bin/activate && uv pip install -e .[dev] && ray start --head --dashboard-host 0.0.0.0 --include-dashboard true --block"
     environment:
       - HF_ENDPOINT=https://hf-mirror.com
       - HF_HUB_DISABLE_PROGRESS_BARS=1
@@ -34,11 +34,11 @@ services:
             capabilities: [gpu]
 
   trinity-node-2:
-    image: trinity-rft-unittest:20260406.dev2
+    image: trinity-rft-unittest:20260407
     cap_add:
       - SYS_PTRACE
     pull_policy: never
-    command: bash -c "source /opt/venv/bin/activate && ray start --address=trinity-node-1:6379 --block"
+    command: bash -c "source /opt/venv/bin/activate && uv pip install -e .[dev] && ray start --address=trinity-node-1:6379 --block"
     environment:
       - HF_ENDPOINT=https://hf-mirror.com
       - HF_HUB_DISABLE_PROGRESS_BARS=1
