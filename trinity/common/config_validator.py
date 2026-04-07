@@ -149,7 +149,7 @@ class RayClusterConfigValidator(ConfigValidator):
         if config.ray_namespace is None or len(config.ray_namespace) == 0:
             config.ray_namespace = f"{config.project}/{config.name}"
 
-        if config.model.tinker.enable:
+        if config.model.tinker.enable or config.model.external_model.enable:
             return
 
         # check cluster infomation
@@ -226,6 +226,10 @@ class RayClusterConfigValidator(ConfigValidator):
                        the current mode and available resources.
         """
         cluster = config.cluster
+
+        if config.explorer.rollout_model.engine_type == "external":
+            return
+
         if config.mode != "train":
             cluster.rollout_gpu_num = (
                 config.explorer.rollout_model.tensor_parallel_size
@@ -388,6 +392,9 @@ class ModelConfigValidator(ConfigValidator):
         if not model.critic_model_path:
             model.critic_model_path = model.model_path
 
+        if model.external_model.enable:
+            self._check_external_model(config)
+
         if model.tinker.enable:
             self._check_tinker(config)
 
@@ -403,6 +410,31 @@ class ModelConfigValidator(ConfigValidator):
 
         # check max_model_len, max_prompt_tokens, max_response_tokens
         self._check_model_len(config)
+
+    def _check_external_model(self, config: Config) -> None:
+        """Validate API-specific configuration settings.
+
+        - Validates that `base_url_env` `api_key_env` `model_name` are provided
+        """
+        if config.mode != "bench":
+            raise ValueError("External model is only supported in `bench` mode.")
+
+        if config.explorer.rollout_model.engine_type != "external":
+            config.explorer.rollout_model.engine_type = "external"
+
+        external_model = config.model.external_model
+        rollout_model_config = config.explorer.rollout_model.external_model_config
+
+        for key, value in vars(external_model).items():
+            setattr(rollout_model_config, key, value)
+
+        # Validate required env keys.
+        if not rollout_model_config.base_url_env:
+            raise ValueError("`model.external_model.base_url_env` is required for external engine.")
+        if not rollout_model_config.api_key_env:
+            raise ValueError("`model.external_model.api_key_env` is required for external engine.")
+        if not rollout_model_config.model_name:
+            raise ValueError("`model.external_model.model_name` is required for external engine.")
 
     def _check_tinker(self, config: Config) -> None:
         """Validate Tinker-specific configuration settings.
@@ -1135,6 +1167,9 @@ class TrainerConfigValidator(ConfigValidator):
         ):
             return
 
+        if config.model.external_model.enable:
+            return
+
         if config.trainer.trainer_type == "verl":
             if config.trainer.ulysses_sequence_parallel_size < 1:
                 self.logger.warning(
@@ -1227,7 +1262,7 @@ class GPUMemoryValidator(ConfigValidator):
         if config.ignore_validator_suggestions:
             return
 
-        if config.model.tinker.enable:
+        if config.model.tinker.enable or config.model.external_model.enable:
             return
 
         if config.mode in {"train", "both"}:

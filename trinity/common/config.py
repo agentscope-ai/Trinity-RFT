@@ -443,6 +443,15 @@ class TinkerConfig:
 
 
 @dataclass
+class ExternalModelConfig:
+    enable: bool = False
+    base_url_env: str = "OPENAI_BASE_URL"
+    api_key_env: str = "OPENAI_API_KEY"
+    model_name: Optional[str] = None
+    # support_prompt_logprobs: bool = False # TODO
+
+
+@dataclass
 class ModelConfig:
     # source model path
     model_path: str = ""
@@ -490,6 +499,9 @@ class ModelConfig:
 
     # tinker config
     tinker: TinkerConfig = field(default_factory=TinkerConfig)
+
+    # external API-based engine
+    external_model: ExternalModelConfig = field(default_factory=ExternalModelConfig)
 
 
 @dataclass
@@ -550,6 +562,9 @@ class InferenceModelConfig:
     tool_call_parser: Optional[str] = None
 
     reasoning_parser: Optional[str] = None
+
+    # For external API-based engine
+    external_model_config: ExternalModelConfig = field(default_factory=ExternalModelConfig)
 
     # ! DO NOT SET
     bundle_indices: str = ""
@@ -944,6 +959,14 @@ class Config:
         }
         if self.model.tinker.base_url:
             envs["TINKER_BASE_URL"] = self.model.tinker.base_url
+        if self.model.external_model.enable and self.model.external_model.base_url_env:
+            envs[self.model.external_model.base_url_env] = os.getenv(
+                self.model.external_model.base_url_env, ""
+            )
+        if self.model.external_model.enable and self.model.external_model.api_key_env:
+            envs[self.model.external_model.api_key_env] = os.getenv(
+                self.model.external_model.api_key_env, ""
+            )
         return envs
 
     def get_checkpoint_job_dir(self) -> str:

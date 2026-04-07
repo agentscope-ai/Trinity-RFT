@@ -48,6 +48,7 @@ class TestConfig(unittest.TestCase):
                     or filename.startswith("verl_")
                     or filename.startswith("dj_")
                     or filename.startswith("tinker")
+                    or filename.startswith("external")
                 ):
                     print(f"Checking config: {filename}")
                     config_path = os.path.join(example_dir, example_name, filename)

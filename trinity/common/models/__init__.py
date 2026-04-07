@@ -1,4 +1,5 @@
 import asyncio
+import os
 from collections import defaultdict
 from typing import Dict, List, Tuple
 
@@ -64,6 +65,19 @@ def create_explorer_models(
         from trinity.common.models.vllm_model import vLLMRolloutModel
 
         engine_cls = vLLMRolloutModel
+    elif config.explorer.rollout_model.engine_type == "external":
+        rollout_engines = create_external_models(
+            config=config.explorer.rollout_model,
+            actor_name=f"{config.explorer.name}_rollout_model",
+        )
+        auxiliary_engines = []
+        for i, model_config in enumerate(config.explorer.auxiliary_models):
+            engines = create_external_models(
+                config=model_config,
+                actor_name=f"{config.explorer.name}_auxiliary_model_{model_config.name or i}",
+            )
+            auxiliary_engines.append(engines)
+        return rollout_engines, auxiliary_engines
     elif config.explorer.rollout_model.engine_type == "tinker":
         from trinity.common.models.tinker_model import TinkerModel
 
@@ -175,6 +189,39 @@ def create_vllm_inference_models(
                     placement_group_capture_child_tasks=True,
                     placement_group_bundle_index=bundles_for_engine[0],
                 ),
+            )
+            .remote(
+                config=config,
+            )
+        )
+    return models
+
+
+def create_external_models(
+    config: InferenceModelConfig,
+    actor_name: str,
+) -> List:
+    from trinity.common.models.external_model import ExternalModel
+
+    # Ensure external-model env vars are propagated to Ray workers.
+    env_vars = {}
+    base_url_env = config.external_model_config.base_url_env
+    api_key_env = config.external_model_config.api_key_env
+    if base_url_env and base_url_env in os.environ:
+        env_vars[base_url_env] = os.environ[base_url_env]
+    if api_key_env and api_key_env in os.environ:
+        env_vars[api_key_env] = os.environ[api_key_env]
+
+    models = []
+    for i in range(config.engine_num):
+        models.append(
+            ray.remote(ExternalModel)
+            .options(
+                name=f"{actor_name}_{i}",
+                num_cpus=0,
+                num_gpus=0,
+                namespace=config.ray_namespace,
+                runtime_env={"env_vars": env_vars},
             )
             .remote(
                 config=config,

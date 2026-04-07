@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """A workflow with LLM-as-a-judge."""
 import json
+import os
 from typing import List, Optional, Tuple
 
 import openai
@@ -44,35 +45,37 @@ class RubricJudgeWorkflow(SimpleWorkflow):
         self.truth = task.truth
         self.rubric = self.raw_task.get("rubric", [])
 
+    def _build_judge(self) -> openai.OpenAI:
+        """Return the judge client.  Subclasses may override this to supply a
+        different client (e.g. an external API) without duplicating ``run``."""
+        assert (
+            self.auxiliary_models is not None
+        ), "auxiliary_models must be set when using the default judge."
+        return self.auxiliary_models[0]
+
     def run(self) -> List[Experience]:
         """Modified from SimpleWorkflow.run"""
-
         messages = self.format_messages()
+        judge = self._build_judge()
 
         self.logger.debug("start chat")
         responses = self.model.chat(messages, **self.rollout_args)
 
-        # === Calculate rubric-based rewards ===
-        assert (
-            self.auxiliary_models is not None
-        ), "Current implementation of rubric-based rewards requires that auxiliary_models is not None."
-
         judge_success_list = []
         for i, response in enumerate(responses):
             judge_success, reward = self.get_judge_reward(
-                response=response.response_text, judger=self.auxiliary_models[0]
+                response=response.response_text, judge=judge
             )
             response.reward = reward
             response.eid.run = i + self.run_id_base
-
             judge_success_list.append(judge_success)
 
             if i == 0:
                 self.logger.debug(
-                    f"self.task_desc: {self.task_desc}, messages: {messages}, response: {response.response_text}, reward: {response.reward}"
+                    f"self.task_desc: {self.task_desc}, messages: {messages}, "
+                    f"response: {response.response_text}, reward: {response.reward}"
                 )
 
-        # record judge success
         judge_success_rate = (
             sum(judge_success_list) / len(judge_success_list) if judge_success_list else 0.0
         )
@@ -83,7 +86,7 @@ class RubricJudgeWorkflow(SimpleWorkflow):
 
         return responses
 
-    def get_judge_reward(self, response: str, judger: openai.OpenAI) -> Tuple[bool, float]:
+    def get_judge_reward(self, response: str, judge: openai.OpenAI) -> Tuple[bool, float]:
         """Get rewards with LLM-as-a-judge
         The prompts are adapted from RAR-IMPLICIT method in https://arxiv.org/pdf/2507.17746
         """
@@ -123,36 +126,36 @@ on how well it satisfies the rubrics.
 Your JSON Evaluation:
 """.strip()
 
-        # Step 2: invoke judger LLM
+        # Step 2: invoke judge LLM
         messages = [
             {"role": "system", "content": ruler_system_prompt},
             {"role": "user", "content": ruler_user_prompt},
         ]
-        completion = judger.chat.completions.create(
-            model=judger.model_path, messages=messages, stream=False, temperature=0.0
+        completion = judge.chat.completions.create(
+            model=judge.model_path, messages=messages, stream=False, temperature=0.0
         )
-        judger_response = completion.choices[0].message.content
-        self.logger.debug(f"LLM judge response: {judger_response}")
+        judge_response = completion.choices[0].message.content
+        self.logger.debug(f"LLM judge response: {judge_response}")
 
-        # Step 3: extract score from judger's response (expecting a JSON block with "rating")
+        # Step 3: extract score from judge's response (expecting a JSON block with "rating")
         try:
             # Extract content between ```json and ```
             start_tag = "```json"
-            start_index = judger_response.find(start_tag)
+            start_index = judge_response.find(start_tag)
             if start_index == -1:
                 start_tag = "```"
-                start_index = judger_response.find(start_tag)
+                start_index = judge_response.find(start_tag)
 
             if start_index == -1:
-                self.logger.warning("No JSON code block found in judger response.")
+                self.logger.warning("No JSON code block found in judge response.")
                 return False, 0.0
 
-            end_index = judger_response.find("```", start_index + len(start_tag))
+            end_index = judge_response.find("```", start_index + len(start_tag))
             if end_index == -1:
-                self.logger.warning("Malformed JSON code block in judger response.")
+                self.logger.warning("Malformed JSON code block in judge response.")
                 return False, 0.0
 
-            json_str = judger_response[start_index + len(start_tag) : end_index].strip()
+            json_str = judge_response[start_index + len(start_tag) : end_index].strip()
             parsed = json.loads(json_str)
             rating = parsed.get("rating")
 
@@ -164,8 +167,55 @@ Your JSON Evaluation:
             return True, normalized_score
 
         except json.JSONDecodeError as e:
-            self.logger.warning(f"Failed to parse JSON from judger response: {e}")
+            self.logger.warning(f"Failed to parse JSON from judge response: {e}")
             return False, 0.0
         except Exception as e:
-            self.logger.warning(f"Unexpected error when processing judger response: {e}")
+            self.logger.warning(f"Unexpected error when processing judge response: {e}")
             return False, 0.0
+
+
+class RubricJudgeWorkflowWithAPI(RubricJudgeWorkflow):
+    """Rubric judge workflow using an external OpenAI-compatible API as the judge.
+
+    Example of workflow_args:
+        judge_model_name: "gpt-4o"
+        judge_api_base_url_env: "OPENAI_BASE_URL"
+        judge_api_key_env: "OPENAI_API_KEY"
+    """
+
+    def __init__(
+        self,
+        *,
+        task: Task,
+        model: ModelWrapper,
+        auxiliary_models: Optional[List[ModelWrapper]] = None,
+    ):
+        super().__init__(task=task, model=model, auxiliary_models=auxiliary_models)
+
+        workflow_args = task.workflow_args or {}
+        judge_model_name = workflow_args.get("judge_model_name")
+        base_url_env = workflow_args.get("judge_api_base_url_env", "OPENAI_BASE_URL")
+        api_key_env = workflow_args.get("judge_api_key_env", "OPENAI_API_KEY")
+        if not judge_model_name:
+            raise ValueError(
+                "Judge model name is missing. Set `judge_model_name` in workflow_args."
+            )
+        judge_base_url = os.getenv(base_url_env, "")
+        if not judge_base_url:
+            raise ValueError(f"Judge base URL is missing. Set env `{base_url_env}`.")
+
+        self._judge_client = openai.OpenAI(
+            base_url=judge_base_url, api_key=os.getenv(api_key_env, "")
+        )
+        self._judge_model_name = judge_model_name
+        self.logger.info(
+            "Initialized external judge model: base_url=%s model=%s",
+            judge_base_url,
+            judge_model_name,
+        )
+
+    def _build_judge(self) -> openai.OpenAI:
+        """Return the pre-built external API judge client."""
+        client = self._judge_client
+        client.model_path = self._judge_model_name  # expected by get_judge_reward
+        return client

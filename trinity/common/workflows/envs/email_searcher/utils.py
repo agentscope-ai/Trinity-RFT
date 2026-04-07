@@ -291,7 +291,7 @@ def read_email_tool(message_id: str) -> Optional[Email]:
 async def judge_correctness(
     answer: str,
     query: QueryModel,
-    judger: Any,
+    judge: Any,
 ) -> bool:
     """Use an LLM to decide whether *answer* matches *query.answer*.
 
@@ -318,8 +318,8 @@ Return your judgement **accept** from **true** and **false**. Do not return any 
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": prompt},
     ]
-    completion = await judger.chat.completions.create(
-        model=judger.model_path, messages=messages, stream=False
+    completion = await judge.chat.completions.create(
+        model=judge.model_path, messages=messages, stream=False
     )
     result = completion.choices[0].message.content
     logger = get_logger(__name__)

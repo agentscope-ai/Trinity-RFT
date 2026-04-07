@@ -195,7 +195,7 @@ class Explorer:
             if self.experience_pipeline:
                 await self.experience_pipeline.prepare.remote()
             self.logger.info("Experience pipeline is ready.")
-            if not self.use_nccl_sync and self.model_type != "tinker":
+            if not self.use_nccl_sync and self.model_type not in {"tinker", "external"}:
                 if self.config.mode == "serve":
                     # In serving mode, each engine will setup its own process group
                     await self.setup_model_level_weight_sync_group()

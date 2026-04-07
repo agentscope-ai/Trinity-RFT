@@ -87,7 +87,7 @@ class MathTrainableRULERWorkflow(SimpleWorkflow):
 
             judge_success_rate, ruler_responses, ruler_scores = self.get_ruler_responses(
                 responses=responses,
-                judger=self.model,  # use the policy model itself as judger!
+                judge=self.model,  # use the policy model itself as judge!
                 ruler_rollout_args=ruler_rollout_args,
                 gold_scores=gold_scores_scaled,
             )
@@ -112,7 +112,7 @@ class MathTrainableRULERWorkflow(SimpleWorkflow):
             ruler_rollout_args["n"] = 1
             judge_success_rate, ruler_responses, ruler_scores = self.get_ruler_responses(
                 responses=responses,
-                judger=self.model,  # use the policy model itself as judger!
+                judge=self.model,  # use the policy model itself as judge!
                 ruler_rollout_args=ruler_rollout_args,
                 gold_scores=None,
             )
@@ -126,7 +126,7 @@ class MathTrainableRULERWorkflow(SimpleWorkflow):
     def get_ruler_responses(
         self,
         responses: List[Experience],
-        judger: Any,
+        judge: Any,
         ruler_rollout_args: Any,
         gold_scores: Optional[List[float]] = None,
     ) -> Tuple[float, List[Experience], List[float]]:
@@ -164,24 +164,24 @@ You may compare them against each other and think step by step before returning 
 Conclude your response with a list of scores, in the following format: [score for solution 1, score for solution 2, ..., score for solution {num_responses}]
 """
 
-        # Step 2: invoke judger LLM (actually self.model), get ruler_responses: List[Experience]
+        # Step 2: invoke judge LLM (actually self.model), get ruler_responses: List[Experience]
         messages = [
             {"role": "system", "content": ruler_system_prompt},
             {"role": "user", "content": ruler_user_prompt},
         ]
-        ruler_responses = judger.chat(messages, **ruler_rollout_args)
+        ruler_responses = judge.chat(messages, **ruler_rollout_args)
 
         # Step 3: extract scores from each ruler_response, and update its reward if needed
         ruler_scores = [0.0 for _ in range(num_responses)]
         judge_success_count = 0
         for ruler_response in ruler_responses:
-            # default reward is 0; update if gold_scores is provided & judger returns valid scores
+            # default reward is 0; update if gold_scores is provided & judge returns valid scores
             ruler_response.reward = 0.0
             ruler_response_text = ruler_response.response_text
             idx1, idx2 = ruler_response_text.rfind("["), ruler_response_text.rfind("]")
 
             if (idx1 == -1) or (idx2 == -1) or (idx1 > idx2):
-                self.logger.warning("Unable to extract a list from judger response.")
+                self.logger.warning("Unable to extract a list from judge response.")
                 continue
 
             lst_as_str = ruler_response_text[idx1 : (idx2 + 1)]
@@ -196,10 +196,10 @@ Conclude your response with a list of scores, in the following format: [score fo
                         ruler_response.reward = 1.0 - mae_error
                 else:
                     self.logger.warning(
-                        "The length of list in judger response does not match num_responses."
+                        "The length of list in judge response does not match num_responses."
                     )
             except Exception:
-                self.logger.warning("Unable to parse the list in judger response.")
+                self.logger.warning("Unable to parse the list in judge response.")
 
         if judge_success_count > 0:
             ruler_scores = [score / judge_success_count for score in ruler_scores]
@@ -212,6 +212,6 @@ Conclude your response with a list of scores, in the following format: [score fo
             if ruler_response.metrics is None:
                 ruler_response.metrics = {}
             ruler_response.metrics.update({"judge_success": judge_success_rate})
-            ruler_response.metrics.update({"reward_for_judger": ruler_response.reward})
+            ruler_response.metrics.update({"reward_for_judge": ruler_response.reward})
 
         return judge_success_rate, ruler_responses, ruler_scores

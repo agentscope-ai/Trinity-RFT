@@ -76,7 +76,7 @@ class MathRULERWorkflow(SimpleWorkflow):
             self.auxiliary_models is not None
         ), "Current implementation of RULER requires that auxiliary_models is not None."
         judge_success, ruler_scores = self.get_ruler_scores(
-            responses=responses, judger=self.auxiliary_models[0]
+            responses=responses, judge=self.auxiliary_models[0]
         )
         for i, response in enumerate(responses):
             response.reward = ruler_scores[i]
@@ -84,9 +84,7 @@ class MathRULERWorkflow(SimpleWorkflow):
 
         return responses
 
-    def get_ruler_scores(
-        self, responses: List[Experience], judger: Any
-    ) -> Tuple[bool, List[float]]:
+    def get_ruler_scores(self, responses: List[Experience], judge: Any) -> Tuple[bool, List[float]]:
         """Get RULER scores"""
 
         num_responses = len(responses)
@@ -120,37 +118,37 @@ You may compare them against each other and think step by step before returning 
 Conclude your response with a list of scores, in the following format: [score for solution 1, score for solution 2, ..., score for solution {num_responses}]
 """
 
-        # Step 2: invoke judger LLM
+        # Step 2: invoke judge LLM
         messages = [
             {"role": "system", "content": ruler_system_prompt},
             {"role": "user", "content": ruler_user_prompt},
         ]
-        completion = judger.chat.completions.create(
-            model=judger.model_path, messages=messages, stream=False
+        completion = judge.chat.completions.create(
+            model=judge.model_path, messages=messages, stream=False
         )
-        judger_response = completion.choices[0].message.content
-        self.logger.info(f"LLM judge response: {judger_response}")
+        judge_response = completion.choices[0].message.content
+        self.logger.info(f"LLM judge response: {judge_response}")
 
-        # Step 3: extract scores from judger's response
-        idx1, idx2 = judger_response.rfind("["), judger_response.rfind("]")
+        # Step 3: extract scores from judge's response
+        idx1, idx2 = judge_response.rfind("["), judge_response.rfind("]")
         if (idx1 == -1) or (idx2 == -1) or (idx1 > idx2):
             self.logger.warning(
-                "Unable to extract a list from judger response, set scores to all zero."
+                "Unable to extract a list from judge response, set scores to all zero."
             )
             return False, [0.0 for _ in range(num_responses)]
-        lst_as_str = judger_response[idx1 : (idx2 + 1)]
+        lst_as_str = judge_response[idx1 : (idx2 + 1)]
         try:
             scores = ast.literal_eval(lst_as_str)
             scores = [max(0.0, min(1.0, score)) for score in scores]  # clip to range [0, 1]
             if len(scores) != num_responses:
                 self.logger.warning(
-                    "The length of list in judger response does not match num_responses."
+                    "The length of list in judge response does not match num_responses."
                 )
                 return False, [0.0 for _ in range(num_responses)]
             return True, scores
         except Exception:
             self.logger.warning(
-                "Unable to parse the list in judger response, set scores to all zero."
+                "Unable to parse the list in judge response, set scores to all zero."
             )
             return False, [0.0 for _ in range(num_responses)]
 
@@ -189,7 +187,7 @@ class AsyncMathRULERWorkflow(MathRULERWorkflow):
             self.auxiliary_models is not None
         ), "Current implementation of RULER requires that auxiliary_models is not None."
         judge_success, ruler_scores = self.get_ruler_scores(
-            responses=responses, judger=self.auxiliary_models[0]
+            responses=responses, judge=self.auxiliary_models[0]
         )
         for i, response in enumerate(responses):
             response.reward = ruler_scores[i]

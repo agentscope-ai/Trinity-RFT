@@ -1,0 +1,34 @@
+mode: bench
+project: Trinity-RFT
+name: external-model-qwen3-max
+checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
+model:
+  model_path: qwen3-max
+  max_model_len: 4096
+  max_prompt_tokens: 2048
+  max_response_tokens: 1024
+  external_model:
+    enable: true
+    model_name: qwen3-max
+    base_url_env: OPENAI_BASE_URL
+    api_key_env: OPENAI_API_KEY
+buffer:
+  batch_size: 16
+  total_epochs: 1
+  explorer_input:
+    eval_tasksets:
+      - name: gsm8k_eval
+        storage_type: file
+        path: ${oc.env:TRINITY_TASKSET_PATH,openai/gsm8k}
+        subset_name: main
+        split: test
+        repeat_times: 1
+        format:
+          prompt_key: question
+          response_key: answer
+        rollout_args:
+          temperature: 1.0
+          logprobs: 0
+    default_eval_workflow_type: math_workflow
+monitor:
+  monitor_type: tensorboard
