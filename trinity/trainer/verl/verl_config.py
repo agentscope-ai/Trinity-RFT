@@ -108,6 +108,7 @@ class FSDPConfig:
     mixed_precision: dict = field(default_factory=dict)
 
 
+@dataclass
 class _CheckpointConfig(CheckpointConfig):
     mbridge_config: dict[str, Any] = field(
         default_factory=lambda: dict(distributed_filesystem=True, memory_efficient=True)

@@ -9,7 +9,6 @@ from transformers.models.qwen3_5.modeling_qwen3_5 import (
     BaseModelOutputWithPast,
     Cache,
     Qwen3_5CausalLMOutputWithPast,
-    Qwen3_5DynamicCache,
     Qwen3_5ForConditionalGeneration,
     Qwen3_5ModelOutputWithPast,
     TransformersKwargs,
@@ -76,9 +75,7 @@ def ulysses_gated_delta_net_forward_decorator(func):
     @wraps(func)
     def wrapper(
         hidden_states: torch.Tensor,
-        cache_params: Qwen3_5DynamicCache | None = None,
-        cache_position: torch.LongTensor | None = None,
-        attention_mask: torch.Tensor | None = None,
+        **kwargs,
     ):
         from verl.utils.ulysses import (
             gather_outputs_and_unpad,
@@ -90,7 +87,7 @@ def ulysses_gated_delta_net_forward_decorator(func):
         if ulysses_sp_size > 1:
             hidden_states = gather_outputs_and_unpad(hidden_states, gather_dim=1)
 
-        output = func(hidden_states, cache_params, cache_position, attention_mask)
+        output = func(hidden_states, **kwargs)
 
         if ulysses_sp_size > 1:
             group = get_ulysses_sequence_parallel_group()
@@ -120,6 +117,8 @@ def qwen35_text_forward(
         inputs_embeds = self.embed_tokens(input_ids)
 
     if use_cache and past_key_values is None:
+        from transformers.models.qwen3_5.modeling_qwen3_5 import Qwen3_5DynamicCache
+
         past_key_values = Qwen3_5DynamicCache(config=self.config)
 
     if cache_position is None:

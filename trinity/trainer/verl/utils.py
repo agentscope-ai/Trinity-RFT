@@ -391,7 +391,7 @@ def rearrange_micro_batches(
     return micro_batches, micro_bsz_idx
 
 
-# bug fix for verl to support transformers v5
+# add rope_theta to hf config for backward compatibility, can be removed after verl is updated
 def patch_rope_theta_in_hf_config(hf_config):
     if not hasattr(hf_config, "rope_theta"):
         if hasattr(hf_config, "rope_parameters"):
