@@ -1,5 +1,11 @@
 # Trinity-RFT Documentation
 
+## Documentation Layout
+
+- `docs/sphinx_doc/`: Sphinx source and build scripts for API/user docs.
+- `docs/agents/`: Agent-oriented operational docs and migration knowledge.
+- `docs/agents/verl_upgrade/`: Canonical veRL upgrade checklist and migration plans.
+
 Please use the following commands to build sphinx doc of Trinity-RFT.
 
 ```shell
@@ -20,3 +26,5 @@ cd docs/sphinx_doc
 ```
 
 The sphinx doc is built in `docs/sphinx_doc/build/html`.
+
+For code-agent workflows (Copilot/Codex/Claude), start from `docs/agents/README.md`.
