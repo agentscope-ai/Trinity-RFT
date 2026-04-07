@@ -1114,7 +1114,7 @@ window.runMermaid = runMermaid;</script>
 
             <span class="n">judge_success_rate</span><span class="p">,</span> <span class="n">ruler_responses</span><span class="p">,</span> <span class="n">ruler_scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ruler_responses</span><span class="p">(</span>
                 <span class="n">responses</span><span class="o">=</span><span class="n">responses</span><span class="p">,</span>
-                <span class="n">judger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>  <span class="c1"># use the policy model itself as judger!</span>
+                <span class="n">judge</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>  <span class="c1"># use the policy model itself as judge!</span>
                 <span class="n">ruler_rollout_args</span><span class="o">=</span><span class="n">ruler_rollout_args</span><span class="p">,</span>
                 <span class="n">gold_scores</span><span class="o">=</span><span class="n">gold_scores_scaled</span><span class="p">,</span>
             <span class="p">)</span>
@@ -1139,7 +1139,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">ruler_rollout_args</span><span class="p">[</span><span class="s2">&quot;n&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
             <span class="n">judge_success_rate</span><span class="p">,</span> <span class="n">ruler_responses</span><span class="p">,</span> <span class="n">ruler_scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ruler_responses</span><span class="p">(</span>
                 <span class="n">responses</span><span class="o">=</span><span class="n">responses</span><span class="p">,</span>
-                <span class="n">judger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>  <span class="c1"># use the policy model itself as judger!</span>
+                <span class="n">judge</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span>  <span class="c1"># use the policy model itself as judge!</span>
                 <span class="n">ruler_rollout_args</span><span class="o">=</span><span class="n">ruler_rollout_args</span><span class="p">,</span>
                 <span class="n">gold_scores</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="p">)</span>
@@ -1156,7 +1156,7 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_ruler_responses</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">responses</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">],</span>
-        <span class="n">judger</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">judge</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
         <span class="n">ruler_rollout_args</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
         <span class="n">gold_scores</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]:</span>
@@ -1194,24 +1194,24 @@ window.runMermaid = runMermaid;</script>
 <span class="s2">Conclude your response with a list of scores, in the following format: [score for solution 1, score for solution 2, ..., score for solution </span><span class="si">{</span><span class="n">num_responses</span><span class="si">}</span><span class="s2">]</span>
 <span class="s2">&quot;&quot;&quot;</span>
 
-        <span class="c1"># Step 2: invoke judger LLM (actually self.model), get ruler_responses: List[Experience]</span>
+        <span class="c1"># Step 2: invoke judge LLM (actually self.model), get ruler_responses: List[Experience]</span>
         <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">ruler_system_prompt</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">ruler_user_prompt</span><span class="p">},</span>
         <span class="p">]</span>
-        <span class="n">ruler_responses</span> <span class="o">=</span> <span class="n">judger</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="o">**</span><span class="n">ruler_rollout_args</span><span class="p">)</span>
+        <span class="n">ruler_responses</span> <span class="o">=</span> <span class="n">judge</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="o">**</span><span class="n">ruler_rollout_args</span><span class="p">)</span>
 
         <span class="c1"># Step 3: extract scores from each ruler_response, and update its reward if needed</span>
         <span class="n">ruler_scores</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_responses</span><span class="p">)]</span>
         <span class="n">judge_success_count</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">ruler_response</span> <span class="ow">in</span> <span class="n">ruler_responses</span><span class="p">:</span>
-            <span class="c1"># default reward is 0; update if gold_scores is provided &amp; judger returns valid scores</span>
+            <span class="c1"># default reward is 0; update if gold_scores is provided &amp; judge returns valid scores</span>
             <span class="n">ruler_response</span><span class="o">.</span><span class="n">reward</span> <span class="o">=</span> <span class="mf">0.0</span>
             <span class="n">ruler_response_text</span> <span class="o">=</span> <span class="n">ruler_response</span><span class="o">.</span><span class="n">response_text</span>
             <span class="n">idx1</span><span class="p">,</span> <span class="n">idx2</span> <span class="o">=</span> <span class="n">ruler_response_text</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot;[&quot;</span><span class="p">),</span> <span class="n">ruler_response_text</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot;]&quot;</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="p">(</span><span class="n">idx1</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">idx2</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">idx1</span> <span class="o">&gt;</span> <span class="n">idx2</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Unable to extract a list from judger response.&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Unable to extract a list from judge response.&quot;</span><span class="p">)</span>
                 <span class="k">continue</span>
 
             <span class="n">lst_as_str</span> <span class="o">=</span> <span class="n">ruler_response_text</span><span class="p">[</span><span class="n">idx1</span> <span class="p">:</span> <span class="p">(</span><span class="n">idx2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
@@ -1226,10 +1226,10 @@ window.runMermaid = runMermaid;</script>
                         <span class="n">ruler_response</span><span class="o">.</span><span class="n">reward</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">mae_error</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                        <span class="s2">&quot;The length of list in judger response does not match num_responses.&quot;</span>
+                        <span class="s2">&quot;The length of list in judge response does not match num_responses.&quot;</span>
                     <span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Unable to parse the list in judger response.&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Unable to parse the list in judge response.&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">judge_success_count</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">ruler_scores</span> <span class="o">=</span> <span class="p">[</span><span class="n">score</span> <span class="o">/</span> <span class="n">judge_success_count</span> <span class="k">for</span> <span class="n">score</span> <span class="ow">in</span> <span class="n">ruler_scores</span><span class="p">]</span>
@@ -1242,7 +1242,7 @@ window.runMermaid = runMermaid;</script>
             <span class="k">if</span> <span class="n">ruler_response</span><span class="o">.</span><span class="n">metrics</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">ruler_response</span><span class="o">.</span><span class="n">metrics</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="n">ruler_response</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;judge_success&quot;</span><span class="p">:</span> <span class="n">judge_success_rate</span><span class="p">})</span>
-            <span class="n">ruler_response</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;reward_for_judger&quot;</span><span class="p">:</span> <span class="n">ruler_response</span><span class="o">.</span><span class="n">reward</span><span class="p">})</span>
+            <span class="n">ruler_response</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;reward_for_judge&quot;</span><span class="p">:</span> <span class="n">ruler_response</span><span class="o">.</span><span class="n">reward</span><span class="p">})</span>
 
         <span class="k">return</span> <span class="n">judge_success_rate</span><span class="p">,</span> <span class="n">ruler_responses</span><span class="p">,</span> <span class="n">ruler_scores</span></div>
 </div>

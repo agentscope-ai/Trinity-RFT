@@ -179,6 +179,11 @@ model:
     train_mlp: true
     train_attn: true
     train_unembed: true
+  external_model:
+    enable: false
+    base_url_env: OPENAI_BASE_URL
+    api_key_env: OPENAI_API_KEY
+    model_name: null
 ```
 
 - `model_path`: 被训练模型的路径。如果启用了`tinker`，则该路径为本地 tokenizer 的路径。
@@ -208,6 +213,11 @@ model:
   - `train_mlp`：是否训练 MLP 层。默认为 `true`。
   - `train_attn`：是否训练注意力层。默认为 `true`。
   - `train_unembed`：是否训练反嵌入（unembedding）层。默认为 `true`。
+- `external_model`：可选的外部 API 模型配置。
+  - `enable`：是否启用外部模型。默认为 `false`。
+  - `model_name`：外部模型的模型名称。若未指定，则默认为 `null`。
+  - `base_url_env`：外部模型的 base url 环境变量。若未指定，则默认为 `OPENAI_BASE_URL`。
+  - `api_key_env`：外部模型的 api key 环境变量。若未指定，则默认为 `OPENAI_API_KEY`。
 
 ```{tip}
 如果使用的是 Explorer 提供的 openai API，则只有 `max_model_len` 会生效，而 `max_response_tokens`、`max_prompt_tokens` 和 `min_response_tokens` 的值将被忽略，在没有独立指定 `max_tokens` 时，每次 API 调用将生成最多 `max_model_len - prompt_length` 个 token，因此在使用时请确保 prompt 长度小于 `max_model_len`。
@@ -424,7 +434,10 @@ explorer:
 - `max_timeout`: 等待 Workflow 完成的最大时间（秒）。
 - `max_retry_times`: Workflow 失败或超时情况下的最大重试次数。
 - `env_vars`: 为每个 WorkflowRunner 设置的环境变量。
-- `rollout_model.engine_type`: 推理引擎类型。支持 `vllm_async` 和 `vllm`，二者的含义相同，都使用了异步引擎。后续版本会只保留 `vllm`。
+- `rollout_model.engine_type`: 推理引擎类型。支持选项：
+  - `vllm`: 使用 vLLM 异步引擎。
+  - `tinker`: 使用 Tinker 引擎。
+  - `external`: 使用外部 API 引擎。
 - `rollout_model.engine_num`: 推理引擎实例的数量。
 - `rollout_model.tensor_parallel_size`: 每个实例的张量并行度。
 - `rollout_model.enable_history`: 是否启用模型调用历史记录功能。若设为 `True`，模型会自动记录调用返回的 experience。请定期通过 `extract_experience_from_history` 提取历史，以避免内存溢出。默认为 `False`。

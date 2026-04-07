@@ -179,6 +179,11 @@ model:
     train_mlp: true
     train_attn: true
     train_unembed: true
+  external_model:
+    enable: false
+    base_url_env: OPENAI_BASE_URL
+    api_key_env: OPENAI_API_KEY
+    model_name: null
 ```
 
 - `model_path`: Path to the model being trained. If `tinker` is enabled, this is the path to the local tokenizer.
@@ -208,6 +213,11 @@ model:
   - `train_mlp`: Whether to train the MLP layer. Default is `true`.
   - `train_attn`: Whether to train the attention layer. Default is `true`.
   - `train_unembed`: Whether to train the unembedding layer. Default is `true`.
+- `external_model`: Optional external API model configuration.
+  - `enable`: Whether to enable external API model. Default is `false`.
+  - `model_name`: The name of the external API model. If not specified, defaults to `null`.
+  - `base_url_env`: The environment variable name for the base URL of the external API model. If not specified, defaults to `OPENAI_BASE_URL`.
+  - `api_key_env`: The environment variable name for the API key of the external API model. If not specified, defaults to `OPENAI_API_KEY`.
 
 ```{tip}
 If you are using the openai API provided by Explorer, only `max_model_len` will take effect, and the value of `max_response_tokens`, `max_prompt_tokens`, and `min_response_tokens` will be ignored. When `max_tokens` is not independently specified, each API call will generate up to `max_model_len - prompt_length` tokens. Therefore, please ensure that the prompt length is less than `max_model_len` when using the API.
@@ -427,7 +437,10 @@ explorer:
 - `max_timeout`: Maximum time (in seconds) for a workflow to complete.
 - `max_retry_times`: Maximum number of retries for a workflow.
 - `env_vars`: Environment variables to be set for every workflow runners.
-- `rollout_model.engine_type`: Type of inference engine. For now, only `vllm_async` and `vllm` is supported, they have the same meaning and both use the asynchronous engine. In subsequent versions, only `vllm` may be retained for simplicity.
+- `rollout_model.engine_type`: Type of inference engine. Supported options:
+  - `vllm`: Use vLLM asynchronous engine.
+  - `tinker`: Use Tinker engine.
+  - `external`: Use external API-based model engine.
 - `rollout_model.engine_num`: Number of inference engines.
 - `rollout_model.tensor_parallel_size`: Degree of tensor parallelism.
 - `rollout_model.enable_history`: Whether to enable model call history recording. If set to `True`, the model wrapper automatically records the return experiences of model calls. Please periodically extract the history via `extract_experience_from_history` to avoid out-of-memory issues. Default is `False`.

@@ -15,6 +15,7 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
+   trinity.common.models.external_model
    trinity.common.models.mm_utils
    trinity.common.models.model
    trinity.common.models.tinker_model

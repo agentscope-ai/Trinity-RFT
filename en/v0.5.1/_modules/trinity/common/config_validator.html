@@ -1186,7 +1186,7 @@ window.runMermaid = runMermaid;</script>
         <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">ray_namespace</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">ray_namespace</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">config</span><span class="o">.</span><span class="n">ray_namespace</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">project</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
 
-        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">tinker</span><span class="o">.</span><span class="n">enable</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">tinker</span><span class="o">.</span><span class="n">enable</span> <span class="ow">or</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">external_model</span><span class="o">.</span><span class="n">enable</span><span class="p">:</span>
             <span class="k">return</span>
 
         <span class="c1"># check cluster infomation</span>
@@ -1264,6 +1264,10 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">                       the current mode and available resources.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">cluster</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">cluster</span>
+
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">engine_type</span> <span class="o">==</span> <span class="s2">&quot;external&quot;</span><span class="p">:</span>
+            <span class="k">return</span>
+
         <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">!=</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
             <span class="n">cluster</span><span class="o">.</span><span class="n">rollout_gpu_num</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">tensor_parallel_size</span>
@@ -1437,6 +1441,9 @@ window.runMermaid = runMermaid;</script>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">model</span><span class="o">.</span><span class="n">critic_model_path</span><span class="p">:</span>
             <span class="n">model</span><span class="o">.</span><span class="n">critic_model_path</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">model_path</span>
 
+        <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">external_model</span><span class="o">.</span><span class="n">enable</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_check_external_model</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">tinker</span><span class="o">.</span><span class="n">enable</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_check_tinker</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
 
@@ -1453,6 +1460,31 @@ window.runMermaid = runMermaid;</script>
         <span class="c1"># check max_model_len, max_prompt_tokens, max_response_tokens</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_model_len</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></div>
 
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_external_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate API-specific configuration settings.</span>
+
+<span class="sd">        - Validates that `base_url_env` `api_key_env` `model_name` are provided</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">!=</span> <span class="s2">&quot;bench&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;External model is only supported in `bench` mode.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">engine_type</span> <span class="o">!=</span> <span class="s2">&quot;external&quot;</span><span class="p">:</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">engine_type</span> <span class="o">=</span> <span class="s2">&quot;external&quot;</span>
+
+        <span class="n">external_model</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">external_model</span>
+        <span class="n">rollout_model_config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">external_model_config</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">vars</span><span class="p">(</span><span class="n">external_model</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">rollout_model_config</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="c1"># Validate required env keys.</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">rollout_model_config</span><span class="o">.</span><span class="n">base_url_env</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`model.external_model.base_url_env` is required for external engine.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">rollout_model_config</span><span class="o">.</span><span class="n">api_key_env</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`model.external_model.api_key_env` is required for external engine.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">rollout_model_config</span><span class="o">.</span><span class="n">model_name</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`model.external_model.model_name` is required for external engine.&quot;</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_check_tinker</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate Tinker-specific configuration settings.</span>
@@ -2220,6 +2252,9 @@ window.runMermaid = runMermaid;</script>
         <span class="p">):</span>
             <span class="k">return</span>
 
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">external_model</span><span class="o">.</span><span class="n">enable</span><span class="p">:</span>
+            <span class="k">return</span>
+
         <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">trainer_type</span> <span class="o">==</span> <span class="s2">&quot;verl&quot;</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">ulysses_sequence_parallel_size</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
@@ -2318,7 +2353,7 @@ window.runMermaid = runMermaid;</script>
         <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">ignore_validator_suggestions</span><span class="p">:</span>
             <span class="k">return</span>
 
-        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">tinker</span><span class="o">.</span><span class="n">enable</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">tinker</span><span class="o">.</span><span class="n">enable</span> <span class="ow">or</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">external_model</span><span class="o">.</span><span class="n">enable</span><span class="p">:</span>
             <span class="k">return</span>
 
         <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">}:</span>

@@ -363,6 +363,7 @@
 <li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.common.html">trinity.common package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.common.models.html">trinity.common.models package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.vllm_patch.html">trinity.common.models.vllm_patch package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.external_model.html">trinity.common.models.external_model module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.mm_utils.html">trinity.common.models.mm_utils module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.model.html">trinity.common.models.model module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.tinker_model.html">trinity.common.models.tinker_model module</a></li>
@@ -850,6 +851,11 @@ Users can use these features to simplify configuration.</p>
 <span class="w">    </span><span class="nt">train_mlp</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 <span class="w">    </span><span class="nt">train_attn</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 <span class="w">    </span><span class="nt">train_unembed</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">external_model</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enable</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="nt">base_url_env</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OPENAI_BASE_URL</span>
+<span class="w">    </span><span class="nt">api_key_env</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OPENAI_API_KEY</span>
+<span class="w">    </span><span class="nt">model_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
 </pre></div>
 </div>
 <ul class="simple">
@@ -884,6 +890,14 @@ Users can use these features to simplify configuration.</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">train_mlp</span></code>: Whether to train the MLP layer. Default is <code class="docutils literal notranslate"><span class="pre">true</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">train_attn</span></code>: Whether to train the attention layer. Default is <code class="docutils literal notranslate"><span class="pre">true</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">train_unembed</span></code>: Whether to train the unembedding layer. Default is <code class="docutils literal notranslate"><span class="pre">true</span></code>.</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">external_model</span></code>: Optional external API model configuration.</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">enable</span></code>: Whether to enable external API model. Default is <code class="docutils literal notranslate"><span class="pre">false</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">model_name</span></code>: The name of the external API model. If not specified, defaults to <code class="docutils literal notranslate"><span class="pre">null</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">base_url_env</span></code>: The environment variable name for the base URL of the external API model. If not specified, defaults to <code class="docutils literal notranslate"><span class="pre">OPENAI_BASE_URL</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">api_key_env</span></code>: The environment variable name for the API key of the external API model. If not specified, defaults to <code class="docutils literal notranslate"><span class="pre">OPENAI_API_KEY</span></code>.</p></li>
 </ul>
 </li>
 </ul>
@@ -1132,7 +1146,13 @@ Users can use these features to simplify configuration.</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">max_timeout</span></code>: Maximum time (in seconds) for a workflow to complete.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">max_retry_times</span></code>: Maximum number of retries for a workflow.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">env_vars</span></code>: Environment variables to be set for every workflow runners.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.engine_type</span></code>: Type of inference engine. For now, only <code class="docutils literal notranslate"><span class="pre">vllm_async</span></code> and <code class="docutils literal notranslate"><span class="pre">vllm</span></code> is supported, they have the same meaning and both use the asynchronous engine. In subsequent versions, only <code class="docutils literal notranslate"><span class="pre">vllm</span></code> may be retained for simplicity.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.engine_type</span></code>: Type of inference engine. Supported options:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">vllm</span></code>: Use vLLM asynchronous engine.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tinker</span></code>: Use Tinker engine.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">external</span></code>: Use external API-based model engine.</p></li>
+</ul>
+</li>
 <li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.engine_num</span></code>: Number of inference engines.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.tensor_parallel_size</span></code>: Degree of tensor parallelism.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.enable_history</span></code>: Whether to enable model call history recording. If set to <code class="docutils literal notranslate"><span class="pre">True</span></code>, the model wrapper automatically records the return experiences of model calls. Please periodically extract the history via <code class="docutils literal notranslate"><span class="pre">extract_experience_from_history</span></code> to avoid out-of-memory issues. Default is <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>

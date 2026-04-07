@@ -1011,6 +1011,7 @@ window.runMermaid = runMermaid;</script>
                   
   <h1>Source code for trinity.common.models</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
 
@@ -1078,6 +1079,19 @@ window.runMermaid = runMermaid;</script>
         <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models.vllm_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">vLLMRolloutModel</span>
 
         <span class="n">engine_cls</span> <span class="o">=</span> <span class="n">vLLMRolloutModel</span>
+    <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">engine_type</span> <span class="o">==</span> <span class="s2">&quot;external&quot;</span><span class="p">:</span>
+        <span class="n">rollout_engines</span> <span class="o">=</span> <span class="n">create_external_models</span><span class="p">(</span>
+            <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="p">,</span>
+            <span class="n">actor_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_rollout_model&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">auxiliary_engines</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">model_config</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">):</span>
+            <span class="n">engines</span> <span class="o">=</span> <span class="n">create_external_models</span><span class="p">(</span>
+                <span class="n">config</span><span class="o">=</span><span class="n">model_config</span><span class="p">,</span>
+                <span class="n">actor_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_auxiliary_model_</span><span class="si">{</span><span class="n">model_config</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">auxiliary_engines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">engines</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">rollout_engines</span><span class="p">,</span> <span class="n">auxiliary_engines</span>
     <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">engine_type</span> <span class="o">==</span> <span class="s2">&quot;tinker&quot;</span><span class="p">:</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models.tinker_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">TinkerModel</span>
 
@@ -1192,6 +1206,42 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">placement_group_capture_child_tasks</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                     <span class="n">placement_group_bundle_index</span><span class="o">=</span><span class="n">bundles_for_engine</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
                 <span class="p">),</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">remote</span><span class="p">(</span>
+                <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">models</span></div>
+
+
+
+<div class="viewcode-block" id="create_external_models">
+<a class="viewcode-back" href="../../../build_api/trinity.common.models.html#trinity.common.models.create_external_models">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_external_models</span><span class="p">(</span>
+    <span class="n">config</span><span class="p">:</span> <span class="n">InferenceModelConfig</span><span class="p">,</span>
+    <span class="n">actor_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models.external_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExternalModel</span>
+
+    <span class="c1"># Ensure external-model env vars are propagated to Ray workers.</span>
+    <span class="n">env_vars</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">base_url_env</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">external_model_config</span><span class="o">.</span><span class="n">base_url_env</span>
+    <span class="n">api_key_env</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">external_model_config</span><span class="o">.</span><span class="n">api_key_env</span>
+    <span class="k">if</span> <span class="n">base_url_env</span> <span class="ow">and</span> <span class="n">base_url_env</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
+        <span class="n">env_vars</span><span class="p">[</span><span class="n">base_url_env</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="n">base_url_env</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">api_key_env</span> <span class="ow">and</span> <span class="n">api_key_env</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
+        <span class="n">env_vars</span><span class="p">[</span><span class="n">api_key_env</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="n">api_key_env</span><span class="p">]</span>
+
+    <span class="n">models</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">engine_num</span><span class="p">):</span>
+        <span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">ray</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">ExternalModel</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">options</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">actor_name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">num_cpus</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">num_gpus</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">namespace</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">ray_namespace</span><span class="p">,</span>
+                <span class="n">runtime_env</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;env_vars&quot;</span><span class="p">:</span> <span class="n">env_vars</span><span class="p">},</span>
             <span class="p">)</span>
             <span class="o">.</span><span class="n">remote</span><span class="p">(</span>
                 <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>

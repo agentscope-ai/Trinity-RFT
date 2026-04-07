@@ -368,6 +368,7 @@
 <li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.common.html">trinity.common package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.common.models.html">trinity.common.models package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.vllm_patch.html">trinity.common.models.vllm_patch package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.external_model.html">trinity.common.models.external_model module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.mm_utils.html">trinity.common.models.mm_utils module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.model.html">trinity.common.models.model module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.tinker_model.html">trinity.common.models.tinker_model module</a></li>
@@ -855,6 +856,11 @@
 <span class="w">    </span><span class="nt">train_mlp</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 <span class="w">    </span><span class="nt">train_attn</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 <span class="w">    </span><span class="nt">train_unembed</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">external_model</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">enable</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="nt">base_url_env</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OPENAI_BASE_URL</span>
+<span class="w">    </span><span class="nt">api_key_env</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">OPENAI_API_KEY</span>
+<span class="w">    </span><span class="nt">model_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
 </pre></div>
 </div>
 <ul class="simple">
@@ -889,6 +895,14 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">train_mlp</span></code>：是否训练 MLP 层。默认为 <code class="docutils literal notranslate"><span class="pre">true</span></code>。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">train_attn</span></code>：是否训练注意力层。默认为 <code class="docutils literal notranslate"><span class="pre">true</span></code>。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">train_unembed</span></code>：是否训练反嵌入（unembedding）层。默认为 <code class="docutils literal notranslate"><span class="pre">true</span></code>。</p></li>
+</ul>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">external_model</span></code>：可选的外部 API 模型配置。</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">enable</span></code>：是否启用外部模型。默认为 <code class="docutils literal notranslate"><span class="pre">false</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">model_name</span></code>：外部模型的模型名称。若未指定，则默认为 <code class="docutils literal notranslate"><span class="pre">null</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">base_url_env</span></code>：外部模型的 base url 环境变量。若未指定，则默认为 <code class="docutils literal notranslate"><span class="pre">OPENAI_BASE_URL</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">api_key_env</span></code>：外部模型的 api key 环境变量。若未指定，则默认为 <code class="docutils literal notranslate"><span class="pre">OPENAI_API_KEY</span></code>。</p></li>
 </ul>
 </li>
 </ul>
@@ -1134,7 +1148,13 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">max_timeout</span></code>: 等待 Workflow 完成的最大时间（秒）。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">max_retry_times</span></code>: Workflow 失败或超时情况下的最大重试次数。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">env_vars</span></code>: 为每个 WorkflowRunner 设置的环境变量。</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.engine_type</span></code>: 推理引擎类型。支持 <code class="docutils literal notranslate"><span class="pre">vllm_async</span></code> 和 <code class="docutils literal notranslate"><span class="pre">vllm</span></code>，二者的含义相同，都使用了异步引擎。后续版本会只保留 <code class="docutils literal notranslate"><span class="pre">vllm</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.engine_type</span></code>: 推理引擎类型。支持选项：</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">vllm</span></code>: 使用 vLLM 异步引擎。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tinker</span></code>: 使用 Tinker 引擎。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">external</span></code>: 使用外部 API 引擎。</p></li>
+</ul>
+</li>
 <li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.engine_num</span></code>: 推理引擎实例的数量。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.tensor_parallel_size</span></code>: 每个实例的张量并行度。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.enable_history</span></code>: 是否启用模型调用历史记录功能。若设为 <code class="docutils literal notranslate"><span class="pre">True</span></code>，模型会自动记录调用返回的 experience。请定期通过 <code class="docutils literal notranslate"><span class="pre">extract_experience_from_history</span></code> 提取历史，以避免内存溢出。默认为 <code class="docutils literal notranslate"><span class="pre">False</span></code>。</p></li>

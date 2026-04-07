@@ -803,6 +803,7 @@ window.runMermaid = runMermaid;</script>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../../../build_api/trinity.common.html">trinity.common package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.common.models.html">trinity.common.models package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.vllm_patch.html">trinity.common.models.vllm_patch package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.external_model.html">trinity.common.models.external_model module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.mm_utils.html">trinity.common.models.mm_utils module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.model.html">trinity.common.models.model module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.tinker_model.html">trinity.common.models.tinker_model module</a></li>
@@ -1023,6 +1024,7 @@ window.runMermaid = runMermaid;</script>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="sd">&quot;&quot;&quot;A workflow with LLM-as-a-judge.&quot;&quot;&quot;</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">openai</span>
@@ -1074,37 +1076,39 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">rubric</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rubric&quot;</span><span class="p">,</span> <span class="p">[])</span></div>
 
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_judge</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">openai</span><span class="o">.</span><span class="n">OpenAI</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the judge client.  Subclasses may override this to supply a</span>
+<span class="sd">        different client (e.g. an external API) without duplicating ``run``.&quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_models</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">),</span> <span class="s2">&quot;auxiliary_models must be set when using the default judge.&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
 <div class="viewcode-block" id="RubricJudgeWorkflow.run">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.workflows.rubric_judge_workflow.html#trinity.common.workflows.rubric_judge_workflow.RubricJudgeWorkflow.run">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Modified from SimpleWorkflow.run&quot;&quot;&quot;</span>
-
         <span class="n">messages</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_messages</span><span class="p">()</span>
+        <span class="n">judge</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_judge</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;start chat&quot;</span><span class="p">)</span>
         <span class="n">responses</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">rollout_args</span><span class="p">)</span>
 
-        <span class="c1"># === Calculate rubric-based rewards ===</span>
-        <span class="k">assert</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_models</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-        <span class="p">),</span> <span class="s2">&quot;Current implementation of rubric-based rewards requires that auxiliary_models is not None.&quot;</span>
-
         <span class="n">judge_success_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">response</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">responses</span><span class="p">):</span>
             <span class="n">judge_success</span><span class="p">,</span> <span class="n">reward</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_judge_reward</span><span class="p">(</span>
-                <span class="n">response</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">response_text</span><span class="p">,</span> <span class="n">judger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">response</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">response_text</span><span class="p">,</span> <span class="n">judge</span><span class="o">=</span><span class="n">judge</span>
             <span class="p">)</span>
             <span class="n">response</span><span class="o">.</span><span class="n">reward</span> <span class="o">=</span> <span class="n">reward</span>
             <span class="n">response</span><span class="o">.</span><span class="n">eid</span><span class="o">.</span><span class="n">run</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_id_base</span>
-
             <span class="n">judge_success_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">judge_success</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;self.task_desc: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task_desc</span><span class="si">}</span><span class="s2">, messages: </span><span class="si">{</span><span class="n">messages</span><span class="si">}</span><span class="s2">, response: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">response_text</span><span class="si">}</span><span class="s2">, reward: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">reward</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;self.task_desc: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task_desc</span><span class="si">}</span><span class="s2">, messages: </span><span class="si">{</span><span class="n">messages</span><span class="si">}</span><span class="s2">, &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;response: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">response_text</span><span class="si">}</span><span class="s2">, reward: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">reward</span><span class="si">}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
 
-        <span class="c1"># record judge success</span>
         <span class="n">judge_success_rate</span> <span class="o">=</span> <span class="p">(</span>
             <span class="nb">sum</span><span class="p">(</span><span class="n">judge_success_list</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">judge_success_list</span><span class="p">)</span> <span class="k">if</span> <span class="n">judge_success_list</span> <span class="k">else</span> <span class="mf">0.0</span>
         <span class="p">)</span>
@@ -1118,7 +1122,7 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="RubricJudgeWorkflow.get_judge_reward">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.workflows.rubric_judge_workflow.html#trinity.common.workflows.rubric_judge_workflow.RubricJudgeWorkflow.get_judge_reward">[文档]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_judge_reward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">judger</span><span class="p">:</span> <span class="n">openai</span><span class="o">.</span><span class="n">OpenAI</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_judge_reward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">judge</span><span class="p">:</span> <span class="n">openai</span><span class="o">.</span><span class="n">OpenAI</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get rewards with LLM-as-a-judge</span>
 <span class="sd">        The prompts are adapted from RAR-IMPLICIT method in https://arxiv.org/pdf/2507.17746</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1158,36 +1162,36 @@ window.runMermaid = runMermaid;</script>
 <span class="s2">Your JSON Evaluation:</span>
 <span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
-        <span class="c1"># Step 2: invoke judger LLM</span>
+        <span class="c1"># Step 2: invoke judge LLM</span>
         <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span>
             <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">ruler_system_prompt</span><span class="p">},</span>
             <span class="p">{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">ruler_user_prompt</span><span class="p">},</span>
         <span class="p">]</span>
-        <span class="n">completion</span> <span class="o">=</span> <span class="n">judger</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
-            <span class="n">model</span><span class="o">=</span><span class="n">judger</span><span class="o">.</span><span class="n">model_path</span><span class="p">,</span> <span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mf">0.0</span>
+        <span class="n">completion</span> <span class="o">=</span> <span class="n">judge</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">judge</span><span class="o">.</span><span class="n">model_path</span><span class="p">,</span> <span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="mf">0.0</span>
         <span class="p">)</span>
-        <span class="n">judger_response</span> <span class="o">=</span> <span class="n">completion</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;LLM judge response: </span><span class="si">{</span><span class="n">judger_response</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">judge_response</span> <span class="o">=</span> <span class="n">completion</span><span class="o">.</span><span class="n">choices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">content</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;LLM judge response: </span><span class="si">{</span><span class="n">judge_response</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-        <span class="c1"># Step 3: extract score from judger&#39;s response (expecting a JSON block with &quot;rating&quot;)</span>
+        <span class="c1"># Step 3: extract score from judge&#39;s response (expecting a JSON block with &quot;rating&quot;)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># Extract content between ```json and ```</span>
             <span class="n">start_tag</span> <span class="o">=</span> <span class="s2">&quot;```json&quot;</span>
-            <span class="n">start_index</span> <span class="o">=</span> <span class="n">judger_response</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">start_tag</span><span class="p">)</span>
+            <span class="n">start_index</span> <span class="o">=</span> <span class="n">judge_response</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">start_tag</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">start_index</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
                 <span class="n">start_tag</span> <span class="o">=</span> <span class="s2">&quot;```&quot;</span>
-                <span class="n">start_index</span> <span class="o">=</span> <span class="n">judger_response</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">start_tag</span><span class="p">)</span>
+                <span class="n">start_index</span> <span class="o">=</span> <span class="n">judge_response</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">start_tag</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">start_index</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No JSON code block found in judger response.&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No JSON code block found in judge response.&quot;</span><span class="p">)</span>
                 <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="mf">0.0</span>
 
-            <span class="n">end_index</span> <span class="o">=</span> <span class="n">judger_response</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;```&quot;</span><span class="p">,</span> <span class="n">start_index</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">start_tag</span><span class="p">))</span>
+            <span class="n">end_index</span> <span class="o">=</span> <span class="n">judge_response</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;```&quot;</span><span class="p">,</span> <span class="n">start_index</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">start_tag</span><span class="p">))</span>
             <span class="k">if</span> <span class="n">end_index</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Malformed JSON code block in judger response.&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Malformed JSON code block in judge response.&quot;</span><span class="p">)</span>
                 <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="mf">0.0</span>
 
-            <span class="n">json_str</span> <span class="o">=</span> <span class="n">judger_response</span><span class="p">[</span><span class="n">start_index</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">start_tag</span><span class="p">)</span> <span class="p">:</span> <span class="n">end_index</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+            <span class="n">json_str</span> <span class="o">=</span> <span class="n">judge_response</span><span class="p">[</span><span class="n">start_index</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">start_tag</span><span class="p">)</span> <span class="p">:</span> <span class="n">end_index</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
             <span class="n">parsed</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">json_str</span><span class="p">)</span>
             <span class="n">rating</span> <span class="o">=</span> <span class="n">parsed</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rating&quot;</span><span class="p">)</span>
 
@@ -1199,12 +1203,65 @@ window.runMermaid = runMermaid;</script>
             <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="n">normalized_score</span>
 
         <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to parse JSON from judger response: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to parse JSON from judge response: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="mf">0.0</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unexpected error when processing judger response: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unexpected error when processing judge response: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="mf">0.0</span></div>
 </div>
+
+
+
+<div class="viewcode-block" id="RubricJudgeWorkflowWithAPI">
+<a class="viewcode-back" href="../../../../build_api/trinity.common.workflows.rubric_judge_workflow.html#trinity.common.workflows.rubric_judge_workflow.RubricJudgeWorkflowWithAPI">[文档]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">RubricJudgeWorkflowWithAPI</span><span class="p">(</span><span class="n">RubricJudgeWorkflow</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Rubric judge workflow using an external OpenAI-compatible API as the judge.</span>
+
+<span class="sd">    Example of workflow_args:</span>
+<span class="sd">        judge_model_name: &quot;gpt-4o&quot;</span>
+<span class="sd">        judge_api_base_url_env: &quot;OPENAI_BASE_URL&quot;</span>
+<span class="sd">        judge_api_key_env: &quot;OPENAI_API_KEY&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="RubricJudgeWorkflowWithAPI.__init__">
+<a class="viewcode-back" href="../../../../build_api/trinity.common.workflows.rubric_judge_workflow.html#trinity.common.workflows.rubric_judge_workflow.RubricJudgeWorkflowWithAPI.__init__">[文档]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">,</span>
+        <span class="n">model</span><span class="p">:</span> <span class="n">ModelWrapper</span><span class="p">,</span>
+        <span class="n">auxiliary_models</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">ModelWrapper</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="n">task</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">auxiliary_models</span><span class="o">=</span><span class="n">auxiliary_models</span><span class="p">)</span>
+
+        <span class="n">workflow_args</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">workflow_args</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="n">judge_model_name</span> <span class="o">=</span> <span class="n">workflow_args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;judge_model_name&quot;</span><span class="p">)</span>
+        <span class="n">base_url_env</span> <span class="o">=</span> <span class="n">workflow_args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;judge_api_base_url_env&quot;</span><span class="p">,</span> <span class="s2">&quot;OPENAI_BASE_URL&quot;</span><span class="p">)</span>
+        <span class="n">api_key_env</span> <span class="o">=</span> <span class="n">workflow_args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;judge_api_key_env&quot;</span><span class="p">,</span> <span class="s2">&quot;OPENAI_API_KEY&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">judge_model_name</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Judge model name is missing. Set `judge_model_name` in workflow_args.&quot;</span>
+            <span class="p">)</span>
+        <span class="n">judge_base_url</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">base_url_env</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">judge_base_url</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Judge base URL is missing. Set env `</span><span class="si">{</span><span class="n">base_url_env</span><span class="si">}</span><span class="s2">`.&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_judge_client</span> <span class="o">=</span> <span class="n">openai</span><span class="o">.</span><span class="n">OpenAI</span><span class="p">(</span>
+            <span class="n">base_url</span><span class="o">=</span><span class="n">judge_base_url</span><span class="p">,</span> <span class="n">api_key</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">api_key_env</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_judge_model_name</span> <span class="o">=</span> <span class="n">judge_model_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="s2">&quot;Initialized external judge model: base_url=</span><span class="si">%s</span><span class="s2"> model=</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="n">judge_base_url</span><span class="p">,</span>
+            <span class="n">judge_model_name</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_judge</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">openai</span><span class="o">.</span><span class="n">OpenAI</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the pre-built external API judge client.&quot;&quot;&quot;</span>
+        <span class="n">client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_judge_client</span>
+        <span class="n">client</span><span class="o">.</span><span class="n">model_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_judge_model_name</span>  <span class="c1"># expected by get_judge_reward</span>
+        <span class="k">return</span> <span class="n">client</span></div>
 
 </pre></div>
 
