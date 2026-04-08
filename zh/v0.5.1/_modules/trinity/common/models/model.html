@@ -1199,35 +1199,40 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="nf">_handle_prompt_truncation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Sequence</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Handle prompt truncation if needed.&quot;&quot;&quot;</span>
         <span class="c1"># Tokenize once without truncation to check if truncation is needed</span>
-        <span class="n">token_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
-            <span class="n">prompt</span><span class="p">,</span>
-            <span class="n">truncation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span><span class="p">,</span>
-        <span class="p">)[</span>
-            <span class="s2">&quot;input_ids&quot;</span>
-        <span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">prompt_token_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
+            <span class="n">prompt</span><span class="p">,</span> <span class="n">truncation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span>
+        <span class="p">)[</span><span class="s2">&quot;input_ids&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 
         <span class="c1"># Check if truncation is needed and apply it</span>
         <span class="k">if</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">enable_prompt_truncation</span>
             <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_prompt_tokens</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">token_ids</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_prompt_tokens</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">prompt_token_ids</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_prompt_tokens</span>
         <span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Prompt was truncated to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_prompt_tokens</span><span class="si">}</span><span class="s2"> tokens&quot;</span><span class="p">)</span>
-            <span class="n">token_ids</span> <span class="o">=</span> <span class="n">token_ids</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_prompt_tokens</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>  <span class="c1"># leave one for response</span>
+
+            <span class="n">dummy_response</span> <span class="o">=</span> <span class="s2">&quot;[This experience is masked out due to overlong prompt]&quot;</span>
+            <span class="n">dummy_response_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
+                <span class="n">dummy_response</span><span class="p">,</span> <span class="n">truncation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span>
+            <span class="p">)[</span><span class="s2">&quot;input_ids&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="n">dummy_response_tokens</span> <span class="o">=</span> <span class="n">dummy_response_tokens</span><span class="p">[</span>
+                <span class="p">:</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dummy_response_tokens</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_response_tokens</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+            <span class="p">]</span>
+
+            <span class="n">token_ids</span> <span class="o">=</span> <span class="n">prompt_token_ids</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_prompt_tokens</span><span class="p">]</span> <span class="o">+</span> <span class="n">dummy_response_tokens</span>
             <span class="k">return</span> <span class="p">[</span>
                 <span class="n">Experience</span><span class="p">(</span>
                     <span class="n">tokens</span><span class="o">=</span><span class="n">token_ids</span><span class="p">,</span>
-                    <span class="n">logprobs</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span>
-                    <span class="n">prompt_length</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">token_ids</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
-                    <span class="n">prompt_text</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">token_ids</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span>
-                    <span class="n">response_text</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">token_ids</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span>
+                    <span class="n">logprobs</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dummy_response_tokens</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span>
+                    <span class="n">prompt_length</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">prompt_token_ids</span><span class="p">),</span>
+                    <span class="n">prompt_text</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">prompt_token_ids</span><span class="p">),</span>
+                    <span class="n">response_text</span><span class="o">=</span><span class="n">dummy_response</span><span class="p">,</span>
                     <span class="n">truncate_status</span><span class="o">=</span><span class="s2">&quot;prompt_truncated&quot;</span><span class="p">,</span>
                     <span class="n">reward</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
                 <span class="p">)</span>
                 <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
-            <span class="p">],</span> <span class="kc">False</span>
-        <span class="k">return</span> <span class="n">token_ids</span><span class="p">,</span> <span class="kc">True</span>
+            <span class="p">],</span> <span class="kc">False</span>  <span class="c1"># If prompt truncation is activated, return a list of dummy experiences &amp; False</span>
+        <span class="k">return</span> <span class="n">prompt_token_ids</span><span class="p">,</span> <span class="kc">True</span>  <span class="c1"># Otherwise, return prompt_token_ids &amp; True</span>
 
 <div class="viewcode-block" id="BaseInferenceModel.convert_messages_to_experience">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.models.model.html#trinity.common.models.model.BaseInferenceModel.convert_messages_to_experience">[文档]</a>
