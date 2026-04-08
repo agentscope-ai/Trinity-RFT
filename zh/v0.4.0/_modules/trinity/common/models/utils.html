@@ -1312,11 +1312,6 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../build_api/trinity.common.models.utils.html#trinity.common.models.utils.load_fsdp_state_dict_from_verl_checkpoint">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_fsdp_state_dict_from_verl_checkpoint</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>  <span class="c1"># noqa: C901</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Load state dict from a Verl checkpoint.&quot;&quot;&quot;</span>
-    <span class="c1"># start of patch for verl to support transformers v5</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.trainer.verl</span><span class="w"> </span><span class="kn">import</span> <span class="n">patch_for_transformers_v5</span>
-
-    <span class="n">patch_for_transformers_v5</span><span class="p">()</span>
-    <span class="c1"># end of patch for verl to support transformers v5</span>
 
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.model_merger.base_model_merger</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelMergerConfig</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.model_merger.fsdp_model_merger</span><span class="w"> </span><span class="kn">import</span> <span class="n">FSDPModelMerger</span>
@@ -1361,17 +1356,13 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="get_megatron_converter">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.models.utils.html#trinity.common.models.utils.get_megatron_converter">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_megatron_converter</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-    <span class="c1"># start of patch for verl to support transformers v5</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.trainer.verl</span><span class="w"> </span><span class="kn">import</span> <span class="n">patch_for_transformers_v5</span>
-
-    <span class="n">patch_for_transformers_v5</span><span class="p">()</span>
-    <span class="c1"># end of patch for verl to support transformers v5</span>
-
     <span class="kn">import</span><span class="w"> </span><span class="nn">builtins</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">contextlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">contextmanager</span>
 
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.model_merger.base_model_merger</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelMergerConfig</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.model_merger.megatron_model_merger</span><span class="w"> </span><span class="kn">import</span> <span class="n">MegatronModelMerger</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.trainer.verl.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">patch_rope_theta_in_hf_config</span>
 
     <span class="c1"># modified from verl/model_merger/megatron_model_merger.py</span>
     <span class="k">class</span><span class="w"> </span><span class="nc">MegatronStateDictConverter</span><span class="p">(</span><span class="n">MegatronModelMerger</span><span class="p">):</span>
@@ -1390,10 +1381,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">get_world_size</span> <span class="o">=</span> <span class="n">original_get_world_size</span>
 
             <span class="c1"># start of patch for verl to support transformers v5</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hf_config</span><span class="p">,</span> <span class="s2">&quot;rope_theta&quot;</span><span class="p">):</span>
-                <span class="n">rope_theta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hf_config</span><span class="o">.</span><span class="n">rope_parameters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rope_theta&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">rope_theta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hf_config</span><span class="p">,</span> <span class="s2">&quot;rope_theta&quot;</span><span class="p">,</span> <span class="n">rope_theta</span><span class="p">)</span>
+            <span class="n">patch_rope_theta_in_hf_config</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hf_config</span><span class="p">)</span>
             <span class="c1"># end of patch for verl to support transformers v5</span>
 
         <span class="nd">@contextmanager</span>

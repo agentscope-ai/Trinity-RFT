@@ -1041,6 +1041,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">verl.trainer.ppo.metric_utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">compute_throughout_metrics</span><span class="p">,</span>
     <span class="n">compute_timing_metrics</span><span class="p">,</span>
+    <span class="n">compute_variance_proxy_metrics</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">verl.trainer.ppo.ray_trainer</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">RayClassWithInitArgs</span><span class="p">,</span>
@@ -1501,9 +1502,14 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="nf">_create_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">train_dataset</span><span class="p">,</span> <span class="n">val_dataset</span><span class="p">,</span> <span class="n">collate_fn</span><span class="p">,</span> <span class="n">train_sampler</span><span class="p">):</span>
         <span class="c1"># Do not use verl&#39;s dataloader</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">train_dataloader</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">val_dataloader</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">total_training_steps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">total_training_steps</span> <span class="ow">or</span> <span class="n">sys</span><span class="o">.</span><span class="n">maxsize</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">actor_rollout_ref</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">total_training_steps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_training_steps</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">critic</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">total_training_steps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_training_steps</span>
+        <span class="k">if</span> <span class="n">OmegaConf</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;actor_rollout_ref.actor.optim&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">actor_rollout_ref</span><span class="o">.</span><span class="n">actor</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">total_training_steps</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">total_training_steps</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">OmegaConf</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;critic.optim&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">critic</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">total_training_steps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_training_steps</span>
 
 <div class="viewcode-block" id="VerlPPOTrainerWrapper.save_state_dict">
 <a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.verl_trainer.html#trinity.trainer.verl.verl_trainer.VerlPPOTrainerWrapper.save_state_dict">[文档]</a>
@@ -1544,6 +1550,16 @@ window.runMermaid = runMermaid;</script>
             <span class="n">batch</span><span class="o">.</span><span class="n">meta_info</span><span class="p">[</span><span class="s2">&quot;global_token_num&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
                 <span class="n">batch</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;attention_mask&quot;</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span>
             <span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+            <span class="n">images_seqlens_all</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">multi_modal_input</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">non_tensor_batch</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;multi_modal_inputs&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+                <span class="k">if</span> <span class="s2">&quot;image_grid_thw&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">multi_modal_input</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">images_seqlens</span> <span class="o">=</span> <span class="n">multi_modal_input</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;images_seqlens&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">images_seqlens</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="n">images_seqlens_all</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">images_seqlens</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">images_seqlens_all</span><span class="p">:</span>
+                <span class="n">batch</span><span class="o">.</span><span class="n">meta_info</span><span class="p">[</span><span class="s2">&quot;images_seqlens&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">images_seqlens_all</span>
 
             <span class="c1"># Operating Mode Selection:</span>
             <span class="c1"># - Bypass mode: Sets old_log_probs = rollout_log_probs (2 policies: π_rollout, π_θ)</span>
@@ -1661,6 +1677,8 @@ window.runMermaid = runMermaid;</script>
         <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
             <span class="n">compute_throughout_metrics</span><span class="p">(</span><span class="n">batch</span><span class="o">=</span><span class="n">batch</span><span class="p">,</span> <span class="n">timing_raw</span><span class="o">=</span><span class="n">timing_raw</span><span class="p">,</span> <span class="n">n_gpus</span><span class="o">=</span><span class="n">n_gpus</span><span class="p">)</span>
         <span class="p">)</span>
+        <span class="n">gradient_norm</span> <span class="o">=</span> <span class="n">metrics</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;actor/grad_norm&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">compute_variance_proxy_metrics</span><span class="p">(</span><span class="n">batch</span><span class="o">=</span><span class="n">batch</span><span class="p">,</span> <span class="n">gradient_norm</span><span class="o">=</span><span class="n">gradient_norm</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">metrics</span></div>
 

@@ -996,7 +996,7 @@ window.runMermaid = runMermaid;</script>
 <span class="c1"># limitations under the License.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">FSDP Checkpoint Manager.</span>
-<span class="sd">Modified from https://github.com/volcengine/verl/blob/v0.7.0/verl/utils/checkpoint/fsdp_checkpoint_manager.py</span>
+<span class="sd">Modified from https://github.com/volcengine/verl/blob/v0.7.1/verl/utils/checkpoint/fsdp_checkpoint_manager.py</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
@@ -1069,6 +1069,19 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">latest_extra_state_save_step</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">latest_hf_model_save_step</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">latest_tokenizer_save_step</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_latest_registered_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">previous_saved_paths</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="o">==</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">previous_saved_paths</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+
+<div class="viewcode-block" id="FSDPCheckpointManager.register_checkpoint">
+<a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.fsdp_checkpoint_manager.html#trinity.trainer.verl.fsdp_checkpoint_manager.FSDPCheckpointManager.register_checkpoint">[文档]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">register_checkpoint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_ckpt_to_keep</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_latest_registered_checkpoint</span><span class="p">(</span><span class="n">new_path</span><span class="p">):</span>
+            <span class="k">return</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">register_checkpoint</span><span class="p">(</span><span class="n">new_path</span><span class="p">,</span> <span class="n">max_ckpt_to_keep</span><span class="p">)</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_upload_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">global_step</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
@@ -1414,16 +1427,16 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Modified from verl.utils.checkpoint.fsdp_checkpoint_manager.py:save_checkpoint</span>
 
-<span class="sd">        Saves the model checkpoint to disk, optionally uploads it to a remote Synchronizer,</span>
-<span class="sd">        and uses background threads to prevent blocking the main training loop.</span>
+<span class="sd">        Saves the model checkpoint to disk and uses background threads to prevent</span>
+<span class="sd">        blocking the main training loop.</span>
 
 <span class="sd">        Main improvements over the base class:</span>
 <span class="sd">        - Uses separate threads for saving model/optimizer/extras.</span>
-<span class="sd">        - Implements synchronization with a remote actor. If the model is not trained (`global_step == 0`) or continues from a breakpoint, `Synchonizer` will be notified and the model will not be saved.</span>
+<span class="sd">        - Registers background work with CheckpointMonitor so trainer-side coordination</span>
+<span class="sd">          can wait on state-dict and checkpoint completion.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            local_path (str): Local directory path to save the checkpoint.</span>
-<span class="sd">            hdfs_path (str, optional): HDFS path for saving the checkpoint (not implemented here).</span>
 <span class="sd">            global_step (int): Current training step.</span>
 <span class="sd">            max_ckpt_to_keep (int, optional): Maximum number of checkpoints to keep locally.</span>
 <span class="sd">            save_as_hf (bool): Whether to force save the model in Hugging Face format.</span>
@@ -1433,24 +1446,15 @@ window.runMermaid = runMermaid;</script>
 
         <span class="c1"># record the previous global step</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">previous_global_step</span> <span class="o">=</span> <span class="n">global_step</span>
-        <span class="n">local_path</span> <span class="o">=</span> <span class="n">local_mkdir_safe</span><span class="p">(</span><span class="n">local_path</span><span class="p">)</span>
 
-        <span class="c1"># remove previous local_path, only rank 0 should do this</span>
-        <span class="k">if</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span>
-            <span class="ow">and</span> <span class="n">max_ckpt_to_keep</span>
-            <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">max_ckpt_to_keep</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
-            <span class="ow">and</span> <span class="n">max_ckpt_to_keep</span> <span class="o">&gt;</span> <span class="mi">0</span>
-            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">previous_saved_paths</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">max_ckpt_to_keep</span>  <span class="c1"># type: ignore</span>
-            <span class="ow">and</span> <span class="n">local_path</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">previous_saved_paths</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># type: ignore</span>
-        <span class="p">):</span>  <span class="c1"># last step may save twice</span>
-            <span class="n">keep_start</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">previous_saved_paths</span><span class="p">)</span> <span class="o">-</span> <span class="n">max_ckpt_to_keep</span> <span class="o">+</span> <span class="mi">1</span>  <span class="c1"># type: ignore</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="s2">&quot;Checkpoint manager is removing previous checkpoints at &quot;</span>
-                <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">previous_saved_paths</span><span class="p">[:</span><span class="n">keep_start</span><span class="p">])</span>  <span class="c1"># type: ignore</span>
-            <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">remove_previous_save_local_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">previous_saved_paths</span><span class="p">[:</span><span class="n">keep_start</span><span class="p">])</span>  <span class="c1"># type: ignore</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">previous_saved_paths</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">previous_saved_paths</span><span class="p">[</span><span class="n">keep_start</span><span class="p">:]</span>  <span class="c1"># type: ignore</span>
+        <span class="n">skip_retention_rotation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_latest_registered_checkpoint</span><span class="p">(</span>
+            <span class="n">local_path</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">skip_retention_rotation</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ensure_checkpoint_capacity</span><span class="p">(</span><span class="n">max_ckpt_to_keep</span><span class="p">)</span>
+
+        <span class="n">local_path</span> <span class="o">=</span> <span class="n">local_mkdir_safe</span><span class="p">(</span><span class="n">local_path</span><span class="p">)</span>
 
         <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span>
 
@@ -1500,10 +1504,8 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">checkpoint_thread_count</span><span class="o">=</span><span class="n">checkpoint_thread_count</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="p">)</span>
-        <span class="k">if</span> <span class="p">(</span>
-            <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">previous_saved_paths</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">local_path</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">previous_saved_paths</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="p">):</span>  <span class="c1"># last step may save twice</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">previous_saved_paths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">local_path</span><span class="p">)</span></div>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">register_checkpoint</span><span class="p">(</span><span class="n">local_path</span><span class="p">,</span> <span class="n">max_ckpt_to_keep</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="FSDPCheckpointManager.wait_on_save_thread">

@@ -1213,11 +1213,13 @@ window.runMermaid = runMermaid;</script>
     <span class="n">use_remove_padding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">use_fused_kernels</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">fused_kernels_backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">use_prefix_grouper</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">use_tiled_mlp</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">tiled_mlp_shards</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Apply monkey patch to the models for ulysses sequence parallel, fused kernel, and tiled MLP.</span>
+<span class="sd">    Apply monkey patch to the models for ulysses sequence parallel, fused kernel, prefix grouper,</span>
+<span class="sd">    and tiled MLP.</span>
 
 <span class="sd">    In the end of this function forward function of the model is patched for fused kernel.</span>
 <span class="sd">    If the model is not supported with fused kernel, please return after patch.</span>
@@ -1233,6 +1235,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.models.transformers.monkey_patch</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
         <span class="n">_ulysses_flash_attention_forward</span><span class="p">,</span>
+        <span class="n">apply_prefix_grouper_patch</span><span class="p">,</span>
         <span class="n">patch_vlm_for_ulysses_input_slicing</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.import_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_trl_available</span>
@@ -1246,6 +1249,9 @@ window.runMermaid = runMermaid;</script>
 
         <span class="n">model_type</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;model_type&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="n">apply_tiled_mlp_monkey_patch</span><span class="p">(</span><span class="n">num_shards</span><span class="o">=</span><span class="n">tiled_mlp_shards</span><span class="p">,</span> <span class="n">model_type</span><span class="o">=</span><span class="n">model_type</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">use_prefix_grouper</span><span class="p">:</span>
+        <span class="n">apply_prefix_grouper_patch</span><span class="p">()</span>
 
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Replace _flash_attention_forward to _ulysses_flash_attention_forward&quot;&quot;&quot;</span>
     <span class="n">module</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="n">model</span><span class="o">.</span><span class="vm">__module__</span><span class="p">]</span>
@@ -1364,12 +1370,12 @@ window.runMermaid = runMermaid;</script>
                     <span class="p">)</span>
 
         <span class="c1"># Step 3: patch verl.utils.flops_counter</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.flops_counter</span><span class="w"> </span><span class="kn">import</span> <span class="n">ESTIMATE_FUNC</span><span class="p">,</span> <span class="n">_estimate_qwen2_flops</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.flops_counter</span><span class="w"> </span><span class="kn">import</span> <span class="n">ESTIMATE_FUNC</span><span class="p">,</span> <span class="n">_estimate_qwen3_vl_flops</span>
 
         <span class="n">ESTIMATE_FUNC</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
             <span class="p">{</span>
-                <span class="s2">&quot;qwen3_5&quot;</span><span class="p">:</span> <span class="n">_estimate_qwen2_flops</span><span class="p">,</span>
-                <span class="s2">&quot;qwen3_5_moe&quot;</span><span class="p">:</span> <span class="n">_estimate_qwen2_flops</span><span class="p">,</span>
+                <span class="s2">&quot;qwen3_5&quot;</span><span class="p">:</span> <span class="n">_estimate_qwen3_vl_flops</span><span class="p">,</span>
+                <span class="s2">&quot;qwen3_5_moe&quot;</span><span class="p">:</span> <span class="n">_estimate_qwen3_vl_flops</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="p">)</span>
 

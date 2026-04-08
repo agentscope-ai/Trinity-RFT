@@ -1396,6 +1396,26 @@ window.runMermaid = runMermaid;</script>
 
     <span class="k">return</span> <span class="n">micro_batches</span><span class="p">,</span> <span class="n">micro_bsz_idx</span></div>
 
+
+
+<span class="c1"># add rope_theta to hf config for backward compatibility, can be removed after verl is updated</span>
+<div class="viewcode-block" id="patch_rope_theta_in_hf_config">
+<a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.utils.html#trinity.trainer.verl.utils.patch_rope_theta_in_hf_config">[文档]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">patch_rope_theta_in_hf_config</span><span class="p">(</span><span class="n">hf_config</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hf_config</span><span class="p">,</span> <span class="s2">&quot;rope_theta&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hf_config</span><span class="p">,</span> <span class="s2">&quot;rope_parameters&quot;</span><span class="p">):</span>
+            <span class="n">rope_parameters</span> <span class="o">=</span> <span class="n">hf_config</span><span class="o">.</span><span class="n">rope_parameters</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hf_config</span><span class="p">,</span> <span class="s2">&quot;text_config&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span>
+            <span class="n">hf_config</span><span class="o">.</span><span class="n">text_config</span><span class="p">,</span> <span class="s2">&quot;rope_parameters&quot;</span>
+        <span class="p">):</span>
+            <span class="n">rope_parameters</span> <span class="o">=</span> <span class="n">hf_config</span><span class="o">.</span><span class="n">text_config</span><span class="o">.</span><span class="n">rope_parameters</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">rope_parameters</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="n">rope_theta</span> <span class="o">=</span> <span class="n">rope_parameters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rope_theta&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">rope_theta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">hf_config</span><span class="p">,</span> <span class="s2">&quot;rope_theta&quot;</span><span class="p">,</span> <span class="n">rope_theta</span><span class="p">)</span></div>
+
 </pre></div>
 
                 </article>
