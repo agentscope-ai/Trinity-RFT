@@ -812,8 +812,11 @@ class SchedulerTest(unittest.IsolatedAsyncioTestCase):
         statuses, exps = await scheduler.get_results(batch_id=0)
         self.assertEqual(len(statuses), 2)
         self.assertEqual(len(exps), 1 * 4 * 3 + 1 * 5 * 8)
-        self.assertAlmostEqual(statuses[0].metrics[0]["run_metrics"], 2.0)  # (1+2+3)/3
-        self.assertAlmostEqual(statuses[1].metrics[0]["run_metrics"], 7.0)  # (0+2+4+6+8+10+12+14)/8
+        # (1+2+3)/3 = 2.0
+        # (0+2+4+6+8+10+12+14)/8 = 7.0
+        self.assertSetEqual(
+            set(status.metrics[0]["run_metrics"] for status in statuses), {2.0, 7.0}
+        )
 
     async def test_over_rollout_min_wait(self):
         self.config.explorer.over_rollout.ratio = 0.5

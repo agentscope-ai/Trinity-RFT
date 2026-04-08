@@ -113,15 +113,6 @@ jobs:
           fi
         fi
 
-    - name: Convert report.json time to ms
-      working-directory: trinity-${{ github.run_id }}
-      if: env.tests_run == 'true' || failure()
-      run: |
-        REPORT=report.json
-        if [ -f "$REPORT" ]; then
-          jq '(.results.summary.start, .results.summary.stop) |= (. * 1000)' "$REPORT" > "$REPORT.tmp" && mv "$REPORT.tmp" "$REPORT"
-        fi
-
     - name: Clean checkpoint dir
       working-directory: trinity-${{ github.run_id }}/.github/workflows/docker
       if: always()
