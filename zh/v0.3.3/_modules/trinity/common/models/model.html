@@ -7,7 +7,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>trinity.common.models.model &#8212; Trinity-RFT 0.5.1 文档</title>
+    <title>trinity.common.models.model &#8212; Trinity-RFT 0.5.2 文档</title>
   
   
   
@@ -38,7 +38,7 @@
   <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../../../../_static/documentation_options.js?v=c79d47ac"></script>
+    <script src="../../../../_static/documentation_options.js?v=e72cdd47"></script>
     <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
     <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../../../../_static/scripts/sphinx-book-theme.js?v=fab101a9"></script>
@@ -484,7 +484,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="搜索" href="../../../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="zh-CN"/>
-  <meta name="docsearch:version" content="0.5.1" />
+  <meta name="docsearch:version" content="0.5.2" />
   </head>
   
   
@@ -565,8 +565,8 @@ window.runMermaid = runMermaid;</script>
       
     
     
-    <img src="../../../../_static/logo.svg" class="logo__image only-light" alt="Trinity-RFT 0.5.1 文档 - Home"/>
-    <img src="../../../../_static/logo.svg" class="logo__image only-dark pst-js-only" alt="Trinity-RFT 0.5.1 文档 - Home"/>
+    <img src="../../../../_static/logo.svg" class="logo__image only-light" alt="Trinity-RFT 0.5.2 文档 - Home"/>
+    <img src="../../../../_static/logo.svg" class="logo__image only-dark pst-js-only" alt="Trinity-RFT 0.5.2 文档 - Home"/>
   
   
 </a></div>
@@ -1187,20 +1187,14 @@ window.runMermaid = runMermaid;</script>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Prompt was truncated to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_prompt_tokens</span><span class="si">}</span><span class="s2"> tokens&quot;</span><span class="p">)</span>
 
             <span class="n">dummy_response</span> <span class="o">=</span> <span class="s2">&quot;[This experience is masked out due to overlong prompt]&quot;</span>
-            <span class="n">dummy_response_tokens</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">(</span>  <span class="c1"># type: ignore</span>
-                <span class="n">dummy_response</span><span class="p">,</span> <span class="n">truncation</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">return_tensors</span><span class="o">=</span><span class="s2">&quot;pt&quot;</span>
-            <span class="p">)[</span><span class="s2">&quot;input_ids&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-            <span class="n">dummy_response_tokens</span> <span class="o">=</span> <span class="n">dummy_response_tokens</span><span class="p">[</span>
-                <span class="p">:</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dummy_response_tokens</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_response_tokens</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
-            <span class="p">]</span>
 
-            <span class="n">token_ids</span> <span class="o">=</span> <span class="n">prompt_token_ids</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_prompt_tokens</span><span class="p">]</span> <span class="o">+</span> <span class="n">dummy_response_tokens</span>
+            <span class="n">token_ids</span> <span class="o">=</span> <span class="n">prompt_token_ids</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_prompt_tokens</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
             <span class="k">return</span> <span class="p">[</span>
                 <span class="n">Experience</span><span class="p">(</span>
                     <span class="n">tokens</span><span class="o">=</span><span class="n">token_ids</span><span class="p">,</span>
-                    <span class="n">logprobs</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dummy_response_tokens</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span>
-                    <span class="n">prompt_length</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">prompt_token_ids</span><span class="p">),</span>
-                    <span class="n">prompt_text</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">prompt_token_ids</span><span class="p">),</span>
+                    <span class="n">logprobs</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span>
+                    <span class="n">prompt_length</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_prompt_tokens</span><span class="p">,</span>  <span class="c1"># Use truncated length</span>
+                    <span class="n">prompt_text</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">token_ids</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span>
                     <span class="n">response_text</span><span class="o">=</span><span class="n">dummy_response</span><span class="p">,</span>
                     <span class="n">truncate_status</span><span class="o">=</span><span class="s2">&quot;prompt_truncated&quot;</span><span class="p">,</span>
                     <span class="n">reward</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
