@@ -1,0 +1,987 @@
+
+<!DOCTYPE html>
+
+
+<html lang="zh-CN" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>监控指标解释 &#8212; Trinity-RFT 0.5.2 文档</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/sphinx-book-theme.css?v=3c74b3bc" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=e72cdd47"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/sphinx-book-theme.js?v=fab101a9"></script>
+    <script src="../_static/translations.js?v=beaddf03"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'tutorial/metrics_reference';</script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+    <link rel="next" title="快速上手" href="example_reasoning_basic.html" />
+    <link rel="prev" title="与 veRL 对齐训练配置" href="align_with_verl.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="zh-CN"/>
+  <meta name="docsearch:version" content="0.5.2" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">跳转至主要内容</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>回到顶部</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="版本警告"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/logo.svg" class="logo__image only-light" alt="Trinity-RFT 0.5.2 文档 - Home"/>
+    <img src="../_static/logo.svg" class="logo__image only-dark pst-js-only" alt="Trinity-RFT 0.5.2 文档 - Home"/>
+  
+  
+</a></div>
+        <div class="sidebar-primary-item">
+<nav class="bd-links bd-docs-nav">
+    <div class="bd-toc-item navbar-nav">
+        <ul class="nav bd-sidenav">
+      <li class="toctree-l1 has-children">
+        <details>
+          <summary>
+            <p class="caption" aria-level="2" role="heading" style="text-align: center;">
+              <span class="fa fa-book"></span>
+             <b>v0.5.2</b>
+            </p>
+          </summary>
+          <ul>
+            <li class="toctree-l2  "><a class="reference" href="../../main/tutorial/metrics_reference.html">latest</a></li>
+            <li class="toctree-l2 current "><a class="reference" href="metrics_reference.html">v0.5.2</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../v0.5.1/tutorial/metrics_reference.html">v0.5.1</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../v0.5.0/tutorial/metrics_reference.html">v0.5.0</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../v0.4.1/index.html">v0.4.1</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../v0.4.0/index.html">v0.4.0</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../v0.3.3/index.html">v0.3.3</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../v0.3.2/index.html">v0.3.2</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../v0.3.1/index.html">v0.3.1</a></li>
+          </ul>
+        </details>
+      </li>
+    </ul>
+    </div>
+</nav>
+</div>
+        <div class="sidebar-primary-item">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="搜索" aria-label="搜索" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">搜索</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button></div>
+        <div class="sidebar-primary-item"><nav class="bd-links bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        <p aria-level="2" class="caption" role="heading"><span class="caption-text">教程</span></p>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="trinity_installation.html">安装指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="develop_overview.html">开发者指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="develop_workflow.html">Workflow 开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="develop_algorithm.html">Algorithm 开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_mix_algo.html">Algorithm 进阶开发</a></li>
+<li class="toctree-l1"><a class="reference internal" href="develop_operator.html">Operator 开发指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="develop_selector.html">🧪 实验性功能：任务选择器</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trinity_configs.html">参数配置指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="trinity_gpu_configs.html">GPU 资源相关配置指南</a></li>
+<li class="toctree-l1"><a class="reference internal" href="synchronizer.html">Synchronizer 介绍</a></li>
+<li class="toctree-l1"><a class="reference internal" href="align_with_verl.html">与 veRL 对齐训练配置</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">监控指标解释</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">样例</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="example_reasoning_basic.html">快速上手</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_reasoning_advanced.html">Off-Policy RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_async_mode.html">异步 RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_multi_turn.html">多轮对话拼接任务</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_step_wise.html">通用多轮 RFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_react.html">ReAct Agent 训练</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_search_email.html">邮件搜索例子</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_dpo.html">离线 DPO 和 SFT</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_tinker_backend.html">Tinker 后端</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_megatron.html">Megatron-LM 支持</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_data_functionalities.html">数据处理</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_dataset_perspective.html">样例总览</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">常见问题</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="faq.html">常见问题（FAQ）</a></li>
+</ul>
+<p aria-level="2" class="caption" role="heading"><span class="caption-text">API Reference</span></p>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="../api_reference.html">API Reference</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.buffer.html">trinity.buffer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.operators.html">trinity.buffer.operators package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.operators.filters.html">trinity.buffer.operators.filters package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.operators.mappers.html">trinity.buffer.operators.mappers package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.operators.data_juicer_operator.html">trinity.buffer.operators.data_juicer_operator module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.operators.experience_operator.html">trinity.buffer.operators.experience_operator module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.pipelines.html">trinity.buffer.pipelines package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.pipelines.experience_pipeline.html">trinity.buffer.pipelines.experience_pipeline module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.pipelines.task_pipeline.html">trinity.buffer.pipelines.task_pipeline module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.reader.html">trinity.buffer.reader package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.reader.file_reader.html">trinity.buffer.reader.file_reader module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.reader.queue_reader.html">trinity.buffer.reader.queue_reader module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.reader.sql_reader.html">trinity.buffer.reader.sql_reader module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.schema.html">trinity.buffer.schema package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.schema.formatter.html">trinity.buffer.schema.formatter module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.schema.sql_schema.html">trinity.buffer.schema.sql_schema module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.selector.html">trinity.buffer.selector package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.selector.difficulty_estimator.html">trinity.buffer.selector.difficulty_estimator module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.selector.selector.html">trinity.buffer.selector.selector module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.storage.html">trinity.buffer.storage package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.storage.file.html">trinity.buffer.storage.file module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.storage.queue.html">trinity.buffer.storage.queue module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.storage.sql.html">trinity.buffer.storage.sql module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.buffer.writer.html">trinity.buffer.writer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.writer.file_writer.html">trinity.buffer.writer.file_writer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.writer.queue_writer.html">trinity.buffer.writer.queue_writer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.buffer.writer.sql_writer.html">trinity.buffer.writer.sql_writer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.buffer.html">trinity.buffer.buffer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.buffer_reader.html">trinity.buffer.buffer_reader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.buffer_writer.html">trinity.buffer.buffer_writer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.task_scheduler.html">trinity.buffer.task_scheduler module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.utils.html">trinity.buffer.utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.buffer.viewer.html">trinity.buffer.viewer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.explorer.html">trinity.explorer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.explorer.proxy.html">trinity.explorer.proxy package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.explorer.proxy.app.html">trinity.explorer.proxy.app module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.explorer.proxy.client.html">trinity.explorer.proxy.client module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.explorer.proxy.recorder.html">trinity.explorer.proxy.recorder module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.explorer.proxy.service.html">trinity.explorer.proxy.service module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.explorer.explorer.html">trinity.explorer.explorer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.explorer.scheduler.html">trinity.explorer.scheduler module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.explorer.workflow_runner.html">trinity.explorer.workflow_runner module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.trainer.html">trinity.trainer package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.trainer.tinker.html">trinity.trainer.tinker package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.tinker.tinker_trainer.html">trinity.trainer.tinker.tinker_trainer module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.tinker.utils.html">trinity.trainer.tinker.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.trainer.verl.html">trinity.trainer.verl package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.dp_actor.html">trinity.trainer.verl.dp_actor module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.fsdp_checkpoint_manager.html">trinity.trainer.verl.fsdp_checkpoint_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.fsdp_workers.html">trinity.trainer.verl.fsdp_workers module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.megatron_actor.html">trinity.trainer.verl.megatron_actor module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.megatron_checkpoint_manager.html">trinity.trainer.verl.megatron_checkpoint_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.megatron_workers.html">trinity.trainer.verl.megatron_workers module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.monkey_patch.html">trinity.trainer.verl.monkey_patch module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.utils.html">trinity.trainer.verl.utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.verl_config.html">trinity.trainer.verl.verl_config module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.trainer.verl.verl_trainer.html">trinity.trainer.verl.verl_trainer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.trainer.trainer.html">trinity.trainer.trainer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.html">trinity.algorithm package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.html">trinity.algorithm.advantage_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.advantage_fn.html">trinity.algorithm.advantage_fn.advantage_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.asymre_advantage.html">trinity.algorithm.advantage_fn.asymre_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.clipb_advantage.html">trinity.algorithm.advantage_fn.clipb_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.clipv_advantage.html">trinity.algorithm.advantage_fn.clipv_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.grpo_advantage.html">trinity.algorithm.advantage_fn.grpo_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.jsd_advantage.html">trinity.algorithm.advantage_fn.jsd_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.multi_step_grpo_advantage.html">trinity.algorithm.advantage_fn.multi_step_grpo_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.on_policy_distill_advantage.html">trinity.algorithm.advantage_fn.on_policy_distill_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.opmd_advantage.html">trinity.algorithm.advantage_fn.opmd_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.ppo_advantage.html">trinity.algorithm.advantage_fn.ppo_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.rec_advantage.html">trinity.algorithm.advantage_fn.rec_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.reinforce_advantage.html">trinity.algorithm.advantage_fn.reinforce_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.reinforce_plus_plus_advantage.html">trinity.algorithm.advantage_fn.reinforce_plus_plus_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.remax_advantage.html">trinity.algorithm.advantage_fn.remax_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.rloo_advantage.html">trinity.algorithm.advantage_fn.rloo_advantage module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.entropy_loss_fn.html">trinity.algorithm.entropy_loss_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.entropy_loss_fn.entropy_loss_fn.html">trinity.algorithm.entropy_loss_fn.entropy_loss_fn module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.kl_fn.html">trinity.algorithm.kl_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.kl_fn.kl_fn.html">trinity.algorithm.kl_fn.kl_fn module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.html">trinity.algorithm.policy_loss_fn package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.chord_policy_loss.html">trinity.algorithm.policy_loss_fn.chord_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.cispo_policy_loss.html">trinity.algorithm.policy_loss_fn.cispo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.dpo_loss.html">trinity.algorithm.policy_loss_fn.dpo_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.gspo_policy_loss.html">trinity.algorithm.policy_loss_fn.gspo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.importance_sampling_policy_loss.html">trinity.algorithm.policy_loss_fn.importance_sampling_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.mix_policy_loss.html">trinity.algorithm.policy_loss_fn.mix_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.opmd_policy_loss.html">trinity.algorithm.policy_loss_fn.opmd_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.policy_loss_fn.html">trinity.algorithm.policy_loss_fn.policy_loss_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.ppo_policy_loss.html">trinity.algorithm.policy_loss_fn.ppo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.rec_policy_loss.html">trinity.algorithm.policy_loss_fn.rec_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.sapo_policy_loss.html">trinity.algorithm.policy_loss_fn.sapo_policy_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.sft_loss.html">trinity.algorithm.policy_loss_fn.sft_loss module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.sppo_loss_fn.html">trinity.algorithm.policy_loss_fn.sppo_loss_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.policy_loss_fn.topr_policy_loss.html">trinity.algorithm.policy_loss_fn.topr_policy_loss module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.algorithm.sample_strategy.html">trinity.algorithm.sample_strategy package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.sample_strategy.mix_sample_strategy.html">trinity.algorithm.sample_strategy.mix_sample_strategy module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.sample_strategy.sample_strategy.html">trinity.algorithm.sample_strategy.sample_strategy module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.sample_strategy.utils.html">trinity.algorithm.sample_strategy.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.algorithm.algorithm.html">trinity.algorithm.algorithm module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.algorithm.key_mapper.html">trinity.algorithm.key_mapper module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.algorithm.utils.html">trinity.algorithm.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.manager.html">trinity.manager package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.manager.config_registry.html">trinity.manager.config_registry package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.algorithm_config_manager.html">trinity.manager.config_registry.algorithm_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.buffer_config_manager.html">trinity.manager.config_registry.buffer_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.config_registry.html">trinity.manager.config_registry.config_registry module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.explorer_config_manager.html">trinity.manager.config_registry.explorer_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.model_config_manager.html">trinity.manager.config_registry.model_config_manager module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.manager.config_registry.trainer_config_manager.html">trinity.manager.config_registry.trainer_config_manager module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.manager.checkpoint_converter.html">trinity.manager.checkpoint_converter module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.manager.config_manager.html">trinity.manager.config_manager module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.manager.log_manager.html">trinity.manager.log_manager module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.manager.state_manager.html">trinity.manager.state_manager module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.manager.synchronizer.html">trinity.manager.synchronizer module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.common.html">trinity.common package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.common.models.html">trinity.common.models package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.vllm_patch.html">trinity.common.models.vllm_patch package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.external_model.html">trinity.common.models.external_model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.mm_utils.html">trinity.common.models.mm_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.model.html">trinity.common.models.model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.tinker_model.html">trinity.common.models.tinker_model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.utils.html">trinity.common.models.utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.vllm_model.html">trinity.common.models.vllm_model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.vllm_worker.html">trinity.common.models.vllm_worker module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.common.patch.html">trinity.common.patch package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.patch.glm4v.html">trinity.common.patch.glm4v module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.patch.kimi.html">trinity.common.patch.kimi module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.patch.qwen3_5.html">trinity.common.patch.qwen3_5 module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.common.rewards.html">trinity.common.rewards package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.accuracy_reward.html">trinity.common.rewards.accuracy_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.agents_reward.html">trinity.common.rewards.agents_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.countdown_reward.html">trinity.common.rewards.countdown_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.dapo_reward.html">trinity.common.rewards.dapo_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.eval_utils.html">trinity.common.rewards.eval_utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.format_reward.html">trinity.common.rewards.format_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.human_reward.html">trinity.common.rewards.human_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.math_reward.html">trinity.common.rewards.math_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.naive_dapo_score.html">trinity.common.rewards.naive_dapo_score module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.qwen25_eval.html">trinity.common.rewards.qwen25_eval module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.reward_fn.html">trinity.common.rewards.reward_fn module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.tool_reward.html">trinity.common.rewards.tool_reward module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.rewards.utils.html">trinity.common.rewards.utils module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.common.workflows.html">trinity.common.workflows package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.agentscope.html">trinity.common.workflows.agentscope package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.agentscope_workflow.html">trinity.common.workflows.agentscope_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.customized_math_workflows.html">trinity.common.workflows.customized_math_workflows module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.customized_toolcall_workflows.html">trinity.common.workflows.customized_toolcall_workflows module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.eval_workflow.html">trinity.common.workflows.eval_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.math_rm_workflow.html">trinity.common.workflows.math_rm_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.math_ruler_workflow.html">trinity.common.workflows.math_ruler_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.math_trainable_ruler_workflow.html">trinity.common.workflows.math_trainable_ruler_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.on_policy_distill_workflow.html">trinity.common.workflows.on_policy_distill_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.rubric_judge_workflow.html">trinity.common.workflows.rubric_judge_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.simple_mm_workflow.html">trinity.common.workflows.simple_mm_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.step_wise_workflow.html">trinity.common.workflows.step_wise_workflow module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.workflows.workflow.html">trinity.common.workflows.workflow module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.common.config.html">trinity.common.config module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.common.config_validator.html">trinity.common.config_validator module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.common.constants.html">trinity.common.constants module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.common.experience.html">trinity.common.experience module</a></li>
+</ul>
+</details></li>
+<li class="toctree-l2 has-children"><a class="reference internal" href="../build_api/trinity.utils.html">trinity.utils package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.annotations.html">trinity.utils.annotations module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.distributed.html">trinity.utils.distributed module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.dlc_utils.html">trinity.utils.dlc_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.log.html">trinity.utils.log module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.lora_utils.html">trinity.utils.lora_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.monitor.html">trinity.utils.monitor module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.plugin_loader.html">trinity.utils.plugin_loader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.registry.html">trinity.utils.registry module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.timer.html">trinity.utils.timer module</a></li>
+</ul>
+</details></li>
+</ul>
+</details></li>
+</ul>
+
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><button class="sidebar-toggle primary-toggle btn btn-sm" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</button></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+<div class="header-extra-switchers" style="display:inline-flex; gap:.25rem; margin-left:.5rem; align-items:center;">
+  <button id="lang-toggle-btn" class="btn btn-sm btn-outline-secondary" title="">
+  <span id="lang-toggle-label"></span>
+</button>
+<script>
+(function () {
+  const btn = document.getElementById('lang-toggle-btn');
+  const lab = document.getElementById('lang-toggle-label');
+  if (!btn || !lab) return;
+
+  const m = location.pathname.match(/^(.*\/)(en|zh)(\/.*)$/);
+
+  const cur = m ? m[2] : 'en';
+  if (cur === 'en') {
+    lab.textContent = '中';
+    btn.title = '切换到中文';
+  } else {
+    lab.textContent = 'EN';
+    btn.title = 'Switch to English';
+  }
+
+  const targetHref = (function () {
+    if (!m) return location.href;
+    const other = cur === 'en' ? 'zh' : 'en';
+    const suffix = m[3] || '/';
+    return m[1] + other + suffix + location.search + location.hash;
+  })();
+
+  btn.addEventListener('click', function () {
+    location.href = targetHref;
+  });
+})();
+</script>
+</div>
+
+
+
+<div class="article-header-buttons">
+
+
+<a href="https://github.com/agentscope-ai/Trinity-RFT" target="_blank"
+   class="btn btn-sm btn-source-repository-button"
+   title="源码库"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="下载此页面">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="../_sources/tutorial/metrics_reference.md" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="下载源文件"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.md</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="列印成 PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button pst-navbar-icon"
+  title="全屏模式"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="亮色"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="暗色"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button>
+
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="搜索" aria-label="搜索" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+<button class="sidebar-toggle secondary-toggle btn btn-sm pst-navbar-icon" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>监控指标解释</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+            <div>
+                <h2> 目录 </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">指标命名规范</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">指标类别</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#explorer">Explorer 相关指标</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#rollout-rollout">Rollout 指标（<code class="docutils literal notranslate"><span class="pre">rollout/</span></code>）</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#eval-bench">评估指标（<code class="docutils literal notranslate"><span class="pre">eval/</span></code>）和基准测试指标（<code class="docutils literal notranslate"><span class="pre">bench/</span></code>）</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#time">时间指标（<code class="docutils literal notranslate"><span class="pre">time/</span></code>）</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trainer">Trainer 相关指标</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">数据处理指标</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#experience-pipeline-experience-pipeline-time-experience-pipeline">Experience Pipeline 相关指标（<code class="docutils literal notranslate"><span class="pre">experience_pipeline/</span></code> 和 <code class="docutils literal notranslate"><span class="pre">time/experience_pipeline/</span></code>）</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#sample">采样相关指标（<code class="docutils literal notranslate"><span class="pre">sample/</span></code>）</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="id1">
+<h1>监控指标解释<a class="headerlink" href="#id1" title="Link to this heading">#</a></h1>
+<p>本文档解释了 Trinity-RFT 中用于跟踪探索、评估和训练进度的指标类别。</p>
+<section id="id2">
+<h2>指标命名规范<a class="headerlink" href="#id2" title="Link to this heading">#</a></h2>
+<p>大多数指标遵循分层命名规范：<code class="docutils literal notranslate"><span class="pre">{category}/{taskset_name}/{metric_name}/{statistic}</span></code></p>
+<ul class="simple">
+<li><p><strong>Category（类别）</strong>：广泛的功能领域（rollout、eval、time、actor、critic 等）</p></li>
+<li><p><strong>Taskset name（任务集名称）</strong>：使用的任务集名称，仅适用于评估阶段的指标</p></li>
+<li><p><strong>Metric name（指标名称）</strong>：正在测量的具体指标</p></li>
+<li><p><strong>Statistic（统计量）</strong>：统计指标（mean、max、min、std 等，如适用）</p></li>
+</ul>
+</section>
+<section id="id3">
+<h2>指标类别<a class="headerlink" href="#id3" title="Link to this heading">#</a></h2>
+<p>以下内容按指标来源（生成位置）和指标前缀（指标名称的第一部分）对指标进行分类。</p>
+<section id="explorer">
+<h3>Explorer 相关指标<a class="headerlink" href="#explorer" title="Link to this heading">#</a></h3>
+<p>Explorer 相关的指标发生在模型生成响应的 rollout 阶段，包括 rollout 指标（<code class="docutils literal notranslate"><span class="pre">rollout/</span></code>）、评估指标（<code class="docutils literal notranslate"><span class="pre">eval/</span></code>）和一些时间指标（<code class="docutils literal notranslate"><span class="pre">time/</span></code>）。</p>
+<section id="rollout-rollout">
+<h4>Rollout 指标（<code class="docutils literal notranslate"><span class="pre">rollout/</span></code>）<a class="headerlink" href="#rollout-rollout" title="Link to this heading">#</a></h4>
+<p>Rollout 指标跟踪模型生成响应的 rollout 阶段的性能。</p>
+<ul class="simple">
+<li><p><strong>格式</strong>：<code class="docutils literal notranslate"><span class="pre">rollout/{metric_name}/{statistic}</span></code></p></li>
+<li><p><strong>示例</strong>：</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">rollout/accuracy/mean</span></code>：生成响应的平均准确率</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rollout/format_score/mean</span></code>：平均格式正确性分数</p></li>
+</ul>
+</li>
+</ul>
+<p><strong>指标计算过程</strong>：</p>
+<p>考虑一个包含 <code class="docutils literal notranslate"><span class="pre">batch_size</span></code> 个任务的探索步骤，其中每个任务有 <code class="docutils literal notranslate"><span class="pre">repeat_times</span></code> 次运行。Rollout 指标（例如，<code class="docutils literal notranslate"><span class="pre">rollout/</span></code>）在不同级别的计算过程如下：</p>
+<ul class="simple">
+<li><p>从<em>Experiences</em>到<em>Run 级别</em>（仅对 <code class="docutils literal notranslate"><span class="pre">can_repeat=False</span></code> 的 workflows 有效）：在 <code class="docutils literal notranslate"><span class="pre">calculate_run_level_metrics</span></code> 函数中，在每次 run 生成的所有 experiences 中求平均得到 run 级别指标。这通常是为了适应通用多轮场景，其中单个 run 可能产生多个 experiences。</p></li>
+<li><p>从<em>Run 级别</em>到<em>Task 级别</em>：在 <code class="docutils literal notranslate"><span class="pre">calculate_task_level_metrics</span></code> 函数中，指标跨同一任务的 <code class="docutils literal notranslate"><span class="pre">repeat_times</span></code> 次运行聚合。例如，<code class="docutils literal notranslate"><span class="pre">rollout/accuracy</span></code> 是该任务所有运行的平均准确率。</p></li>
+<li><p>从<em>Task 级别</em>到<em>Step 级别</em>：在 <code class="docutils literal notranslate"><span class="pre">gather_metrics</span></code> 函数中，指标跨步骤中所有任务聚合。例如，<code class="docutils literal notranslate"><span class="pre">rollout/accuracy/mean</span></code>、<code class="docutils literal notranslate"><span class="pre">rollout/accuracy/max</span></code>、<code class="docutils literal notranslate"><span class="pre">rollout/accuracy/min</span></code> 分别是步骤中所有任务的准确率（<code class="docutils literal notranslate"><span class="pre">rollout/accuracy</span></code>）的平均值、最大值和最小值。</p></li>
+</ul>
+<p>以下图表说明了 rollout 指标的计算过程：</p>
+<div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>graph TD
+    subgraph Step[&quot;Batch_size=3 Tasks&quot;]
+        subgraph Task1[&quot;Task 1 (repeat_times=2)&quot;]
+            Run1_1[&quot;Run 1&lt;br/&gt;accuracy: 0.8&quot;]
+            Run1_2[&quot;Run 2&lt;br/&gt;accuracy: 0.9&quot;]
+            Run1_1 --&gt; Task1_Metric[&quot;rollout/accuracy&lt;br/&gt;= 0.85&quot;]
+            Run1_2 --&gt; Task1_Metric
+        end
+
+        subgraph Task2[&quot;Task 2 (repeat_times=2)&quot;]
+            Run2_1[&quot;Run 1&lt;br/&gt;accuracy: 0.6&quot;]
+            Run2_2[&quot;Run 2&lt;br/&gt;accuracy: 0.9&quot;]
+            Run2_1 --&gt; Task2_Metric[&quot;rollout/accuracy&lt;br/&gt;= 0.75&quot;]
+            Run2_2 --&gt; Task2_Metric
+        end
+
+        subgraph TaskN[&quot;Task 3 (repeat_times=2)&quot;]
+            Run3_1[&quot;Run 1&lt;br/&gt;accuracy: 0.95&quot;]
+            Run3_2[&quot;Run 2&lt;br/&gt;accuracy: 0.85&quot;]
+            Run3_1 --&gt; Task3_Metric[&quot;rollout/accuracy&lt;br/&gt;= 0.9&quot;]
+            Run3_2 --&gt; Task3_Metric
+        end
+
+        Task1_Metric --&gt; Step_Metrics[&quot;Step Level Metrics&lt;br/&gt;rollout/accuracy/mean=0.83&lt;br/&gt;rollout/accuracy/max=0.9&lt;br/&gt;rollout/accuracy/min=0.75&quot;]
+        Task2_Metric --&gt; Step_Metrics
+        Task3_Metric --&gt; Step_Metrics
+    end
+</pre></div>
+</div>
+</section>
+<section id="eval-bench">
+<h4>评估指标（<code class="docutils literal notranslate"><span class="pre">eval/</span></code>）和基准测试指标（<code class="docutils literal notranslate"><span class="pre">bench/</span></code>）<a class="headerlink" href="#eval-bench" title="Link to this heading">#</a></h4>
+<p>评估指标衡量模型在保留的评估任务上的性能。这些指标在评估阶段的每次运行期间计算。</p>
+<ul class="simple">
+<li><p><strong>格式</strong>：<code class="docutils literal notranslate"><span class="pre">eval/{task_name}/{metric_name}/{statistic}</span></code> 或 <code class="docutils literal notranslate"><span class="pre">bench/{task_name}/{metric_name}/{statistic}</span></code></p></li>
+<li><p><strong>示例</strong>：</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">eval/gsm8k-eval/accuracy/mean&#64;4</span></code>：跨 repeat_times=4 次运行的平均准确率</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">bench/gsm8k-eval/accuracy/best&#64;4</span></code>：跨 repeat_times=4 次运行的最佳准确率值</p></li>
+</ul>
+</li>
+<li><p><strong>注意</strong>：</p>
+<ul>
+<li><p>Eval 和 bench 指标的计算方式相同，唯一的区别是指标名称的前缀。</p></li>
+<li><p>默认情况下，只返回指标的<em>平均值</em>。如果你想返回详细统计信息，可以在配置中将 <code class="docutils literal notranslate"><span class="pre">monitor.detailed_stats</span></code> 设置为 <code class="docutils literal notranslate"><span class="pre">True</span></code>。</p></li>
+</ul>
+</li>
+</ul>
+<p><strong>指标计算过程</strong>：</p>
+<p>考虑一个包含 <code class="docutils literal notranslate"><span class="pre">len(eval_taskset)</span></code> 个任务的评估步骤，其中每个任务有 <code class="docutils literal notranslate"><span class="pre">repeat_times</span></code> 次运行。评估指标（例如，<code class="docutils literal notranslate"><span class="pre">eval/</span></code>、<code class="docutils literal notranslate"><span class="pre">bench/</span></code>）在不同级别计算和聚合：</p>
+<ul class="simple">
+<li><p>从<em>Experiences</em>到<em>Run 级别</em>（仅对 <code class="docutils literal notranslate"><span class="pre">can_repeat=False</span></code> 的 workflows 有效）：在 <code class="docutils literal notranslate"><span class="pre">calculate_run_level_metrics</span></code> 函数中，在每次 run 生成的所有 experiences 中求平均得到 run 级别指标。这通常是为了适应通用多轮场景，其中单个 run 可能产生多个 experiences。</p></li>
+<li><p>从<em>Run 级别</em>到<em>Task 级别</em>：在 <code class="docutils literal notranslate"><span class="pre">calculate_task_level_metrics</span></code> 函数中，指标跨同一任务的 <code class="docutils literal notranslate"><span class="pre">repeat_times</span></code> 次运行聚合。例如，<code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy/mean&#64;2</span></code> 是该任务所有运行的平均准确率。</p></li>
+<li><p>从<em>Task 级别</em>到<em>Step 级别</em>：在 <code class="docutils literal notranslate"><span class="pre">gather_eval_metrics</span></code> 函数中，指标跨步骤中所有任务聚合。例如，<code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy/mean&#64;2</span></code>、<code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy/std&#64;2</span></code>、<code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy/best&#64;2</span></code>、<code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy/worst&#64;2</span></code> 分别是步骤中所有任务的准确率（<code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy</span></code>）的平均值、标准差、最佳值和最差值。</p></li>
+</ul>
+<p>以下图表说明了在包含三个任务的虚拟数据集上评估指标的计算过程。默认情况下，报告所有评估任务中指标的 <code class="docutils literal notranslate"><span class="pre">mean&#64;k</span></code>、<code class="docutils literal notranslate"><span class="pre">std&#64;k</span></code>、<code class="docutils literal notranslate"><span class="pre">best&#64;k</span></code>、<code class="docutils literal notranslate"><span class="pre">worst&#64;k</span></code>。你可以在配置中将 <code class="docutils literal notranslate"><span class="pre">monitor.detailed_stats</span></code> 设置为 <code class="docutils literal notranslate"><span class="pre">True</span></code> 以返回详细统计信息。</p>
+<div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>graph TD
+    subgraph Step[&quot;len(eval_taskset)=3 Tasks&quot;]
+        subgraph Task1[&quot;Task 1 (repeat_times=2)&quot;]
+            Run1_1[&quot;Run 1&lt;br/&gt;accuracy: 0.8&quot;]
+            Run1_2[&quot;Run 2&lt;br/&gt;accuracy: 0.9&quot;]
+            Run1_1 --&gt; Task1_Metric[&quot;eval/dummy/accuracy/mean@2=0.85&lt;br/&gt;eval/dummy/accuracy/std@2=0.05&quot;]
+            Run1_2 --&gt; Task1_Metric
+        end
+
+        subgraph Task2[&quot;Task 2 (repeat_times=2)&quot;]
+            Run2_1[&quot;Run 1&lt;br/&gt;accuracy: 0.6&quot;]
+            Run2_2[&quot;Run 2&lt;br/&gt;accuracy: 0.9&quot;]
+            Run2_1 --&gt; Task2_Metric[&quot;eval/dummy/accuracy/mean@2=0.75&lt;br/&gt;eval/dummy/accuracy/std@2=0.15&quot;]
+            Run2_2 --&gt; Task2_Metric
+        end
+
+        subgraph TaskN[&quot;Task 3 (repeat_times=2)&quot;]
+            Run3_1[&quot;Run 1&lt;br/&gt;accuracy: 0.95&quot;]
+            Run3_2[&quot;Run 2&lt;br/&gt;accuracy: 0.85&quot;]
+            Run3_1 --&gt; Task3_Metric[&quot;eval/dummy/accuracy/mean@2=0.9&lt;br/&gt;eval/dummy/accuracy/std@2=0.05&quot;]
+            Run3_2 --&gt; Task3_Metric
+        end
+
+        Task1_Metric --&gt; Step_Metrics[&quot;Step Level Metrics&lt;br/&gt;eval/dummy/accuracy/mean@2=0.83&lt;br/&gt;eval/dummy/accuracy/std@2=0.083&quot;]
+        Task2_Metric --&gt; Step_Metrics
+        Task3_Metric --&gt; Step_Metrics
+    end
+</pre></div>
+</div>
+<p>当你将 <code class="docutils literal notranslate"><span class="pre">monitor.detailed_stats</span></code> 设置为 <code class="docutils literal notranslate"><span class="pre">True</span></code> 时，你会得到详细的统计信息，包括 mean、std、min、max，例如下面图表中给出的一些实例：</p>
+<div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>graph TD
+    subgraph Step_Metrics_Summary[&quot;Detailed Statistics&quot;]
+        Stat1[&quot;eval/dummy/accuracy/mean@2/mean=0.83&lt;br/&gt;eval/dummy/accuracy/mean@2/std=0.062&lt;br/&gt;eval/dummy/accuracy/mean@2/max=0.9&lt;br/&gt;eval/dummy/accuracy/mean@2/min=0.75&quot;]
+        Stat2[&quot;eval/dummy/accuracy/std@2/mean=0.083&lt;br/&gt;eval/dummy/accuracy/std@2/std=0.047&lt;br/&gt;eval/dummy/accuracy/std@2/max=0.15&lt;br/&gt;eval/dummy/accuracy/std@2/min=0.05&quot;]
+        Step_Metrics --&gt; Stat1
+        Step_Metrics --&gt; Stat2
+    end
+</pre></div>
+</div>
+</section>
+<section id="time">
+<h4>时间指标（<code class="docutils literal notranslate"><span class="pre">time/</span></code>）<a class="headerlink" href="#time" title="Link to this heading">#</a></h4>
+<p>时间指标测量整个过程中各种操作的执行持续时间。</p>
+<ul class="simple">
+<li><p><strong>格式</strong>：<code class="docutils literal notranslate"><span class="pre">time/{operation_name}</span></code></p></li>
+<li><p><strong>示例</strong>：</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">time/eval</span></code>：从提交评估任务开始到评估阶段结束的时间；此持续时间包括评估任务和一些 rollout 任务。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">time/wait_explore_step</span></code>：等待一次 rollout 步骤完成的时间。</p></li>
+</ul>
+</li>
+</ul>
+<p><strong>注意</strong>：</p>
+<ul class="simple">
+<li><p>由于 rollout 阶段的异步性质，时间测量的结果可能不太准确，但仍然可以用于监控整体训练进度。</p></li>
+<li><p>除非特殊说明，时间指标以秒为单位。</p></li>
+<li><p>一些训练操作还报告每个 token 的时间指标，前缀为 <code class="docutils literal notranslate"><span class="pre">timing_per_token_ms/</span></code>（例如，<code class="docutils literal notranslate"><span class="pre">timing_per_token_ms/update_actor</span></code>、<code class="docutils literal notranslate"><span class="pre">timing_per_token_ms/update_critic</span></code>、<code class="docutils literal notranslate"><span class="pre">timing_per_token_ms/adv</span></code>、<code class="docutils literal notranslate"><span class="pre">timing_per_token_ms/values</span></code>）。这些指标通过处理的 token 数量对执行时间进行归一化，提供独立于批次大小的效率测量。</p></li>
+</ul>
+</section>
+</section>
+<section id="trainer">
+<h3>Trainer 相关指标<a class="headerlink" href="#trainer" title="Link to this heading">#</a></h3>
+<p>此类别包括跟踪 actor 模型（<code class="docutils literal notranslate"><span class="pre">actor/</span></code>）和 critic 模型（<code class="docutils literal notranslate"><span class="pre">critic/</span></code>）的训练动态的指标，以及一些性能指标（<code class="docutils literal notranslate"><span class="pre">perf/</span></code>、<code class="docutils literal notranslate"><span class="pre">global_seqlen/</span></code>、<code class="docutils literal notranslate"><span class="pre">response_length/</span></code>、<code class="docutils literal notranslate"><span class="pre">prompt_length/</span></code>、<code class="docutils literal notranslate"><span class="pre">time/</span></code>）。这些指标和 <a class="reference external" href="https://github.com/volcengine/verl">veRL</a> 中的指标一致，感兴趣的用户可以参考 <a class="reference external" href="https://verl.readthedocs.io/en/latest/index.html">veRL 文档</a> 了解更多详细信息。</p>
+</section>
+<section id="id4">
+<h3>数据处理指标<a class="headerlink" href="#id4" title="Link to this heading">#</a></h3>
+<p>此类别包括跟踪通过各种数据处理操作（<code class="docutils literal notranslate"><span class="pre">experience_pipeline/</span></code>）和数据采样统计（<code class="docutils literal notranslate"><span class="pre">sample/</span></code>）的指标。这些指标在步骤（step）级别计算，因为 experience 处理和数据采样会在每个步骤中执行一次。</p>
+<section id="experience-pipeline-experience-pipeline-time-experience-pipeline">
+<h4>Experience Pipeline 相关指标（<code class="docutils literal notranslate"><span class="pre">experience_pipeline/</span></code> 和 <code class="docutils literal notranslate"><span class="pre">time/experience_pipeline/</span></code>）<a class="headerlink" href="#experience-pipeline-experience-pipeline-time-experience-pipeline" title="Link to this heading">#</a></h4>
+<p>Experience Pipeline 相关的指标统计了和数据处理相关的值，每个指标表示一个步骤中特定操作的统计值。</p>
+<ul class="simple">
+<li><p><strong>格式</strong>：<code class="docutils literal notranslate"><span class="pre">experience_pipeline/{metric_name}</span></code></p></li>
+<li><p><strong>示例</strong>：</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">experience_pipeline/experience_count</span></code>：处理的经验数量</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">experience_pipeline/group_advantages/reward_mean/mean</span></code>：这里 <code class="docutils literal notranslate"><span class="pre">reward_mean</span></code> 是每个任务的平均奖励，然后我们计算步骤中所有任务的平均奖励的平均值。</p></li>
+</ul>
+</li>
+</ul>
+<p>以下图表说明了数据处理指标的计算过程：</p>
+<div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>graph TD
+    subgraph Step[&quot;4 Experiences in one step&quot;]
+        subgraph Task1[&quot;Experience 1&quot;]
+            Run1_1[&quot;Run 1&lt;br/&gt;reward_mean: 0.8&quot;]
+            Run1_2[&quot;Run 2&lt;br/&gt;reward_mean: 0.8&quot;]
+            Run2_1[&quot;Run 3&lt;br/&gt;reward_mean: 0.9&quot;]
+            Run2_2[&quot;Run 4&lt;br/&gt;reward_mean: 0.9&quot;]
+        end
+            Run1_1 --&gt; Task1_Metric[&quot;rollout/accuracy&lt;br/&gt;= 0.85&quot;]
+            Run1_2 --&gt; Task1_Metric
+            Run2_1 --&gt; Task1_Metric
+            Run2_2 --&gt; Task1_Metric
+    end
+</pre></div>
+</div>
+</section>
+<section id="sample">
+<h4>采样相关指标（<code class="docutils literal notranslate"><span class="pre">sample/</span></code>）<a class="headerlink" href="#sample" title="Link to this heading">#</a></h4>
+<p>采样相关的指标发生在训练阶段，用于训练期间的数据采样统计。</p>
+<ul class="simple">
+<li><p><strong>格式</strong>：<code class="docutils literal notranslate"><span class="pre">sample/{metric_name}</span></code></p></li>
+<li><p><strong>示例</strong>：</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">sample/model_version/mean</span></code>：采样经验的平均模型版本</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sample/task_count</span></code>：采样批次中的任务数量</p></li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="align_with_verl.html"
+       title="上一页">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">上一页</p>
+        <p class="prev-next-title">与 veRL 对齐训练配置</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="example_reasoning_basic.html"
+       title="下一页">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">下一页</p>
+        <p class="prev-next-title">快速上手</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item"><div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> 目录
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">指标命名规范</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">指标类别</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#explorer">Explorer 相关指标</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#rollout-rollout">Rollout 指标（<code class="docutils literal notranslate"><span class="pre">rollout/</span></code>）</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#eval-bench">评估指标（<code class="docutils literal notranslate"><span class="pre">eval/</span></code>）和基准测试指标（<code class="docutils literal notranslate"><span class="pre">bench/</span></code>）</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#time">时间指标（<code class="docutils literal notranslate"><span class="pre">time/</span></code>）</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trainer">Trainer 相关指标</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">数据处理指标</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#experience-pipeline-experience-pipeline-time-experience-pipeline">Experience Pipeline 相关指标（<code class="docutils literal notranslate"><span class="pre">experience_pipeline/</span></code> 和 <code class="docutils literal notranslate"><span class="pre">time/experience_pipeline/</span></code>）</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#sample">采样相关指标（<code class="docutils literal notranslate"><span class="pre">sample/</span></code>）</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+作者： Trinity-RFT Team
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+
+  <p class="copyright">
+    
+      © Copyright 2025, Trinity-RFT Team.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>
