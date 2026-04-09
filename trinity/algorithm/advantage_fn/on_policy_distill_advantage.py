@@ -42,7 +42,7 @@ class OnPolicyDistillAdvantage(AdvantageFn):
         metrics = {}
 
         old_log_probs = exps.batch["old_log_probs"]  # student sampling logprobs
-        teacher_log_probs = exps.batch["teacher_log_probs"]
+        teacher_log_probs = exps.batch["teacher_logprobs"]
         response_mask = exps.batch["response_mask"]
 
         # advantages = -(student - teacher) = teacher - student
