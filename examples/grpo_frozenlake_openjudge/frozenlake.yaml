@@ -1,0 +1,95 @@
+project: "FrozenLake-OpenJudge"
+name: "trinity-frozen-lake-openjudge"
+checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
+algorithm:
+  algorithm_type: grpo
+  repeat_times: 8
+  optimizer:
+    lr: 1e-6
+  policy_loss_fn_args:
+    clip_range_low: 0.2
+    clip_range_high: 0.28
+  kl_loss_fn_args:
+    kl_coef: 0.0
+  loss_agg_mode: "seq-mean-token-sum"
+model:
+  model_path: ${oc.env:TRINITY_MODEL_PATH,Qwen/Qwen2.5-3B-Instruct}
+  enable_prompt_truncation: false
+  max_response_tokens: 10240
+  max_model_len: 14436
+  temperature: 0.7
+cluster:
+  node_num: 1
+  gpu_per_node: 8
+buffer:
+  total_epochs: 1
+  batch_size: 64
+  explorer_input:
+    taskset:
+      name: frozenlake
+      storage_type: file
+      path: ${oc.env:TRINITY_TASKSET_PATH}
+      split: train
+      workflow_args:
+        env_max_steps: 8
+        agent_max_steps: 10
+        is_slippery: false
+        # OpenJudge reward: replaces the binary env reward (0/1) with a
+        # TrajectoryAccuracyGrader score over the full conversation history.
+        reward_fn_type: trajectory_accuracy_grader_reward
+        reward_fn_args:
+          model_name: ${oc.env:TRINITY_JUDGE_MODEL_NAME,qwen3-max}
+          judge_api_base_url_env: OPENAI_BASE_URL
+          judge_api_key_env: OPENAI_API_KEY
+          normalize_score: true
+          score_min: 1.0
+          score_max: 3.0
+    eval_tasksets:
+      - name: frozenlake
+        storage_type: file
+        path: ${oc.env:TRINITY_TASKSET_PATH}
+        split: test
+        workflow_args:
+          env_max_steps: 8
+          agent_max_steps: 10
+          is_slippery: false
+        repeat_times: 4
+        rollout_args:
+          top_p: 0.8
+          top_k: 20
+    default_workflow_type: 'frozen_lake_workflow'
+explorer:
+  eval_on_startup: true
+  eval_interval: 10
+  runner_per_model: 8
+  rollout_model:
+    engine_num: 6
+    tensor_parallel_size: 1
+    enable_chunked_prefill: true
+    enforce_eager: false
+    dtype: bfloat16
+    seed: 42
+    gpu_memory_utilization: 0.85
+trainer:
+  trainer_type: 'verl'
+  save_interval: 1000
+  use_dynamic_bsz: true
+  max_token_len_per_gpu: 16384
+  ulysses_sequence_parallel_size: 1
+  trainer_config:
+    actor_rollout_ref:
+      hybrid_engine: true
+      model:
+        use_remove_padding: true
+        enable_gradient_checkpointing: true
+      actor:
+        fsdp_config:
+          param_offload: true
+          optimizer_offload: true
+      ref:
+        fsdp_config:
+          param_offload: true
+synchronizer:
+  sync_method: nccl
+  sync_interval: 1
+  sync_timeout: 1200

@@ -111,6 +111,17 @@ class FrozenLakeWorkflow(MultiTurnWorkflow):
         self.is_slippery = workflow_args.get("is_slippery", False)
         self.max_response_tokens = self.rollout_args.get("max_response_tokens", 10240)
 
+        # Optional external reward function (e.g. TrajectoryAccuracyGrader).
+        # Configured via workflow_args: reward_fn_type + reward_fn_args.
+        self.reward_fn = None
+        reward_fn_type = workflow_args.get("reward_fn_type")
+        if reward_fn_type:
+            from trinity.common.rewards import REWARD_FUNCTIONS  # avoid circular import
+
+            reward_fn_cls = REWARD_FUNCTIONS.get(reward_fn_type)
+            reward_fn_kwargs = workflow_args.get("reward_fn_args", {})
+            self.reward_fn = reward_fn_cls(**reward_fn_kwargs)
+
         # Extract task-specific arguments
         self.raw_task = task.raw_task if hasattr(task, "raw_task") else {}
         self.size = self.raw_task.get("size", 1)
@@ -351,6 +362,21 @@ class FrozenLakeWorkflow(MultiTurnWorkflow):
 
         # Create experience from messages
         final_reward = sum(self.step_rewards)
+        # If an external reward_fn is configured, use it to score the full trajectory.
+        if self.reward_fn is not None:
+            try:
+                # Build a lightweight proxy so reward_fn can access response_text
+                class _ExpProxy:
+                    response_text = (
+                        messages[-1]["content"]
+                        if messages and messages[-1].get("role") == "assistant"
+                        else ""
+                    )
+
+                reward_dict = self.reward_fn(_ExpProxy(), messages)
+                final_reward = reward_dict.get("reward", final_reward)
+            except Exception as e:
+                self.logger.warning(f"reward_fn failed, falling back to env reward: {e}")
         # print(f"final_reward: {final_reward}, terminate_reason: {terminate_reason}")
         experience = await self.process_messages_to_experience_async(
             messages=messages,

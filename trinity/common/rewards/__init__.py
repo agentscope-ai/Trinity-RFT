@@ -1,13 +1,24 @@
 # -*- coding: utf-8 -*-
 """Reward functions for RFT"""
 
+from trinity.common.rewards.open_judge_reward import (
+    OpenJudgeRewardFn,
+    OpenJudgeTrajectoryAccuracyRewardFn,
+    TrajectoryAccuracyGrader,
+)
 from trinity.common.rewards.reward_fn import RewardFn
 from trinity.utils.registry import Registry
 
 REWARD_FUNCTIONS = Registry(
     "reward_functions",
     default_mapping={
-        "rm_gallery_reward": "trinity.common.rewards.reward_fn.RMGalleryFn",
+        # Single-grader: TrajectoryAccuracyGrader (subclass of OpenJudgeRewardFn)
+        "openjudge_reward": "trinity.common.rewards.open_judge_reward.TrajectoryAccuracyGrader",
+        "trajectory_accuracy_grader_reward": "trinity.common.rewards.open_judge_reward.TrajectoryAccuracyGrader",
+        "openjudge_trajectory_accuracy_reward": "trinity.common.rewards.open_judge_reward.OpenJudgeTrajectoryAccuracyRewardFn",
+        # Multi-grader base pipeline
+        "openjudge_multi_grader_reward": "trinity.common.rewards.open_judge_reward.OpenJudgeRewardFn",
+        "rm_gallery_reward": "trinity.common.rewards.open_judge_reward.OpenJudgeRewardFn",
         "math_reward": "trinity.common.rewards.math_reward.MathRewardFn",
         "math_boxed_reward": "trinity.common.rewards.math_reward.MathBoxedRewardFn",
         "format_reward": "trinity.common.rewards.format_reward.FormatReward",
@@ -19,6 +30,8 @@ REWARD_FUNCTIONS = Registry(
 
 __all__ = [
     "RewardFn",
-    "RMGalleryFn",
+    "OpenJudgeRewardFn",
+    "TrajectoryAccuracyGrader",
+    "OpenJudgeTrajectoryAccuracyRewardFn",
     "REWARD_FUNCTIONS",
 ]
