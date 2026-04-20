@@ -84,6 +84,23 @@ class OpenJudgeRewardFn(RewardFn):
         **kwargs,
     ) -> Dict[str, float]:
         """Evaluate a single experience and return a reward dict."""
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.run(self.acall(experience, messages, **kwargs))
+
+        raise RuntimeError(
+            "OpenJudgeRewardFn.__call__ cannot be used inside a running event loop. "
+            "Use `await reward_fn.acall(...)` in async workflows."
+        )
+
+    async def acall(  # type: ignore[override]
+        self,
+        experience: Any,
+        messages: List[Dict[str, Any]],
+        **kwargs,
+    ) -> Dict[str, float]:
+        """Async evaluation for event-loop contexts."""
         merged_messages = list(messages)
         if not merged_messages or merged_messages[-1].get("role") != "assistant":
             merged_messages.append(
@@ -94,7 +111,7 @@ class OpenJudgeRewardFn(RewardFn):
             )
 
         data = {"messages": merged_messages}
-        batch_results = asyncio.run(self.runner.arun([data]))
+        batch_results = await self.runner.arun([data])
         return self._extract_reward(batch_results)
 
     def _extract_reward(self, batch_results: Dict[str, Any]) -> Dict[str, float]:
