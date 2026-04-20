@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
 """Reward functions for RFT"""
-
-from trinity.common.rewards.open_judge_reward import (
-    OpenJudgeRewardFn,
-    OpenJudgeTrajectoryAccuracyRewardFn,
-    TrajectoryAccuracyGrader,
-)
 from trinity.common.rewards.reward_fn import RewardFn
 from trinity.utils.registry import Registry
 
@@ -25,7 +19,5 @@ REWARD_FUNCTIONS = Registry(
 
 __all__ = [
     "RewardFn",
-    "OpenJudgeRewardFn",
-    "TrajectoryAccuracyGrader",
     "REWARD_FUNCTIONS",
 ]

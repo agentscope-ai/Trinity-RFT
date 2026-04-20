@@ -15,8 +15,8 @@ WORKFLOWS: Registry = Registry(
         "async_math_boxed_workflow": "trinity.common.workflows.customized_math_workflows.AsyncMathBoxedWorkflow",
         "math_eval_workflow": "trinity.common.workflows.eval_workflow.MathEvalWorkflow",
         "async_math_eval_workflow": "trinity.common.workflows.eval_workflow.AsyncMathEvalWorkflow",
-        "math_rm_workflow": "trinity.common.workflows.math_rm_workflow.MathRMWorkflow",
-        "async_math_rm_workflow": "trinity.common.workflows.math_rm_workflow.AsyncMathRMWorkflow",
+        "math_openjudge_workflow": "trinity.common.workflows.math_openjudge_workflow.MathOpenJudgeWorkflow",
+        "async_math_openjudge_workflow": "trinity.common.workflows.math_openjudge_workflow.AsyncMathOpenJudgeWorkflow",
         # tool_call
         "tool_call_workflow": "trinity.common.workflows.customized_toolcall_workflows.ToolCallWorkflow",
         # agentscope

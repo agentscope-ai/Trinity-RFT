@@ -8,7 +8,7 @@ from trinity.common.models.model import ModelWrapper
 from trinity.common.workflows.workflow import SimpleWorkflow, Task
 
 
-class MathRMWorkflow(SimpleWorkflow):
+class MathOpenJudgeWorkflow(SimpleWorkflow):
     """A workflow for math tasks as introduced in DeepSeek-R1."""
 
     def __init__(
@@ -40,7 +40,9 @@ class MathRMWorkflow(SimpleWorkflow):
             if response.metrics is None:
                 response.metrics = {}
             response.metrics.update(reward_dict)
-            reward = sum(reward_dict.values())
+            # Use the dedicated "reward" key when present (e.g. OpenJudge reward fns),
+            # otherwise fall back to summing all dimension scores (legacy rm_gallery behaviour).
+            reward = reward_dict.get("reward", sum(reward_dict.values()))
             response.reward = reward
             response.eid.run = i + self.run_id_base
 
@@ -50,7 +52,7 @@ class MathRMWorkflow(SimpleWorkflow):
         return responses
 
 
-class AsyncMathRMWorkflow(MathRMWorkflow):
+class AsyncMathOpenJudgeWorkflow(MathOpenJudgeWorkflow):
     is_async: bool = True
 
     async def run_async(self) -> List[Experience]:
@@ -68,7 +70,9 @@ class AsyncMathRMWorkflow(MathRMWorkflow):
             if response.metrics is None:
                 response.metrics = {}
             response.metrics.update(reward_dict)
-            reward = sum(reward_dict.values())
+            # Use the dedicated "reward" key when present (e.g. OpenJudge reward fns),
+            # otherwise fall back to summing all dimension scores (legacy rm_gallery behaviour).
+            reward = reward_dict.get("reward", sum(reward_dict.values()))
             response.reward = reward
             response.eid.run = i + self.run_id_base
 

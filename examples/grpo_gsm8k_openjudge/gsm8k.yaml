@@ -1,0 +1,74 @@
+project: "Trinity-RFT-gsm8k-openjudge"
+name: "qwen2.5-1.5B-gsm8k-openjudge"
+checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
+algorithm:
+  algorithm_type: grpo
+  repeat_times: 8
+  optimizer:
+    lr: 1e-5
+model:
+  model_path: ${oc.env:TRINITY_MODEL_PATH,Qwen/Qwen2.5-1.5B-Instruct}
+  max_response_tokens: 1024
+  max_model_len: 2048
+cluster:
+  node_num: 1
+  gpu_per_node: 2
+buffer:
+  total_epochs: 1
+  batch_size: 96
+  explorer_input:
+    taskset:
+      name: gsm8k
+      storage_type: file
+      path: ${oc.env:TRINITY_TASKSET_PATH,openai/gsm8k}
+      subset_name: 'main'
+      split: 'train'
+      format:
+        prompt_key: 'question'
+        response_key: 'answer'
+      rollout_args:
+        temperature: 1.0
+      reward_fn_args:
+        model_name: ${oc.env:TRINITY_JUDGE_MODEL_NAME,qwen3-max}
+        judge_api_base_url_env: OPENAI_BASE_URL
+        judge_api_key_env: OPENAI_API_KEY
+        normalize_score: true
+        score_min: 1.0
+        score_max: 3.0
+    eval_tasksets:
+    - name: gsm8k-eval
+      storage_type: file
+      path: ${oc.env:TRINITY_TASKSET_PATH,openai/gsm8k}
+      subset_name: 'main'
+      split: 'test'
+      format:
+        prompt_key: 'question'
+        response_key: 'answer'
+    default_workflow_type: 'math_rm_workflow'
+    default_reward_fn_type: 'trajectory_accuracy_grader_reward'
+  trainer_input:
+    experience_buffer:
+      name: gsm8k_buffer
+      storage_type: queue
+      path: 'sqlite:///gsm8k.db'
+explorer:
+  eval_interval: 50
+  runner_per_model: 8
+  rollout_model:
+    engine_num: 1
+    tensor_parallel_size: 1
+    enable_prefix_caching: false
+    enforce_eager: true
+    dtype: bfloat16
+    seed: 42
+synchronizer:
+  sync_method: 'nccl'
+  sync_interval: 1
+  sync_timeout: 1200
+trainer:
+  trainer_type: 'verl'
+  save_interval: 100
+  grad_clip: 1.0
+  use_dynamic_bsz: true
+  max_token_len_per_gpu: 16384
+  ulysses_sequence_parallel_size: 1

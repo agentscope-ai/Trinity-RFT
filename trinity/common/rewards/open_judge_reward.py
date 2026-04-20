@@ -35,8 +35,12 @@ class OpenJudgeRewardFn(RewardFn):
         **kwargs,
     ):
         try:
-            from openjudge.models.openai_chat_model import OpenAIChatModel  # pyright: ignore[reportMissingImports]
-            from openjudge.runner.grading_runner import GradingRunner  # pyright: ignore[reportMissingImports]
+            from openjudge.models.openai_chat_model import (  # pyright: ignore[reportMissingImports]
+                OpenAIChatModel,
+            )
+            from openjudge.runner.grading_runner import (  # pyright: ignore[reportMissingImports]
+                GradingRunner,
+            )
         except ImportError as e:
             raise ImportError(
                 "OpenJudge dependencies are not installed. "
@@ -46,14 +50,16 @@ class OpenJudgeRewardFn(RewardFn):
         self.score_aggregation = score_aggregation
 
         if grader_configs is None:
-            from openjudge.graders.common.correctness import CorrectnessGrader  # pyright: ignore[reportMissingImports]
-            from openjudge.graders.common.relevance import RelevanceGrader  # pyright: ignore[reportMissingImports]
+            from openjudge.graders.common.correctness import (  # pyright: ignore[reportMissingImports]
+                CorrectnessGrader,
+            )
+            from openjudge.graders.common.relevance import (  # pyright: ignore[reportMissingImports]
+                RelevanceGrader,
+            )
 
             judge_base_url = os.getenv(judge_api_base_url_env, "")
             if not judge_base_url:
-                raise ValueError(
-                    f"Judge base URL is missing. Set env `{judge_api_base_url_env}`."
-                )
+                raise ValueError(f"Judge base URL is missing. Set env `{judge_api_base_url_env}`.")
             model_kwargs: Dict[str, Any] = {
                 "model": model_name,
                 "base_url": judge_base_url,
@@ -92,7 +98,10 @@ class OpenJudgeRewardFn(RewardFn):
         return self._extract_reward(batch_results)
 
     def _extract_reward(self, batch_results: Dict[str, Any]) -> Dict[str, float]:
-        from openjudge.graders.schema import GraderError, GraderScore  # pyright: ignore[reportMissingImports]
+        from openjudge.graders.schema import (  # pyright: ignore[reportMissingImports]
+            GraderError,
+            GraderScore,
+        )
 
         reward_dict: Dict[str, float] = {}
         scores: List[float] = []
@@ -144,10 +153,12 @@ class TrajectoryAccuracyGrader(OpenJudgeRewardFn):
         **kwargs,
     ):
         try:
-            from openjudge.graders.agent.trajectory.trajectory_accuracy import (  # pyright: ignore[reportMissingImports]
-                TrajectoryAccuracyGrader as _TrajectoryAccuracyGrader,
+            from openjudge.graders.agent.trajectory.trajectory_accuracy import (
+                TrajectoryAccuracyGrader as _TrajectoryAccuracyGrader,  # pyright: ignore[reportMissingImports]
             )
-            from openjudge.models.openai_chat_model import OpenAIChatModel  # pyright: ignore[reportMissingImports]
+            from openjudge.models.openai_chat_model import (  # pyright: ignore[reportMissingImports]
+                OpenAIChatModel,
+            )
         except ImportError as e:
             raise ImportError(
                 "OpenJudge dependencies are not installed. "
@@ -156,9 +167,7 @@ class TrajectoryAccuracyGrader(OpenJudgeRewardFn):
 
         judge_base_url = os.getenv(judge_api_base_url_env, "")
         if not judge_base_url:
-            raise ValueError(
-                f"Judge base URL is missing. Set env `{judge_api_base_url_env}`."
-            )
+            raise ValueError(f"Judge base URL is missing. Set env `{judge_api_base_url_env}`.")
         judge_model = OpenAIChatModel(
             model=kwargs.get("judge_model_name", model_name),
             base_url=judge_base_url,
