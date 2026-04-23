@@ -1019,6 +1019,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">init_engine</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">StorageConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.experience</span><span class="w"> </span><span class="kn">import</span> <span class="n">Experience</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.experience_visualizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_experience_token_view</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
 
 
@@ -1128,32 +1129,7 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.viewer.html#trinity.buffer.viewer.render_experience">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">render_experience</span><span class="p">(</span><span class="n">exp</span><span class="p">:</span> <span class="n">Experience</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Render a single experience sequence in Streamlit.&quot;&quot;&quot;</span>
-    <span class="n">token_ids</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">tokens</span>
-    <span class="k">if</span> <span class="n">token_ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Experience tokens are required for visualization.&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">exp</span><span class="o">.</span><span class="n">logprobs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">logprobs</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">logprobs</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">logprobs</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">token_ids</span><span class="p">)</span>
-    <span class="n">action_mask</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">action_mask</span>
-
-    <span class="n">prompt_length</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">prompt_length</span>
-
-    <span class="n">prompt_token_ids</span> <span class="o">=</span> <span class="n">token_ids</span><span class="p">[:</span><span class="n">prompt_length</span><span class="p">]</span>  <span class="c1"># type: ignore [index]</span>
-    <span class="n">response_token_ids</span> <span class="o">=</span> <span class="n">token_ids</span><span class="p">[</span><span class="n">prompt_length</span><span class="p">:]</span>  <span class="c1"># type: ignore [index]</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">decode_token_ids</span><span class="p">(</span><span class="n">tokenizer_obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">token_id_list</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">tokenizer_obj</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">token_id_list</span><span class="p">))</span>
-
-    <span class="c1"># Decode tokens</span>
-    <span class="n">prompt_text</span> <span class="o">=</span> <span class="n">decode_token_ids</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">,</span> <span class="n">prompt_token_ids</span><span class="p">)</span>
-    <span class="n">response_text</span> <span class="o">=</span> <span class="n">decode_token_ids</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">,</span> <span class="n">response_token_ids</span><span class="p">)</span>
-
-    <span class="c1"># Get each response token text</span>
-    <span class="n">response_tokens</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">tid</span> <span class="ow">in</span> <span class="n">response_token_ids</span><span class="p">:</span>
-        <span class="n">token_text</span> <span class="o">=</span> <span class="n">decode_token_ids</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">,</span> <span class="p">[</span><span class="n">tid</span><span class="p">])</span>
-        <span class="n">response_tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token_text</span><span class="p">)</span>
+    <span class="n">token_view</span> <span class="o">=</span> <span class="n">build_experience_token_view</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">)</span>
 
     <span class="c1"># HTML escape function</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">html_escape</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
@@ -1170,11 +1146,11 @@ window.runMermaid = runMermaid;</script>
 
     <span class="c1"># Prompt section using st.text_area</span>
     <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**📝 Prompt:**&quot;</span><span class="p">)</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">code</span><span class="p">(</span><span class="n">prompt_text</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wrap_lines</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">line_numbers</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">code</span><span class="p">(</span><span class="n">token_view</span><span class="o">.</span><span class="n">prompt_text</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wrap_lines</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">line_numbers</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1"># Response section using st.text_area</span>
     <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**💬 Response:**&quot;</span><span class="p">)</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">code</span><span class="p">(</span><span class="n">response_text</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wrap_lines</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">line_numbers</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">code</span><span class="p">(</span><span class="n">token_view</span><span class="o">.</span><span class="n">response_text</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wrap_lines</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">line_numbers</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1"># Reward and other info</span>
     <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**🏆 Reward and Other Info:**&quot;</span><span class="p">)</span>
@@ -1247,17 +1223,18 @@ window.runMermaid = runMermaid;</script>
 <span class="s2">    &quot;&quot;&quot;</span>
 
     <span class="c1"># Add each response token</span>
-    <span class="k">for</span> <span class="n">token_text</span><span class="p">,</span> <span class="n">logprob</span><span class="p">,</span> <span class="n">mask</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">response_tokens</span><span class="p">,</span> <span class="n">logprobs</span><span class="p">,</span> <span class="n">action_mask</span><span class="p">):</span>  <span class="c1"># type: ignore [arg-type]</span>
-        <span class="n">bg_color</span> <span class="o">=</span> <span class="n">get_color_for_action_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">token_view</span><span class="o">.</span><span class="n">response_tokens</span><span class="p">:</span>
+        <span class="n">bg_color</span> <span class="o">=</span> <span class="n">get_color_for_action_mask</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">is_action</span><span class="p">))</span>
 
         <span class="c1"># Handle special character display</span>
-        <span class="n">token_display</span> <span class="o">=</span> <span class="n">token_text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;␣&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;↵&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;⇥&quot;</span><span class="p">)</span>
+        <span class="n">token_display</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">token_text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;␣&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;↵&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;⇥&quot;</span><span class="p">)</span>
         <span class="n">token_display</span> <span class="o">=</span> <span class="n">html_escape</span><span class="p">(</span><span class="n">token_display</span><span class="p">)</span>
+        <span class="n">logprob_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">token</span><span class="o">.</span><span class="n">logprob</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">logprob</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;N/A&quot;</span>
 
         <span class="n">html</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">                &lt;div class=&quot;token-box&quot; style=&quot;background-color: </span><span class="si">{</span><span class="n">bg_color</span><span class="si">}</span><span class="s2">;&quot;&gt;</span>
 <span class="s2">                    &lt;div class=&quot;token-text&quot;&gt;</span><span class="si">{</span><span class="n">token_display</span><span class="si">}</span><span class="s2">&lt;/div&gt;</span>
-<span class="s2">                    &lt;div class=&quot;token-logprob&quot;&gt;</span><span class="si">{</span><span class="n">logprob</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&lt;/div&gt;</span>
+<span class="s2">                    &lt;div class=&quot;token-logprob&quot;&gt;</span><span class="si">{</span><span class="n">logprob_text</span><span class="si">}</span><span class="s2">&lt;/div&gt;</span>
 <span class="s2">                &lt;/div&gt;</span>
 <span class="s2">        &quot;&quot;&quot;</span>
     <span class="n">html</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>

@@ -19,7 +19,6 @@ Submodules
    trinity.common.rewards.qwen25_eval
    trinity.common.rewards.reward_fn
    trinity.common.rewards.tool_reward
-   trinity.common.rewards.utils
 
 Module contents
 ---------------

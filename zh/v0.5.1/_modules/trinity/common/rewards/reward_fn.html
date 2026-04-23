@@ -1019,10 +1019,7 @@ window.runMermaid = runMermaid;</script>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="sd">&quot;&quot;&quot;Base Reward Function Class.&quot;&quot;&quot;</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
-
-<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.experience</span><span class="w"> </span><span class="kn">import</span> <span class="n">Experience</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.rewards.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">to_rm_gallery_messages</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span>
 
 
 <div class="viewcode-block" id="RewardFn">
@@ -1040,94 +1037,6 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
         <span class="k">pass</span></div>
-
-
-
-<div class="viewcode-block" id="RMGalleryFn">
-<a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.reward_fn.html#trinity.common.rewards.RMGalleryFn">[文档]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">RMGalleryFn</span><span class="p">(</span><span class="n">RewardFn</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reward Function from RMGallery.</span>
-<span class="sd">    https://github.com/modelscope/RM-Gallery</span>
-
-<span class="sd">    TODO: Update to OpenJudgeFn</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<div class="viewcode-block" id="RMGalleryFn.__init__">
-<a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.reward_fn.html#trinity.common.rewards.RMGalleryFn.__init__">[文档]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">reward_name</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">):</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">rm_gallery.core.reward.registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">RewardRegistry</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">reward_model</span> <span class="o">=</span> <span class="n">RewardRegistry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">reward_name</span><span class="p">)(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
-
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">experience</span><span class="p">:</span> <span class="n">Experience</span><span class="p">,</span> <span class="n">messages</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>  <span class="c1"># type: ignore</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Call the reward function.&quot;&quot;&quot;</span>
-
-        <span class="n">sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_sample_from_experience</span><span class="p">(</span><span class="n">experience</span><span class="p">,</span> <span class="n">messages</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-        <span class="n">sample_with_reward</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reward_model</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_reward</span><span class="p">(</span><span class="n">sample_with_reward</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_build_sample_from_experience</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">experience</span><span class="p">:</span> <span class="n">Experience</span><span class="p">,</span> <span class="n">messages</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="o">**</span><span class="n">kwargs</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert experience to sample.</span>
-<span class="sd">        Ref: https://github.com/modelscope/RM-Gallery/blob/main/rm_gallery/core/data/schema.py</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">rm_gallery.core.data.schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataOutput</span><span class="p">,</span> <span class="n">DataSample</span><span class="p">,</span> <span class="n">Step</span>
-
-        <span class="n">output</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">DataOutput</span><span class="p">(</span>
-                <span class="n">answer</span><span class="o">=</span><span class="n">Step</span><span class="p">(</span>
-                    <span class="n">role</span><span class="o">=</span><span class="s2">&quot;assistant&quot;</span><span class="p">,</span>
-                    <span class="n">content</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">experience</span><span class="o">.</span><span class="n">response_text</span><span class="p">),</span>
-                    <span class="n">label</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;reference&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ground_truth&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)},</span>
-                <span class="p">),</span>
-            <span class="p">)</span>
-        <span class="p">]</span>
-
-        <span class="n">sample</span> <span class="o">=</span> <span class="n">DataSample</span><span class="p">(</span>
-            <span class="n">unique_id</span><span class="o">=</span><span class="n">experience</span><span class="o">.</span><span class="n">eid</span><span class="o">.</span><span class="n">uid</span><span class="p">,</span>
-            <span class="nb">input</span><span class="o">=</span><span class="n">to_rm_gallery_messages</span><span class="p">(</span><span class="n">messages</span><span class="p">),</span>
-            <span class="n">output</span><span class="o">=</span><span class="n">output</span><span class="p">,</span>
-            <span class="n">metadata</span><span class="o">=</span><span class="n">experience</span><span class="o">.</span><span class="n">info</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">sample</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_extract_reward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Extract reward from DataSample in rm-gallery</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">reward_dict</span> <span class="o">=</span> <span class="p">{}</span>
-
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">reward_obj</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">output</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">answer</span><span class="o">.</span><span class="n">reward</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No reward is found in sample: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-        <span class="kn">from</span><span class="w"> </span><span class="nn">rm_gallery.core.reward.schema</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-            <span class="n">RewardDimensionWithRank</span><span class="p">,</span>
-            <span class="n">RewardDimensionWithScore</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">reward_obj</span><span class="o">.</span><span class="n">details</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">detail</span> <span class="ow">in</span> <span class="n">reward_obj</span><span class="o">.</span><span class="n">details</span><span class="p">:</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">detail</span><span class="p">,</span> <span class="n">RewardDimensionWithScore</span><span class="p">):</span>
-                    <span class="n">reward_dict</span><span class="p">[</span><span class="n">detail</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">detail</span><span class="o">.</span><span class="n">score</span>
-                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">detail</span><span class="p">,</span> <span class="n">RewardDimensionWithRank</span><span class="p">):</span>
-                    <span class="c1"># TODO: support multi-ranked dimension</span>
-                    <span class="k">if</span> <span class="n">detail</span><span class="p">:</span>
-                        <span class="n">top_ranked_item</span> <span class="o">=</span> <span class="n">detail</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-                        <span class="n">reward_dict</span><span class="p">[</span><span class="n">top_ranked_item</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">top_ranked_item</span><span class="o">.</span><span class="n">score</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">reward_dict</span><span class="p">[</span><span class="s2">&quot;reward&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reward_obj</span><span class="o">.</span><span class="n">score</span>
-
-        <span class="k">return</span> <span class="n">reward_dict</span></div>
 
 </pre></div>
 
