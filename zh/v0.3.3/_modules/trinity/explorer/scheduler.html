@@ -1024,7 +1024,13 @@ window.runMermaid = runMermaid;</script>
     <span class="n">batch_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
     <span class="n">sub_task_num</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># number of sub tasks splitted from this task</span>
     <span class="c1"># if max_repeat_times_per_runner is set, one task may be splitted into multiple sub tasks</span>
-    <span class="n">results</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Status</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]]]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span></div>
+    <span class="n">finished_sub_task_num</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">completed_runs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">total_runs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># total planned runs for the whole task</span>
+    <span class="n">metrics</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">experiences</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">first_error</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">emitted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span></div>
 
 
 
@@ -1182,7 +1188,12 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="RunnerWrapper.run_with_retry">
 <a class="viewcode-back" href="../../../build_api/trinity.explorer.scheduler.html#trinity.explorer.scheduler.RunnerWrapper.run_with_retry">[文档]</a>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">run_with_retry</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">TaskWrapper</span><span class="p">,</span> <span class="n">repeat_times</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">run_id_base</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">task</span><span class="p">:</span> <span class="n">TaskWrapper</span><span class="p">,</span>
+        <span class="n">repeat_times</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">run_id_base</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+        <span class="n">collect_partial_runs</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Status</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
@@ -1200,8 +1211,9 @@ window.runMermaid = runMermaid;</script>
         <span class="n">last_exception_msg</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">__ray_ready__</span><span class="o">.</span><span class="n">remote</span><span class="p">()</span>
         <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-        <span class="n">status</span> <span class="o">=</span> <span class="n">Status</span><span class="p">(</span><span class="n">ok</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="nb">list</span><span class="p">())</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">Status</span><span class="p">(</span><span class="n">completed_runs</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">total_runs</span><span class="o">=</span><span class="n">repeat_times</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="nb">list</span><span class="p">())</span>
         <span class="n">exps</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">run_task_ref</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">task2run</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span>
             <span class="n">task</span><span class="o">.</span><span class="n">task</span><span class="p">,</span>
             <span class="n">rollout_args</span><span class="o">=</span><span class="n">replace</span><span class="p">(</span>
@@ -1212,29 +1224,55 @@ window.runMermaid = runMermaid;</script>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">retry_times</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
                 <span class="k">try</span><span class="p">:</span>
+                    <span class="n">run_task_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">run_task</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span>
+                        <span class="n">task</span><span class="o">=</span><span class="n">task2run</span><span class="p">,</span>
+                        <span class="n">batch_id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">task</span><span class="o">.</span><span class="n">batch_id</span><span class="p">),</span>
+                        <span class="n">repeat_times</span><span class="o">=</span><span class="n">repeat_times</span><span class="p">,</span>
+                        <span class="n">run_id_base</span><span class="o">=</span><span class="n">run_id_base</span><span class="p">,</span>
+                        <span class="n">collect_partial_runs</span><span class="o">=</span><span class="n">collect_partial_runs</span><span class="p">,</span>
+                    <span class="p">)</span>
                     <span class="n">status</span><span class="p">,</span> <span class="n">exps</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">wait_for</span><span class="p">(</span>
-                        <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">run_task</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span>
-                            <span class="n">task</span><span class="o">=</span><span class="n">task2run</span><span class="p">,</span>
-                            <span class="n">batch_id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">task</span><span class="o">.</span><span class="n">batch_id</span><span class="p">),</span>
-                            <span class="n">repeat_times</span><span class="o">=</span><span class="n">repeat_times</span><span class="p">,</span>
-                            <span class="n">run_id_base</span><span class="o">=</span><span class="n">run_id_base</span><span class="p">,</span>
-                        <span class="p">),</span>
+                        <span class="n">run_task_ref</span><span class="p">,</span>
                         <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span>
                     <span class="p">)</span>
+                    <span class="n">run_task_ref</span> <span class="o">=</span> <span class="kc">None</span>
                     <span class="k">if</span> <span class="n">status</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+                        <span class="k">break</span>
+                    <span class="k">if</span> <span class="n">collect_partial_runs</span> <span class="ow">and</span> <span class="n">status</span><span class="o">.</span><span class="n">completed_runs</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                            <span class="s2">&quot;Task returned partial success; skipping retry to avoid &quot;</span>
+                            <span class="s2">&quot;re-running successful runs. </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span>
+                            <span class="n">status</span><span class="o">.</span><span class="n">message</span><span class="p">,</span>
+                        <span class="p">)</span>
                         <span class="k">break</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
                 <span class="k">except</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">TimeoutError</span><span class="p">:</span>
+                    <span class="n">run_task_ref</span> <span class="o">=</span> <span class="kc">None</span>
                     <span class="n">last_exception_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Timeout when running task of batch </span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">batch_id</span><span class="si">}</span><span class="s2"> at runner </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">runner_id</span><span class="si">}</span><span class="s2"> at attempt </span><span class="si">{</span><span class="n">attempt</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">task</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">last_exception_msg</span><span class="p">)</span>
-                    <span class="n">status</span> <span class="o">=</span> <span class="n">Status</span><span class="p">(</span><span class="n">ok</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="nb">list</span><span class="p">(),</span> <span class="n">message</span><span class="o">=</span><span class="n">last_exception_msg</span><span class="p">)</span>
+                    <span class="n">status</span> <span class="o">=</span> <span class="n">Status</span><span class="p">(</span>
+                        <span class="n">completed_runs</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">total_runs</span><span class="o">=</span><span class="n">repeat_times</span><span class="p">,</span>
+                        <span class="n">metrics</span><span class="o">=</span><span class="nb">list</span><span class="p">(),</span>
+                        <span class="n">message</span><span class="o">=</span><span class="n">last_exception_msg</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="k">except</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">CancelledError</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">run_task_ref</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">ray</span><span class="o">.</span><span class="n">cancel</span><span class="p">(</span><span class="n">run_task_ref</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                    <span class="k">raise</span>
                 <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="n">run_task_ref</span> <span class="o">=</span> <span class="kc">None</span>
                     <span class="n">last_exception_msg</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
                         <span class="sa">f</span><span class="s2">&quot;Task execution attempt </span><span class="si">{</span><span class="n">attempt</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> failed:</span><span class="se">\n</span><span class="si">{</span><span class="n">last_exception_msg</span><span class="si">}</span><span class="s2">&quot;</span>
                     <span class="p">)</span>
-                    <span class="n">status</span> <span class="o">=</span> <span class="n">Status</span><span class="p">(</span><span class="n">ok</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="nb">list</span><span class="p">(),</span> <span class="n">message</span><span class="o">=</span><span class="n">last_exception_msg</span><span class="p">)</span>
+                    <span class="n">status</span> <span class="o">=</span> <span class="n">Status</span><span class="p">(</span>
+                        <span class="n">completed_runs</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">total_runs</span><span class="o">=</span><span class="n">repeat_times</span><span class="p">,</span>
+                        <span class="n">metrics</span><span class="o">=</span><span class="nb">list</span><span class="p">(),</span>
+                        <span class="n">message</span><span class="o">=</span><span class="n">last_exception_msg</span><span class="p">,</span>
+                    <span class="p">)</span>
         <span class="k">finally</span><span class="p">:</span>
             <span class="n">end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
             <span class="n">status</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;time/task_execution&quot;</span><span class="p">:</span> <span class="n">end_time</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">})</span>
@@ -1315,11 +1353,14 @@ window.runMermaid = runMermaid;</script>
             <span class="nb">int</span>
         <span class="p">)</span>  <span class="c1"># batch_id -&gt; tasks scheduled under this batch_id</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">running_task_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">asyncio</span><span class="o">.</span><span class="n">Future</span><span class="p">,</span> <span class="n">TaskWrapper</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>  <span class="c1"># future -&gt; task</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">running_task_runner_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">asyncio</span><span class="o">.</span><span class="n">Future</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>  <span class="c1"># future -&gt; runner_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cancelled_task_restart_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">asyncio</span><span class="o">.</span><span class="n">Future</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">completed_tasks</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span>
             <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">deque</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">Status</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]]]</span>
         <span class="p">]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span>
             <span class="n">deque</span>
         <span class="p">)</span>  <span class="c1"># batch_id -&gt; results</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">background_tasks</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">scheduler_task</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">running</span> <span class="o">=</span> <span class="kc">False</span>
@@ -1357,6 +1398,11 @@ window.runMermaid = runMermaid;</script>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">idle_runners</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">runner_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Runner </span><span class="si">{</span><span class="n">runner_id</span><span class="si">}</span><span class="s2"> restarted.&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_schedule_runner_restart</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">runner_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">restart_task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_restart_runner</span><span class="p">(</span><span class="n">runner_id</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">background_tasks</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">restart_task</span><span class="p">)</span>
+        <span class="n">restart_task</span><span class="o">.</span><span class="n">add_done_callback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">background_tasks</span><span class="o">.</span><span class="n">discard</span><span class="p">)</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_scheduler_loop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Scheduler loop started.&quot;</span><span class="p">)</span>
@@ -1405,9 +1451,11 @@ window.runMermaid = runMermaid;</script>
                         <span class="n">repeat_times</span><span class="o">=</span><span class="n">repeat_times</span><span class="p">,</span>
                         <span class="n">run_id_base</span><span class="o">=</span><span class="n">run_id_base</span><span class="p">,</span>
                         <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dynamic_timeout</span><span class="p">(),</span>
+                        <span class="n">collect_partial_runs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">over_rollout</span><span class="o">.</span><span class="n">return_partial_tasks</span><span class="p">,</span>
                     <span class="p">)</span>
                 <span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">running_task_map</span><span class="p">[</span><span class="n">future</span><span class="p">]</span> <span class="o">=</span> <span class="n">task</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">running_task_runner_map</span><span class="p">[</span><span class="n">future</span><span class="p">]</span> <span class="o">=</span> <span class="n">runner_id</span>
                 <span class="n">future</span><span class="o">.</span><span class="n">add_done_callback</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">task_done_callback</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">running_tasks</span><span class="p">[</span><span class="n">batch_id</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">future</span><span class="p">)</span>
 
@@ -1418,35 +1466,28 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../build_api/trinity.explorer.scheduler.html#trinity.explorer.scheduler.Scheduler.task_done_callback">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">task_done_callback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">async_task</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span><span class="p">):</span>
         <span class="n">task</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">running_task_map</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">async_task</span><span class="p">)</span>
+        <span class="n">runner_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">running_task_runner_map</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">async_task</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">async_task</span><span class="o">.</span><span class="n">cancelled</span><span class="p">():</span>
-            <span class="k">return</span>
+            <span class="n">should_restart</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cancelled_task_restart_map</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">async_task</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">should_restart</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">busy_runners</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">runner_id</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">idle_runners</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">runner_id</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">async_task</span><span class="o">.</span><span class="n">exception</span><span class="p">():</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Task </span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">task_id</span><span class="si">}</span><span class="s2"> failed: </span><span class="si">{</span><span class="n">async_task</span><span class="o">.</span><span class="n">exception</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="k">return</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cancelled_task_restart_map</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">async_task</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_schedule_runner_restart</span><span class="p">(</span><span class="n">runner_id</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cancelled_task_restart_map</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">async_task</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="n">status</span><span class="p">,</span> <span class="n">exps</span><span class="p">,</span> <span class="n">runner_id</span><span class="p">,</span> <span class="n">run_time</span> <span class="o">=</span> <span class="n">async_task</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">task</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">is_eval</span><span class="p">:</span>  <span class="c1"># only count running time for non-eval tasks</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">total_running_time</span> <span class="o">+=</span> <span class="n">run_time</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">total_completed_tasks</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="n">task</span><span class="o">.</span><span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">status</span><span class="p">,</span> <span class="n">exps</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">busy_runners</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">runner_id</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_accumulate_task_result</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span> <span class="n">exps</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">busy_runners</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">runner_id</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">idle_runners</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">runner_id</span><span class="p">)</span>
             <span class="c1"># If all sub runs in a task are completed</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">task</span><span class="o">.</span><span class="n">results</span><span class="p">)</span> <span class="o">==</span> <span class="n">task</span><span class="o">.</span><span class="n">sub_task_num</span><span class="p">:</span>
-                <span class="n">task_experiences</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="n">task_metrics</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="n">all_success</span> <span class="o">=</span> <span class="kc">True</span>
-                <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">task</span><span class="o">.</span><span class="n">results</span><span class="p">:</span>
-                    <span class="n">task_metrics</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">metrics</span><span class="p">)</span>
-                    <span class="n">task_experiences</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="ow">not</span> <span class="n">s</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
-                        <span class="n">all_success</span> <span class="o">=</span> <span class="kc">False</span>
-                <span class="c1"># calculate task level metrics</span>
-                <span class="n">task_status</span> <span class="o">=</span> <span class="n">Status</span><span class="p">(</span>
-                    <span class="n">ok</span><span class="o">=</span><span class="n">all_success</span><span class="p">,</span>
-                    <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="n">calculate_task_level_metrics</span><span class="p">(</span><span class="n">task_metrics</span><span class="p">,</span> <span class="n">task</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">is_eval</span><span class="p">)],</span>
-                <span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">completed_tasks</span><span class="p">[</span><span class="n">task</span><span class="o">.</span><span class="n">batch_id</span><span class="p">]</span><span class="o">.</span><span class="n">appendleft</span><span class="p">((</span><span class="n">task_status</span><span class="p">,</span> <span class="n">task_experiences</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">task</span><span class="o">.</span><span class="n">finished_sub_task_num</span> <span class="o">==</span> <span class="n">task</span><span class="o">.</span><span class="n">sub_task_num</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_emit_task_result</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Task completed (batch_id </span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">batch_id</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">task</span><span class="o">.</span><span class="n">batch_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">running_tasks</span><span class="p">:</span>
@@ -1455,16 +1496,77 @@ window.runMermaid = runMermaid;</script>
                 <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">running_tasks</span><span class="p">[</span><span class="n">task</span><span class="o">.</span><span class="n">batch_id</span><span class="p">]</span></div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_clear_timeout_tasks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_accumulate_task_result</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">TaskWrapper</span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="n">Status</span><span class="p">,</span> <span class="n">experiences</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">task</span><span class="o">.</span><span class="n">finished_sub_task_num</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">task</span><span class="o">.</span><span class="n">completed_runs</span> <span class="o">+=</span> <span class="n">status</span><span class="o">.</span><span class="n">completed_runs</span>
+        <span class="n">task</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">status</span><span class="o">.</span><span class="n">metrics</span><span class="p">)</span>
+        <span class="n">task</span><span class="o">.</span><span class="n">experiences</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">experiences</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">status</span><span class="o">.</span><span class="n">ok</span> <span class="ow">and</span> <span class="n">task</span><span class="o">.</span><span class="n">first_error</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">task</span><span class="o">.</span><span class="n">first_error</span> <span class="o">=</span> <span class="n">status</span><span class="o">.</span><span class="n">message</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_task_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">TaskWrapper</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Status</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]]:</span>
+        <span class="k">if</span> <span class="n">task</span><span class="o">.</span><span class="n">completed_runs</span> <span class="o">&lt;</span> <span class="n">task</span><span class="o">.</span><span class="n">total_runs</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">completed_runs</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">total_runs</span><span class="si">}</span><span class="s2"> runs completed successfully.&quot;</span>
+            <span class="k">if</span> <span class="n">task</span><span class="o">.</span><span class="n">first_error</span><span class="p">:</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2"> First error: </span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">first_error</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">message</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2"> Remaining runs were cancelled during scheduler cleanup.&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">Status</span><span class="p">(</span>
+            <span class="n">completed_runs</span><span class="o">=</span><span class="n">task</span><span class="o">.</span><span class="n">completed_runs</span><span class="p">,</span>
+            <span class="n">total_runs</span><span class="o">=</span><span class="n">task</span><span class="o">.</span><span class="n">total_runs</span><span class="p">,</span>
+            <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="n">calculate_task_level_metrics</span><span class="p">(</span><span class="n">task</span><span class="o">.</span><span class="n">metrics</span><span class="p">,</span> <span class="n">task</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">is_eval</span><span class="p">)],</span>
+            <span class="n">message</span><span class="o">=</span><span class="n">message</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">status</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">task</span><span class="o">.</span><span class="n">experiences</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_emit_task_result</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">TaskWrapper</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">task</span><span class="o">.</span><span class="n">emitted</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">completed_tasks</span><span class="p">[</span><span class="n">task</span><span class="o">.</span><span class="n">batch_id</span><span class="p">]</span><span class="o">.</span><span class="n">appendleft</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_build_task_result</span><span class="p">(</span><span class="n">task</span><span class="p">))</span>
+        <span class="n">task</span><span class="o">.</span><span class="n">emitted</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_collect_incomplete_tasks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">TaskWrapper</span><span class="p">]:</span>
+        <span class="n">tasks</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">task</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_tasks</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">batch_id</span><span class="p">,</span> <span class="n">deque</span><span class="p">()):</span>
+            <span class="n">tasks</span><span class="p">[</span><span class="nb">id</span><span class="p">(</span><span class="n">task</span><span class="p">)]</span> <span class="o">=</span> <span class="n">task</span>
+        <span class="k">for</span> <span class="n">future</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">running_tasks</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">batch_id</span><span class="p">,</span> <span class="nb">set</span><span class="p">()):</span>
+            <span class="n">task</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">running_task_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">future</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">task</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">tasks</span><span class="p">[</span><span class="nb">id</span><span class="p">(</span><span class="n">task</span><span class="p">)]</span> <span class="o">=</span> <span class="n">task</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">tasks</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_emit_partial_tasks_for_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collect_incomplete_tasks</span><span class="p">(</span><span class="n">batch_id</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">task</span><span class="o">.</span><span class="n">emitted</span> <span class="ow">or</span> <span class="n">task</span><span class="o">.</span><span class="n">completed_runs</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_emit_task_result</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Task partially completed and emitted (batch_id </span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">batch_id</span><span class="si">}</span><span class="s2">, task_id </span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">task_id</span><span class="si">}</span><span class="s2">).&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_clear_timeout_tasks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">asyncio</span><span class="o">.</span><span class="n">Future</span><span class="p">]:</span>
+        <span class="n">cancelled_futures</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="n">batch_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_tasks</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Clear timeout pending tasks at batch_id </span><span class="si">{</span><span class="n">batch_id</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
             <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_tasks</span><span class="p">[</span><span class="n">batch_id</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">batch_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">running_tasks</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Clear timeout running tasks at batch_id </span><span class="si">{</span><span class="n">batch_id</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">future</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">running_tasks</span><span class="p">[</span><span class="n">batch_id</span><span class="p">]:</span>
+                <span class="n">cancelled_futures</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">future</span><span class="p">)</span>
                 <span class="n">future</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
             <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">running_tasks</span><span class="p">[</span><span class="n">batch_id</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">task_num_map</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">batch_id</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">cancelled_futures</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_mark_running_tasks_for_cleanup</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">batch_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">restart_runners</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">future</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">running_tasks</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">batch_id</span><span class="p">,</span> <span class="nb">set</span><span class="p">()):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cancelled_task_restart_map</span><span class="p">[</span><span class="n">future</span><span class="p">]</span> <span class="o">=</span> <span class="n">restart_runners</span>
 
 <div class="viewcode-block" id="Scheduler.start">
 <a class="viewcode-back" href="../../../build_api/trinity.explorer.scheduler.html#trinity.explorer.scheduler.Scheduler.start">[文档]</a>
@@ -1494,6 +1596,9 @@ window.runMermaid = runMermaid;</script>
         <span class="k">if</span> <span class="n">all_running_futures</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Waiting for </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">all_running_futures</span><span class="p">)</span><span class="si">}</span><span class="s2"> running tasks to complete...&quot;</span><span class="p">)</span>
             <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="n">all_running_futures</span><span class="p">,</span> <span class="n">return_exceptions</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">background_tasks</span><span class="p">:</span>
+            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">background_tasks</span><span class="p">),</span> <span class="n">return_exceptions</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scheduler_task</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">scheduler_task</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
@@ -1533,6 +1638,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">task_wrapper</span> <span class="o">=</span> <span class="n">TaskWrapper</span><span class="p">(</span>
                 <span class="n">task</span><span class="o">=</span><span class="n">replace</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">batch_id</span><span class="o">=</span><span class="n">batch_id</span><span class="p">,</span> <span class="n">task_id</span><span class="o">=</span><span class="n">i</span><span class="p">),</span>
                 <span class="n">batch_id</span><span class="o">=</span><span class="n">batch_id</span><span class="p">,</span>
+                <span class="n">total_runs</span><span class="o">=</span><span class="n">task</span><span class="o">.</span><span class="n">repeat_times</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_repeat_times</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">task_wrapper</span><span class="o">.</span><span class="n">sub_task_num</span> <span class="o">=</span> <span class="mi">1</span>
@@ -1561,9 +1667,21 @@ window.runMermaid = runMermaid;</script>
         <span class="p">)</span></div>
 
 
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_cleanup_batch_and_restart_runners</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clear timeout tasks for a batch and restart associated runners.&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_clear_timeout_tasks</span><span class="p">(</span><span class="n">batch_id</span><span class="o">=</span><span class="n">batch_id</span><span class="p">)</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_cleanup_batch</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">batch_id</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">return_partial_tasks</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="n">restart_runners</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Clear unfinished tasks for a batch and optionally restart associated runners.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">return_partial_tasks</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_emit_partial_tasks_for_batch</span><span class="p">(</span><span class="n">batch_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mark_running_tasks_for_cleanup</span><span class="p">(</span><span class="n">batch_id</span><span class="p">,</span> <span class="n">restart_runners</span><span class="o">=</span><span class="n">restart_runners</span><span class="p">)</span>
+        <span class="n">cancelled_futures</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_clear_timeout_tasks</span><span class="p">(</span><span class="n">batch_id</span><span class="o">=</span><span class="n">batch_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">cancelled_futures</span><span class="p">:</span>
+            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="n">cancelled_futures</span><span class="p">,</span> <span class="n">return_exceptions</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">restart_runners</span><span class="p">:</span>
+            <span class="k">return</span>
         <span class="n">runners_to_restart</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">runner_id</span>
             <span class="k">for</span> <span class="n">runner_id</span><span class="p">,</span> <span class="n">task</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">busy_runners</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
@@ -1580,6 +1698,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">min_num</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">clear_timeout_tasks</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">return_partial_tasks</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Status</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the result of tasks at the specific batch_id.</span>
 
@@ -1588,6 +1707,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            min_num (`int`): The minimum number of tasks to wait for. If `None`, wait for all tasks at `batch_id`.</span>
 <span class="sd">            timeout (`float`): The timeout for waiting for tasks to finish. If `None`, wait for default timeout.</span>
 <span class="sd">            clear_timeout_tasks (`bool`): Whether to clear timeout tasks.</span>
+<span class="sd">            return_partial_tasks (`bool`): Whether to emit tasks with partial successful runs when cleaning up unfinished tasks.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_timeout</span>
         <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
@@ -1613,7 +1733,11 @@ window.runMermaid = runMermaid;</script>
                     <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">over_rollout</span><span class="o">.</span><span class="n">wait_after_min</span>
                 <span class="p">):</span>
                     <span class="k">if</span> <span class="n">clear_timeout_tasks</span><span class="p">:</span>
-                        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_batch_and_restart_runners</span><span class="p">(</span><span class="n">batch_id</span><span class="p">)</span>
+                        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_batch</span><span class="p">(</span>
+                            <span class="n">batch_id</span><span class="p">,</span>
+                            <span class="n">return_partial_tasks</span><span class="o">=</span><span class="n">return_partial_tasks</span><span class="p">,</span>
+                            <span class="n">restart_runners</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="p">)</span>
                         <span class="k">break</span>
             <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
 
@@ -1622,7 +1746,11 @@ window.runMermaid = runMermaid;</script>
                 <span class="sa">f</span><span class="s2">&quot;Timed out waiting for tasks at batch </span><span class="si">{</span><span class="n">batch_id</span><span class="si">}</span><span class="s2"> to complete after </span><span class="si">{</span><span class="n">timeout</span><span class="si">}</span><span class="s2"> seconds&quot;</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="n">clear_timeout_tasks</span><span class="p">:</span>
-                <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_batch_and_restart_runners</span><span class="p">(</span><span class="n">batch_id</span><span class="p">)</span>
+                <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_batch</span><span class="p">(</span>
+                    <span class="n">batch_id</span><span class="p">,</span>
+                    <span class="n">return_partial_tasks</span><span class="o">=</span><span class="n">return_partial_tasks</span><span class="p">,</span>
+                    <span class="n">restart_runners</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="p">)</span>
 
         <span class="n">statuses</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">experiences</span> <span class="o">=</span> <span class="p">[]</span>

@@ -1117,15 +1117,16 @@ Users can use these features to simplify configuration.</p>
 <span class="w">    </span><span class="nt">engine_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">vllm</span>
 <span class="w">    </span><span class="nt">engine_num</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
 <span class="w">    </span><span class="nt">tensor_parallel_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
-<span class="w">    </span><span class="nt">enable_history</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">False</span>
+<span class="w">    </span><span class="nt">enable_history</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
 <span class="w">  </span><span class="nt">auxiliary_models</span><span class="p">:</span>
 <span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">model_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Qwen/Qwen2.5-7B-Instruct</span>
 <span class="w">    </span><span class="nt">tensor_parallel_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
 <span class="w">  </span><span class="nt">eval_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
-<span class="w">  </span><span class="nt">eval_on_startup</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
+<span class="w">  </span><span class="nt">eval_on_startup</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 <span class="w">  </span><span class="nt">over_rollout</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">ratio</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0</span>
 <span class="w">    </span><span class="nt">wait_after_min</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30.0</span>
+<span class="w">    </span><span class="nt">return_partial_tasks</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
 <span class="w">  </span><span class="nt">dynamic_timeout</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">enable</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
 <span class="w">    </span><span class="nt">ratio</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3.0</span>
@@ -1155,7 +1156,7 @@ Users can use these features to simplify configuration.</p>
 </li>
 <li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.engine_num</span></code>: Number of inference engines.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.tensor_parallel_size</span></code>: Degree of tensor parallelism.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.enable_history</span></code>: Whether to enable model call history recording. If set to <code class="docutils literal notranslate"><span class="pre">True</span></code>, the model wrapper automatically records the return experiences of model calls. Please periodically extract the history via <code class="docutils literal notranslate"><span class="pre">extract_experience_from_history</span></code> to avoid out-of-memory issues. Default is <code class="docutils literal notranslate"><span class="pre">False</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.enable_history</span></code>: Whether to enable model call history recording. If set to <code class="docutils literal notranslate"><span class="pre">true</span></code>, the model wrapper automatically records the return experiences of model calls. Please periodically extract the history via <code class="docutils literal notranslate"><span class="pre">extract_experience_from_history</span></code> to avoid out-of-memory issues. Default is <code class="docutils literal notranslate"><span class="pre">false</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">auxiliary_models</span></code>: Additional models used for custom workflows.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">eval_interval</span></code>: Interval (in steps) for evaluating the model.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">eval_on_startup</span></code>: Whether to evaluate the model on startup. More precisely, at step 0 with the original model, so it will not be triggered when restarting.</p></li>
@@ -1163,6 +1164,7 @@ Users can use these features to simplify configuration.</p>
 <ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">ratio</span></code>: Explorer will only wait for <code class="docutils literal notranslate"><span class="pre">(1</span> <span class="pre">-</span> <span class="pre">ratio)</span> <span class="pre">*</span> <span class="pre">batch_size</span></code> of tasks at each step. Default is <code class="docutils literal notranslate"><span class="pre">0.0</span></code>, meaning waiting for all tasks.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">wait_after_min</span></code>: After reaching the minimum task threshold, wait for this many seconds before proceeding. Default is <code class="docutils literal notranslate"><span class="pre">30.0</span></code> seconds.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">return_partial_tasks</span></code>: Whether to return the results of tasks that have only completed partially (e.g., only some runs in GRPO). Default is <code class="docutils literal notranslate"><span class="pre">false</span></code>, meaning only return results of tasks that have completed all runs.</p></li>
 </ul>
 </li>
 <li><p><code class="docutils literal notranslate"><span class="pre">dynamic_timeout</span></code>: [Experimental] Configurations for dynamic timeout mechanism, which adjusts the timeout for each task based on the average time taken for successful tasks.</p>

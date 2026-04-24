@@ -1036,10 +1036,26 @@ window.runMermaid = runMermaid;</script>
 <span class="k">class</span><span class="w"> </span><span class="nc">Status</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Status of the task running result.&quot;&quot;&quot;</span>
 
-    <span class="n">ok</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">completed_runs</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">total_runs</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">metrics</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span>
     <span class="c1"># A list of metric dictionaries, where each dictionary is from a single run.</span>
-    <span class="n">message</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="n">message</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ok</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">completed_runs</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_runs</span></div>
+
+
+
+<div class="viewcode-block" id="RunnerExecutionResult">
+<a class="viewcode-back" href="../../../build_api/trinity.explorer.workflow_runner.html#trinity.explorer.workflow_runner.RunnerExecutionResult">[文档]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RunnerExecutionResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Execution result for one runner task.&quot;&quot;&quot;</span>
+
+    <span class="n">status</span><span class="p">:</span> <span class="n">Status</span>
+    <span class="n">experiences</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]</span></div>
 
 
 
@@ -1165,9 +1181,163 @@ window.runMermaid = runMermaid;</script>
             <span class="n">exps</span> <span class="o">=</span> <span class="n">workflow_instance</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">exps</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">_create_isolated_workflow_instance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Workflow</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">task</span><span class="o">.</span><span class="n">to_workflow</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_wrapper</span><span class="o">.</span><span class="n">clone_with_isolated_history</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">enable_history</span>
+            <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_wrapper</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_model_wrappers</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_build_execution_result</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">total_runs</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">completed_runs</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">metrics</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
+        <span class="n">experiences</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">],</span>
+        <span class="n">first_error</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RunnerExecutionResult</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">first_error</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">elif</span> <span class="n">completed_runs</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">completed_runs</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">total_runs</span><span class="si">}</span><span class="s2"> runs completed successfully. &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;First error: </span><span class="si">{</span><span class="n">first_error</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="n">first_error</span>
+
+        <span class="k">return</span> <span class="n">RunnerExecutionResult</span><span class="p">(</span>
+            <span class="n">status</span><span class="o">=</span><span class="n">Status</span><span class="p">(</span>
+                <span class="n">completed_runs</span><span class="o">=</span><span class="n">completed_runs</span><span class="p">,</span>
+                <span class="n">total_runs</span><span class="o">=</span><span class="n">total_runs</span><span class="p">,</span>
+                <span class="n">metrics</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">metrics</span><span class="p">),</span>
+                <span class="n">message</span><span class="o">=</span><span class="n">message</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">experiences</span><span class="o">=</span><span class="n">experiences</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_aggregate_run_results</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">total_runs</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">results</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RunnerExecutionResult</span><span class="p">:</span>
+        <span class="n">exps</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">run_metrics</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">first_error</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">for</span> <span class="n">ok</span><span class="p">,</span> <span class="n">new_exps</span><span class="p">,</span> <span class="n">run_metric</span><span class="p">,</span> <span class="n">error</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">ok</span><span class="p">:</span>
+                <span class="n">exps</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">new_exps</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">run_metric</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">run_metrics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">run_metric</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">first_error</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">first_error</span> <span class="o">=</span> <span class="n">error</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_execution_result</span><span class="p">(</span>
+            <span class="n">total_runs</span><span class="o">=</span><span class="n">total_runs</span><span class="p">,</span>
+            <span class="n">completed_runs</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">run_metrics</span><span class="p">),</span>
+            <span class="n">metrics</span><span class="o">=</span><span class="n">run_metrics</span><span class="p">,</span>
+            <span class="n">experiences</span><span class="o">=</span><span class="n">exps</span><span class="p">,</span>
+            <span class="n">first_error</span><span class="o">=</span><span class="n">first_error</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_run_parallel_runs</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">,</span>
+        <span class="n">repeat_times</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">run_id_base</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">collect_partial_runs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">use_threads</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RunnerExecutionResult</span><span class="p">:</span>
+        <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">run_single</span><span class="p">(</span>
+            <span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+            <span class="n">workflow</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_isolated_workflow_instance</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+            <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_execute_single_run</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">run_id_base</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">collect_partial_runs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">use_threads</span><span class="p">:</span>
+                <span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span>
+                    <span class="o">*</span><span class="p">(</span>
+                        <span class="n">asyncio</span><span class="o">.</span><span class="n">to_thread</span><span class="p">(</span><span class="k">lambda</span> <span class="n">idx</span><span class="o">=</span><span class="n">i</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">run_single</span><span class="p">(</span><span class="n">idx</span><span class="p">)))</span>  <span class="c1"># type: ignore[misc]</span>
+                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">repeat_times</span><span class="p">)</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">run_single</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">repeat_times</span><span class="p">)))</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aggregate_run_results</span><span class="p">(</span><span class="n">repeat_times</span><span class="p">,</span> <span class="n">results</span><span class="p">)</span>
+
+        <span class="n">future_to_run_index</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">repeat_times</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">use_threads</span><span class="p">:</span>
+                <span class="n">future</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span>
+                    <span class="n">asyncio</span><span class="o">.</span><span class="n">to_thread</span><span class="p">(</span><span class="k">lambda</span> <span class="n">idx</span><span class="o">=</span><span class="n">i</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">run_single</span><span class="p">(</span><span class="n">idx</span><span class="p">)))</span>  <span class="c1"># type: ignore[misc]</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">future</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">run_single</span><span class="p">(</span><span class="n">i</span><span class="p">))</span>
+            <span class="n">future_to_run_index</span><span class="p">[</span><span class="n">future</span><span class="p">]</span> <span class="o">=</span> <span class="n">i</span>
+
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">while</span> <span class="n">future_to_run_index</span><span class="p">:</span>
+            <span class="n">done</span><span class="p">,</span> <span class="n">pending</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span>
+                <span class="n">future_to_run_index</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
+                <span class="n">return_when</span><span class="o">=</span><span class="n">asyncio</span><span class="o">.</span><span class="n">FIRST_COMPLETED</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">should_stop</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">for</span> <span class="n">future</span> <span class="ow">in</span> <span class="n">done</span><span class="p">:</span>
+                <span class="n">future_to_run_index</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">future</span><span class="p">)</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="n">future</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+                <span class="n">ok</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">result</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">ok</span><span class="p">:</span>
+                    <span class="n">should_stop</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="n">should_stop</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">future</span> <span class="ow">in</span> <span class="n">pending</span><span class="p">:</span>
+                    <span class="n">future</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">pending</span><span class="p">:</span>
+                    <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="n">pending</span><span class="p">,</span> <span class="n">return_exceptions</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">break</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aggregate_run_results</span><span class="p">(</span><span class="n">repeat_times</span><span class="p">,</span> <span class="n">results</span><span class="p">)</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_execute_single_run</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">workflow</span><span class="p">:</span> <span class="n">Workflow</span><span class="p">,</span>
+        <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">,</span>
+        <span class="n">run_index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">run_id_base</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+        <span class="n">st</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_wrapper</span><span class="o">.</span><span class="n">clean_workflow_state</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runner_state</span><span class="p">[</span><span class="s2">&quot;workflow_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">batch_id</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">task_id</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">run_index</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runner_state</span><span class="p">[</span><span class="s2">&quot;terminate_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runner_state</span><span class="p">[</span><span class="s2">&quot;begin_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">st</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">new_exps</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_workflow</span><span class="p">(</span><span class="n">workflow</span><span class="p">)</span>
+            <span class="n">et</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">runner_state</span><span class="p">[</span><span class="s2">&quot;terminate_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">et</span>
+            <span class="n">run_metric</span> <span class="o">=</span> <span class="n">calculate_run_level_metrics</span><span class="p">(</span><span class="n">new_exps</span><span class="p">)</span>
+            <span class="n">run_metric</span><span class="p">[</span><span class="s2">&quot;time/run_execution&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">et</span> <span class="o">-</span> <span class="n">st</span>
+            <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">new_exps</span><span class="p">:</span>
+                <span class="n">exp</span><span class="o">.</span><span class="n">eid</span><span class="o">.</span><span class="n">run</span> <span class="o">=</span> <span class="n">run_id_base</span> <span class="o">+</span> <span class="n">run_index</span>
+            <span class="k">return</span> <span class="kc">True</span><span class="p">,</span> <span class="n">new_exps</span><span class="p">,</span> <span class="n">run_metric</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">runner_state</span><span class="p">[</span><span class="s2">&quot;terminate_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="n">error_trace_back</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
+                <span class="s2">&quot;WorkflowRunner single run error: &quot;</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">exc</span><span class="si">}</span><span class="se">\n</span><span class="s2">Traceback:</span><span class="se">\n</span><span class="si">{</span><span class="n">error_trace_back</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span><span class="p">,</span> <span class="p">[],</span> <span class="kc">None</span><span class="p">,</span> <span class="n">error_trace_back</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_run_task</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">,</span> <span class="n">repeat_times</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">run_id_base</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]]:</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">,</span>
+        <span class="n">repeat_times</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">run_id_base</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">collect_partial_runs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RunnerExecutionResult</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Init workflow from the task and run it.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">task</span><span class="o">.</span><span class="n">workflow</span><span class="o">.</span><span class="n">can_repeat</span><span class="p">:</span>
             <span class="n">workflow_instance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_workflow_instance</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
@@ -1184,113 +1354,68 @@ window.runMermaid = runMermaid;</script>
             <span class="n">run_metrics</span> <span class="o">=</span> <span class="p">[</span><span class="n">exp</span><span class="o">.</span><span class="n">metrics</span> <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">exps</span> <span class="k">if</span> <span class="n">exp</span><span class="o">.</span><span class="n">metrics</span><span class="p">]</span>
             <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">run_metrics</span><span class="p">:</span>
                 <span class="n">metric</span><span class="p">[</span><span class="s2">&quot;time/run_execution&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">et</span> <span class="o">-</span> <span class="n">st</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_execution_result</span><span class="p">(</span>
+                <span class="n">total_runs</span><span class="o">=</span><span class="n">repeat_times</span><span class="p">,</span>
+                <span class="n">completed_runs</span><span class="o">=</span><span class="n">repeat_times</span><span class="p">,</span>
+                <span class="n">metrics</span><span class="o">=</span><span class="n">run_metrics</span><span class="p">,</span>
+                <span class="n">experiences</span><span class="o">=</span><span class="n">exps</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">exps</span><span class="p">,</span> <span class="n">run_metrics</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">concurrent_run_fn</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">repeat_times</span><span class="p">,</span> <span class="n">run_id_base</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">exps</span><span class="p">,</span> <span class="n">run_metrics</span>
+            <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">concurrent_run_fn</span><span class="p">(</span>
+                <span class="n">task</span><span class="p">,</span>
+                <span class="n">repeat_times</span><span class="p">,</span>
+                <span class="n">run_id_base</span><span class="p">,</span>
+                <span class="n">collect_partial_runs</span><span class="o">=</span><span class="n">collect_partial_runs</span><span class="p">,</span>
+            <span class="p">)</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_sequential_run</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">,</span>
         <span class="n">repeat_times</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">run_id_base</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]]:</span>
-        <span class="n">exps</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">run_metrics</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">collect_partial_runs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RunnerExecutionResult</span><span class="p">:</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">repeat_times</span><span class="p">):</span>
-            <span class="n">st</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
             <span class="n">workflow</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_create_workflow_instance</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
-            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_wrapper</span><span class="o">.</span><span class="n">clean_workflow_state</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">runner_state</span><span class="p">[</span><span class="s2">&quot;workflow_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">batch_id</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">task_id</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">runner_state</span><span class="p">[</span><span class="s2">&quot;terminate_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">runner_state</span><span class="p">[</span><span class="s2">&quot;begin_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">st</span>
-            <span class="n">new_exps</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_workflow</span><span class="p">(</span><span class="n">workflow</span><span class="p">)</span>
-            <span class="n">et</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">runner_state</span><span class="p">[</span><span class="s2">&quot;terminate_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">et</span>
-            <span class="n">run_metric</span> <span class="o">=</span> <span class="n">calculate_run_level_metrics</span><span class="p">(</span><span class="n">new_exps</span><span class="p">)</span>
-            <span class="n">run_metric</span><span class="p">[</span><span class="s2">&quot;time/run_execution&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">et</span> <span class="o">-</span> <span class="n">st</span>
-            <span class="n">run_metrics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">run_metric</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">new_exps</span><span class="p">:</span>
-                <span class="n">exp</span><span class="o">.</span><span class="n">eid</span><span class="o">.</span><span class="n">run</span> <span class="o">=</span> <span class="n">run_id_base</span> <span class="o">+</span> <span class="n">i</span>
-            <span class="n">exps</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">new_exps</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">exps</span><span class="p">,</span> <span class="n">run_metrics</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_execute_single_run</span><span class="p">(</span><span class="n">workflow</span><span class="p">,</span> <span class="n">task</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">run_id_base</span><span class="p">)</span>
+            <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">collect_partial_runs</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">ok</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">result</span>
+            <span class="k">if</span> <span class="n">ok</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">break</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_aggregate_run_results</span><span class="p">(</span><span class="n">repeat_times</span><span class="p">,</span> <span class="n">results</span><span class="p">)</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_asynchronous_run</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">,</span>
         <span class="n">repeat_times</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">run_id_base</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]]:</span>
-        <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">run_single</span><span class="p">(</span><span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">],</span> <span class="n">Dict</span><span class="p">]:</span>
-            <span class="n">st</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            <span class="n">workflow</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">to_workflow</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">model_wrapper</span><span class="o">.</span><span class="n">clone_with_isolated_history</span><span class="p">()</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">enable_history</span>
-                <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_wrapper</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_model_wrappers</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_wrapper</span><span class="o">.</span><span class="n">clean_workflow_state</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">runner_state</span><span class="p">[</span><span class="s2">&quot;workflow_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">batch_id</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">task_id</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">runner_state</span><span class="p">[</span><span class="s2">&quot;terminate_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">runner_state</span><span class="p">[</span><span class="s2">&quot;begin_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">st</span>
-            <span class="n">new_exps</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_workflow</span><span class="p">(</span><span class="n">workflow</span><span class="p">)</span>
-            <span class="n">et</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">runner_state</span><span class="p">[</span><span class="s2">&quot;terminate_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">et</span>
-            <span class="n">run_metric</span> <span class="o">=</span> <span class="n">calculate_run_level_metrics</span><span class="p">(</span><span class="n">new_exps</span><span class="p">)</span>
-            <span class="n">run_metric</span><span class="p">[</span><span class="s2">&quot;time/run_execution&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">et</span> <span class="o">-</span> <span class="n">st</span>
-            <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">new_exps</span><span class="p">:</span>
-                <span class="n">exp</span><span class="o">.</span><span class="n">eid</span><span class="o">.</span><span class="n">run</span> <span class="o">=</span> <span class="n">run_id_base</span> <span class="o">+</span> <span class="n">i</span>
-            <span class="k">return</span> <span class="n">new_exps</span><span class="p">,</span> <span class="n">run_metric</span>
-
-        <span class="n">tasks</span> <span class="o">=</span> <span class="p">[</span><span class="n">run_single</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">repeat_times</span><span class="p">)]</span>
-        <span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="n">tasks</span><span class="p">)</span>
-        <span class="n">exps</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">run_metrics</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">new_exps</span><span class="p">,</span> <span class="n">run_metric</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
-            <span class="n">exps</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">new_exps</span><span class="p">)</span>
-            <span class="n">run_metrics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">run_metric</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">exps</span><span class="p">,</span> <span class="n">run_metrics</span>
+        <span class="n">collect_partial_runs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RunnerExecutionResult</span><span class="p">:</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_parallel_runs</span><span class="p">(</span>
+            <span class="n">task</span><span class="p">,</span>
+            <span class="n">repeat_times</span><span class="p">,</span>
+            <span class="n">run_id_base</span><span class="p">,</span>
+            <span class="n">collect_partial_runs</span><span class="o">=</span><span class="n">collect_partial_runs</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_multi_threading_run</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">,</span>
         <span class="n">repeat_times</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">run_id_base</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]]:</span>
-        <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">run_single</span><span class="p">(</span><span class="n">i</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">],</span> <span class="n">Dict</span><span class="p">]:</span>
-            <span class="n">st</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_wrapper</span><span class="o">.</span><span class="n">clean_workflow_state</span><span class="p">()</span>
-            <span class="n">workflow</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">to_workflow</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">model_wrapper</span><span class="o">.</span><span class="n">clone_with_isolated_history</span><span class="p">()</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">enable_history</span>
-                <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_wrapper</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_model_wrappers</span><span class="p">,</span>
-            <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">runner_state</span><span class="p">[</span><span class="s2">&quot;workflow_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">batch_id</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">task</span><span class="o">.</span><span class="n">task_id</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">runner_state</span><span class="p">[</span><span class="s2">&quot;terminate_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">runner_state</span><span class="p">[</span><span class="s2">&quot;begin_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">st</span>
-            <span class="n">new_exps</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_workflow</span><span class="p">(</span><span class="n">workflow</span><span class="p">)</span>
-            <span class="n">et</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">runner_state</span><span class="p">[</span><span class="s2">&quot;terminate_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">et</span>
-            <span class="n">run_metric</span> <span class="o">=</span> <span class="n">calculate_run_level_metrics</span><span class="p">(</span><span class="n">new_exps</span><span class="p">)</span>
-            <span class="n">run_metric</span><span class="p">[</span><span class="s2">&quot;time/run_execution&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">et</span> <span class="o">-</span> <span class="n">st</span>
-            <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">new_exps</span><span class="p">:</span>
-                <span class="n">exp</span><span class="o">.</span><span class="n">eid</span><span class="o">.</span><span class="n">run</span> <span class="o">=</span> <span class="n">run_id_base</span> <span class="o">+</span> <span class="n">i</span>
-            <span class="k">return</span> <span class="n">new_exps</span><span class="p">,</span> <span class="n">run_metric</span>
-
-        <span class="c1"># Use asyncio.to_thread to run async tasks in threads</span>
-        <span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span>
-            <span class="o">*</span><span class="p">(</span>
-                <span class="n">asyncio</span><span class="o">.</span><span class="n">to_thread</span><span class="p">(</span><span class="k">lambda</span> <span class="n">idx</span><span class="o">=</span><span class="n">i</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">run_single</span><span class="p">(</span><span class="n">idx</span><span class="p">)))</span>  <span class="c1"># type: ignore[misc]</span>
-                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">repeat_times</span><span class="p">)</span>
-            <span class="p">)</span>
+        <span class="n">collect_partial_runs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RunnerExecutionResult</span><span class="p">:</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_parallel_runs</span><span class="p">(</span>
+            <span class="n">task</span><span class="p">,</span>
+            <span class="n">repeat_times</span><span class="p">,</span>
+            <span class="n">run_id_base</span><span class="p">,</span>
+            <span class="n">collect_partial_runs</span><span class="o">=</span><span class="n">collect_partial_runs</span><span class="p">,</span>
+            <span class="n">use_threads</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span>
-
-        <span class="n">exps</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">run_metrics</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">new_exps</span><span class="p">,</span> <span class="n">run_metric</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
-            <span class="n">exps</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">new_exps</span><span class="p">)</span>
-            <span class="n">run_metrics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">run_metric</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">exps</span><span class="p">,</span> <span class="n">run_metrics</span>
 
 <div class="viewcode-block" id="WorkflowRunner.get_runner_state">
 <a class="viewcode-back" href="../../../build_api/trinity.explorer.workflow_runner.html#trinity.explorer.workflow_runner.WorkflowRunner.get_runner_state">[文档]</a>
@@ -1309,6 +1434,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">batch_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">repeat_times</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">run_id_base</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="n">collect_partial_runs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Status</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the task and return the states.&quot;&quot;&quot;</span>
         <span class="c1"># TODO: avoid sending the experiences back to the scheduler to reduce the communication overhead</span>
@@ -1319,8 +1445,15 @@ window.runMermaid = runMermaid;</script>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Starting task: step=</span><span class="si">{</span><span class="n">batch_id</span><span class="si">}</span><span class="s2">, model_version=</span><span class="si">{</span><span class="n">model_version</span><span class="si">}</span><span class="s2">, repeat_times=</span><span class="si">{</span><span class="n">repeat_times</span><span class="si">}</span><span class="s2">, run_id_base=</span><span class="si">{</span><span class="n">run_id_base</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
-            <span class="n">exps</span><span class="p">,</span> <span class="n">metrics</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_task</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">repeat_times</span><span class="p">,</span> <span class="n">run_id_base</span><span class="p">)</span>
-            <span class="k">assert</span> <span class="n">exps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">exps</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;An empty experience is generated&quot;</span>
+            <span class="n">execution_result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_task</span><span class="p">(</span>
+                <span class="n">task</span><span class="p">,</span>
+                <span class="n">repeat_times</span><span class="p">,</span>
+                <span class="n">run_id_base</span><span class="p">,</span>
+                <span class="n">collect_partial_runs</span><span class="o">=</span><span class="n">collect_partial_runs</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">exps</span> <span class="o">=</span> <span class="n">execution_result</span><span class="o">.</span><span class="n">experiences</span>
+            <span class="k">if</span> <span class="n">execution_result</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">completed_runs</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="n">exps</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">exps</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;An empty experience is generated&quot;</span>
             <span class="c1"># set eid for each experience</span>
             <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">exps</span><span class="p">:</span>
                 <span class="n">exp</span><span class="o">.</span><span class="n">eid</span><span class="o">.</span><span class="n">batch</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">batch_id</span>
@@ -1336,17 +1469,24 @@ window.runMermaid = runMermaid;</script>
                 <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="s2">&quot;metrics&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">exp</span><span class="o">.</span><span class="n">metrics</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">exp</span><span class="o">.</span><span class="n">metrics</span> <span class="o">=</span> <span class="p">{}</span>
 
+            <span class="n">status</span> <span class="o">=</span> <span class="n">execution_result</span><span class="o">.</span><span class="n">status</span>
+
             <span class="k">if</span> <span class="n">task</span><span class="o">.</span><span class="n">is_eval</span><span class="p">:</span>
                 <span class="c1"># If the task is an evaluation task, we do not record the experiences to the buffer</span>
-                <span class="k">return</span> <span class="n">Status</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">),</span> <span class="p">[]</span>
+                <span class="k">return</span> <span class="n">status</span><span class="p">,</span> <span class="p">[]</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">Status</span><span class="p">(</span><span class="kc">True</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">),</span> <span class="n">exps</span>
+                <span class="k">return</span> <span class="n">status</span><span class="p">,</span> <span class="n">exps</span>
 
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="n">error_trace_back</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;WorkflowRunner run task error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="se">\n</span><span class="s2">Traceback:</span><span class="se">\n</span><span class="si">{</span><span class="n">error_trace_back</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="p">(</span>
-                <span class="n">Status</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;time/run_execution&quot;</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">st</span><span class="p">}],</span> <span class="n">message</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)),</span>
+                <span class="n">Status</span><span class="p">(</span>
+                    <span class="n">completed_runs</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                    <span class="n">total_runs</span><span class="o">=</span><span class="n">repeat_times</span><span class="p">,</span>
+                    <span class="n">metrics</span><span class="o">=</span><span class="p">[{</span><span class="s2">&quot;time/run_execution&quot;</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">st</span><span class="p">}],</span>
+                    <span class="n">message</span><span class="o">=</span><span class="n">error_trace_back</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(),</span>
+                <span class="p">),</span>
                 <span class="p">[],</span>
             <span class="p">)</span></div>
 </div>

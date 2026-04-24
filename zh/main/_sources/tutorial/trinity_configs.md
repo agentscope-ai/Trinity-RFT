@@ -409,15 +409,16 @@ explorer:
     engine_type: vllm
     engine_num: 1
     tensor_parallel_size: 1
-    enable_history: False
+    enable_history: false
   auxiliary_models:
   - model_path: Qwen/Qwen2.5-7B-Instruct
     tensor_parallel_size: 1
   eval_interval: 100
-  eval_on_startup: True
+  eval_on_startup: true
   over_rollout:
     ratio: 0.0
     wait_after_min: 30.0
+    return_partial_tasks: false
   dynamic_timeout:
     enable: false
     ratio: 3.0
@@ -447,6 +448,7 @@ explorer:
 - `over_rollout`: [实验性] 超量 rollout 机制的配置，允许 explorer 在每个步骤中使用少于完整批次大小的任务继续进行。这在某些任务显著耗时较长的场景中能有效地提高吞吐量。仅当使用动态同步（`synchronizer.sync_style` 不是 `fixed`）时适用。
   - `ratio`: explorer 在每个步骤中仅等待 `(1 - ratio) * batch_size` 的任务。默认为 `0.0`，表示等待所有任务。
   - `wait_after_min`: 达到最小任务阈值后，等待此秒数后再继续。
+  - `return_partial_tasks`: 是否返回仅部分完成的任务结果（例如，在 GRPO 中仅完成部分 run 的任务）。默认为 `false`，表示仅返回已完成组内所有 run 的任务结果。
 - `dynamic_timeout`: [实验性] 动态超时机制的配置，根据成功任务的平均耗时调整每个任务的超时时间。
   - `enable`: 是否启用动态超时。默认为 `false`。
   - `ratio`: 每个任务的超时时间动态设置为 `average_time_per_success_task * ratio`。默认为 `3.0`。

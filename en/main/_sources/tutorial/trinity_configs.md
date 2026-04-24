@@ -412,15 +412,16 @@ explorer:
     engine_type: vllm
     engine_num: 1
     tensor_parallel_size: 1
-    enable_history: False
+    enable_history: false
   auxiliary_models:
   - model_path: Qwen/Qwen2.5-7B-Instruct
     tensor_parallel_size: 1
   eval_interval: 100
-  eval_on_startup: True
+  eval_on_startup: true
   over_rollout:
     ratio: 0.0
     wait_after_min: 30.0
+    return_partial_tasks: false
   dynamic_timeout:
     enable: false
     ratio: 3.0
@@ -443,13 +444,14 @@ explorer:
   - `external`: Use external API-based model engine.
 - `rollout_model.engine_num`: Number of inference engines.
 - `rollout_model.tensor_parallel_size`: Degree of tensor parallelism.
-- `rollout_model.enable_history`: Whether to enable model call history recording. If set to `True`, the model wrapper automatically records the return experiences of model calls. Please periodically extract the history via `extract_experience_from_history` to avoid out-of-memory issues. Default is `False`.
+- `rollout_model.enable_history`: Whether to enable model call history recording. If set to `true`, the model wrapper automatically records the return experiences of model calls. Please periodically extract the history via `extract_experience_from_history` to avoid out-of-memory issues. Default is `false`.
 - `auxiliary_models`: Additional models used for custom workflows.
 - `eval_interval`: Interval (in steps) for evaluating the model.
 - `eval_on_startup`: Whether to evaluate the model on startup. More precisely, at step 0 with the original model, so it will not be triggered when restarting.
 - `over_rollout`: [Experimental] Configurations for over-rollout mechanism, which allows the explorer to proceed with fewer tasks than the full batch size. It effectively increases throughput in scenarios where some tasks take significantly longer to complete than others. Only applicable when dynamic synchronization (`synchronizer.sync_style` is not `fixed`) is used.
   - `ratio`: Explorer will only wait for `(1 - ratio) * batch_size` of tasks at each step. Default is `0.0`, meaning waiting for all tasks.
   - `wait_after_min`: After reaching the minimum task threshold, wait for this many seconds before proceeding. Default is `30.0` seconds.
+  - `return_partial_tasks`: Whether to return the results of tasks that have only completed partially (e.g., only some runs in GRPO). Default is `false`, meaning only return results of tasks that have completed all runs.
 - `dynamic_timeout`: [Experimental] Configurations for dynamic timeout mechanism, which adjusts the timeout for each task based on the average time taken for successful tasks.
   - `enable`: Whether to enable dynamic timeout. Default is `false`.
   - `ratio`: The timeout for each task is dynamically set to `average_time_per_success_task * ratio`. Default is `3.0`.
