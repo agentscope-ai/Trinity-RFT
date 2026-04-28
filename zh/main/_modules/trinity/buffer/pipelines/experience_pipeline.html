@@ -703,6 +703,7 @@ window.runMermaid = runMermaid;</script>
 </ul>
 </details></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.explorer.explorer.html">trinity.explorer.explorer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.explorer.rollout_coordinator.html">trinity.explorer.rollout_coordinator module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.explorer.scheduler.html">trinity.explorer.scheduler module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.explorer.workflow_runner.html">trinity.explorer.workflow_runner module</a></li>
 </ul>
@@ -1068,7 +1069,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="ExperiencePipeline.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.pipelines.experience_pipeline.html#trinity.buffer.pipelines.ExperiencePipeline.__init__">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_experience_pipeline&quot;</span><span class="p">,</span> <span class="n">in_ray_actor</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">()</span>
         <span class="n">load_plugins</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">input_store</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_input_storage</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">data_processor</span><span class="o">.</span><span class="n">experience_pipeline</span><span class="p">)</span>  <span class="c1"># type: ignore [arg-type]</span>
@@ -1174,8 +1175,24 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Returns:</span>
 <span class="sd">            Dict: A dictionary containing metrics collected during the processing of experiences.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">st</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="n">exps</span> <span class="o">=</span> <span class="n">Experience</span><span class="o">.</span><span class="n">deserialize_many</span><span class="p">(</span><span class="n">exp_bytes</span><span class="p">)</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_experiences</span><span class="p">(</span><span class="n">exps</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="ExperiencePipeline.process_serialized_chunks">
+<a class="viewcode-back" href="../../../../build_api/trinity.buffer.pipelines.experience_pipeline.html#trinity.buffer.pipelines.ExperiencePipeline.process_serialized_chunks">[文档]</a>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">process_serialized_chunks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exp_chunks</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bytes</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Process a batch assembled from multiple serialized task payloads.&quot;&quot;&quot;</span>
+        <span class="n">exps</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">exp_bytes</span> <span class="ow">in</span> <span class="n">exp_chunks</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">exp_bytes</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">exps</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">Experience</span><span class="o">.</span><span class="n">deserialize_many</span><span class="p">(</span><span class="n">exp_bytes</span><span class="p">))</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_experiences</span><span class="p">(</span><span class="n">exps</span><span class="p">)</span></div>
+
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_process_experiences</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exps</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Experience</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+        <span class="n">st</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_store</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_store</span><span class="o">.</span><span class="n">write_async</span><span class="p">(</span><span class="n">exps</span><span class="p">)</span>
 
@@ -1210,8 +1227,7 @@ window.runMermaid = runMermaid;</script>
         <span class="k">if</span> <span class="n">SELECTOR_METRIC</span> <span class="ow">in</span> <span class="n">metrics</span><span class="p">:</span>
             <span class="n">result_metrics</span><span class="p">[</span><span class="n">SELECTOR_METRIC</span><span class="p">]</span> <span class="o">=</span> <span class="n">metrics</span><span class="p">[</span><span class="n">SELECTOR_METRIC</span><span class="p">]</span>
 
-        <span class="k">return</span> <span class="n">result_metrics</span></div>
-
+        <span class="k">return</span> <span class="n">result_metrics</span>
 
 <div class="viewcode-block" id="ExperiencePipeline.close">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.pipelines.experience_pipeline.html#trinity.buffer.pipelines.ExperiencePipeline.close">[文档]</a>

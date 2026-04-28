@@ -262,6 +262,7 @@
 </ul>
 </details></li>
 <li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.explorer.explorer.html">trinity.explorer.explorer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.explorer.rollout_coordinator.html">trinity.explorer.rollout_coordinator module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.explorer.scheduler.html">trinity.explorer.scheduler module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.explorer.workflow_runner.html">trinity.explorer.workflow_runner module</a></li>
 </ul>
@@ -1129,6 +1130,7 @@ Users can use these features to simplify configuration.</p>
 <span class="w">    </span><span class="nt">return_partial_tasks</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
 <span class="w">  </span><span class="nt">dynamic_timeout</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">enable</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="nt">warmup_min_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
 <span class="w">    </span><span class="nt">ratio</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3.0</span>
 <span class="w">  </span><span class="nt">runner_state_report_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
 </pre></div>
@@ -1167,10 +1169,11 @@ Users can use these features to simplify configuration.</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">return_partial_tasks</span></code>: Whether to return the results of tasks that have only completed partially (e.g., only some runs in GRPO). Default is <code class="docutils literal notranslate"><span class="pre">false</span></code>, meaning only return results of tasks that have completed all runs.</p></li>
 </ul>
 </li>
-<li><p><code class="docutils literal notranslate"><span class="pre">dynamic_timeout</span></code>: [Experimental] Configurations for dynamic timeout mechanism, which adjusts the timeout for each task based on the average time taken for successful tasks.</p>
+<li><p><code class="docutils literal notranslate"><span class="pre">dynamic_timeout</span></code>: [Experimental] Configurations for dynamic timeout mechanism, which adjusts the timeout for each scheduled execution unit based on historical runtime statistics.</p>
 <ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">enable</span></code>: Whether to enable dynamic timeout. Default is <code class="docutils literal notranslate"><span class="pre">false</span></code>.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ratio</span></code>: The timeout for each task is dynamically set to <code class="docutils literal notranslate"><span class="pre">average_time_per_success_task</span> <span class="pre">*</span> <span class="pre">ratio</span></code>. Default is <code class="docutils literal notranslate"><span class="pre">3.0</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">warmup_min_steps</span></code>: The minimum number of fully observed non-eval steps required before dynamic timeout takes effect. Default is <code class="docutils literal notranslate"><span class="pre">1</span></code>. This is equivalent to a warmup batch/step count, and helps avoid enabling dynamic timeout based only on a few fast early completions.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ratio</span></code>: The timeout for each scheduled execution unit is dynamically set to <code class="docutils literal notranslate"><span class="pre">average_time_per_success_execution</span> <span class="pre">*</span> <span class="pre">ratio</span></code>. Default is <code class="docutils literal notranslate"><span class="pre">3.0</span></code>.</p></li>
 </ul>
 </li>
 <li><p><code class="docutils literal notranslate"><span class="pre">runner_state_report_interval</span></code>: Workflow runner report interval (in seconds). If set to a value greater than <code class="docutils literal notranslate"><span class="pre">0</span></code>, the workflow runner will periodically report its status to the main explorer process and print it in the command line for monitoring. Default is <code class="docutils literal notranslate"><span class="pre">0</span></code>, meaning this feature is disabled. If you want to use this feature, it is recommended to set it to <code class="docutils literal notranslate"><span class="pre">10</span></code> seconds or longer to minimize performance impact.</p></li>

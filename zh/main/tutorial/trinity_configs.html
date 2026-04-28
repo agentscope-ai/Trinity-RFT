@@ -268,6 +268,7 @@
 </ul>
 </details></li>
 <li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.explorer.explorer.html">trinity.explorer.explorer module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.explorer.rollout_coordinator.html">trinity.explorer.rollout_coordinator module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.explorer.scheduler.html">trinity.explorer.scheduler module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.explorer.workflow_runner.html">trinity.explorer.workflow_runner module</a></li>
 </ul>
@@ -1132,6 +1133,7 @@
 <span class="w">    </span><span class="nt">return_partial_tasks</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
 <span class="w">  </span><span class="nt">dynamic_timeout</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">enable</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="nt">warmup_min_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
 <span class="w">    </span><span class="nt">ratio</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3.0</span>
 <span class="w">  </span><span class="nt">runner_state_report_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
 </pre></div>
@@ -1170,10 +1172,11 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">return_partial_tasks</span></code>: 是否返回仅部分完成的任务结果（例如，在 GRPO 中仅完成部分 run 的任务）。默认为 <code class="docutils literal notranslate"><span class="pre">false</span></code>，表示仅返回已完成组内所有 run 的任务结果。</p></li>
 </ul>
 </li>
-<li><p><code class="docutils literal notranslate"><span class="pre">dynamic_timeout</span></code>: [实验性] 动态超时机制的配置，根据成功任务的平均耗时调整每个任务的超时时间。</p>
+<li><p><code class="docutils literal notranslate"><span class="pre">dynamic_timeout</span></code>: [实验性] 动态超时机制的配置，根据历史执行耗时动态调整每个调度执行单元的超时时间。</p>
 <ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">enable</span></code>: 是否启用动态超时。默认为 <code class="docutils literal notranslate"><span class="pre">false</span></code>。</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ratio</span></code>: 每个任务的超时时间动态设置为 <code class="docutils literal notranslate"><span class="pre">average_time_per_success_task</span> <span class="pre">*</span> <span class="pre">ratio</span></code>。默认为 <code class="docutils literal notranslate"><span class="pre">3.0</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">warmup_min_steps</span></code>: 动态超时生效前至少需要观测到多少个完整结束的非评估 step。默认为 <code class="docutils literal notranslate"><span class="pre">1</span></code>。它等价于预热所需的 batch/step 数，可以避免只根据少量较快完成的早期任务就提前启用动态超时。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ratio</span></code>: 每个调度执行单元的超时时间动态设置为 <code class="docutils literal notranslate"><span class="pre">average_time_per_success_execution</span> <span class="pre">*</span> <span class="pre">ratio</span></code>。默认为 <code class="docutils literal notranslate"><span class="pre">3.0</span></code>。</p></li>
 </ul>
 </li>
 <li><p><code class="docutils literal notranslate"><span class="pre">runner_state_report_interval</span></code>: WorkflowRunner 报告自身状态的时间间隔（秒）。若设为大于 0 的值，工作流执行器会定期将其状态报告给 explorer 主进程并打印在命令行中，以便监控其运行状态。默认为 <code class="docutils literal notranslate"><span class="pre">0</span></code>，表示不启用此功能。推荐如需使用此功能，将其设置为 <code class="docutils literal notranslate"><span class="pre">10</span></code> 秒或更长时间以减少对性能的影响。</p></li>

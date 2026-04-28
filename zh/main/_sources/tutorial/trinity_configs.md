@@ -421,6 +421,7 @@ explorer:
     return_partial_tasks: false
   dynamic_timeout:
     enable: false
+    warmup_min_steps: 1
     ratio: 3.0
   runner_state_report_interval: 0
 ```
@@ -449,9 +450,10 @@ explorer:
   - `ratio`: explorer 在每个步骤中仅等待 `(1 - ratio) * batch_size` 的任务。默认为 `0.0`，表示等待所有任务。
   - `wait_after_min`: 达到最小任务阈值后，等待此秒数后再继续。
   - `return_partial_tasks`: 是否返回仅部分完成的任务结果（例如，在 GRPO 中仅完成部分 run 的任务）。默认为 `false`，表示仅返回已完成组内所有 run 的任务结果。
-- `dynamic_timeout`: [实验性] 动态超时机制的配置，根据成功任务的平均耗时调整每个任务的超时时间。
+- `dynamic_timeout`: [实验性] 动态超时机制的配置，根据历史执行耗时动态调整每个调度执行单元的超时时间。
   - `enable`: 是否启用动态超时。默认为 `false`。
-  - `ratio`: 每个任务的超时时间动态设置为 `average_time_per_success_task * ratio`。默认为 `3.0`。
+  - `warmup_min_steps`: 动态超时生效前至少需要观测到多少个完整结束的非评估 step。默认为 `1`。它等价于预热所需的 batch/step 数，可以避免只根据少量较快完成的早期任务就提前启用动态超时。
+  - `ratio`: 每个调度执行单元的超时时间动态设置为 `average_time_per_success_execution * ratio`。默认为 `3.0`。
 - `runner_state_report_interval`: WorkflowRunner 报告自身状态的时间间隔（秒）。若设为大于 0 的值，工作流执行器会定期将其状态报告给 explorer 主进程并打印在命令行中，以便监控其运行状态。默认为 `0`，表示不启用此功能。推荐如需使用此功能，将其设置为 `10` 秒或更长时间以减少对性能的影响。
 
 ---

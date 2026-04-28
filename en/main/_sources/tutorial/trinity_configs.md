@@ -424,6 +424,7 @@ explorer:
     return_partial_tasks: false
   dynamic_timeout:
     enable: false
+    warmup_min_steps: 1
     ratio: 3.0
   runner_state_report_interval: 0
 ```
@@ -452,9 +453,10 @@ explorer:
   - `ratio`: Explorer will only wait for `(1 - ratio) * batch_size` of tasks at each step. Default is `0.0`, meaning waiting for all tasks.
   - `wait_after_min`: After reaching the minimum task threshold, wait for this many seconds before proceeding. Default is `30.0` seconds.
   - `return_partial_tasks`: Whether to return the results of tasks that have only completed partially (e.g., only some runs in GRPO). Default is `false`, meaning only return results of tasks that have completed all runs.
-- `dynamic_timeout`: [Experimental] Configurations for dynamic timeout mechanism, which adjusts the timeout for each task based on the average time taken for successful tasks.
+- `dynamic_timeout`: [Experimental] Configurations for dynamic timeout mechanism, which adjusts the timeout for each scheduled execution unit based on historical runtime statistics.
   - `enable`: Whether to enable dynamic timeout. Default is `false`.
-  - `ratio`: The timeout for each task is dynamically set to `average_time_per_success_task * ratio`. Default is `3.0`.
+  - `warmup_min_steps`: The minimum number of fully observed non-eval steps required before dynamic timeout takes effect. Default is `1`. This is equivalent to a warmup batch/step count, and helps avoid enabling dynamic timeout based only on a few fast early completions.
+  - `ratio`: The timeout for each scheduled execution unit is dynamically set to `average_time_per_success_execution * ratio`. Default is `3.0`.
 - `runner_state_report_interval`: Workflow runner report interval (in seconds). If set to a value greater than `0`, the workflow runner will periodically report its status to the main explorer process and print it in the command line for monitoring. Default is `0`, meaning this feature is disabled. If you want to use this feature, it is recommended to set it to `10` seconds or longer to minimize performance impact.
 
 ---

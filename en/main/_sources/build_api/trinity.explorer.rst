@@ -16,6 +16,7 @@ Submodules
    :maxdepth: 4
 
    trinity.explorer.explorer
+   trinity.explorer.rollout_coordinator
    trinity.explorer.scheduler
    trinity.explorer.workflow_runner
 
