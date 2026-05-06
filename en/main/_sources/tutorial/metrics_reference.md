@@ -164,7 +164,7 @@ This category includes metrics that track the training dynamics of the policy (a
 This category includes metrics that track the processing of experiences through various pipeline operators (`experience_pipeline/`) and data sampling statistics (`sample/`). These metrics are aggregated at the step level, as the experience pipeline and data sampling are performed in each step.
 
 
-#### Experience Pipeline Metrics (`experience_pipeline/` and `time/experience_pipeline/`)
+#### Experience Pipeline Metrics (`experience_pipeline/` and `experience_pipeline/time/`)
 
 Experience pipeline metrics track the processing of experiences through various pipeline operators. Each metric represents the count of the specific operator in one step.
 

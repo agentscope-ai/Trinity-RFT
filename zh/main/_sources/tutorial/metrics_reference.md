@@ -165,7 +165,7 @@ graph TD
 此类别包括跟踪通过各种数据处理操作（`experience_pipeline/`）和数据采样统计（`sample/`）的指标。这些指标在步骤（step）级别计算，因为 experience 处理和数据采样会在每个步骤中执行一次。
 
 
-#### Experience Pipeline 相关指标（`experience_pipeline/` 和 `time/experience_pipeline/`）
+#### Experience Pipeline 相关指标（`experience_pipeline/` 和 `experience_pipeline/time/`）
 
 Experience Pipeline 相关的指标统计了和数据处理相关的值，每个指标表示一个步骤中特定操作的统计值。
 

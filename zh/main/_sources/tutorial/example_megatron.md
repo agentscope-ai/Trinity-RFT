@@ -44,11 +44,10 @@ pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation \
 
 #### 构建 Docker 镜像
 
-Trinity-RFT 提供了专门用于 Megatron-LM 的 Dockerfile，位于 `scripts/docker/Dockerfile.megatron`。
-可以使用以下命令构建镜像：
+Trinity-RFT 提供的 Docker 已经预装了 Megatron-LM 相关依赖。你可以直接使用我们提供的 Docker 镜像，或者根据需要自定义 Dockerfile 来构建镜像。
 
 ```bash
-docker build -f scripts/docker/Dockerfile.megatron -t trinity-rft-megatron:latest .
+docker build -f scripts/docker/Dockerfile.uv -t trinity-rft:latest .
 ```
 
 > 💡 你可以在构建前自定义 Dockerfile —— 例如添加 pip 镜像源或设置 API 密钥。
@@ -62,10 +61,11 @@ docker run -it \
     --rm \
     -v $PWD:/workspace \
     -v <your_data_and_checkpoints_path>:/data \
-    trinity-rft-megatron:latest
+    trinity-rft:latest
 ```
 
 请将 `<your_data_and_checkpoints_path>` 替换为你机器上存储数据集和模型检查点的实际路径。
+该镜像使用 `uv` 来管理 Python 依赖，进入容器后虚拟环境会自动激活（也可通过 `source /opt/venv/bin/activate` 手动激活）。该镜像已经包含了 vllm, flash-attn 以及 Megatron-LM，如果需要使用其他依赖，可直接使用 `uv pip install` 来安装它们。
 
 ---
 

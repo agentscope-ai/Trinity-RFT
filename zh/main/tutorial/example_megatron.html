@@ -694,9 +694,8 @@ pip<span class="w"> </span>install<span class="w"> </span>-v<span class="w"> </s
 <p>我们提供了 Docker 配置以简化环境管理。</p>
 <section id="id3">
 <h4>构建 Docker 镜像<a class="headerlink" href="#id3" title="Link to this heading">#</a></h4>
-<p>Trinity-RFT 提供了专门用于 Megatron-LM 的 Dockerfile，位于 <code class="docutils literal notranslate"><span class="pre">scripts/docker/Dockerfile.megatron</span></code>。
-可以使用以下命令构建镜像：</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>build<span class="w"> </span>-f<span class="w"> </span>scripts/docker/Dockerfile.megatron<span class="w"> </span>-t<span class="w"> </span>trinity-rft-megatron:latest<span class="w"> </span>.
+<p>Trinity-RFT 提供的 Docker 已经预装了 Megatron-LM 相关依赖。你可以直接使用我们提供的 Docker 镜像，或者根据需要自定义 Dockerfile 来构建镜像。</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>docker<span class="w"> </span>build<span class="w"> </span>-f<span class="w"> </span>scripts/docker/Dockerfile.uv<span class="w"> </span>-t<span class="w"> </span>trinity-rft:latest<span class="w"> </span>.
 </pre></div>
 </div>
 <blockquote>
@@ -711,10 +710,11 @@ pip<span class="w"> </span>install<span class="w"> </span>-v<span class="w"> </s
 <span class="w">    </span>--rm<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>-v<span class="w"> </span><span class="nv">$PWD</span>:/workspace<span class="w"> </span><span class="se">\</span>
 <span class="w">    </span>-v<span class="w"> </span>&lt;your_data_and_checkpoints_path&gt;:/data<span class="w"> </span><span class="se">\</span>
-<span class="w">    </span>trinity-rft-megatron:latest
+<span class="w">    </span>trinity-rft:latest
 </pre></div>
 </div>
-<p>请将 <code class="docutils literal notranslate"><span class="pre">&lt;your_data_and_checkpoints_path&gt;</span></code> 替换为你机器上存储数据集和模型检查点的实际路径。</p>
+<p>请将 <code class="docutils literal notranslate"><span class="pre">&lt;your_data_and_checkpoints_path&gt;</span></code> 替换为你机器上存储数据集和模型检查点的实际路径。
+该镜像使用 <code class="docutils literal notranslate"><span class="pre">uv</span></code> 来管理 Python 依赖，进入容器后虚拟环境会自动激活（也可通过 <code class="docutils literal notranslate"><span class="pre">source</span> <span class="pre">/opt/venv/bin/activate</span></code> 手动激活）。该镜像已经包含了 vllm, flash-attn 以及 Megatron-LM，如果需要使用其他依赖，可直接使用 <code class="docutils literal notranslate"><span class="pre">uv</span> <span class="pre">pip</span> <span class="pre">install</span></code> 来安装它们。</p>
 </section>
 </section>
 </section>

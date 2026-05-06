@@ -1199,16 +1199,16 @@ window.runMermaid = runMermaid;</script>
         <span class="c1"># Process experiences through operators</span>
         <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">operator</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">operators</span><span class="p">):</span>
             <span class="k">with</span> <span class="n">Timer</span><span class="p">(</span>
-                <span class="n">metrics</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;time/experience_pipeline/operator/</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">operator</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">metrics</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;experience_pipeline/time/operator/</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">operator</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">):</span>
                 <span class="n">exps</span><span class="p">,</span> <span class="n">metric</span> <span class="o">=</span> <span class="k">await</span> <span class="n">operator</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">exps</span><span class="p">)</span>
                 <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span>
         <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;experience_count&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">exps</span><span class="p">)</span>
 
         <span class="c1"># Write processed experiences to output buffer</span>
-        <span class="k">with</span> <span class="n">Timer</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="s2">&quot;time/experience_pipeline/write&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">Timer</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="s2">&quot;experience_pipeline/time/write&quot;</span><span class="p">):</span>
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">write_async</span><span class="p">(</span><span class="n">exps</span><span class="p">)</span>
-        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;time/experience_pipeline/total&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">st</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;experience_pipeline/time/total&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">st</span>
 
         <span class="c1"># prefix metrics keys with &#39;pipeline/&#39;</span>
         <span class="n">result_metrics</span> <span class="o">=</span> <span class="p">{}</span>

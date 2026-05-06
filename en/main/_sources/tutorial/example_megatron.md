@@ -39,10 +39,10 @@ We provide a Docker setup to simplify environment management.
 #### Build the Docker Image
 
 
-Trinity-RFT provides a dedicated Dockerfile for Megatron-LM located at `scripts/docker/Dockerfile.megatron`. You can build the image using the following command:
+Trinity-RFT's provided Docker already has Megatron-LM related dependencies pre-installed. You can either use our provided Docker image directly or customize the Dockerfile to build your own image as needed.
 
 ```bash
-docker build -f scripts/docker/Dockerfile.megatron -t trinity-rft-megatron:latest .
+docker build -f scripts/docker/Dockerfile.uv -t trinity-rft-megatron:latest .
 ```
 
 > 💡 You can customize the Dockerfile before building — for example, to add pip mirrors or set API keys.
@@ -60,6 +60,7 @@ docker run -it \
 ```
 
 Replace `<your_data_and_checkpoints_path>` with the actual path on your machine where datasets and model checkpoints are stored.
+The image uses `uv` to manage Python dependencies, the virtual environment will be automatically activated after entering the docker container (you can also manually activate it with `source /opt/venv/bin/activate`). The image has include dependencies such as vllm, flash-attn and Megatron-LM, if you need to download more packages, don't forget to activate the virtual environment and use `uv pip install` to install them.
 
 ---
 

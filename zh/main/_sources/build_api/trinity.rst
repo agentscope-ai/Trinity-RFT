@@ -12,6 +12,7 @@ Subpackages
    trinity.common
    trinity.explorer
    trinity.manager
+   trinity.perf
    trinity.plugins
    trinity.service
    trinity.trainer
