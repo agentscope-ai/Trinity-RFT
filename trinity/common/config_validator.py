@@ -1165,7 +1165,7 @@ class TrainerConfigValidator(ConfigValidator):
                        or save checkpoint strategy is invalid.
         """
         if (
-            config.mode not in ["train", "both", "bench", "colocate"]
+            config.mode not in ["train", "both", "colocate"]
             and config.trainer.trainer_strategy != "megatron"
         ):
             return
