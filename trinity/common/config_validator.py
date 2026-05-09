@@ -960,6 +960,7 @@ class BufferConfigValidator(ConfigValidator):
                 set_if_none(taskset.rollout_args, attr, getattr(config.model, attr))
             set_if_none(taskset.rollout_args, "max_tokens", config.model.max_response_tokens)
             set_if_none(taskset.format, "chat_template", config.model.custom_chat_template)
+            taskset.workflow_args["checkpoint_job_dir"] = config.checkpoint_job_dir
 
         for i, taskset in enumerate(explorer_input.tasksets):
             _fill_taskset_config(taskset, i)
@@ -1164,10 +1165,7 @@ class TrainerConfigValidator(ConfigValidator):
             ValueError: If trainer type is invalid, deprecated config path is used,
                        or save checkpoint strategy is invalid.
         """
-        if (
-            config.mode not in ["train", "both", "bench", "colocate"]
-            and config.trainer.trainer_strategy != "megatron"
-        ):
+        if config.mode in ["explore", "bench"] and config.trainer.trainer_strategy != "megatron":
             return
 
         if config.model.external_model.enable:

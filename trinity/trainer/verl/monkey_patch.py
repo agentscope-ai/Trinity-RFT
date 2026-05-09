@@ -210,12 +210,21 @@ def apply_monkey_patch(  # noqa: C901
     from verl.models.transformers.monkey_patch import (
         _ulysses_flash_attention_forward,
         apply_prefix_grouper_patch,
-        patch_vlm_for_ulysses_input_slicing,
+    )
+    from verl.models.transformers.monkey_patch import (
+        patch_vlm_for_ulysses_input_slicing as verl_patch_vlm_for_ulysses_input_slicing,
     )
     from verl.utils.import_utils import is_trl_available
     from verl.utils.transformers_compat import is_transformers_version_in_range
 
-    logger = get_logger(__name__)
+    logger = get_logger(__name__, in_ray_actor=True)
+
+    def patch_vlm_for_ulysses_input_slicing(model_class: type):
+        if getattr(model_class, "_patch_vlm_for_ulysses_input_slicing", False):
+            return
+
+        verl_patch_vlm_for_ulysses_input_slicing(model_class)
+        model_class._patch_vlm_for_ulysses_input_slicing = True
 
     # Apply TiledMLP monkey patch for memory-efficient MLP computation
     if use_tiled_mlp:
@@ -309,9 +318,19 @@ def apply_monkey_patch(  # noqa: C901
             patch_vlm_for_ulysses_input_slicing(Qwen3VLMoeTextModel)
 
     elif model.config.model_type in ["qwen3_5", "qwen3_5_moe"]:
-        from transformers.models.qwen3_5.modeling_qwen3_5 import Qwen3_5TextModel
+        from transformers.models.qwen3_5.modeling_qwen3_5 import (
+            Qwen3_5DecoderLayer,
+            Qwen3_5GatedDeltaNet,
+            Qwen3_5Model,
+            Qwen3_5TextModel,
+            Qwen3_5VisionModel,
+        )
         from transformers.models.qwen3_5_moe.modeling_qwen3_5_moe import (
+            Qwen3_5MoeDecoderLayer,
+            Qwen3_5MoeGatedDeltaNet,
+            Qwen3_5MoeModel,
             Qwen3_5MoeTextModel,
+            Qwen3_5MoeVisionModel,
         )
 
         # Step 1: bug fix in transformers==5.2.0
@@ -330,28 +349,46 @@ def apply_monkey_patch(  # noqa: C901
             Qwen3_5TextModel.forward = qwen35_text_forward
             Qwen3_5MoeTextModel.forward = qwen35_text_forward
 
+        from trinity.common.patch.qwen3_5 import (
+            decoder_layer_forward,
+            gate_delta_net_forward,
+            qwen35_model_forward,
+            qwen35_vision_fast_pos_embed_interpolate,
+        )
+
+        Qwen3_5DecoderLayer.forward = decoder_layer_forward
+        Qwen3_5MoeDecoderLayer.forward = decoder_layer_forward
+        Qwen3_5GatedDeltaNet.forward = gate_delta_net_forward
+        Qwen3_5MoeGatedDeltaNet.forward = gate_delta_net_forward
+
+        Qwen3_5VisionModel.fast_pos_embed_interpolate = qwen35_vision_fast_pos_embed_interpolate
+        Qwen3_5MoeVisionModel.fast_pos_embed_interpolate = qwen35_vision_fast_pos_embed_interpolate
+
+        Qwen3_5Model.forward = qwen35_model_forward
+        Qwen3_5MoeModel.forward = qwen35_model_forward
+
         # Step 2: patch input for multimodal sequence parallelism
         if ulysses_sp_size > 1:
             patch_vlm_for_ulysses_input_slicing(Qwen3_5TextModel)
             patch_vlm_for_ulysses_input_slicing(Qwen3_5MoeTextModel)
 
-            from trinity.common.patch.qwen3_5 import (
-                ulysses_gated_delta_net_forward_decorator,
-            )
+            from trinity.common.patch.qwen3_5 import ulysses_gate_delta_net_decorator
 
             for layer in model.model.language_model.layers:
                 if layer.layer_type == "linear_attention":
-                    layer.linear_attn.forward = ulysses_gated_delta_net_forward_decorator(
-                        layer.linear_attn.forward
-                    )
+                    ulysses_gate_delta_net_decorator(layer.linear_attn, ulysses_sp_size)
 
         # Step 3: patch verl.utils.flops_counter
-        from verl.utils.flops_counter import ESTIMATE_FUNC, _estimate_qwen3_vl_flops
+        from verl.utils.flops_counter import (
+            ESTIMATE_FUNC,
+            _estimate_qwen3_vl_flops,
+            _estimate_qwen3_vl_moe_flops,
+        )
 
         ESTIMATE_FUNC.update(
             {
                 "qwen3_5": _estimate_qwen3_vl_flops,
-                "qwen3_5_moe": _estimate_qwen3_vl_flops,
+                "qwen3_5_moe": _estimate_qwen3_vl_moe_flops,
             }
         )
 

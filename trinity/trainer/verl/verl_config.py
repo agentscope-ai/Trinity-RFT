@@ -173,6 +173,7 @@ class Actor:
     policy_loss: PolicyLossConfig = field(default_factory=PolicyLossConfig)
     profiler: dict = field(default_factory=dict)
     router_replay: RouterReplayConfig = field(default_factory=RouterReplayConfig)
+    freeze_vision_tower: bool = False
     # do not set
     loss_agg_mode: str = "token-mean"
     loss_scale_factor: Optional[float] = None
@@ -250,6 +251,7 @@ class CriticModel:
     enable_gradient_checkpointing: bool = True
     use_remove_padding: bool = True
     fsdp_config: FSDPConfig = field(default_factory=FSDPConfig)
+    freeze_vision_tower: bool = False
 
     # rope configs
     rope_scaling: Optional[dict] = None

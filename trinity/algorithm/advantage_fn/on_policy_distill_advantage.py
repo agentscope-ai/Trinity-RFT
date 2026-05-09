@@ -32,7 +32,7 @@ class OnPolicyDistillAdvantage(AdvantageFn):
         Args:
             exps: DataProto containing:
                 - old_log_probs: student's sampling logprobs [batch, seq]
-                - teacher_log_probs: teacher's logprobs [batch, seq]
+                - teacher_logprobs: teacher's logprobs [batch, seq]
                 - response_mask: mask for response tokens [batch, seq]
 
         Returns:

@@ -264,7 +264,8 @@ class Explorer:
             await self.shutdown()
             return False
         self.explore_step_num += 1
-        assert self.rollout_coordinator is not None, "Rollout coordinator must be prepared first."
+        if self.rollout_coordinator is None:
+            return False
         await self.rollout_coordinator.submit_batch.remote(
             batch_id=self.explore_step_num,
             tasks=tasks,
@@ -398,7 +399,9 @@ class Explorer:
                 self.monitor.log(metric, step=end_step)
 
     async def _finish_explore_step(self, step: int, model_version: int) -> None:
-        assert self.rollout_coordinator is not None, "Rollout coordinator must be prepared first."
+        if self.rollout_coordinator is None:
+            return
+
         metric = {"rollout/model_version": model_version}
         with Timer(metric, "explorer/time/wait_explore_step"):
             result = await self.rollout_coordinator.finalize_train_batch.remote(step)

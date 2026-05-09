@@ -1,4 +1,5 @@
 import asyncio
+import json
 from logging import Logger
 
 import vllm
@@ -25,18 +26,75 @@ def vllm_patch():
         if vllm_version < parse_version("0.16.0"):
             raise ImportError("Please upgrade vllm to 0.16.0 or above to use transformers>=5.0.0.")
 
-        from transformers.configuration_utils import PreTrainedConfig
+        if vllm_version < parse_version("0.19.1"):
+            from transformers.configuration_utils import PreTrainedConfig
 
-        original_init = PreTrainedConfig.__init__
+            original_init = PreTrainedConfig.__init__
 
-        def new_init(self, *args, **kwargs):
-            if "ignore_keys_at_rope_validation" in kwargs:
-                kwargs["ignore_keys_at_rope_validation"] = set(
-                    kwargs["ignore_keys_at_rope_validation"]
+            def new_init(self, *args, **kwargs):
+                if "ignore_keys_at_rope_validation" in kwargs:
+                    kwargs["ignore_keys_at_rope_validation"] = set(
+                        kwargs["ignore_keys_at_rope_validation"]
+                    )
+                original_init(self, *args, **kwargs)
+
+            PreTrainedConfig.__init__ = new_init
+    if parse_version("0.20.0") <= vllm_version:
+        # TODO: add upper bound when following PR is merged
+        # https://github.com/vllm-project/vllm/pull/39772/changes
+        from vllm.tool_parsers.qwen3coder_tool_parser import (
+            FunctionCall,
+            Qwen3CoderToolParser,
+            ToolCall,
+            find_tool_properties,
+            logger,
+        )
+
+        if getattr(Qwen3CoderToolParser, "_is_patched", None) is None:
+
+            def new_parse_xml_function_call(self, function_call_str: str) -> ToolCall | None:
+                # Extract function name
+                end_index = function_call_str.find(">")
+                # If there's no ">" character, this is not a valid xml function call
+                if end_index == -1:
+                    return None
+                function_name = function_call_str[:end_index]
+                param_config = find_tool_properties(self.tools, function_name)
+                parameters = function_call_str[end_index + 1 :]
+                param_dict = {}
+                for match_text in self.tool_call_parameter_regex.findall(parameters):
+                    idx = match_text.find(">")
+                    # Skip malformed parameters missing the name>value separator
+                    # (e.g. truncated output) so other valid parameters can still
+                    # be parsed.
+                    if idx == -1:
+                        logger.warning(
+                            "Skipping malformed parameter without '>' separator "
+                            "in tool call for function '%s': %r",
+                            function_name,
+                            match_text,
+                        )
+                        continue
+                    param_name = match_text[:idx]
+                    param_value = str(match_text[idx + 1 :])
+                    # Remove prefix and trailing \n
+                    if param_value.startswith("\n"):
+                        param_value = param_value[1:]
+                    if param_value.endswith("\n"):
+                        param_value = param_value[:-1]
+
+                    param_dict[param_name] = self._convert_param_value(
+                        param_value, param_name, param_config, function_name
+                    )
+                return ToolCall(
+                    type="function",
+                    function=FunctionCall(
+                        name=function_name, arguments=json.dumps(param_dict, ensure_ascii=False)
+                    ),
                 )
-            original_init(self, *args, **kwargs)
 
-        PreTrainedConfig.__init__ = new_init
+            Qwen3CoderToolParser._is_patched = True
+            Qwen3CoderToolParser._parse_xml_function_call = new_parse_xml_function_call
 
 
 def get_vllm_version():

@@ -357,7 +357,7 @@ class Experience:
                 value = getattr(exp, field_name)
                 if value is None:
                     continue
-                tensor_data[f"{index}:{field_name}"] = value.detach().cpu().contiguous()
+                tensor_data[f"{index}:{field_name}"] = value.detach().cpu().contiguous().clone()
 
             if exp.multi_modal_inputs is None:
                 item_meta["multi_modal_input_keys"] = []

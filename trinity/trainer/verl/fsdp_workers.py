@@ -130,7 +130,12 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                 timeout=datetime.timedelta(seconds=self.config.get("nccl_timeout", 600)),
                 init_method=os.environ.get("DIST_INIT_METHOD", None),
             )
+
+        # setup logger
         self.logger = get_logger(f"{role}_{self.rank}", in_ray_actor=True)
+        import builtins
+
+        builtins.print = lambda *args, **kwargs: self.logger.info(" ".join(map(str, args)))
 
         # build device mesh for FSDP
         world_size = torch.distributed.get_world_size()
@@ -343,11 +348,6 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
         actor_model_config = AutoConfig.from_pretrained(
             local_path, trust_remote_code=trust_remote_code, attn_implementation=attn_implementation
         )
-        # TODO: VL models use VisionAttention, which directly uses flash_attention in transformers>=4.53
-        # which will be patched by _ulysses_flash_attention_forward, but errorly misses position_ids
-        # Maybe support Ulysses in VisionAttention in the future and remove this patch
-        if self.ulysses_sequence_parallel_size > 1 and hasattr(actor_model_config, "vision_config"):
-            actor_model_config.vision_config._attn_implementation = "eager"
 
         # patch for qwen2.5-vl: when using flash_attention_3, set vision tower to use flash_attention_2
         # because the vision tower does not support flash_attention_3
@@ -382,20 +382,35 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
         if self.rank == 0:
             self.logger.info(f"Model config after override: {actor_model_config}")
 
-        # NOTE(fix me): tie_word_embedding causes meta_tensor init to hang
-        init_context = get_init_weight_context_manager(use_meta_tensor=False, mesh=self.device_mesh)
+        use_meta = (
+            (
+                self.rank != 0
+                if self.device_mesh is None
+                else self.device_mesh.get_coordinate()[-1] != 0
+            )
+            if self.config.actor.strategy == "fsdp2"
+            else False
+        )
 
-        with init_context(), warnings.catch_warnings():
+        init_context = torch.device("meta") if use_meta else torch.device("cpu")
+
+        with init_context, warnings.catch_warnings():
             warnings.simplefilter("ignore")
             actor_module_class = get_hf_auto_model_class(actor_model_config)
-
-            actor_module = actor_module_class.from_pretrained(
-                pretrained_model_name_or_path=local_path,
-                torch_dtype=torch_dtype,
+            loading_kwargs = dict(
+                dtype=torch_dtype,
                 config=actor_model_config,
                 trust_remote_code=trust_remote_code,
                 attn_implementation=attn_implementation,
             )
+
+            if use_meta:
+                actor_module = actor_module_class.from_config(**loading_kwargs)
+            else:
+                actor_module = actor_module_class.from_pretrained(
+                    pretrained_model_name_or_path=local_path,
+                    **loading_kwargs,
+                )
 
             # Apply Liger kernel to the model if use_liger is set to True
             if use_liger:
@@ -1189,7 +1204,12 @@ class CriticWorker(Worker, DistProfilerExtension):
                 init_method=os.environ.get("DIST_INIT_METHOD", None),
             )
 
+        # Setup logger
         self.logger = get_logger(f"critic_{self.rank}", in_ray_actor=True)
+        import builtins
+
+        builtins.print = lambda *args, **kwargs: self.logger.info(" ".join(map(str, args)))
+
         self.config: FSDPCriticConfig = config
 
         # build device mesh for Ulysses Sequence Parallel

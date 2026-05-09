@@ -27,7 +27,6 @@ import ray
 import torch
 from accelerate import init_empty_weights
 from torch.distributed.fsdp import (
-    FullStateDictConfig,
     ShardedOptimStateDictConfig,
     ShardedStateDictConfig,
     StateDictType,
@@ -47,6 +46,7 @@ from verl.utils.fsdp_utils import (
 )
 from verl.utils.logger import log_with_rank
 from verl.utils.model import get_hf_auto_model_class
+from verl.utils.transformers_compat import is_transformers_version_in_range
 
 from trinity.manager.synchronizer import Synchronizer
 from trinity.trainer.verl.verl_trainer import CheckpointMonitor
@@ -112,10 +112,7 @@ class FSDPCheckpointManager(OldFSDPCheckpointManager):
             global_step (int): The current training step number.
         """
         assert self.synchronizer is not None
-        state_dict_config = FullStateDictConfig(offload_to_cpu=True, rank0_only=True)
-        with get_fsdp_state_ctx(self.model, StateDictType.FULL_STATE_DICT, state_dict_config, None):
-            state_dict = self.model.state_dict()
-        state_dict = {key: value.to("cpu") for key, value in state_dict.items()}
+        state_dict = get_fsdp_full_state_dict(self.model, offload_to_cpu=True, rank0_only=True)
         self._upload_state_dict(state_dict, global_step)
 
     def _save_with_thread(
@@ -364,7 +361,10 @@ class FSDPCheckpointManager(OldFSDPCheckpointManager):
                 ray.get(
                     self.checkpoint_monitor.notify_started.remote(node_id=node_id, job_id=job_id)
                 )
-                save_model.save_pretrained(hf_local_path, state_dict=state_dict)
+                save_kwargs = dict(state_dict=state_dict)
+                if is_transformers_version_in_range(min_version="5.4.0", max_version="5.5.4"):
+                    save_kwargs["save_original_format"] = False
+                save_model.save_pretrained(hf_local_path, **save_kwargs)
                 log_with_rank(
                     f"Saved hf_model to {os.path.abspath(hf_local_path)}",
                     rank=self.rank,
