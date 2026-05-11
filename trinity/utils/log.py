@@ -90,6 +90,7 @@ def get_logger(
         # File handler (rotating file log)
         log_dir = os.environ.get(LOG_DIR_ENV_VAR)
         assert name is not None, "Logger name must be set when logging from a Ray actor"
+        # If LOG_DIR_ENV_VAR is not set, file logging is disabled
         if log_dir:
             if os.environ.get(LOG_NODE_IP_ENV_VAR, "0") != "0":
                 # organize logs by node IP
@@ -104,8 +105,7 @@ def get_logger(
             file_handler.setLevel(resolved_level)
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
-            _ray_logger_ctx.set(logger)
-            _ray_logger = logger
-        # If LOG_DIR_ENV_VAR is not set, file logging is disabled
+        _ray_logger_ctx.set(logger)
+        _ray_logger = logger
 
     return logger

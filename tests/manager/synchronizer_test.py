@@ -170,13 +170,15 @@ class BaseTestSynchronizer(unittest.TestCase):
 
     def wait_trainer_started(self, ray_namespace: str):
         ray.init(ignore_reinit_error=True)
-        while True:
+        for _ in range(20):
             try:
                 ray.get_actor("queue-exp_buffer", namespace=ray_namespace)
                 break
             except ValueError:
                 print("waiting for trainer to start.")
                 time.sleep(5)
+        else:
+            raise RuntimeError("Trainer failed to start.")
         return ray.get_actor("synchronizer", namespace=ray_namespace)
 
     def _check_metrics(

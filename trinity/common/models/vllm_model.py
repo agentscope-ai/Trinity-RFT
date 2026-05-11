@@ -499,7 +499,7 @@ class vLLMRolloutModel(BaseInferenceModel):
             await self.async_llm.add_lora(self.get_lora_request(self.default_lora_path))
             self.model_version = model_version
             return model_version
-        await self.async_llm.reset_prefix_cache()
+        await self.async_llm.reset_prefix_cache(reset_running_requests=True)
         await self._collective_rpc("update_weight", timeout=timeout)
         self.logger.info(
             f"Synchronized model to version {model_version} using method {sync_method}."
@@ -577,7 +577,7 @@ class vLLMRolloutModel(BaseInferenceModel):
         return f"http://{self.api_server_host}:{self.api_server_port}"
 
     async def reset_prefix_cache(self) -> None:
-        await self.async_llm.reset_prefix_cache()
+        await self.async_llm.reset_prefix_cache(reset_running_requests=True)
 
     def get_model_version(self) -> int:
         return self.model_version
