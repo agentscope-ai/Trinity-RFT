@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Sequence, Union
 import torch
 
 from trinity.common.config import InferenceModelConfig
+from trinity.common.constants import SyncMethod
 from trinity.common.experience import Experience
 from trinity.common.models.model import InferenceModel
 
@@ -153,7 +154,9 @@ class ExternalModel(InferenceModel):
         exp.tools = tools
         return exp
 
-    async def sync_model(self, model_version: int) -> int:
+    async def sync_model(
+        self, model_version: int, sync_method: SyncMethod, timeout: float = 1200
+    ) -> int:
         # for
         self.model_version = model_version
         return self.model_version

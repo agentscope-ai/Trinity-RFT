@@ -1,6 +1,7 @@
 import asyncio
 import os
 from collections import defaultdict
+from copy import deepcopy
 from typing import Dict, List, Tuple
 
 import ray
@@ -65,6 +66,10 @@ def create_explorer_models(
         from trinity.common.models.vllm_model import vLLMRolloutModel
 
         engine_cls = vLLMRolloutModel
+    elif config.explorer.rollout_model.engine_type == "sglang":
+        from trinity.common.models.sglang_model import SGLangRolloutModel
+
+        engine_cls = SGLangRolloutModel
     elif config.explorer.rollout_model.engine_type == "external":
         rollout_engines = create_external_models(
             config=config.explorer.rollout_model,
@@ -114,11 +119,15 @@ def create_explorer_models(
 
     if config.mode == "colocate":
         rollout_engine = (
-            ray.remote(vLLMRolloutModel)
+            ray.remote(engine_cls)
             .options(
                 name=f"{config.explorer.name}_rollout_model_0",
                 num_cpus=0,
-                num_gpus=0,
+                num_gpus=(
+                    config.explorer.rollout_model.tensor_parallel_size
+                    if config.explorer.rollout_model.engine_type == "sglang"
+                    else 0
+                ),
                 namespace=config.ray_namespace,
             )
             .remote(
@@ -126,6 +135,28 @@ def create_explorer_models(
             )
         )
         return [rollout_engine], []
+
+    if config.explorer.rollout_model.engine_type == "sglang":
+        rollout_engines = create_sglang_explorer_models(
+            config=config.explorer.rollout_model,
+            actor_name=f"{config.explorer.name}_rollout_model",
+        )
+
+        if config.explorer.rollout_model.enable_history:
+            logger.info(
+                "Model History recording is enabled. Please periodically extract "
+                "history via `extract_experience_from_history` to avoid out-of-memory issues."
+            )
+
+        auxiliary_engines = []
+        for i, model_config in enumerate(config.explorer.auxiliary_models):
+            engines = create_sglang_explorer_models(
+                config=model_config,
+                actor_name=f"{config.explorer.name}_auxiliary_model_{model_config.name or i}",
+            )
+            auxiliary_engines.append(engines)
+
+        return rollout_engines, auxiliary_engines
 
     num_gpus = (
         config.explorer.rollout_model.engine_num
@@ -141,7 +172,12 @@ def create_explorer_models(
     allocator = _BundleAllocator(num_gpus=num_gpus)
 
     # create rollout models
-    rollout_engines = create_vllm_inference_models(
+    model_factory = (
+        create_sglang_inference_models
+        if config.explorer.rollout_model.engine_type == "sglang"
+        else create_vllm_inference_models
+    )
+    rollout_engines = model_factory(
         config=config.explorer.rollout_model,
         allocator=allocator,
         actor_name=f"{config.explorer.name}_rollout_model",
@@ -156,7 +192,7 @@ def create_explorer_models(
     # create auxiliary models
     auxiliary_engines = []
     for i, model_config in enumerate(config.explorer.auxiliary_models):
-        engines = create_vllm_inference_models(
+        engines = model_factory(
             config=model_config,
             allocator=allocator,
             actor_name=f"{config.explorer.name}_auxiliary_model_{model_config.name or i}",
@@ -176,14 +212,16 @@ def create_vllm_inference_models(
     models = []
     for i in range(config.engine_num):
         bundles_for_engine = allocator.allocate(config.tensor_parallel_size)
-        config.bundle_indices = ",".join([str(bid) for bid in bundles_for_engine])
+        model_config = deepcopy(config)
+        model_config.bundle_indices = ",".join([str(bid) for bid in bundles_for_engine])
+        model_config.engine_id = i
         models.append(
             ray.remote(vLLMRolloutModel)
             .options(
                 name=f"{actor_name}_{i}",
                 num_cpus=0,
-                num_gpus=0 if config.tensor_parallel_size > 1 else 1,
-                namespace=config.ray_namespace,
+                num_gpus=0 if model_config.tensor_parallel_size > 1 else 1,
+                namespace=model_config.ray_namespace,
                 scheduling_strategy=PlacementGroupSchedulingStrategy(
                     placement_group=allocator.pg,
                     placement_group_capture_child_tasks=True,
@@ -191,7 +229,75 @@ def create_vllm_inference_models(
                 ),
             )
             .remote(
-                config=config,
+                config=model_config,
+            )
+        )
+    return models
+
+
+def create_sglang_inference_models(
+    config: InferenceModelConfig,
+    allocator: _BundleAllocator,
+    actor_name: str,
+) -> List:
+    from trinity.common.models.sglang_model import SGLangRolloutModel
+
+    models = []
+    for i in range(config.engine_num):
+        bundles_for_engine = allocator.allocate(config.tensor_parallel_size)
+        model_config = deepcopy(config)
+        model_config.bundle_indices = ",".join([str(bid) for bid in bundles_for_engine])
+        model_config.engine_id = i
+        models.append(
+            ray.remote(SGLangRolloutModel)
+            .options(
+                name=f"{actor_name}_{i}",
+                num_cpus=0,
+                num_gpus=0 if model_config.tensor_parallel_size > 1 else 1,
+                namespace=model_config.ray_namespace,
+                scheduling_strategy=PlacementGroupSchedulingStrategy(
+                    placement_group=allocator.pg,
+                    placement_group_capture_child_tasks=True,
+                    placement_group_bundle_index=bundles_for_engine[0],
+                ),
+            )
+            .remote(
+                config=model_config,
+            )
+        )
+    return models
+
+
+def create_sglang_explorer_models(
+    config: InferenceModelConfig,
+    actor_name: str,
+) -> List:
+    from trinity.common.models.sglang_model import SGLangRolloutModel
+
+    models = []
+    for i in range(config.engine_num):
+        model_config = deepcopy(config)
+        model_config.engine_id = i
+        engine_pg = placement_group(
+            [{"GPU": model_config.tensor_parallel_size}],
+            strategy="PACK",
+        )
+        ray.get(engine_pg.ready())
+        models.append(
+            ray.remote(SGLangRolloutModel)
+            .options(
+                name=f"{actor_name}_{i}",
+                num_cpus=0,
+                num_gpus=model_config.tensor_parallel_size,
+                namespace=model_config.ray_namespace,
+                scheduling_strategy=PlacementGroupSchedulingStrategy(
+                    placement_group=engine_pg,
+                    placement_group_capture_child_tasks=True,
+                    placement_group_bundle_index=0,
+                ),
+            )
+            .remote(
+                config=model_config,
             )
         )
     return models
@@ -214,17 +320,19 @@ def create_external_models(
 
     models = []
     for i in range(config.engine_num):
+        model_config = deepcopy(config)
+        model_config.engine_id = i
         models.append(
             ray.remote(ExternalModel)
             .options(
                 name=f"{actor_name}_{i}",
                 num_cpus=0,
                 num_gpus=0,
-                namespace=config.ray_namespace,
+                namespace=model_config.ray_namespace,
                 runtime_env={"env_vars": env_vars},
             )
             .remote(
-                config=config,
+                config=model_config,
             )
         )
     return models

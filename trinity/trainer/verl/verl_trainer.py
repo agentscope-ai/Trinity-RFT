@@ -191,6 +191,9 @@ class VerlPPOTrainerWrapper(RayPPOTrainer, TrainEngineWrapper):
         global_config: Config,
     ):
         self.logger = get_logger(__name__, in_ray_actor=True)
+        self.logger.info(
+            f"Initializing verl Trainer with {global_config.trainer.trainer_strategy} backend"
+        )
         train_config = global_config.trainer
         config = OmegaConf.structured(train_config.trainer_config)
         # download the checkpoint from hdfs

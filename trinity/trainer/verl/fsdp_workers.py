@@ -100,6 +100,12 @@ from trinity.utils.distributed import init_process_group
 from trinity.utils.log import get_logger
 
 
+def _align_trainable_param_dtype(module: torch.nn.Module, target_dtype: torch.dtype) -> None:
+    for param in module.parameters():
+        if param.requires_grad and param.dtype != target_dtype:
+            param.data = param.data.to(dtype=target_dtype)
+
+
 class ActorRolloutRefWorker(Worker, DistProfilerExtension):
     """
     This worker can be instantiated as a standalone actor or a standalone rollout or a standalone reference policy
@@ -325,6 +331,20 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
 
         log_gpu_memory_usage(f"Before init {role} from HF AutoModel", logger=self.logger)
         local_path = model_path
+        fsdp_strategy = self.config.actor.strategy
+        mixed_precision_config = fsdp_config.get("mixed_precision", None)
+        if mixed_precision_config is not None:
+            param_dtype = PrecisionType.to_dtype(mixed_precision_config.get("param_dtype", "bf16"))
+            reduce_dtype = PrecisionType.to_dtype(
+                mixed_precision_config.get("reduce_dtype", "fp32")
+            )
+            buffer_dtype = PrecisionType.to_dtype(
+                mixed_precision_config.get("buffer_dtype", "fp32")
+            )
+        else:
+            param_dtype = PrecisionType.to_dtype(fsdp_config.dtype)
+            reduce_dtype = torch.float32
+            buffer_dtype = torch.float32
 
         # note that we have to create model in fp32. Otherwise, the optimizer is in bf16, which is incorrect
         # TODO(zhangchi.usc1992): 1. support create from random initialized model. 2. Support init with FSDP directly
@@ -339,7 +359,10 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
 
         torch_dtype = fsdp_config.model_dtype
         if torch_dtype is None:
-            torch_dtype = torch.float32 if self._is_actor else torch.bfloat16
+            if self._is_lora and fsdp_strategy == "fsdp2":
+                torch_dtype = param_dtype
+            else:
+                torch_dtype = torch.float32 if self._is_actor else torch.bfloat16
         else:
             torch_dtype = PrecisionType.to_dtype(torch_dtype)
 
@@ -449,6 +472,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
         if self._is_lora:
             self.logger.info("Applying LoRA to actor module")
             actor_module.enable_input_require_grads()
+            autocast_adapter_dtype = fsdp_strategy != "fsdp2"
 
             lora_adapter_path = self.config.model.get("lora_adapter_path")
             if lora_adapter_path is not None:
@@ -464,7 +488,10 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                 )
 
                 actor_module = PeftModel.from_pretrained(
-                    actor_module, local_adapter_path, is_trainable=True
+                    actor_module,
+                    local_adapter_path,
+                    is_trainable=True,
+                    autocast_adapter_dtype=autocast_adapter_dtype,
                 )
                 peft_config = actor_module.peft_config["default"]
                 # Ensure task_type is TaskType enum, not string
@@ -481,7 +508,14 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                     "exclude_modules": convert_to_regular_types(self.config.model.exclude_modules),
                     "bias": "none",
                 }
-                actor_module = get_peft_model(actor_module, LoraConfig(**lora_config))
+                actor_module = get_peft_model(
+                    actor_module,
+                    LoraConfig(**lora_config),
+                    autocast_adapter_dtype=autocast_adapter_dtype,
+                )
+
+            if fsdp_strategy == "fsdp2":
+                _align_trainable_param_dtype(actor_module, param_dtype)
 
         self.use_orig_params = fsdp_config.get("use_orig_params", False)
         if self.config.actor.get("freeze_vision_tower", False):
@@ -503,20 +537,6 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
         log_gpu_memory_usage(f"After init {role} from HF AutoModel", logger=self.logger)
 
         # We wrap FSDP for rollout as well
-        mixed_precision_config = fsdp_config.get("mixed_precision", None)
-        if mixed_precision_config is not None:
-            param_dtype = PrecisionType.to_dtype(mixed_precision_config.get("param_dtype", "bf16"))
-            reduce_dtype = PrecisionType.to_dtype(
-                mixed_precision_config.get("reduce_dtype", "fp32")
-            )
-            buffer_dtype = PrecisionType.to_dtype(
-                mixed_precision_config.get("buffer_dtype", "fp32")
-            )
-        else:
-            param_dtype = PrecisionType.to_dtype(fsdp_config.dtype)
-            reduce_dtype = torch.float32
-            buffer_dtype = torch.float32
-
         mixed_precision = MixedPrecision(
             param_dtype=param_dtype, reduce_dtype=reduce_dtype, buffer_dtype=buffer_dtype
         )
@@ -538,7 +558,6 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
         # We force reference policy to use CPUOffload to save memory.
         # We force turn off CPUOffload for actor because it causes incorrect results when using grad accumulation
         cpu_offload = None if role == "actor" else CPUOffload(offload_params=True)
-        fsdp_strategy = self.config.actor.strategy
         if fsdp_strategy == "fsdp":
             actor_module_fsdp = FSDP(
                 actor_module,
@@ -819,6 +838,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                 )
                 timeout = self.config.synchronizer.sync_timeout
 
+                self.logger.info("Trainer start init_process_group.")
                 self._model_update_group = init_process_group(
                     host=master_address,
                     port=master_port,
@@ -826,11 +846,10 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                     backend="nccl",
                     timeout=timeout,
                     world_size=world_size,
-                    device_id=torch.device(f"cuda:{get_device_id()}"),
                     rank=0,
                 )
-                torch.distributed.barrier(group=self._model_update_group)
                 ray.get(setup_ref)
+                self.logger.info("Trainer explorer setup confirmation received.")
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
     def sync_weight(self):
@@ -853,7 +872,6 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                         torch.distributed.broadcast(full_param, 0, group=self._model_update_group)
                     del full_param
             if torch.distributed.get_rank() == 0:
-                torch.distributed.barrier(group=self._model_update_group)
                 torch.cuda.synchronize()
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
@@ -1320,7 +1338,28 @@ class CriticWorker(Worker, DistProfilerExtension):
         if self.rank == 0:
             self.logger.info(f"Critic overriding config {override_config_kwargs}")
 
+        fsdp_config = self.config.model.fsdp_config
+        mixed_precision_config = fsdp_config.get("mixed_precision", None)
+        if mixed_precision_config is not None:
+            param_dtype = PrecisionType.to_dtype(mixed_precision_config.get("param_dtype", "bf16"))
+            reduce_dtype = PrecisionType.to_dtype(
+                mixed_precision_config.get("reduce_dtype", "fp32")
+            )
+            buffer_dtype = PrecisionType.to_dtype(
+                mixed_precision_config.get("buffer_dtype", "fp32")
+            )
+        else:
+            param_dtype = torch.bfloat16
+            reduce_dtype = torch.float32
+            buffer_dtype = torch.float32
+
         torch_dtype = self.config.model.fsdp_config.model_dtype or "fp32"
+        if (
+            self._is_lora
+            and config.strategy == "fsdp2"
+            and self.config.model.fsdp_config.model_dtype is None
+        ):
+            torch_dtype = param_dtype
         torch_dtype = PrecisionType.to_dtype(torch_dtype)
 
         from transformers import AutoConfig
@@ -1387,6 +1426,7 @@ class CriticWorker(Worker, DistProfilerExtension):
         if self._is_lora:
             self.logger.info("Applying LoRA to critic module")
             critic_module.enable_input_require_grads()
+            autocast_adapter_dtype = config.strategy != "fsdp2"
 
             # Check if we should load a pre-trained LoRA adapter
             lora_adapter_path = self.config.model.get("lora_adapter_path")
@@ -1403,7 +1443,10 @@ class CriticWorker(Worker, DistProfilerExtension):
                 )
 
                 critic_module = PeftModel.from_pretrained(
-                    critic_module, local_adapter_path, is_trainable=True
+                    critic_module,
+                    local_adapter_path,
+                    is_trainable=True,
+                    autocast_adapter_dtype=autocast_adapter_dtype,
                 )
                 peft_config = critic_module.peft_config["default"]
                 # Ensure task_type is TaskType enum, not string
@@ -1421,27 +1464,19 @@ class CriticWorker(Worker, DistProfilerExtension):
                     "target_modules": convert_to_regular_types(self.config.model.target_modules),
                     "bias": "none",
                 }
-                critic_module = get_peft_model(critic_module, LoraConfig(**lora_config))
+                critic_module = get_peft_model(
+                    critic_module,
+                    LoraConfig(**lora_config),
+                    autocast_adapter_dtype=autocast_adapter_dtype,
+                )
+
+            if config.strategy == "fsdp2":
+                _align_trainable_param_dtype(critic_module, param_dtype)
 
         if self.rank == 0:
             print_model_size(critic_module)
 
         self.critic_model_config = critic_model_config
-
-        fsdp_config = self.config.model.fsdp_config
-        mixed_precision_config = fsdp_config.get("mixed_precision", None)
-        if mixed_precision_config is not None:
-            param_dtype = PrecisionType.to_dtype(mixed_precision_config.get("param_dtype", "bf16"))
-            reduce_dtype = PrecisionType.to_dtype(
-                mixed_precision_config.get("reduce_dtype", "fp32")
-            )
-            buffer_dtype = PrecisionType.to_dtype(
-                mixed_precision_config.get("buffer_dtype", "fp32")
-            )
-        else:
-            param_dtype = torch.bfloat16
-            reduce_dtype = torch.float32
-            buffer_dtype = torch.float32
 
         mixed_precision = MixedPrecision(
             param_dtype=param_dtype, reduce_dtype=reduce_dtype, buffer_dtype=buffer_dtype

@@ -54,9 +54,7 @@ class WorkerExtension:
             timeout=timeout,
             world_size=world_size,
             rank=self._weight_update_rank,
-            device_id=self.device,
         )
-        torch.distributed.barrier(group=self._model_update_group)
         self.logger.info("vLLM init_process_group finished.")
         self._explorer_name = explorer_name
         self._namespace = namespace
@@ -92,6 +90,5 @@ class WorkerExtension:
             weight = weight.type(self.model_config.dtype)
             self.model_runner.model.load_weights(weights=[(name, weight)])
             del weight
-        torch.distributed.barrier(group=self._model_update_group)
         torch.cuda.synchronize()
         torch.cuda.empty_cache()

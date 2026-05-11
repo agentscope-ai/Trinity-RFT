@@ -9,6 +9,7 @@ from tinker import types
 from torch import Tensor
 
 from trinity.common.config import InferenceModelConfig
+from trinity.common.constants import SyncMethod
 from trinity.common.experience import Experience
 from trinity.common.models.model import BaseInferenceModel
 from trinity.manager.synchronizer import Synchronizer
@@ -149,7 +150,9 @@ class TinkerModel(BaseInferenceModel):
         )
         await self._initialize_tokenizer()
 
-    async def sync_model(self, model_version: int) -> int:
+    async def sync_model(
+        self, model_version: int, sync_method: SyncMethod, timeout: float = 1200
+    ) -> int:
         self.model_version = model_version
         remote_sampler_path, _ = await self.synchronizer.get_model_state_dict.remote()
         self.model = await self.service_client.create_sampling_client_async(

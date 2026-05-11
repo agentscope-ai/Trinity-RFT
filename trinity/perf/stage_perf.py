@@ -13,6 +13,7 @@ import ray
 
 from trinity.buffer.pipelines.task_pipeline import check_and_run_task_pipeline
 from trinity.common.config import Config, load_config
+from trinity.perf.report_metrics import compute_global_token_throughput_metrics
 from trinity.perf.resource_sampler import ResourceSampler
 from trinity.perf.tensorboard_metrics import (
     TensorBoardScalarReader,
@@ -62,6 +63,18 @@ def build_explorer_perf_payload(
             "output_json": options.output_path,
         }
 
+    timing = {
+        "startup_time_sec": startup_time_sec,
+        "execution_time_sec": execution_time_sec,
+        "total_time_sec": total_time_sec,
+    }
+    timing.update(
+        compute_global_token_throughput_metrics(
+            execution_time_sec=execution_time_sec,
+            step_metrics=step_metrics,
+        )
+    )
+
     return {
         "run_meta": {
             "module": "explorer",
@@ -72,11 +85,7 @@ def build_explorer_perf_payload(
             "pid": os.getpid(),
             "generated_at": time.time(),
         },
-        "timing": {
-            "startup_time_sec": startup_time_sec,
-            "execution_time_sec": execution_time_sec,
-            "total_time_sec": total_time_sec,
-        },
+        "timing": timing,
         **resource_payload,
         "step_metrics": step_metrics,
         "artifacts": artifacts,

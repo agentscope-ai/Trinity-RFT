@@ -4,17 +4,75 @@ import datetime
 import math
 import os
 import shutil
+import socket
 import unittest
+from unittest.mock import patch
 
 import torch
 
 from tests.tools import get_template_config, get_unittest_dataset_config
 from trinity.common.config import InferenceModelConfig, load_config
+from trinity.common.constants import SyncMethod
+from trinity.common.models.model import InferenceModel
 
 CHECKPOINT_ROOT_DIR = os.path.join(os.path.dirname(__file__), "temp_checkpoint_dir")
 
 
+class DummyInferenceModel(InferenceModel):
+    async def generate(self, prompt: str, **kwargs):
+        raise NotImplementedError
+
+    async def chat(self, messages, **kwargs):
+        raise NotImplementedError
+
+    async def logprobs(self, token_ids, **kwargs):
+        raise NotImplementedError
+
+    async def convert_messages_to_experience(self, messages, tools=None, temperature=None):
+        raise NotImplementedError
+
+    async def sync_model(
+        self, model_version: int, sync_method: SyncMethod, timeout: float = 1200
+    ) -> int:
+        return model_version
+
+    def get_model_version(self) -> int:
+        return 0
+
+
 class TestConfig(unittest.TestCase):
+    def test_inference_model_base_port_uses_engine_id(self):
+        model = DummyInferenceModel(InferenceModelConfig(base_port=9000, engine_id=3))
+
+        _, port = model.get_available_address()
+
+        self.assertEqual(port, 9003)
+
+    def test_inference_model_base_port_falls_back_when_unavailable(self):
+        requested_port = 9004
+        model = DummyInferenceModel(InferenceModelConfig(base_port=9000, engine_id=4))
+
+        with socket.socket() as occupied_socket:
+            occupied_socket.bind(("", requested_port))
+
+            with patch.object(model.logger, "warning") as mock_warning:
+                _, port = model.get_available_address()
+
+        self.assertNotEqual(port, requested_port)
+        self.assertGreater(port, 0)
+        mock_warning.assert_called_once_with(
+            "Configured port %s is unavailable for engine %s; falling back to an ephemeral port.",
+            requested_port,
+            4,
+        )
+
+    def test_inference_model_without_base_port_uses_ephemeral_port(self):
+        model = DummyInferenceModel(InferenceModelConfig())
+
+        _, port = model.get_available_address()
+
+        self.assertGreater(port, 0)
+
     def test_load_default_config(self):
         config = get_template_config()
         config.buffer.batch_size = 8

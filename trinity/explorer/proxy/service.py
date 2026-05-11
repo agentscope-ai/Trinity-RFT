@@ -5,7 +5,7 @@ from typing import Dict, List, Tuple
 
 import torch
 
-from trinity.common.constants import RunningStatus
+from trinity.common.constants import RunningStatus, SyncMethod
 from trinity.common.experience import Experience
 from trinity.common.models.model import ModelWrapper
 from trinity.explorer.explorer import Explorer
@@ -106,7 +106,7 @@ class ExplorerService:
             )
         latest_version = self.latest_model_version  # capture the latest version
         # perform synchronization
-        await self.models[index].sync_model_weights(latest_version)
+        await self.models[index].sync_model_weights(latest_version, method=SyncMethod.CHECKPOINT)
         self.logger.info(f"Model {index} synchronized to version {latest_version}.")
         self.model_version_map[index] = await self.models[index].model_version_async
         self.models[index].status = RunningStatus.RUNNING

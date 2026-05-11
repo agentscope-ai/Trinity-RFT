@@ -36,6 +36,7 @@ class Synchronizer:
         self._ready_condition = asyncio.Condition()
         self.model_state_dict = None
         self.model_version = 0
+        self.model_path = None
         self.checkpoint_shard_counter = defaultdict(lambda: 0)
         self.ref_count = 0
         self._modules = {module_ref}
@@ -263,6 +264,10 @@ class Synchronizer:
         async with self._ready_condition:
             self.model_state_dict = model_state_dict
             self.model_version = trainer_step
+            # TODO: check model_path for different trainer types
+            self.model_path = os.path.join(
+                self.config.checkpoint_job_dir, f"global_step_{trainer_step}", "actor"
+            )
             self.logger.info(f"Set model state dict version to {trainer_step}.")
             self._ready_condition.notify_all()
 
@@ -350,6 +355,16 @@ class Synchronizer:
         """
         async with self._ready_condition:
             return self.model_version
+
+    async def get_latest_model_path(self) -> Optional[str]:
+        """
+        Get the latest model path available in the synchronizer.
+
+        Returns:
+            The current model path.
+        """
+        async with self._ready_condition:
+            return self.model_path
 
     async def ready_to_nccl_sync(self, module: str, trainer_step: int) -> Union[int, None]:
         """

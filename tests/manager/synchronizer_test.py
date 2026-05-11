@@ -66,12 +66,14 @@ def explorer_monkey_patch(explore_step_time_list: List[int]):
         await asyncio.sleep(explore_step_time_list[step - 1])
         dummy_exps = [
             Experience(
-                tokens=torch.tensor([0, 0, 0]),
+                tokens=torch.tensor([0, 1, 2]),
                 info={"model_version": model_version},
             )
             for _ in range(self.config.buffer.train_batch_size)
         ]
-        await self.experience_pipeline.process.remote(Experience.serialize_many(dummy_exps))
+        await self.rollout_coordinator.process_experiences.remote(
+            [Experience.serialize_many(dummy_exps)]
+        )
         self.monitor.log(metric, step=step)
 
     Explorer.explore_step = new_explore_step
@@ -347,6 +349,7 @@ class TestPullLatestWeights(unittest.IsolatedAsyncioTestCase):
 
     def setUp(self):
         self.explorer = object.__new__(Explorer)
+        self.explorer.config = Config()
         self.explorer.logger = MagicMock()
         self.explorer.models = [MagicMock(), MagicMock()]
         self.explorer.synchronizer = MagicMock()
@@ -378,7 +381,11 @@ class TestPullLatestWeights(unittest.IsolatedAsyncioTestCase):
 
         for m in self.explorer.models:
             if expect_sync:
-                m.sync_model.remote.assert_called_once_with(new_version)
+                m.sync_model.remote.assert_called_once_with(
+                    new_version,
+                    self.explorer.config.synchronizer.sync_method,
+                    timeout=self.explorer.config.synchronizer.sync_timeout,
+                )
             else:
                 m.sync_model.remote.assert_not_called()
 

@@ -782,7 +782,6 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
                     world_size=world_size,
                     rank=0,
                 )
-                torch.distributed.barrier(group=self._model_update_group)
                 ray.get(setup_ref)
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
@@ -797,7 +796,6 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
                 torch.distributed.broadcast(weight, 0, group=self._model_update_group)
             del weight
         if torch.distributed.get_rank() == 0:
-            torch.distributed.barrier(group=self._model_update_group)
             torch.cuda.synchronize()
         if self._is_offload_param:
             offload_megatron_model_to_cpu(self.actor_module)

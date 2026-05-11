@@ -546,6 +546,8 @@ class InferenceModelConfig:
     repetition_penalty: Optional[float] = None
     # used for testing very long response generation, do not set it unless you know what you are doing
     ignore_eos: bool = False
+    # for multi-modal models
+    enable_multimodal: bool = False
 
     # override chat template in model
     chat_template: Optional[str] = None
@@ -559,6 +561,7 @@ class InferenceModelConfig:
     # For OpenAI API
     enable_openai_api: bool = False
     enable_log_requests: bool = False  # whether to enable request logging in vLLM API server
+    base_port: Optional[int] = None
 
     # For tool calls in OpenAI API
     enable_auto_tool_choice: bool = False
@@ -572,6 +575,7 @@ class InferenceModelConfig:
 
     # ! DO NOT SET
     bundle_indices: str = ""
+    engine_id: int = 0
     ray_namespace: Optional[str] = None
     cuda_visible_devices: Optional[str] = None
 
@@ -751,7 +755,7 @@ class ExplorerConfig:
 class TrainerConfig:
     name: str = TRAINER_NAME
     trainer_type: str = "verl"
-    trainer_strategy: str = "fsdp"  # "fsdp", "fsdp2" or "megatron"
+    trainer_strategy: str = "fsdp2"  # "fsdp", "fsdp2" or "megatron"
     save_interval: int = 0
     enable_preview: bool = True  # enable rollout preview in wandb
     total_steps: Optional[

@@ -282,7 +282,7 @@ class DummyModel(InferenceModel):
 
         super().__init__(InferenceModelConfig(model_path="dummy_model"))
 
-    def sync_model(self, model_version, update_weight_args_list):
+    def sync_model(self, model_version, sync_method, timeout):
         return True
 
     async def prepare(self):
@@ -329,7 +329,7 @@ class DummyModel(InferenceModel):
 
 @ray.remote
 class DummyAuxiliaryModel(InferenceModel):
-    def sync_model(self, model_version, update_weight_args_list):
+    def sync_model(self, model_version, sync_method, timeout):
         return True
 
     def get_model_version(self):

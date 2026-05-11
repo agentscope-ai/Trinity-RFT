@@ -328,7 +328,7 @@ class AsyncSimpleWorkflow(BaseSimpleWorkflow):
         # TODO: Optimize the generate function
         messages = self.format_messages()
 
-        self.logger.debug("start chat")
+        self.logger.info("start chat")
         responses = await self.model.chat_async(messages, **self.rollout_args)
         for i, response in enumerate(responses):
             reward_dict = self.reward_fn(  # type: ignore [misc]

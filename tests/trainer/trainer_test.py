@@ -78,7 +78,7 @@ class BaseTrainerCase(RayUnittestBase):
 @parameterized_class(
     ("strategy",),
     [
-        ("fsdp",),
+        ("fsdp2",),
         ("megatron",),
     ],
 )
@@ -576,7 +576,7 @@ def run_serve(config: Config, stop_event=None) -> None:
 
 @parameterized_class(
     ("use_priority_queue", "strategy"),
-    [(False, "fsdp"), (True, "fsdp"), (True, "megatron")],
+    [(False, "fsdp"), (True, "fsdp2"), (True, "megatron")],
 )
 class TestFullyAsyncMode(unittest.TestCase):
     def setUp(self):
@@ -603,16 +603,14 @@ class TestFullyAsyncMode(unittest.TestCase):
         config.synchronizer.sync_method = SyncMethod.CHECKPOINT
         config.synchronizer.sync_style = SyncStyle.EXPLORER_DRIVEN
         config.synchronizer.sync_interval = 8
+        config.trainer.trainer_strategy = self.strategy
         config.monitor.monitor_type = "tensorboard"
         trainer_config = deepcopy(config)
         trainer_config.mode = "train"
         trainer_config.buffer.train_batch_size = 4
-        if self.strategy == "megatron":
-            trainer_config.trainer.trainer_strategy = "megatron"
         trainer_config.check_and_update()
-        if self.strategy == "megatron":
-            _trainer_config = trainer_config.trainer.trainer_config
-            _trainer_config.critic.strategy = "megatron"
+        _trainer_config = trainer_config.trainer.trainer_config
+        _trainer_config.critic.strategy = self.strategy
 
         explorer1_config = deepcopy(config)
         explorer1_config.trainer = deepcopy(trainer_config.trainer)

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """The explorer module"""
+
 from __future__ import annotations
 
 import asyncio
@@ -144,7 +145,16 @@ class Explorer:
     async def _checkpoint_weights_update(self, step_num: Optional[int] = None) -> int:
         self.logger.info(f"Start to update model weights from checkpoint at step {step_num}.")
         step_num = await self.synchronizer.set_model_state_dict_with_step_num.remote(step_num)
-        await asyncio.gather(*[model.sync_model.remote(step_num) for model in self.models])
+        await asyncio.gather(
+            *[
+                model.sync_model.remote(
+                    step_num,
+                    self.config.synchronizer.sync_method,
+                    timeout=self.config.synchronizer.sync_timeout,
+                )
+                for model in self.models
+            ]
+        )
         self.logger.info(f"Model weights updated to checkpoint at step {step_num}.")
         return step_num  # type: ignore
 
@@ -157,7 +167,14 @@ class Explorer:
             if self.model_version != -1 or new_version > 0:
                 self.logger.info(f"New model weights version: {new_version}")
                 await asyncio.gather(
-                    *[model.sync_model.remote(new_version) for model in self.models]
+                    *[
+                        model.sync_model.remote(
+                            new_version,
+                            self.config.synchronizer.sync_method,
+                            timeout=self.config.synchronizer.sync_timeout,
+                        )
+                        for model in self.models
+                    ]
                 )
             self.model_version = new_version
         else:
@@ -174,7 +191,14 @@ class Explorer:
             return
         self.model_version = new_version
         await asyncio.gather(
-            *[model.sync_model.remote(self.model_version) for model in self.models]
+            *[
+                model.sync_model.remote(
+                    self.model_version,
+                    self.config.synchronizer.sync_method,
+                    timeout=self.config.synchronizer.sync_timeout,
+                )
+                for model in self.models
+            ]
         )
 
     async def prepare(self) -> None:
