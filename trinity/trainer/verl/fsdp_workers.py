@@ -405,13 +405,14 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
         if self.rank == 0:
             self.logger.info(f"Model config after override: {actor_model_config}")
 
+        major_capability, _ = torch.cuda.get_device_capability(0)
         use_meta = (
             (
                 self.rank != 0
                 if self.device_mesh is None
                 else self.device_mesh.get_coordinate()[-1] != 0
             )
-            if self.config.actor.strategy == "fsdp2"
+            if self.config.actor.strategy == "fsdp2" and major_capability >= 9
             else False
         )
 
