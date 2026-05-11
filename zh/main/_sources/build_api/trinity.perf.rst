@@ -7,6 +7,7 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
+   trinity.perf.report_metrics
    trinity.perf.report_viewer
    trinity.perf.resource_backends
    trinity.perf.resource_sampler

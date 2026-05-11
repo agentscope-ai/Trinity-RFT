@@ -1013,6 +1013,7 @@ window.runMermaid = runMermaid;</script>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">ray</span>
@@ -1079,6 +1080,10 @@ window.runMermaid = runMermaid;</script>
         <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models.vllm_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">vLLMRolloutModel</span>
 
         <span class="n">engine_cls</span> <span class="o">=</span> <span class="n">vLLMRolloutModel</span>
+    <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">engine_type</span> <span class="o">==</span> <span class="s2">&quot;sglang&quot;</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models.sglang_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">SGLangRolloutModel</span>
+
+        <span class="n">engine_cls</span> <span class="o">=</span> <span class="n">SGLangRolloutModel</span>
     <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">engine_type</span> <span class="o">==</span> <span class="s2">&quot;external&quot;</span><span class="p">:</span>
         <span class="n">rollout_engines</span> <span class="o">=</span> <span class="n">create_external_models</span><span class="p">(</span>
             <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="p">,</span>
@@ -1128,11 +1133,15 @@ window.runMermaid = runMermaid;</script>
 
     <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;colocate&quot;</span><span class="p">:</span>
         <span class="n">rollout_engine</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">ray</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">vLLMRolloutModel</span><span class="p">)</span>
+            <span class="n">ray</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">engine_cls</span><span class="p">)</span>
             <span class="o">.</span><span class="n">options</span><span class="p">(</span>
                 <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_rollout_model_0&quot;</span><span class="p">,</span>
                 <span class="n">num_cpus</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                <span class="n">num_gpus</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">num_gpus</span><span class="o">=</span><span class="p">(</span>
+                    <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">tensor_parallel_size</span>
+                    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">engine_type</span> <span class="o">==</span> <span class="s2">&quot;sglang&quot;</span>
+                    <span class="k">else</span> <span class="mi">0</span>
+                <span class="p">),</span>
                 <span class="n">namespace</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">ray_namespace</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="o">.</span><span class="n">remote</span><span class="p">(</span>
@@ -1140,6 +1149,28 @@ window.runMermaid = runMermaid;</script>
             <span class="p">)</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">rollout_engine</span><span class="p">],</span> <span class="p">[]</span>
+
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">engine_type</span> <span class="o">==</span> <span class="s2">&quot;sglang&quot;</span><span class="p">:</span>
+        <span class="n">rollout_engines</span> <span class="o">=</span> <span class="n">create_sglang_explorer_models</span><span class="p">(</span>
+            <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="p">,</span>
+            <span class="n">actor_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_rollout_model&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">enable_history</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="s2">&quot;Model History recording is enabled. Please periodically extract &quot;</span>
+                <span class="s2">&quot;history via `extract_experience_from_history` to avoid out-of-memory issues.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">auxiliary_engines</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">model_config</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">):</span>
+            <span class="n">engines</span> <span class="o">=</span> <span class="n">create_sglang_explorer_models</span><span class="p">(</span>
+                <span class="n">config</span><span class="o">=</span><span class="n">model_config</span><span class="p">,</span>
+                <span class="n">actor_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_auxiliary_model_</span><span class="si">{</span><span class="n">model_config</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">auxiliary_engines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">engines</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">rollout_engines</span><span class="p">,</span> <span class="n">auxiliary_engines</span>
 
     <span class="n">num_gpus</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">engine_num</span>
@@ -1155,7 +1186,12 @@ window.runMermaid = runMermaid;</script>
     <span class="n">allocator</span> <span class="o">=</span> <span class="n">_BundleAllocator</span><span class="p">(</span><span class="n">num_gpus</span><span class="o">=</span><span class="n">num_gpus</span><span class="p">)</span>
 
     <span class="c1"># create rollout models</span>
-    <span class="n">rollout_engines</span> <span class="o">=</span> <span class="n">create_vllm_inference_models</span><span class="p">(</span>
+    <span class="n">model_factory</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">create_sglang_inference_models</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">engine_type</span> <span class="o">==</span> <span class="s2">&quot;sglang&quot;</span>
+        <span class="k">else</span> <span class="n">create_vllm_inference_models</span>
+    <span class="p">)</span>
+    <span class="n">rollout_engines</span> <span class="o">=</span> <span class="n">model_factory</span><span class="p">(</span>
         <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="p">,</span>
         <span class="n">allocator</span><span class="o">=</span><span class="n">allocator</span><span class="p">,</span>
         <span class="n">actor_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_rollout_model&quot;</span><span class="p">,</span>
@@ -1170,7 +1206,7 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># create auxiliary models</span>
     <span class="n">auxiliary_engines</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">model_config</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">):</span>
-        <span class="n">engines</span> <span class="o">=</span> <span class="n">create_vllm_inference_models</span><span class="p">(</span>
+        <span class="n">engines</span> <span class="o">=</span> <span class="n">model_factory</span><span class="p">(</span>
             <span class="n">config</span><span class="o">=</span><span class="n">model_config</span><span class="p">,</span>
             <span class="n">allocator</span><span class="o">=</span><span class="n">allocator</span><span class="p">,</span>
             <span class="n">actor_name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">_auxiliary_model_</span><span class="si">{</span><span class="n">model_config</span><span class="o">.</span><span class="n">name</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
@@ -1193,14 +1229,16 @@ window.runMermaid = runMermaid;</script>
     <span class="n">models</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">engine_num</span><span class="p">):</span>
         <span class="n">bundles_for_engine</span> <span class="o">=</span> <span class="n">allocator</span><span class="o">.</span><span class="n">allocate</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">tensor_parallel_size</span><span class="p">)</span>
-        <span class="n">config</span><span class="o">.</span><span class="n">bundle_indices</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">bid</span><span class="p">)</span> <span class="k">for</span> <span class="n">bid</span> <span class="ow">in</span> <span class="n">bundles_for_engine</span><span class="p">])</span>
+        <span class="n">model_config</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="n">model_config</span><span class="o">.</span><span class="n">bundle_indices</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">bid</span><span class="p">)</span> <span class="k">for</span> <span class="n">bid</span> <span class="ow">in</span> <span class="n">bundles_for_engine</span><span class="p">])</span>
+        <span class="n">model_config</span><span class="o">.</span><span class="n">engine_id</span> <span class="o">=</span> <span class="n">i</span>
         <span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="n">ray</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">vLLMRolloutModel</span><span class="p">)</span>
             <span class="o">.</span><span class="n">options</span><span class="p">(</span>
                 <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">actor_name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
                 <span class="n">num_cpus</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                <span class="n">num_gpus</span><span class="o">=</span><span class="mi">0</span> <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">tensor_parallel_size</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">1</span><span class="p">,</span>
-                <span class="n">namespace</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">ray_namespace</span><span class="p">,</span>
+                <span class="n">num_gpus</span><span class="o">=</span><span class="mi">0</span> <span class="k">if</span> <span class="n">model_config</span><span class="o">.</span><span class="n">tensor_parallel_size</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="n">namespace</span><span class="o">=</span><span class="n">model_config</span><span class="o">.</span><span class="n">ray_namespace</span><span class="p">,</span>
                 <span class="n">scheduling_strategy</span><span class="o">=</span><span class="n">PlacementGroupSchedulingStrategy</span><span class="p">(</span>
                     <span class="n">placement_group</span><span class="o">=</span><span class="n">allocator</span><span class="o">.</span><span class="n">pg</span><span class="p">,</span>
                     <span class="n">placement_group_capture_child_tasks</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -1208,7 +1246,81 @@ window.runMermaid = runMermaid;</script>
                 <span class="p">),</span>
             <span class="p">)</span>
             <span class="o">.</span><span class="n">remote</span><span class="p">(</span>
-                <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
+                <span class="n">config</span><span class="o">=</span><span class="n">model_config</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">models</span></div>
+
+
+
+<div class="viewcode-block" id="create_sglang_inference_models">
+<a class="viewcode-back" href="../../../build_api/trinity.common.models.html#trinity.common.models.create_sglang_inference_models">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_sglang_inference_models</span><span class="p">(</span>
+    <span class="n">config</span><span class="p">:</span> <span class="n">InferenceModelConfig</span><span class="p">,</span>
+    <span class="n">allocator</span><span class="p">:</span> <span class="n">_BundleAllocator</span><span class="p">,</span>
+    <span class="n">actor_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models.sglang_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">SGLangRolloutModel</span>
+
+    <span class="n">models</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">engine_num</span><span class="p">):</span>
+        <span class="n">bundles_for_engine</span> <span class="o">=</span> <span class="n">allocator</span><span class="o">.</span><span class="n">allocate</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">tensor_parallel_size</span><span class="p">)</span>
+        <span class="n">model_config</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="n">model_config</span><span class="o">.</span><span class="n">bundle_indices</span> <span class="o">=</span> <span class="s2">&quot;,&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">bid</span><span class="p">)</span> <span class="k">for</span> <span class="n">bid</span> <span class="ow">in</span> <span class="n">bundles_for_engine</span><span class="p">])</span>
+        <span class="n">model_config</span><span class="o">.</span><span class="n">engine_id</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">ray</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">SGLangRolloutModel</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">options</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">actor_name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">num_cpus</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">num_gpus</span><span class="o">=</span><span class="mi">0</span> <span class="k">if</span> <span class="n">model_config</span><span class="o">.</span><span class="n">tensor_parallel_size</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="n">namespace</span><span class="o">=</span><span class="n">model_config</span><span class="o">.</span><span class="n">ray_namespace</span><span class="p">,</span>
+                <span class="n">scheduling_strategy</span><span class="o">=</span><span class="n">PlacementGroupSchedulingStrategy</span><span class="p">(</span>
+                    <span class="n">placement_group</span><span class="o">=</span><span class="n">allocator</span><span class="o">.</span><span class="n">pg</span><span class="p">,</span>
+                    <span class="n">placement_group_capture_child_tasks</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">placement_group_bundle_index</span><span class="o">=</span><span class="n">bundles_for_engine</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">remote</span><span class="p">(</span>
+                <span class="n">config</span><span class="o">=</span><span class="n">model_config</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">models</span></div>
+
+
+
+<div class="viewcode-block" id="create_sglang_explorer_models">
+<a class="viewcode-back" href="../../../build_api/trinity.common.models.html#trinity.common.models.create_sglang_explorer_models">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_sglang_explorer_models</span><span class="p">(</span>
+    <span class="n">config</span><span class="p">:</span> <span class="n">InferenceModelConfig</span><span class="p">,</span>
+    <span class="n">actor_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models.sglang_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">SGLangRolloutModel</span>
+
+    <span class="n">models</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">engine_num</span><span class="p">):</span>
+        <span class="n">model_config</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="n">model_config</span><span class="o">.</span><span class="n">engine_id</span> <span class="o">=</span> <span class="n">i</span>
+        <span class="n">engine_pg</span> <span class="o">=</span> <span class="n">placement_group</span><span class="p">(</span>
+            <span class="p">[{</span><span class="s2">&quot;GPU&quot;</span><span class="p">:</span> <span class="n">model_config</span><span class="o">.</span><span class="n">tensor_parallel_size</span><span class="p">}],</span>
+            <span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;PACK&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">ray</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">engine_pg</span><span class="o">.</span><span class="n">ready</span><span class="p">())</span>
+        <span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">ray</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">SGLangRolloutModel</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">options</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">actor_name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">num_cpus</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="n">num_gpus</span><span class="o">=</span><span class="n">model_config</span><span class="o">.</span><span class="n">tensor_parallel_size</span><span class="p">,</span>
+                <span class="n">namespace</span><span class="o">=</span><span class="n">model_config</span><span class="o">.</span><span class="n">ray_namespace</span><span class="p">,</span>
+                <span class="n">scheduling_strategy</span><span class="o">=</span><span class="n">PlacementGroupSchedulingStrategy</span><span class="p">(</span>
+                    <span class="n">placement_group</span><span class="o">=</span><span class="n">engine_pg</span><span class="p">,</span>
+                    <span class="n">placement_group_capture_child_tasks</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">placement_group_bundle_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">remote</span><span class="p">(</span>
+                <span class="n">config</span><span class="o">=</span><span class="n">model_config</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="p">)</span>
     <span class="k">return</span> <span class="n">models</span></div>
@@ -1234,17 +1346,19 @@ window.runMermaid = runMermaid;</script>
 
     <span class="n">models</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">engine_num</span><span class="p">):</span>
+        <span class="n">model_config</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="n">model_config</span><span class="o">.</span><span class="n">engine_id</span> <span class="o">=</span> <span class="n">i</span>
         <span class="n">models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="n">ray</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">ExternalModel</span><span class="p">)</span>
             <span class="o">.</span><span class="n">options</span><span class="p">(</span>
                 <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">actor_name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
                 <span class="n">num_cpus</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
                 <span class="n">num_gpus</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                <span class="n">namespace</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">ray_namespace</span><span class="p">,</span>
+                <span class="n">namespace</span><span class="o">=</span><span class="n">model_config</span><span class="o">.</span><span class="n">ray_namespace</span><span class="p">,</span>
                 <span class="n">runtime_env</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;env_vars&quot;</span><span class="p">:</span> <span class="n">env_vars</span><span class="p">},</span>
             <span class="p">)</span>
             <span class="o">.</span><span class="n">remote</span><span class="p">(</span>
-                <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span>
+                <span class="n">config</span><span class="o">=</span><span class="n">model_config</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="p">)</span>
     <span class="k">return</span> <span class="n">models</span></div>

@@ -798,10 +798,12 @@ window.runMermaid = runMermaid;</script>
 </details></li>
 <li class="toctree-l2 has-children"><a class="reference internal" href="../../../build_api/trinity.common.html">trinity.common package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../build_api/trinity.common.models.html">trinity.common.models package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.models.sglang_patch.html">trinity.common.models.sglang_patch package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.models.vllm_patch.html">trinity.common.models.vllm_patch package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.models.external_model.html">trinity.common.models.external_model module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.models.mm_utils.html">trinity.common.models.mm_utils module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.models.model.html">trinity.common.models.model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.models.sglang_model.html">trinity.common.models.sglang_model module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.models.tinker_model.html">trinity.common.models.tinker_model module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.models.utils.html">trinity.common.models.utils module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.models.vllm_model.html">trinity.common.models.vllm_model module</a></li>
@@ -1032,6 +1034,7 @@ window.runMermaid = runMermaid;</script>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.pipelines.task_pipeline</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_and_run_task_pipeline</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span><span class="p">,</span> <span class="n">load_config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.perf.report_metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_global_token_throughput_metrics</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.perf.resource_sampler</span><span class="w"> </span><span class="kn">import</span> <span class="n">ResourceSampler</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.perf.tensorboard_metrics</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">TensorBoardScalarReader</span><span class="p">,</span>
@@ -1089,6 +1092,18 @@ window.runMermaid = runMermaid;</script>
             <span class="s2">&quot;output_json&quot;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">output_path</span><span class="p">,</span>
         <span class="p">}</span>
 
+    <span class="n">timing</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;startup_time_sec&quot;</span><span class="p">:</span> <span class="n">startup_time_sec</span><span class="p">,</span>
+        <span class="s2">&quot;execution_time_sec&quot;</span><span class="p">:</span> <span class="n">execution_time_sec</span><span class="p">,</span>
+        <span class="s2">&quot;total_time_sec&quot;</span><span class="p">:</span> <span class="n">total_time_sec</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">timing</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+        <span class="n">compute_global_token_throughput_metrics</span><span class="p">(</span>
+            <span class="n">execution_time_sec</span><span class="o">=</span><span class="n">execution_time_sec</span><span class="p">,</span>
+            <span class="n">step_metrics</span><span class="o">=</span><span class="n">step_metrics</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
     <span class="k">return</span> <span class="p">{</span>
         <span class="s2">&quot;run_meta&quot;</span><span class="p">:</span> <span class="p">{</span>
             <span class="s2">&quot;module&quot;</span><span class="p">:</span> <span class="s2">&quot;explorer&quot;</span><span class="p">,</span>
@@ -1099,11 +1114,7 @@ window.runMermaid = runMermaid;</script>
             <span class="s2">&quot;pid&quot;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">(),</span>
             <span class="s2">&quot;generated_at&quot;</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
         <span class="p">},</span>
-        <span class="s2">&quot;timing&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;startup_time_sec&quot;</span><span class="p">:</span> <span class="n">startup_time_sec</span><span class="p">,</span>
-            <span class="s2">&quot;execution_time_sec&quot;</span><span class="p">:</span> <span class="n">execution_time_sec</span><span class="p">,</span>
-            <span class="s2">&quot;total_time_sec&quot;</span><span class="p">:</span> <span class="n">total_time_sec</span><span class="p">,</span>
-        <span class="p">},</span>
+        <span class="s2">&quot;timing&quot;</span><span class="p">:</span> <span class="n">timing</span><span class="p">,</span>
         <span class="o">**</span><span class="n">resource_payload</span><span class="p">,</span>
         <span class="s2">&quot;step_metrics&quot;</span><span class="p">:</span> <span class="n">step_metrics</span><span class="p">,</span>
         <span class="s2">&quot;artifacts&quot;</span><span class="p">:</span> <span class="n">artifacts</span><span class="p">,</span>
