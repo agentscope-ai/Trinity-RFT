@@ -46,7 +46,6 @@ from verl.utils.fsdp_utils import (
 )
 from verl.utils.logger import log_with_rank
 from verl.utils.model import get_hf_auto_model_class
-from verl.utils.transformers_compat import is_transformers_version_in_range
 
 from trinity.manager.synchronizer import Synchronizer
 from trinity.trainer.verl.verl_trainer import CheckpointMonitor
@@ -361,10 +360,7 @@ class FSDPCheckpointManager(OldFSDPCheckpointManager):
                 ray.get(
                     self.checkpoint_monitor.notify_started.remote(node_id=node_id, job_id=job_id)
                 )
-                save_kwargs = dict(state_dict=state_dict)
-                if is_transformers_version_in_range(min_version="5.4.0", max_version="5.5.4"):
-                    save_kwargs["save_original_format"] = False
-                save_model.save_pretrained(hf_local_path, **save_kwargs)
+                save_model.save_pretrained(hf_local_path, state_dict=state_dict)
                 log_with_rank(
                     f"Saved hf_model to {os.path.abspath(hf_local_path)}",
                     rank=self.rank,

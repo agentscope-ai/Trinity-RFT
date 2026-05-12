@@ -162,13 +162,7 @@ class Converter:
                 return
 
             state_dict = {k: v.to(torch.bfloat16) for k, v in state_dict.items()}
-
-            from verl.utils.transformers_compat import is_transformers_version_in_range
-
-            save_kwargs = dict(state_dict=state_dict)
-            if is_transformers_version_in_range(min_version="5.4.0", max_version="5.5.4"):
-                save_kwargs["save_original_format"] = False
-            model.save_pretrained(huggingface_dir, **save_kwargs)
+            model.save_pretrained(huggingface_dir, state_dict=state_dict)
             self.logger.info(f"Saved huggingface checkpoint to {huggingface_dir}")
 
         else:  # recursive search

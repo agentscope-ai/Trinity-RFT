@@ -16,6 +16,7 @@ The main entry point to run the PPO algorithm.
 Modified from https://github.com/volcengine/verl/blob/v0.7.1/verl/workers/fsdp_workers.py
 """
 
+import builtins
 import datetime
 import json
 import os
@@ -139,8 +140,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
 
         # setup logger
         self.logger = get_logger(f"{role}_{self.rank}", in_ray_actor=True)
-        import builtins
-
+        # redirect built-in print to logger to capture logs
         builtins.print = lambda *args, **kwargs: self.logger.info(" ".join(map(str, args)))
 
         # build device mesh for FSDP
@@ -1225,8 +1225,7 @@ class CriticWorker(Worker, DistProfilerExtension):
 
         # Setup logger
         self.logger = get_logger(f"critic_{self.rank}", in_ray_actor=True)
-        import builtins
-
+        # redirect built-in print to logger to capture logs
         builtins.print = lambda *args, **kwargs: self.logger.info(" ".join(map(str, args)))
 
         self.config: FSDPCriticConfig = config

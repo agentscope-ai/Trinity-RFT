@@ -6,7 +6,6 @@ import torch
 import torch.distributed as dist
 from torch import Tensor
 from transformers.models.qwen3_5.modeling_qwen3_5 import (
-    BaseModelOutputWithPast,
     BaseModelOutputWithPooling,
     Cache,
     F,
@@ -17,9 +16,6 @@ from transformers.models.qwen3_5.modeling_qwen3_5 import (
     Unpack,
     apply_mask_to_padding_states,
     can_return_tuple,
-    capture_outputs,
-    create_causal_mask,
-    merge_with_config_defaults,
 )
 from verl.utils.ulysses import all_gather_tensor
 
@@ -78,6 +74,21 @@ _in_gate_delta_net_with_sp = False
 
 
 def ulysses_gate_delta_net_decorator(net, ulysses_sp_size):
+    """Decorator to enable Ulysses Sequence Parallel for Qwen3.5 GateDeltaNet linear attention.
+
+    This decorator patches the GateDeltaNet module to support sequence parallelism using the Ulysses
+    strategy. It intercepts various operations (forward pass, projections, convolutions, and attention)
+    to properly scatter/gather tensors across sequence parallel ranks.
+
+    Args:
+        net: The GateDeltaNet module to patch (typically a linear attention layer).
+        ulysses_sp_size: The sequence parallel world size. If 1, no patching is performed.
+
+    Note:
+        - This function patches the module in-place and sets a `_is_patched` flag to avoid double-patching.
+        - The sequence parallel operations are controlled via a global `_in_gate_delta_net_with_sp` flag.
+        - The patching includes modifications to forward, in_proj_qkv, conv1d, torch.split, and chunk_gated_delta_rule.
+    """
     if getattr(net, "_is_patched", False):
         return
 
@@ -174,6 +185,8 @@ def ulysses_gate_delta_net_decorator(net, ulysses_sp_size):
     net.chunk_gated_delta_rule = new_chunk_gated_delta_rule
 
 
+# removed when following PR is merged
+# https://github.com/huggingface/transformers/pull/45034/changes
 def gate_delta_net_forward(
     self,
     hidden_states: torch.Tensor,
@@ -181,6 +194,21 @@ def gate_delta_net_forward(
     attention_mask: torch.Tensor | None = None,
     **kwargs,
 ):
+    """Forward pass for Qwen3.5 GateDeltaNet linear attention with packing support.
+
+    This implementation of the linear attention forward pass supports packed sequences for efficient
+    training, following the approach referenced in the Hugging Face transformers PR #45034.
+    It handles both incremental (cached) and non-cached inference modes.
+
+    Args:
+        hidden_states: Input hidden states of shape (batch_size, seq_len, hidden_dim).
+        cache_params: Optional cache parameters for incremental decoding.
+        attention_mask: Optional attention mask to mask out padding positions.
+        **kwargs: Additional keyword arguments passed to sub-components (e.g., seq_idx for packed sequences).
+
+    Returns:
+        Output tensor of shape (batch_size, seq_len, hidden_dim) after linear attention computation.
+    """
     hidden_states = apply_mask_to_padding_states(hidden_states, attention_mask)
 
     # Set up dimensions for reshapes later
@@ -297,6 +325,8 @@ def gate_delta_net_forward(
     return output
 
 
+# removed when following PR is merged
+# https://github.com/huggingface/transformers/pull/45034/changes
 def decoder_layer_forward(
     self,
     hidden_states: torch.Tensor,
@@ -306,6 +336,25 @@ def decoder_layer_forward(
     past_key_values: Cache | None = None,
     **kwargs: Unpack[TransformersKwargs],
 ) -> torch.FloatTensor:
+    """Forward pass for a Qwen3.5 decoder layer supporting packed sequences.
+
+    This function implements a full transformer decoder layer with support for packed sequences
+    (packing training). It combines token mixing (via linear or full attention) with a feed-forward
+    network, with residual connections around each sub-layer.
+
+    Args:
+        hidden_states: Input hidden states of shape (batch_size, seq_len, hidden_dim).
+        position_embeddings: Tuple of (cos_cached, sin_cached) for rotary position embeddings.
+        attention_mask: Optional attention mask.
+        position_ids: Optional position IDs for the sequence.
+        past_key_values: Optional cache for incremental decoding.
+        **kwargs: Additional arguments including:
+            - layer_type: Either 'linear_attention' or 'full_attention' to determine token mixer.
+            - seq_idx: Sequence indices for packed sequence training.
+
+    Returns:
+        Output hidden states of same shape as input (batch_size, seq_len, hidden_dim).
+    """
     residual = hidden_states
 
     hidden_states = self.input_layernorm(hidden_states)
@@ -340,91 +389,31 @@ def decoder_layer_forward(
     return hidden_states
 
 
-@merge_with_config_defaults
-@capture_outputs
-def qwen35_text_forward(
-    self,
-    input_ids: torch.LongTensor | None = None,
-    attention_mask: torch.Tensor | None = None,
-    position_ids: torch.LongTensor | None = None,
-    past_key_values: Cache | None = None,
-    inputs_embeds: torch.FloatTensor | None = None,
-    use_cache: bool | None = None,
-    cache_position: torch.LongTensor | None = None,
-    **kwargs: Unpack[TransformersKwargs],
-) -> BaseModelOutputWithPast:
-    if (input_ids is None) ^ (inputs_embeds is not None):
-        raise ValueError("You must specify exactly one of input_ids or inputs_embeds")
-
-    if inputs_embeds is None:
-        inputs_embeds = self.embed_tokens(input_ids)
-
-    if use_cache and past_key_values is None:
-        from transformers.models.qwen3_5.modeling_qwen3_5 import Qwen3_5DynamicCache
-
-        past_key_values = Qwen3_5DynamicCache(config=self.config)
-
-    if cache_position is None:
-        past_seen_tokens = past_key_values.get_seq_length() if past_key_values is not None else 0
-        cache_position = torch.arange(
-            past_seen_tokens, past_seen_tokens + inputs_embeds.shape[1], device=inputs_embeds.device
-        )
-
-    # mrope: the hard coded `3` is for temporal, height and width.
-    if position_ids is None:
-        position_ids = cache_position.view(1, 1, -1).expand(3, inputs_embeds.shape[0], -1)
-    elif position_ids.ndim == 2:
-        position_ids = position_ids[None, ...].expand(3, position_ids.shape[0], -1)
-
-    if position_ids.ndim == 3 and position_ids.shape[0] == 4:
-        text_position_ids = position_ids[0]
-        position_ids = position_ids[1:]
-    else:
-        text_position_ids = position_ids[0]
-
-    causal_mask = create_causal_mask(
-        config=self.config,
-        inputs_embeds=inputs_embeds,
-        attention_mask=attention_mask,
-        cache_position=cache_position,
-        past_key_values=past_key_values,
-        position_ids=text_position_ids,
-    )
-    linear_attn_mask = self._update_linear_attn_mask(attention_mask, cache_position)
-
-    hidden_states = inputs_embeds
-    position_embeddings = self.rotary_emb(hidden_states, position_ids)
-
-    for layer_idx, decoder_layer in enumerate(self.layers[: self.config.num_hidden_layers]):
-        layer_mask = (
-            linear_attn_mask if decoder_layer.layer_type == "linear_attention" else causal_mask
-        )
-
-        hidden_states = decoder_layer(
-            hidden_states,
-            position_embeddings=position_embeddings,
-            attention_mask=layer_mask,
-            position_ids=text_position_ids,
-            past_key_values=past_key_values,
-            use_cache=use_cache,
-            cache_position=cache_position,
-            **kwargs,
-        )
-
-    hidden_states = self.norm(hidden_states)
-
-    return Qwen3_5ModelOutputWithPast(
-        last_hidden_state=hidden_states,
-        past_key_values=past_key_values,
-    )
-
-
 def qwen35_vision_fast_pos_embed_interpolate(self, grid_thw):
+    """Interpolate vision position embeddings for variable resolution inputs with proper device handling.
+
+    This function performs bilinear interpolation of position embeddings to support variable spatial
+    resolutions. It fixes the device handling issue that occurred during CPU offloading, ensuring all
+    tensors are created and operated on the same device as the input.
+
+    Args:
+        grid_thw: Tensor of shape (num_images, 3) containing temporal, height, and width dimensions
+                 for each image in the batch.
+
+    Returns:
+        Interpolated position embeddings of shape (total_patches, embedding_dim) after merging,
+        where total_patches is the sum of all h*w for each image after spatial merging.
+
+    Note:
+        - The function supports batch processing of multiple images with different resolutions.
+        - Spatial merging is applied based on config.spatial_merge_size.
+        - All tensors are properly placed on the same device as the input grid_thw.
+    """
     grid_thw_list = grid_thw.tolist()
     grid_ts = [row[0] for row in grid_thw_list]
     grid_hs = [row[1] for row in grid_thw_list]
     grid_ws = [row[2] for row in grid_thw_list]
-    device = grid_thw.device
+    device = grid_thw.device  # modified to ensure tensors are created on the correct device
 
     idx_list = [[] for _ in range(4)]
     weight_list = [[] for _ in range(4)]
@@ -498,6 +487,33 @@ def qwen35_model_forward(
     mm_token_type_ids: torch.IntTensor | None = None,
     **kwargs: Unpack[TransformersKwargs],
 ) -> tuple | Qwen3_5ModelOutputWithPast:
+    """Qwen3.5 model forward pass with multimodal support and gradient synchronization across ranks.
+
+    This forward function handles multimodal training (images and/or videos) across multiple GPU ranks
+    with proper synchronization. When a rank doesn't have image/video inputs but other ranks do (common in
+    distributed training with different data samples), it creates dummy images/videos to maintain consistency
+    and avoid hanging in collective operations.
+
+    Args:
+        input_ids: Token IDs of shape (batch_size, seq_len).
+        attention_mask: Attention mask for padding tokens.
+        position_ids: Position IDs for embeddings.
+        past_key_values: Cached key-values for incremental decoding.
+        inputs_embeds: Pre-computed input embeddings (alternative to input_ids).
+        pixel_values: Image pixel values of shape (num_images, channels, height, width).
+        pixel_values_videos: Video pixel values of shape (num_videos, frames, channels, height, width).
+        image_grid_thw: Grid dimensions (temporal, height, width) for images.
+        video_grid_thw: Grid dimensions (temporal, height, width) for videos.
+        mm_token_type_ids: Token type IDs to distinguish image, video, and text tokens.
+        **kwargs: Additional arguments.
+
+    Returns:
+        Qwen3_5ModelOutputWithPast containing language model outputs with rope_deltas for position embeddings.
+
+    Note:
+        - Dummy images/videos are created with shape based on spatial_merge_size when needed for gradient synchronization.
+        - Uses distributed communication (dist.all_reduce) to synchronize multimodal input availability across ranks.
+    """
     r"""
     image_grid_thw (`torch.LongTensor` of shape `(num_images, 3)`, *optional*):
         The temporal, height and width of feature shape of each image in LLM.
@@ -612,6 +628,31 @@ def forward_with_torch_backend(
     temperature: float = 1.0,
     **kwargs,
 ) -> tuple | Qwen3_5CausalLMOutputForPPO:
+    """Compute log probabilities and entropy for reinforcement learning using PyTorch backend.
+
+    This function computes per-token log probabilities and entropy from the language model's hidden
+    states using a fused PyTorch-based linear projection. It's designed for PPO and other RL algorithms
+    that require per-token probability distributions over the vocabulary.
+
+    Args:
+        input_ids: Token IDs of shape (batch_size, seq_len).
+        labels: Optional labels for loss computation. If None, input_ids are rolled to compute shifted targets.
+        temperature: Temperature scaling for softmax (default: 1.0). Used to control probability distribution sharpness.
+        **kwargs: Additional arguments passed to the model (e.g., attention_mask).
+
+    Returns:
+        Qwen3_5CausalLMOutputForPPO containing:
+            - log_probs: Log probabilities of shape (batch_size, seq_len)
+            - entropy: Entropy values of shape (batch_size, seq_len)
+            - hidden_states: Hidden states from the model forward pass
+
+    Raises:
+        RuntimeError: If neither labels nor input_ids is provided.
+
+    Note:
+        - Uses FusedLinearForPPO for efficient torch-based computation.
+        - The log probability target is computed by rolling labels (or input_ids) by -1 to create next-token prediction targets.
+    """
     from verl.utils.experimental.torch_functional import FusedLinearForPPO
 
     outputs = self.model(input_ids=input_ids, **kwargs)
@@ -648,6 +689,32 @@ def forward_with_triton_backend(
     temperature: float = 1.0,
     **kwargs,
 ) -> tuple | Qwen3_5CausalLMOutputForPPO:
+    """Compute log probabilities and entropy for reinforcement learning using Triton kernel backend.
+
+    This function computes per-token log probabilities and entropy from the language model's hidden
+    states using an optimized Triton kernel (linear_cross_entropy). It provides better performance
+    compared to the PyTorch backend for large vocabularies, suitable for PPO and other RL algorithms.
+
+    Args:
+        input_ids: Token IDs of shape (batch_size, seq_len).
+        labels: Optional labels for loss computation. If None, input_ids are rolled to compute shifted targets.
+        temperature: Temperature scaling for softmax (default: 1.0). Used to control probability distribution sharpness.
+        **kwargs: Additional arguments passed to the model (e.g., attention_mask).
+
+    Returns:
+        Qwen3_5CausalLMOutputForPPO containing:
+            - log_probs: Log probabilities of shape (batch_size, seq_len)
+            - entropy: Entropy values of shape (batch_size, seq_len)
+            - hidden_states: Hidden states from the model forward pass
+
+    Raises:
+        RuntimeError: If neither labels nor input_ids is provided.
+
+    Note:
+        - Uses the linear_cross_entropy Triton kernel from verl for highly optimized computation.
+        - The log probability target is computed by rolling labels (or input_ids) by -1 to create next-token prediction targets.
+        - Generally faster than forward_with_torch_backend for large vocabulary sizes.
+    """
     from verl.utils.kernel.linear_cross_entropy import linear_cross_entropy
 
     outputs = self.model(input_ids=input_ids, **kwargs)
