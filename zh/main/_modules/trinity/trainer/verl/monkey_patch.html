@@ -1245,12 +1245,21 @@ window.runMermaid = runMermaid;</script>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.models.transformers.monkey_patch</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
         <span class="n">_ulysses_flash_attention_forward</span><span class="p">,</span>
         <span class="n">apply_prefix_grouper_patch</span><span class="p">,</span>
-        <span class="n">patch_vlm_for_ulysses_input_slicing</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">verl.models.transformers.monkey_patch</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+        <span class="n">patch_vlm_for_ulysses_input_slicing</span> <span class="k">as</span> <span class="n">verl_patch_vlm_for_ulysses_input_slicing</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.import_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_trl_available</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.transformers_compat</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_transformers_version_in_range</span>
 
-    <span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">in_ray_actor</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">patch_vlm_for_ulysses_input_slicing</span><span class="p">(</span><span class="n">model_class</span><span class="p">:</span> <span class="nb">type</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_class</span><span class="p">,</span> <span class="s2">&quot;_patch_vlm_for_ulysses_input_slicing&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">return</span>
+
+        <span class="n">verl_patch_vlm_for_ulysses_input_slicing</span><span class="p">(</span><span class="n">model_class</span><span class="p">)</span>
+        <span class="n">model_class</span><span class="o">.</span><span class="n">_patch_vlm_for_ulysses_input_slicing</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="c1"># Apply TiledMLP monkey patch for memory-efficient MLP computation</span>
     <span class="k">if</span> <span class="n">use_tiled_mlp</span><span class="p">:</span>
@@ -1344,49 +1353,61 @@ window.runMermaid = runMermaid;</script>
             <span class="n">patch_vlm_for_ulysses_input_slicing</span><span class="p">(</span><span class="n">Qwen3VLMoeTextModel</span><span class="p">)</span>
 
     <span class="k">elif</span> <span class="n">model</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">model_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;qwen3_5&quot;</span><span class="p">,</span> <span class="s2">&quot;qwen3_5_moe&quot;</span><span class="p">]:</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">transformers.models.qwen3_5.modeling_qwen3_5</span><span class="w"> </span><span class="kn">import</span> <span class="n">Qwen3_5TextModel</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">transformers.models.qwen3_5.modeling_qwen3_5</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">Qwen3_5DecoderLayer</span><span class="p">,</span>
+            <span class="n">Qwen3_5GatedDeltaNet</span><span class="p">,</span>
+            <span class="n">Qwen3_5Model</span><span class="p">,</span>
+            <span class="n">Qwen3_5TextModel</span><span class="p">,</span>
+            <span class="n">Qwen3_5VisionModel</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">transformers.models.qwen3_5_moe.modeling_qwen3_5_moe</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">Qwen3_5MoeDecoderLayer</span><span class="p">,</span>
+            <span class="n">Qwen3_5MoeGatedDeltaNet</span><span class="p">,</span>
+            <span class="n">Qwen3_5MoeModel</span><span class="p">,</span>
             <span class="n">Qwen3_5MoeTextModel</span><span class="p">,</span>
+            <span class="n">Qwen3_5MoeVisionModel</span><span class="p">,</span>
         <span class="p">)</span>
 
-        <span class="c1"># Step 1: bug fix in transformers==5.2.0</span>
-        <span class="c1"># see https://github.com/huggingface/transformers/pull/44382</span>
-        <span class="k">if</span> <span class="s2">&quot;Qwen3_5TextDecoderLayer&quot;</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">_no_split_modules</span><span class="p">:</span>
-            <span class="n">model</span><span class="o">.</span><span class="n">_no_split_modules</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">&quot;Qwen3_5TextDecoderLayer&quot;</span><span class="p">)</span>
-            <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">_no_split_modules</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">&quot;Qwen3_5TextDecoderLayer&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="s2">&quot;Qwen3_5MoeTextDecoderLayer&quot;</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">_no_split_modules</span><span class="p">:</span>
-            <span class="n">model</span><span class="o">.</span><span class="n">_no_split_modules</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">&quot;Qwen3_5MoeTextDecoderLayer&quot;</span><span class="p">)</span>
-            <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">_no_split_modules</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="s2">&quot;Qwen3_5MoeTextDecoderLayer&quot;</span><span class="p">)</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.patch.qwen3_5</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">decoder_layer_forward</span><span class="p">,</span>
+            <span class="n">gate_delta_net_forward</span><span class="p">,</span>
+            <span class="n">qwen35_model_forward</span><span class="p">,</span>
+            <span class="n">qwen35_vision_fast_pos_embed_interpolate</span><span class="p">,</span>
+        <span class="p">)</span>
 
-        <span class="c1"># see https://github.com/huggingface/transformers/pull/44399</span>
-        <span class="k">if</span> <span class="n">is_transformers_version_in_range</span><span class="p">(</span><span class="n">max_version</span><span class="o">=</span><span class="s2">&quot;5.3.0&quot;</span><span class="p">):</span>
-            <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.patch.qwen3_5</span><span class="w"> </span><span class="kn">import</span> <span class="n">qwen35_text_forward</span>
+        <span class="n">Qwen3_5DecoderLayer</span><span class="o">.</span><span class="n">forward</span> <span class="o">=</span> <span class="n">decoder_layer_forward</span>
+        <span class="n">Qwen3_5MoeDecoderLayer</span><span class="o">.</span><span class="n">forward</span> <span class="o">=</span> <span class="n">decoder_layer_forward</span>
+        <span class="n">Qwen3_5GatedDeltaNet</span><span class="o">.</span><span class="n">forward</span> <span class="o">=</span> <span class="n">gate_delta_net_forward</span>
+        <span class="n">Qwen3_5MoeGatedDeltaNet</span><span class="o">.</span><span class="n">forward</span> <span class="o">=</span> <span class="n">gate_delta_net_forward</span>
 
-            <span class="n">Qwen3_5TextModel</span><span class="o">.</span><span class="n">forward</span> <span class="o">=</span> <span class="n">qwen35_text_forward</span>
-            <span class="n">Qwen3_5MoeTextModel</span><span class="o">.</span><span class="n">forward</span> <span class="o">=</span> <span class="n">qwen35_text_forward</span>
+        <span class="n">Qwen3_5VisionModel</span><span class="o">.</span><span class="n">fast_pos_embed_interpolate</span> <span class="o">=</span> <span class="n">qwen35_vision_fast_pos_embed_interpolate</span>
+        <span class="n">Qwen3_5MoeVisionModel</span><span class="o">.</span><span class="n">fast_pos_embed_interpolate</span> <span class="o">=</span> <span class="n">qwen35_vision_fast_pos_embed_interpolate</span>
+
+        <span class="n">Qwen3_5Model</span><span class="o">.</span><span class="n">forward</span> <span class="o">=</span> <span class="n">qwen35_model_forward</span>
+        <span class="n">Qwen3_5MoeModel</span><span class="o">.</span><span class="n">forward</span> <span class="o">=</span> <span class="n">qwen35_model_forward</span>
 
         <span class="c1"># Step 2: patch input for multimodal sequence parallelism</span>
         <span class="k">if</span> <span class="n">ulysses_sp_size</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">patch_vlm_for_ulysses_input_slicing</span><span class="p">(</span><span class="n">Qwen3_5TextModel</span><span class="p">)</span>
             <span class="n">patch_vlm_for_ulysses_input_slicing</span><span class="p">(</span><span class="n">Qwen3_5MoeTextModel</span><span class="p">)</span>
 
-            <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.patch.qwen3_5</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-                <span class="n">ulysses_gated_delta_net_forward_decorator</span><span class="p">,</span>
-            <span class="p">)</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.patch.qwen3_5</span><span class="w"> </span><span class="kn">import</span> <span class="n">ulysses_gate_delta_net_decorator</span>
 
             <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">language_model</span><span class="o">.</span><span class="n">layers</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">==</span> <span class="s2">&quot;linear_attention&quot;</span><span class="p">:</span>
-                    <span class="n">layer</span><span class="o">.</span><span class="n">linear_attn</span><span class="o">.</span><span class="n">forward</span> <span class="o">=</span> <span class="n">ulysses_gated_delta_net_forward_decorator</span><span class="p">(</span>
-                        <span class="n">layer</span><span class="o">.</span><span class="n">linear_attn</span><span class="o">.</span><span class="n">forward</span>
-                    <span class="p">)</span>
+                    <span class="n">ulysses_gate_delta_net_decorator</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">linear_attn</span><span class="p">,</span> <span class="n">ulysses_sp_size</span><span class="p">)</span>
 
         <span class="c1"># Step 3: patch verl.utils.flops_counter</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.flops_counter</span><span class="w"> </span><span class="kn">import</span> <span class="n">ESTIMATE_FUNC</span><span class="p">,</span> <span class="n">_estimate_qwen3_vl_flops</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.flops_counter</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">ESTIMATE_FUNC</span><span class="p">,</span>
+            <span class="n">_estimate_qwen3_vl_flops</span><span class="p">,</span>
+            <span class="n">_estimate_qwen3_vl_moe_flops</span><span class="p">,</span>
+        <span class="p">)</span>
 
         <span class="n">ESTIMATE_FUNC</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
             <span class="p">{</span>
                 <span class="s2">&quot;qwen3_5&quot;</span><span class="p">:</span> <span class="n">_estimate_qwen3_vl_flops</span><span class="p">,</span>
-                <span class="s2">&quot;qwen3_5_moe&quot;</span><span class="p">:</span> <span class="n">_estimate_qwen3_vl_flops</span><span class="p">,</span>
+                <span class="s2">&quot;qwen3_5_moe&quot;</span><span class="p">:</span> <span class="n">_estimate_qwen3_vl_moe_flops</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="p">)</span>
 

@@ -1094,6 +1094,7 @@ window.runMermaid = runMermaid;</script>
         <span class="c1"># File handler (rotating file log)</span>
         <span class="n">log_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">LOG_DIR_ENV_VAR</span><span class="p">)</span>
         <span class="k">assert</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Logger name must be set when logging from a Ray actor&quot;</span>
+        <span class="c1"># If LOG_DIR_ENV_VAR is not set, file logging is disabled</span>
         <span class="k">if</span> <span class="n">log_dir</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">LOG_NODE_IP_ENV_VAR</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;0&quot;</span><span class="p">:</span>
                 <span class="c1"># organize logs by node IP</span>
@@ -1108,9 +1109,8 @@ window.runMermaid = runMermaid;</script>
             <span class="n">file_handler</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">resolved_level</span><span class="p">)</span>
             <span class="n">file_handler</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">file_handler</span><span class="p">)</span>
-            <span class="n">_ray_logger_ctx</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">logger</span><span class="p">)</span>
-            <span class="n">_ray_logger</span> <span class="o">=</span> <span class="n">logger</span>
-        <span class="c1"># If LOG_DIR_ENV_VAR is not set, file logging is disabled</span>
+        <span class="n">_ray_logger_ctx</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">logger</span><span class="p">)</span>
+        <span class="n">_ray_logger</span> <span class="o">=</span> <span class="n">logger</span>
 
     <span class="k">return</span> <span class="n">logger</span></div>
 

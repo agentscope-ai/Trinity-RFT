@@ -1030,16 +1030,16 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch.distributed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dist</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">transformers.models.qwen3_5.modeling_qwen3_5</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">BaseModelOutputWithPast</span><span class="p">,</span>
+    <span class="n">BaseModelOutputWithPooling</span><span class="p">,</span>
     <span class="n">Cache</span><span class="p">,</span>
+    <span class="n">F</span><span class="p">,</span>
     <span class="n">Qwen3_5CausalLMOutputWithPast</span><span class="p">,</span>
     <span class="n">Qwen3_5ForConditionalGeneration</span><span class="p">,</span>
     <span class="n">Qwen3_5ModelOutputWithPast</span><span class="p">,</span>
     <span class="n">TransformersKwargs</span><span class="p">,</span>
     <span class="n">Unpack</span><span class="p">,</span>
-    <span class="n">capture_outputs</span><span class="p">,</span>
-    <span class="n">create_causal_mask</span><span class="p">,</span>
-    <span class="n">merge_with_config_defaults</span><span class="p">,</span>
+    <span class="n">apply_mask_to_padding_states</span><span class="p">,</span>
+    <span class="n">can_return_tuple</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.ulysses</span><span class="w"> </span><span class="kn">import</span> <span class="n">all_gather_tensor</span>
 
@@ -1103,114 +1103,562 @@ window.runMermaid = runMermaid;</script>
 
 
 
-<span class="c1"># TODO: may optimize this function</span>
-<div class="viewcode-block" id="ulysses_gated_delta_net_forward_decorator">
-<a class="viewcode-back" href="../../../../build_api/trinity.common.patch.qwen3_5.html#trinity.common.patch.qwen3_5.ulysses_gated_delta_net_forward_decorator">[文档]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">ulysses_gated_delta_net_forward_decorator</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
-    <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span>
-        <span class="n">hidden_states</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
-        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">):</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.ulysses</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-            <span class="n">gather_outputs_and_unpad</span><span class="p">,</span>
-            <span class="n">get_ulysses_sequence_parallel_group</span><span class="p">,</span>
-            <span class="n">get_ulysses_sequence_parallel_world_size</span><span class="p">,</span>
-        <span class="p">)</span>
+<span class="n">_in_gate_delta_net_with_sp</span> <span class="o">=</span> <span class="kc">False</span>
 
-        <span class="n">ulysses_sp_size</span> <span class="o">=</span> <span class="n">get_ulysses_sequence_parallel_world_size</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">ulysses_sp_size</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">hidden_states</span> <span class="o">=</span> <span class="n">gather_outputs_and_unpad</span><span class="p">(</span><span class="n">hidden_states</span><span class="p">,</span> <span class="n">gather_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
-        <span class="n">output</span> <span class="o">=</span> <span class="n">func</span><span class="p">(</span><span class="n">hidden_states</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<div class="viewcode-block" id="ulysses_gate_delta_net_decorator">
+<a class="viewcode-back" href="../../../../build_api/trinity.common.patch.qwen3_5.html#trinity.common.patch.qwen3_5.ulysses_gate_delta_net_decorator">[文档]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">ulysses_gate_delta_net_decorator</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">ulysses_sp_size</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator to enable Ulysses Sequence Parallel for Qwen3.5 GateDeltaNet linear attention.</span>
 
-        <span class="k">if</span> <span class="n">ulysses_sp_size</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">group</span> <span class="o">=</span> <span class="n">get_ulysses_sequence_parallel_group</span><span class="p">()</span>
-            <span class="n">output</span> <span class="o">=</span> <span class="n">Slice</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">output</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="sd">    This decorator patches the GateDeltaNet module to support sequence parallelism using the Ulysses</span>
+<span class="sd">    strategy. It intercepts various operations (forward pass, projections, convolutions, and attention)</span>
+<span class="sd">    to properly scatter/gather tensors across sequence parallel ranks.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        net: The GateDeltaNet module to patch (typically a linear attention layer).</span>
+<span class="sd">        ulysses_sp_size: The sequence parallel world size. If 1, no patching is performed.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        - This function patches the module in-place and sets a `_is_patched` flag to avoid double-patching.</span>
+<span class="sd">        - The sequence parallel operations are controlled via a global `_in_gate_delta_net_with_sp` flag.</span>
+<span class="sd">        - The patching includes modifications to forward, in_proj_qkv, conv1d, torch.split, and chunk_gated_delta_rule.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="s2">&quot;_is_patched&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="k">return</span>
+
+    <span class="n">net</span><span class="o">.</span><span class="n">_is_patched</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># ulysses sequence parallel setup</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.ulysses</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+        <span class="n">gather_heads_scatter_seq</span><span class="p">,</span>
+        <span class="n">gather_seq_scatter_heads</span><span class="p">,</span>
+        <span class="n">get_ulysses_sequence_parallel_group</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">ulysses_sp_size</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="c1"># no need to patch</span>
+        <span class="k">return</span>
+
+    <span class="c1"># Patch net.forward</span>
+    <span class="n">original_net_forward</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">forward</span>
+
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">original_net_forward</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">new_net_forward</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">global</span> <span class="n">_in_gate_delta_net_with_sp</span>
+        <span class="n">_in_gate_delta_net_with_sp</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">original_net_forward</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">_in_gate_delta_net_with_sp</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="k">return</span> <span class="n">output</span>
 
-    <span class="k">return</span> <span class="n">wrapper</span></div>
+    <span class="n">net</span><span class="o">.</span><span class="n">forward</span> <span class="o">=</span> <span class="n">new_net_forward</span>
+
+    <span class="c1"># Patch in_proj_qkv</span>
+    <span class="n">original_in_proj_qkv_forward</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">in_proj_qkv</span><span class="o">.</span><span class="n">forward</span>
+
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">original_in_proj_qkv_forward</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">new_in_proj_qkv_forward</span><span class="p">(</span><span class="nb">input</span><span class="p">):</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">original_in_proj_qkv_forward</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
+        <span class="n">group</span> <span class="o">=</span> <span class="n">get_ulysses_sequence_parallel_group</span><span class="p">()</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">gather_seq_scatter_heads</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">seq_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">head_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">group</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">output</span>
+
+    <span class="n">net</span><span class="o">.</span><span class="n">in_proj_qkv</span><span class="o">.</span><span class="n">forward</span> <span class="o">=</span> <span class="n">new_in_proj_qkv_forward</span>
+
+    <span class="c1"># Patch conv1d layer</span>
+    <span class="n">original_conv1d_class</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">conv1d</span><span class="o">.</span><span class="vm">__class__</span>
+    <span class="n">original_conv1d_getattr</span> <span class="o">=</span> <span class="n">original_conv1d_class</span><span class="o">.</span><span class="fm">__getattr__</span>
+
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">original_conv1d_getattr</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">new_conv1d_getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">global</span> <span class="n">_in_gate_delta_net_with_sp</span>
+        <span class="n">attr</span> <span class="o">=</span> <span class="n">original_conv1d_getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+        <span class="c1"># bias is None in Qwen3.5, so no need to patch for bias</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">and</span> <span class="n">_in_gate_delta_net_with_sp</span><span class="p">:</span>
+            <span class="n">group</span> <span class="o">=</span> <span class="n">get_ulysses_sequence_parallel_group</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">Slice</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">attr</span>
+
+    <span class="n">new_conv1d_class</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;UlyssesGated</span><span class="si">{</span><span class="n">original_conv1d_class</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="p">(</span><span class="n">original_conv1d_class</span><span class="p">,),</span>
+        <span class="p">{</span><span class="s2">&quot;__getattr__&quot;</span><span class="p">:</span> <span class="n">new_conv1d_getattr</span><span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">net</span><span class="o">.</span><span class="n">conv1d</span><span class="o">.</span><span class="vm">__class__</span> <span class="o">=</span> <span class="n">new_conv1d_class</span>
+
+    <span class="c1"># Patch torch.split</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;_is_patched_by_ulysses_gate_delta_net&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="n">original_split</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">split</span>
+
+        <span class="nd">@wraps</span><span class="p">(</span><span class="n">original_split</span><span class="p">)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">new_split</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">split_size_or_sections</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+            <span class="k">global</span> <span class="n">_in_gate_delta_net_with_sp</span>
+            <span class="k">if</span> <span class="n">_in_gate_delta_net_with_sp</span> <span class="ow">and</span> <span class="n">dim</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">split_size_or_sections</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">tensor</span> <span class="o">=</span> <span class="n">gather_heads_scatter_seq</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">seq_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">head_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">original_split</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">split_size_or_sections</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span>
+
+        <span class="n">torch</span><span class="o">.</span><span class="n">split</span> <span class="o">=</span> <span class="n">new_split</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="o">.</span><span class="n">_is_patched_by_ulysses_gate_delta_net</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># Patch chunk_gated_delta_rule</span>
+    <span class="n">original_chunk_gated_delta_rule</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">chunk_gated_delta_rule</span>
+
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">original_chunk_gated_delta_rule</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">new_chunk_gated_delta_rule</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">gather_seq_scatter_heads</span><span class="p">(</span><span class="n">query</span><span class="p">,</span> <span class="n">seq_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">head_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">gather_seq_scatter_heads</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">seq_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">head_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">gather_seq_scatter_heads</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">seq_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">head_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="n">gather_seq_scatter_heads</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">seq_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">head_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">gather_seq_scatter_heads</span><span class="p">(</span><span class="n">beta</span><span class="p">,</span> <span class="n">seq_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">head_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">output</span><span class="p">,</span> <span class="n">last_recurrent_state</span> <span class="o">=</span> <span class="n">original_chunk_gated_delta_rule</span><span class="p">(</span>
+            <span class="n">query</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">gather_heads_scatter_seq</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">seq_dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">head_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">output</span><span class="p">,</span> <span class="n">last_recurrent_state</span>
+
+    <span class="n">net</span><span class="o">.</span><span class="n">chunk_gated_delta_rule</span> <span class="o">=</span> <span class="n">new_chunk_gated_delta_rule</span></div>
 
 
 
-<div class="viewcode-block" id="qwen35_text_forward">
-<a class="viewcode-back" href="../../../../build_api/trinity.common.patch.qwen3_5.html#trinity.common.patch.qwen3_5.qwen35_text_forward">[文档]</a>
-<span class="nd">@merge_with_config_defaults</span>
-<span class="nd">@capture_outputs</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">qwen35_text_forward</span><span class="p">(</span>
+<span class="c1"># removed when following PR is merged</span>
+<span class="c1"># https://github.com/huggingface/transformers/pull/45034/changes</span>
+<div class="viewcode-block" id="gate_delta_net_forward">
+<a class="viewcode-back" href="../../../../build_api/trinity.common.patch.qwen3_5.html#trinity.common.patch.qwen3_5.gate_delta_net_forward">[文档]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">gate_delta_net_forward</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
-    <span class="n">input_ids</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">hidden_states</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">cache_params</span><span class="p">:</span> <span class="n">Cache</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">attention_mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Forward pass for Qwen3.5 GateDeltaNet linear attention with packing support.</span>
+
+<span class="sd">    This implementation of the linear attention forward pass supports packed sequences for efficient</span>
+<span class="sd">    training, following the approach referenced in the Hugging Face transformers PR #45034.</span>
+<span class="sd">    It handles both incremental (cached) and non-cached inference modes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        hidden_states: Input hidden states of shape (batch_size, seq_len, hidden_dim).</span>
+<span class="sd">        cache_params: Optional cache parameters for incremental decoding.</span>
+<span class="sd">        attention_mask: Optional attention mask to mask out padding positions.</span>
+<span class="sd">        **kwargs: Additional keyword arguments passed to sub-components (e.g., seq_idx for packed sequences).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Output tensor of shape (batch_size, seq_len, hidden_dim) after linear attention computation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hidden_states</span> <span class="o">=</span> <span class="n">apply_mask_to_padding_states</span><span class="p">(</span><span class="n">hidden_states</span><span class="p">,</span> <span class="n">attention_mask</span><span class="p">)</span>
+
+    <span class="c1"># Set up dimensions for reshapes later</span>
+    <span class="n">batch_size</span><span class="p">,</span> <span class="n">seq_len</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">hidden_states</span><span class="o">.</span><span class="n">shape</span>
+
+    <span class="n">use_precomputed_states</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">cache_params</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="ow">and</span> <span class="n">cache_params</span><span class="o">.</span><span class="n">has_previous_state</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_idx</span><span class="p">)</span>
+        <span class="ow">and</span> <span class="n">seq_len</span> <span class="o">==</span> <span class="mi">1</span>
+    <span class="p">)</span>
+
+    <span class="c1"># getting projected states from cache if it exists</span>
+    <span class="k">if</span> <span class="n">use_precomputed_states</span><span class="p">:</span>
+        <span class="n">conv_state</span> <span class="o">=</span> <span class="n">cache_params</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_idx</span><span class="p">]</span><span class="o">.</span><span class="n">conv_states</span>
+        <span class="n">recurrent_state</span> <span class="o">=</span> <span class="n">cache_params</span><span class="o">.</span><span class="n">layers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_idx</span><span class="p">]</span><span class="o">.</span><span class="n">recurrent_states</span>
+
+    <span class="n">mixed_qkv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_proj_qkv</span><span class="p">(</span><span class="n">hidden_states</span><span class="p">)</span>
+    <span class="n">mixed_qkv</span> <span class="o">=</span> <span class="n">mixed_qkv</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_proj_z</span><span class="p">(</span><span class="n">hidden_states</span><span class="p">)</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">seq_len</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">head_v_dim</span><span class="p">)</span>
+
+    <span class="n">b</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_proj_b</span><span class="p">(</span><span class="n">hidden_states</span><span class="p">)</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">in_proj_a</span><span class="p">(</span><span class="n">hidden_states</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">use_precomputed_states</span><span class="p">:</span>
+        <span class="c1"># 2. Convolution sequence transformation</span>
+        <span class="c1"># NOTE: the conv state is updated in `causal_conv1d_update`</span>
+        <span class="n">mixed_qkv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">causal_conv1d_update</span><span class="p">(</span>
+            <span class="n">mixed_qkv</span><span class="p">,</span>
+            <span class="n">conv_state</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">conv1d</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">conv1d</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">cache_params</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">conv_state</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">mixed_qkv</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv_kernel_size</span> <span class="o">-</span> <span class="n">mixed_qkv</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="mi">0</span><span class="p">))</span>
+            <span class="n">conv_state</span> <span class="o">=</span> <span class="n">cache_params</span><span class="o">.</span><span class="n">update_conv_state</span><span class="p">(</span><span class="n">conv_state</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_idx</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">causal_conv1d_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">seq_idx</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;seq_idx&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">mixed_qkv</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">causal_conv1d_fn</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="n">mixed_qkv</span><span class="p">,</span>
+                <span class="n">weight</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1d</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span>
+                <span class="n">bias</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1d</span><span class="o">.</span><span class="n">bias</span><span class="p">,</span>
+                <span class="n">activation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">,</span>
+                <span class="n">seq_idx</span><span class="o">=</span><span class="n">seq_idx</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mixed_qkv</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">silu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1d</span><span class="p">(</span><span class="n">mixed_qkv</span><span class="p">)[:,</span> <span class="p">:,</span> <span class="p">:</span><span class="n">seq_len</span><span class="p">])</span>
+
+    <span class="n">mixed_qkv</span> <span class="o">=</span> <span class="n">mixed_qkv</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">query</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">(</span>
+        <span class="n">mixed_qkv</span><span class="p">,</span>
+        <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">key_dim</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">key_dim</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">value_dim</span><span class="p">,</span>
+        <span class="p">],</span>
+        <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">seq_len</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">head_k_dim</span><span class="p">)</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">seq_len</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">head_k_dim</span><span class="p">)</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">seq_len</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">head_v_dim</span><span class="p">)</span>
+
+    <span class="n">beta</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">()</span>
+    <span class="c1"># If the model is loaded in fp16, without the .float() here, A might be -inf</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">A_log</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">exp</span><span class="p">()</span> <span class="o">*</span> <span class="n">F</span><span class="o">.</span><span class="n">softplus</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">float</span><span class="p">()</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt_bias</span><span class="p">)</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_v_heads</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_k_heads</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_v_heads</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_k_heads</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_v_heads</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_k_heads</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">use_precomputed_states</span><span class="p">:</span>
+        <span class="n">chunk_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chunk_gated_delta_rule</span><span class="p">,</span> <span class="s2">&quot;__module__&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;fla.&quot;</span><span class="p">):</span>
+            <span class="n">chunk_kwargs</span><span class="p">[</span><span class="s2">&quot;cu_seqlens&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cu_seqlens&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="n">core_attn_out</span><span class="p">,</span> <span class="n">last_recurrent_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk_gated_delta_rule</span><span class="p">(</span>
+            <span class="n">query</span><span class="p">,</span>
+            <span class="n">key</span><span class="p">,</span>
+            <span class="n">value</span><span class="p">,</span>
+            <span class="n">g</span><span class="o">=</span><span class="n">g</span><span class="p">,</span>
+            <span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span>
+            <span class="n">initial_state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">output_final_state</span><span class="o">=</span><span class="n">cache_params</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">use_qk_l2norm_in_kernel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">chunk_kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">core_attn_out</span><span class="p">,</span> <span class="n">last_recurrent_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">recurrent_gated_delta_rule</span><span class="p">(</span>
+            <span class="n">query</span><span class="p">,</span>
+            <span class="n">key</span><span class="p">,</span>
+            <span class="n">value</span><span class="p">,</span>
+            <span class="n">g</span><span class="o">=</span><span class="n">g</span><span class="p">,</span>
+            <span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span>
+            <span class="n">initial_state</span><span class="o">=</span><span class="n">recurrent_state</span><span class="p">,</span>
+            <span class="n">output_final_state</span><span class="o">=</span><span class="n">cache_params</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">use_qk_l2norm_in_kernel</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Update cache</span>
+    <span class="k">if</span> <span class="n">cache_params</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">cache_params</span><span class="o">.</span><span class="n">update_recurrent_state</span><span class="p">(</span><span class="n">last_recurrent_state</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_idx</span><span class="p">)</span>
+
+    <span class="c1"># reshape input data into 2D tensor</span>
+    <span class="n">core_attn_out</span> <span class="o">=</span> <span class="n">core_attn_out</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">head_v_dim</span><span class="p">)</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">head_v_dim</span><span class="p">)</span>
+    <span class="n">core_attn_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">core_attn_out</span><span class="p">,</span> <span class="n">z</span><span class="p">)</span>
+    <span class="n">core_attn_out</span> <span class="o">=</span> <span class="n">core_attn_out</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">seq_len</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">out_proj</span><span class="p">(</span><span class="n">core_attn_out</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">output</span></div>
+
+
+
+<span class="c1"># removed when following PR is merged</span>
+<span class="c1"># https://github.com/huggingface/transformers/pull/45034/changes</span>
+<div class="viewcode-block" id="decoder_layer_forward">
+<a class="viewcode-back" href="../../../../build_api/trinity.common.patch.qwen3_5.html#trinity.common.patch.qwen3_5.decoder_layer_forward">[文档]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">decoder_layer_forward</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">hidden_states</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+    <span class="n">position_embeddings</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span>
+    <span class="n">attention_mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">position_ids</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">past_key_values</span><span class="p">:</span> <span class="n">Cache</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Unpack</span><span class="p">[</span><span class="n">TransformersKwargs</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Forward pass for a Qwen3.5 decoder layer supporting packed sequences.</span>
+
+<span class="sd">    This function implements a full transformer decoder layer with support for packed sequences</span>
+<span class="sd">    (packing training). It combines token mixing (via linear or full attention) with a feed-forward</span>
+<span class="sd">    network, with residual connections around each sub-layer.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        hidden_states: Input hidden states of shape (batch_size, seq_len, hidden_dim).</span>
+<span class="sd">        position_embeddings: Tuple of (cos_cached, sin_cached) for rotary position embeddings.</span>
+<span class="sd">        attention_mask: Optional attention mask.</span>
+<span class="sd">        position_ids: Optional position IDs for the sequence.</span>
+<span class="sd">        past_key_values: Optional cache for incremental decoding.</span>
+<span class="sd">        **kwargs: Additional arguments including:</span>
+<span class="sd">            - layer_type: Either &#39;linear_attention&#39; or &#39;full_attention&#39; to determine token mixer.</span>
+<span class="sd">            - seq_idx: Sequence indices for packed sequence training.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Output hidden states of same shape as input (batch_size, seq_len, hidden_dim).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">residual</span> <span class="o">=</span> <span class="n">hidden_states</span>
+
+    <span class="n">hidden_states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_layernorm</span><span class="p">(</span><span class="n">hidden_states</span><span class="p">)</span>
+
+    <span class="c1"># Token Mixer</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">==</span> <span class="s2">&quot;linear_attention&quot;</span><span class="p">:</span>
+        <span class="n">hidden_states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">linear_attn</span><span class="p">(</span>
+            <span class="n">hidden_states</span><span class="o">=</span><span class="n">hidden_states</span><span class="p">,</span>
+            <span class="n">cache_params</span><span class="o">=</span><span class="n">past_key_values</span><span class="p">,</span>
+            <span class="n">attention_mask</span><span class="o">=</span><span class="n">attention_mask</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">==</span> <span class="s2">&quot;full_attention&quot;</span><span class="p">:</span>
+        <span class="c1"># Self Attention</span>
+        <span class="n">hidden_states</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">self_attn</span><span class="p">(</span>
+            <span class="n">hidden_states</span><span class="o">=</span><span class="n">hidden_states</span><span class="p">,</span>
+            <span class="n">attention_mask</span><span class="o">=</span><span class="n">attention_mask</span><span class="p">,</span>
+            <span class="n">position_ids</span><span class="o">=</span><span class="n">position_ids</span><span class="p">,</span>
+            <span class="n">past_key_values</span><span class="o">=</span><span class="n">past_key_values</span><span class="p">,</span>
+            <span class="n">position_embeddings</span><span class="o">=</span><span class="n">position_embeddings</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">hidden_states</span> <span class="o">=</span> <span class="n">residual</span> <span class="o">+</span> <span class="n">hidden_states</span>
+
+    <span class="c1"># Fully Connected</span>
+    <span class="n">residual</span> <span class="o">=</span> <span class="n">hidden_states</span>
+    <span class="n">hidden_states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">post_attention_layernorm</span><span class="p">(</span><span class="n">hidden_states</span><span class="p">)</span>
+    <span class="n">hidden_states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mlp</span><span class="p">(</span><span class="n">hidden_states</span><span class="p">)</span>
+    <span class="n">hidden_states</span> <span class="o">=</span> <span class="n">residual</span> <span class="o">+</span> <span class="n">hidden_states</span>
+
+    <span class="k">return</span> <span class="n">hidden_states</span></div>
+
+
+
+<div class="viewcode-block" id="qwen35_vision_fast_pos_embed_interpolate">
+<a class="viewcode-back" href="../../../../build_api/trinity.common.patch.qwen3_5.html#trinity.common.patch.qwen3_5.qwen35_vision_fast_pos_embed_interpolate">[文档]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">qwen35_vision_fast_pos_embed_interpolate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">grid_thw</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Interpolate vision position embeddings for variable resolution inputs with proper device handling.</span>
+
+<span class="sd">    This function performs bilinear interpolation of position embeddings to support variable spatial</span>
+<span class="sd">    resolutions. It fixes the device handling issue that occurred during CPU offloading, ensuring all</span>
+<span class="sd">    tensors are created and operated on the same device as the input.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        grid_thw: Tensor of shape (num_images, 3) containing temporal, height, and width dimensions</span>
+<span class="sd">                 for each image in the batch.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Interpolated position embeddings of shape (total_patches, embedding_dim) after merging,</span>
+<span class="sd">        where total_patches is the sum of all h*w for each image after spatial merging.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        - The function supports batch processing of multiple images with different resolutions.</span>
+<span class="sd">        - Spatial merging is applied based on config.spatial_merge_size.</span>
+<span class="sd">        - All tensors are properly placed on the same device as the input grid_thw.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">grid_thw_list</span> <span class="o">=</span> <span class="n">grid_thw</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+    <span class="n">grid_ts</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">grid_thw_list</span><span class="p">]</span>
+    <span class="n">grid_hs</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">grid_thw_list</span><span class="p">]</span>
+    <span class="n">grid_ws</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">grid_thw_list</span><span class="p">]</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">grid_thw</span><span class="o">.</span><span class="n">device</span>  <span class="c1"># modified to ensure tensors are created on the correct device</span>
+
+    <span class="n">idx_list</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
+    <span class="n">weight_list</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)]</span>
+
+    <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">grid_thw_list</span><span class="p">:</span>
+        <span class="n">h_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_grid_per_side</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+        <span class="n">w_idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_grid_per_side</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span>
+
+        <span class="n">h_idxs_floor</span> <span class="o">=</span> <span class="n">h_idxs</span><span class="o">.</span><span class="n">int</span><span class="p">()</span>
+        <span class="n">w_idxs_floor</span> <span class="o">=</span> <span class="n">w_idxs</span><span class="o">.</span><span class="n">int</span><span class="p">()</span>
+        <span class="n">h_idxs_ceil</span> <span class="o">=</span> <span class="p">(</span><span class="n">h_idxs</span><span class="o">.</span><span class="n">int</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="nb">max</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_grid_per_side</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">w_idxs_ceil</span> <span class="o">=</span> <span class="p">(</span><span class="n">w_idxs</span><span class="o">.</span><span class="n">int</span><span class="p">()</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="nb">max</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_grid_per_side</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">dh</span> <span class="o">=</span> <span class="n">h_idxs</span> <span class="o">-</span> <span class="n">h_idxs_floor</span>
+        <span class="n">dw</span> <span class="o">=</span> <span class="n">w_idxs</span> <span class="o">-</span> <span class="n">w_idxs_floor</span>
+
+        <span class="n">base_h</span> <span class="o">=</span> <span class="n">h_idxs_floor</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_grid_per_side</span>
+        <span class="n">base_h_ceil</span> <span class="o">=</span> <span class="n">h_idxs_ceil</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_grid_per_side</span>
+
+        <span class="n">indices</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">base_h</span><span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">T</span> <span class="o">+</span> <span class="n">w_idxs_floor</span><span class="p">[</span><span class="kc">None</span><span class="p">])</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
+            <span class="p">(</span><span class="n">base_h</span><span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">T</span> <span class="o">+</span> <span class="n">w_idxs_ceil</span><span class="p">[</span><span class="kc">None</span><span class="p">])</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
+            <span class="p">(</span><span class="n">base_h_ceil</span><span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">T</span> <span class="o">+</span> <span class="n">w_idxs_floor</span><span class="p">[</span><span class="kc">None</span><span class="p">])</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
+            <span class="p">(</span><span class="n">base_h_ceil</span><span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">T</span> <span class="o">+</span> <span class="n">w_idxs_ceil</span><span class="p">[</span><span class="kc">None</span><span class="p">])</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
+        <span class="p">]</span>
+
+        <span class="n">weights</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">dh</span><span class="p">)[</span><span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">T</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">dw</span><span class="p">)[</span><span class="kc">None</span><span class="p">])</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
+            <span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">dh</span><span class="p">)[</span><span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">T</span> <span class="o">*</span> <span class="n">dw</span><span class="p">[</span><span class="kc">None</span><span class="p">])</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
+            <span class="p">(</span><span class="n">dh</span><span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">T</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">dw</span><span class="p">)[</span><span class="kc">None</span><span class="p">])</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
+            <span class="p">(</span><span class="n">dh</span><span class="p">[</span><span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">T</span> <span class="o">*</span> <span class="n">dw</span><span class="p">[</span><span class="kc">None</span><span class="p">])</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
+        <span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+            <span class="n">idx_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">indices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+            <span class="n">weight_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+
+    <span class="n">idx_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">idx_list</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">weight_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">weight_list</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pos_embed</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">pos_embeds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_embed</span><span class="p">(</span><span class="n">idx_tensor</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span> <span class="o">*</span> <span class="n">weight_tensor</span><span class="p">[:,</span> <span class="p">:,</span> <span class="kc">None</span><span class="p">]</span>
+    <span class="n">patch_pos_embeds</span> <span class="o">=</span> <span class="n">pos_embeds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">pos_embeds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">pos_embeds</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="n">pos_embeds</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+
+    <span class="n">patch_pos_embeds</span> <span class="o">=</span> <span class="n">patch_pos_embeds</span><span class="o">.</span><span class="n">split</span><span class="p">([</span><span class="n">h</span> <span class="o">*</span> <span class="n">w</span> <span class="k">for</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">grid_hs</span><span class="p">,</span> <span class="n">grid_ws</span><span class="p">)])</span>
+
+    <span class="n">patch_pos_embeds_permute</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">merge_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">spatial_merge_size</span>
+    <span class="k">for</span> <span class="n">pos_embed</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">patch_pos_embeds</span><span class="p">,</span> <span class="n">grid_ts</span><span class="p">,</span> <span class="n">grid_hs</span><span class="p">,</span> <span class="n">grid_ws</span><span class="p">):</span>
+        <span class="n">pos_embed</span> <span class="o">=</span> <span class="n">pos_embed</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">pos_embed</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">pos_embed</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">h</span> <span class="o">//</span> <span class="n">merge_size</span><span class="p">,</span> <span class="n">merge_size</span><span class="p">,</span> <span class="n">w</span> <span class="o">//</span> <span class="n">merge_size</span><span class="p">,</span> <span class="n">merge_size</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">permute</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">patch_pos_embeds_permute</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pos_embed</span><span class="p">)</span>
+    <span class="n">patch_pos_embeds</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">patch_pos_embeds_permute</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">patch_pos_embeds</span></div>
+
+
+
+<div class="viewcode-block" id="qwen35_model_forward">
+<a class="viewcode-back" href="../../../../build_api/trinity.common.patch.qwen3_5.html#trinity.common.patch.qwen3_5.qwen35_model_forward">[文档]</a>
+<span class="nd">@can_return_tuple</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">qwen35_model_forward</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">input_ids</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">attention_mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">position_ids</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">past_key_values</span><span class="p">:</span> <span class="n">Cache</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">inputs_embeds</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">use_cache</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">cache_position</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">pixel_values</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">pixel_values_videos</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">FloatTensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">image_grid_thw</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">video_grid_thw</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">LongTensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">mm_token_type_ids</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">IntTensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Unpack</span><span class="p">[</span><span class="n">TransformersKwargs</span><span class="p">],</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BaseModelOutputWithPast</span><span class="p">:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span> <span class="o">|</span> <span class="n">Qwen3_5ModelOutputWithPast</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Qwen3.5 model forward pass with multimodal support and gradient synchronization across ranks.</span>
+
+<span class="sd">    This forward function handles multimodal training (images and/or videos) across multiple GPU ranks</span>
+<span class="sd">    with proper synchronization. When a rank doesn&#39;t have image/video inputs but other ranks do (common in</span>
+<span class="sd">    distributed training with different data samples), it creates dummy images/videos to maintain consistency</span>
+<span class="sd">    and avoid hanging in collective operations.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_ids: Token IDs of shape (batch_size, seq_len).</span>
+<span class="sd">        attention_mask: Attention mask for padding tokens.</span>
+<span class="sd">        position_ids: Position IDs for embeddings.</span>
+<span class="sd">        past_key_values: Cached key-values for incremental decoding.</span>
+<span class="sd">        inputs_embeds: Pre-computed input embeddings (alternative to input_ids).</span>
+<span class="sd">        pixel_values: Image pixel values of shape (num_images, channels, height, width).</span>
+<span class="sd">        pixel_values_videos: Video pixel values of shape (num_videos, frames, channels, height, width).</span>
+<span class="sd">        image_grid_thw: Grid dimensions (temporal, height, width) for images.</span>
+<span class="sd">        video_grid_thw: Grid dimensions (temporal, height, width) for videos.</span>
+<span class="sd">        mm_token_type_ids: Token type IDs to distinguish image, video, and text tokens.</span>
+<span class="sd">        **kwargs: Additional arguments.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Qwen3_5ModelOutputWithPast containing language model outputs with rope_deltas for position embeddings.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        - Dummy images/videos are created with shape based on spatial_merge_size when needed for gradient synchronization.</span>
+<span class="sd">        - Uses distributed communication (dist.all_reduce) to synchronize multimodal input availability across ranks.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    image_grid_thw (`torch.LongTensor` of shape `(num_images, 3)`, *optional*):</span>
+<span class="sd">        The temporal, height and width of feature shape of each image in LLM.</span>
+<span class="sd">    video_grid_thw (`torch.LongTensor` of shape `(num_videos, 3)`, *optional*):</span>
+<span class="sd">        The temporal, height and width of feature shape of each video in LLM.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">input_ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">^</span> <span class="p">(</span><span class="n">inputs_embeds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;You must specify exactly one of input_ids or inputs_embeds&quot;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">inputs_embeds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">inputs_embeds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">embed_tokens</span><span class="p">(</span><span class="n">input_ids</span><span class="p">)</span>
+        <span class="n">inputs_embeds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_input_embeddings</span><span class="p">()(</span><span class="n">input_ids</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">use_cache</span> <span class="ow">and</span> <span class="n">past_key_values</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">transformers.models.qwen3_5.modeling_qwen3_5</span><span class="w"> </span><span class="kn">import</span> <span class="n">Qwen3_5DynamicCache</span>
-
-        <span class="n">past_key_values</span> <span class="o">=</span> <span class="n">Qwen3_5DynamicCache</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">cache_position</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">past_seen_tokens</span> <span class="o">=</span> <span class="n">past_key_values</span><span class="o">.</span><span class="n">get_seq_length</span><span class="p">()</span> <span class="k">if</span> <span class="n">past_key_values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span>
-        <span class="n">cache_position</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span>
-            <span class="n">past_seen_tokens</span><span class="p">,</span> <span class="n">past_seen_tokens</span> <span class="o">+</span> <span class="n">inputs_embeds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">inputs_embeds</span><span class="o">.</span><span class="n">device</span>
-        <span class="p">)</span>
-
-    <span class="c1"># mrope: the hard coded `3` is for temporal, height and width.</span>
-    <span class="k">if</span> <span class="n">position_ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">position_ids</span> <span class="o">=</span> <span class="n">cache_position</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">inputs_embeds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">position_ids</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-        <span class="n">position_ids</span> <span class="o">=</span> <span class="n">position_ids</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">position_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">position_ids</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">position_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
-        <span class="n">text_position_ids</span> <span class="o">=</span> <span class="n">position_ids</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">position_ids</span> <span class="o">=</span> <span class="n">position_ids</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">text_position_ids</span> <span class="o">=</span> <span class="n">position_ids</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-
-    <span class="n">causal_mask</span> <span class="o">=</span> <span class="n">create_causal_mask</span><span class="p">(</span>
-        <span class="n">config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span>
-        <span class="n">inputs_embeds</span><span class="o">=</span><span class="n">inputs_embeds</span><span class="p">,</span>
-        <span class="n">attention_mask</span><span class="o">=</span><span class="n">attention_mask</span><span class="p">,</span>
-        <span class="n">cache_position</span><span class="o">=</span><span class="n">cache_position</span><span class="p">,</span>
-        <span class="n">past_key_values</span><span class="o">=</span><span class="n">past_key_values</span><span class="p">,</span>
-        <span class="n">position_ids</span><span class="o">=</span><span class="n">text_position_ids</span><span class="p">,</span>
+    <span class="n">vision_config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">vision_config</span>
+    <span class="n">pixel_values_dim</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">vision_config</span><span class="o">.</span><span class="n">in_channels</span>
+        <span class="o">*</span> <span class="n">vision_config</span><span class="o">.</span><span class="n">temporal_patch_size</span>
+        <span class="o">*</span> <span class="p">(</span><span class="n">vision_config</span><span class="o">.</span><span class="n">patch_size</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
     <span class="p">)</span>
-    <span class="n">linear_attn_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update_linear_attn_mask</span><span class="p">(</span><span class="n">attention_mask</span><span class="p">,</span> <span class="n">cache_position</span><span class="p">)</span>
+    <span class="n">merge_size</span> <span class="o">=</span> <span class="n">vision_config</span><span class="o">.</span><span class="n">spatial_merge_size</span>
 
-    <span class="n">hidden_states</span> <span class="o">=</span> <span class="n">inputs_embeds</span>
-    <span class="n">position_embeddings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rotary_emb</span><span class="p">(</span><span class="n">hidden_states</span><span class="p">,</span> <span class="n">position_ids</span><span class="p">)</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">inputs_embeds</span><span class="o">.</span><span class="n">device</span>
+    <span class="n">has_mm_local</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+        <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">pixel_values</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">pixel_values_videos</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)],</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span>
+    <span class="p">)</span>
+    <span class="n">has_mm_global</span> <span class="o">=</span> <span class="n">has_mm_local</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">dist</span><span class="o">.</span><span class="n">is_initialized</span><span class="p">():</span>
+        <span class="n">dist</span><span class="o">.</span><span class="n">all_reduce</span><span class="p">(</span><span class="n">has_mm_global</span><span class="p">)</span>
+    <span class="n">has_mm_global</span> <span class="o">=</span> <span class="n">has_mm_global</span> <span class="o">&gt;</span> <span class="mi">0</span>
 
-    <span class="k">for</span> <span class="n">layer_idx</span><span class="p">,</span> <span class="n">decoder_layer</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layers</span><span class="p">[:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">num_hidden_layers</span><span class="p">]):</span>
-        <span class="n">layer_mask</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">linear_attn_mask</span> <span class="k">if</span> <span class="n">decoder_layer</span><span class="o">.</span><span class="n">layer_type</span> <span class="o">==</span> <span class="s2">&quot;linear_attention&quot;</span> <span class="k">else</span> <span class="n">causal_mask</span>
+    <span class="c1"># check images</span>
+    <span class="k">if</span> <span class="n">has_mm_global</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">():</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">has_mm_local</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">():</span>
+            <span class="n">pixel_values</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">merge_size</span> <span class="o">*</span> <span class="n">merge_size</span><span class="p">,</span> <span class="n">pixel_values_dim</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span>
+            <span class="p">)</span>
+            <span class="n">image_grid_thw</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">image_grid_thw</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">merge_size</span>
+
+        <span class="n">image_outputs</span><span class="p">:</span> <span class="n">BaseModelOutputWithPooling</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_image_features</span><span class="p">(</span>
+            <span class="n">pixel_values</span><span class="p">,</span> <span class="n">image_grid_thw</span><span class="p">,</span> <span class="n">return_dict</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>
+        <span class="n">image_embeds</span> <span class="o">=</span> <span class="n">image_outputs</span><span class="o">.</span><span class="n">pooler_output</span>
+        <span class="n">image_embeds</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">image_embeds</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">inputs_embeds</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">inputs_embeds</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
 
-        <span class="n">hidden_states</span> <span class="o">=</span> <span class="n">decoder_layer</span><span class="p">(</span>
-            <span class="n">hidden_states</span><span class="p">,</span>
-            <span class="n">position_embeddings</span><span class="o">=</span><span class="n">position_embeddings</span><span class="p">,</span>
-            <span class="n">attention_mask</span><span class="o">=</span><span class="n">layer_mask</span><span class="p">,</span>
-            <span class="n">position_ids</span><span class="o">=</span><span class="n">text_position_ids</span><span class="p">,</span>
+        <span class="k">if</span> <span class="n">has_mm_local</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">():</span>
+            <span class="n">image_mask</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_placeholder_mask</span><span class="p">(</span>
+                <span class="n">input_ids</span><span class="p">,</span> <span class="n">inputs_embeds</span><span class="o">=</span><span class="n">inputs_embeds</span><span class="p">,</span> <span class="n">image_features</span><span class="o">=</span><span class="n">image_embeds</span>
+            <span class="p">)</span>
+            <span class="n">inputs_embeds</span> <span class="o">=</span> <span class="n">inputs_embeds</span><span class="o">.</span><span class="n">masked_scatter</span><span class="p">(</span><span class="n">image_mask</span><span class="p">,</span> <span class="n">image_embeds</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># patched for backward</span>
+            <span class="n">inputs_embeds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">inputs_embeds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">image_embeds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.0</span>
+
+    <span class="c1"># check videos</span>
+    <span class="k">if</span> <span class="n">has_mm_global</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">():</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">has_mm_local</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">():</span>
+            <span class="n">pixel_values_videos</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">merge_size</span> <span class="o">*</span> <span class="n">merge_size</span><span class="p">,</span> <span class="n">pixel_values_dim</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span>
+            <span class="p">)</span>
+            <span class="n">video_grid_thw</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">video_grid_thw</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="n">merge_size</span>
+
+        <span class="n">video_outputs</span><span class="p">:</span> <span class="n">BaseModelOutputWithPooling</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_video_features</span><span class="p">(</span>
+            <span class="n">pixel_values_videos</span><span class="p">,</span> <span class="n">video_grid_thw</span><span class="p">,</span> <span class="n">return_dict</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
+        <span class="n">video_embeds</span> <span class="o">=</span> <span class="n">video_outputs</span><span class="o">.</span><span class="n">pooler_output</span>
+        <span class="n">video_embeds</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">video_embeds</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">inputs_embeds</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">inputs_embeds</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">has_mm_local</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">():</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">video_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_placeholder_mask</span><span class="p">(</span>
+                <span class="n">input_ids</span><span class="p">,</span> <span class="n">inputs_embeds</span><span class="o">=</span><span class="n">inputs_embeds</span><span class="p">,</span> <span class="n">video_features</span><span class="o">=</span><span class="n">video_embeds</span>
+            <span class="p">)</span>
+            <span class="n">inputs_embeds</span> <span class="o">=</span> <span class="n">inputs_embeds</span><span class="o">.</span><span class="n">masked_scatter</span><span class="p">(</span><span class="n">video_mask</span><span class="p">,</span> <span class="n">video_embeds</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>  <span class="c1"># patched for backward</span>
+            <span class="n">inputs_embeds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">inputs_embeds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">video_embeds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.0</span>
+
+    <span class="k">if</span> <span class="n">position_ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">position_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_3d_position_ids</span><span class="p">(</span>
+            <span class="n">input_ids</span><span class="o">=</span><span class="n">input_ids</span><span class="p">,</span>
+            <span class="n">image_grid_thw</span><span class="o">=</span><span class="n">image_grid_thw</span><span class="p">,</span>
+            <span class="n">video_grid_thw</span><span class="o">=</span><span class="n">video_grid_thw</span><span class="p">,</span>
+            <span class="n">inputs_embeds</span><span class="o">=</span><span class="n">inputs_embeds</span><span class="p">,</span>
+            <span class="n">attention_mask</span><span class="o">=</span><span class="n">attention_mask</span><span class="p">,</span>
             <span class="n">past_key_values</span><span class="o">=</span><span class="n">past_key_values</span><span class="p">,</span>
-            <span class="n">use_cache</span><span class="o">=</span><span class="n">use_cache</span><span class="p">,</span>
-            <span class="n">cache_position</span><span class="o">=</span><span class="n">cache_position</span><span class="p">,</span>
-            <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+            <span class="n">mm_token_type_ids</span><span class="o">=</span><span class="n">mm_token_type_ids</span><span class="p">,</span>
         <span class="p">)</span>
 
-    <span class="n">hidden_states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">hidden_states</span><span class="p">)</span>
+    <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">language_model</span><span class="p">(</span>
+        <span class="n">input_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">position_ids</span><span class="o">=</span><span class="n">position_ids</span><span class="p">,</span>
+        <span class="n">attention_mask</span><span class="o">=</span><span class="n">attention_mask</span><span class="p">,</span>
+        <span class="n">past_key_values</span><span class="o">=</span><span class="n">past_key_values</span><span class="p">,</span>
+        <span class="n">inputs_embeds</span><span class="o">=</span><span class="n">inputs_embeds</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">Qwen3_5ModelOutputWithPast</span><span class="p">(</span>
-        <span class="n">last_hidden_state</span><span class="o">=</span><span class="n">hidden_states</span><span class="p">,</span>
-        <span class="n">past_key_values</span><span class="o">=</span><span class="n">past_key_values</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">outputs</span><span class="p">,</span>
+        <span class="n">rope_deltas</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rope_deltas</span><span class="p">,</span>
     <span class="p">)</span></div>
 
 
@@ -1233,6 +1681,31 @@ window.runMermaid = runMermaid;</script>
     <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span> <span class="o">|</span> <span class="n">Qwen3_5CausalLMOutputForPPO</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute log probabilities and entropy for reinforcement learning using PyTorch backend.</span>
+
+<span class="sd">    This function computes per-token log probabilities and entropy from the language model&#39;s hidden</span>
+<span class="sd">    states using a fused PyTorch-based linear projection. It&#39;s designed for PPO and other RL algorithms</span>
+<span class="sd">    that require per-token probability distributions over the vocabulary.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_ids: Token IDs of shape (batch_size, seq_len).</span>
+<span class="sd">        labels: Optional labels for loss computation. If None, input_ids are rolled to compute shifted targets.</span>
+<span class="sd">        temperature: Temperature scaling for softmax (default: 1.0). Used to control probability distribution sharpness.</span>
+<span class="sd">        **kwargs: Additional arguments passed to the model (e.g., attention_mask).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Qwen3_5CausalLMOutputForPPO containing:</span>
+<span class="sd">            - log_probs: Log probabilities of shape (batch_size, seq_len)</span>
+<span class="sd">            - entropy: Entropy values of shape (batch_size, seq_len)</span>
+<span class="sd">            - hidden_states: Hidden states from the model forward pass</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        RuntimeError: If neither labels nor input_ids is provided.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        - Uses FusedLinearForPPO for efficient torch-based computation.</span>
+<span class="sd">        - The log probability target is computed by rolling labels (or input_ids) by -1 to create next-token prediction targets.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.experimental.torch_functional</span><span class="w"> </span><span class="kn">import</span> <span class="n">FusedLinearForPPO</span>
 
     <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">input_ids</span><span class="o">=</span><span class="n">input_ids</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -1272,6 +1745,32 @@ window.runMermaid = runMermaid;</script>
     <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span> <span class="o">|</span> <span class="n">Qwen3_5CausalLMOutputForPPO</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute log probabilities and entropy for reinforcement learning using Triton kernel backend.</span>
+
+<span class="sd">    This function computes per-token log probabilities and entropy from the language model&#39;s hidden</span>
+<span class="sd">    states using an optimized Triton kernel (linear_cross_entropy). It provides better performance</span>
+<span class="sd">    compared to the PyTorch backend for large vocabularies, suitable for PPO and other RL algorithms.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        input_ids: Token IDs of shape (batch_size, seq_len).</span>
+<span class="sd">        labels: Optional labels for loss computation. If None, input_ids are rolled to compute shifted targets.</span>
+<span class="sd">        temperature: Temperature scaling for softmax (default: 1.0). Used to control probability distribution sharpness.</span>
+<span class="sd">        **kwargs: Additional arguments passed to the model (e.g., attention_mask).</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Qwen3_5CausalLMOutputForPPO containing:</span>
+<span class="sd">            - log_probs: Log probabilities of shape (batch_size, seq_len)</span>
+<span class="sd">            - entropy: Entropy values of shape (batch_size, seq_len)</span>
+<span class="sd">            - hidden_states: Hidden states from the model forward pass</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        RuntimeError: If neither labels nor input_ids is provided.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        - Uses the linear_cross_entropy Triton kernel from verl for highly optimized computation.</span>
+<span class="sd">        - The log probability target is computed by rolling labels (or input_ids) by -1 to create next-token prediction targets.</span>
+<span class="sd">        - Generally faster than forward_with_torch_backend for large vocabulary sizes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.kernel.linear_cross_entropy</span><span class="w"> </span><span class="kn">import</span> <span class="n">linear_cross_entropy</span>
 
     <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">input_ids</span><span class="o">=</span><span class="n">input_ids</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
