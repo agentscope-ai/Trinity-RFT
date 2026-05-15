@@ -1021,7 +1021,6 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ray</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">InferenceModel</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.workflows</span><span class="w"> </span><span class="kn">import</span> <span class="n">Task</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.explorer.workflow_runner</span><span class="w"> </span><span class="kn">import</span> <span class="n">Status</span><span class="p">,</span> <span class="n">WorkflowRunner</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
@@ -1181,14 +1180,14 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">runner_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">rollout_model</span><span class="p">:</span> <span class="n">InferenceModel</span><span class="p">,</span>
-        <span class="n">auxiliary_models</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">InferenceModel</span><span class="p">],</span>
+        <span class="n">rollout_model_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">auxiliary_model_ids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
         <span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">runner_id</span> <span class="o">=</span> <span class="n">runner_id</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rollout_model</span> <span class="o">=</span> <span class="n">rollout_model</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_models</span> <span class="o">=</span> <span class="n">auxiliary_models</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rollout_model_id</span> <span class="o">=</span> <span class="n">rollout_model_id</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_model_ids</span> <span class="o">=</span> <span class="n">auxiliary_model_ids</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">retry_times</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">max_retry_times</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">timeout</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">max_timeout</span>
@@ -1210,17 +1209,11 @@ window.runMermaid = runMermaid;</script>
             <span class="p">)</span>
             <span class="o">.</span><span class="n">remote</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">rollout_model</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">rollout_model_id</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_model_ids</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">runner_id</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="p">)</span>
-
-<div class="viewcode-block" id="RunnerWrapper.prepare">
-<a class="viewcode-back" href="../../../build_api/trinity.explorer.scheduler.html#trinity.explorer.scheduler.RunnerWrapper.prepare">[文档]</a>
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">prepare</span><span class="o">.</span><span class="n">remote</span><span class="p">()</span></div>
-
 
 <div class="viewcode-block" id="RunnerWrapper.update_state">
 <a class="viewcode-back" href="../../../build_api/trinity.explorer.scheduler.html#trinity.explorer.scheduler.RunnerWrapper.update_state">[文档]</a>
@@ -1228,6 +1221,12 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the runner state.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">get_runner_state</span><span class="o">.</span><span class="n">remote</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">[</span><span class="s2">&quot;running_time&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;begin_time&quot;</span><span class="p">,</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="RunnerWrapper.prepare">
+<a class="viewcode-back" href="../../../build_api/trinity.explorer.scheduler.html#trinity.explorer.scheduler.RunnerWrapper.prepare">[文档]</a>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">prepare</span><span class="o">.</span><span class="n">remote</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="RunnerWrapper.run_with_retry">
@@ -1369,13 +1368,9 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">,</span>
-        <span class="n">rollout_model</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">InferenceModel</span><span class="p">],</span>
-        <span class="n">auxiliary_models</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">InferenceModel</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rollout_model</span> <span class="o">=</span> <span class="n">rollout_model</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_models</span> <span class="o">=</span> <span class="n">auxiliary_models</span> <span class="ow">or</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">namespace</span> <span class="o">=</span> <span class="n">ray</span><span class="o">.</span><span class="n">get_runtime_context</span><span class="p">()</span><span class="o">.</span><span class="n">namespace</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">default_timeout</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">max_timeout</span> <span class="o">*</span> <span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">max_retry_times</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_times</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">max_retry_times</span>
@@ -1383,7 +1378,9 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">default_batch_size</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">batch_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">running</span> <span class="o">=</span> <span class="kc">False</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">runner_num</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">rollout_model</span><span class="p">)</span> <span class="o">*</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">runner_per_model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runner_num</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">engine_num</span> <span class="o">*</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">runner_per_model</span>
+        <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">runners</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">RunnerWrapper</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">idle_runners</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>  <span class="c1"># runner_id of idle runners</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">busy_runners</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">RunningTaskState</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>  <span class="c1"># runner_id -&gt; running state</span>
@@ -1421,10 +1418,10 @@ window.runMermaid = runMermaid;</script>
     <span class="p">):</span>
         <span class="n">runner</span> <span class="o">=</span> <span class="n">RunnerWrapper</span><span class="p">(</span>
             <span class="n">runner_id</span><span class="o">=</span><span class="n">runner_id</span><span class="p">,</span>
-            <span class="n">rollout_model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rollout_model</span><span class="p">[</span><span class="n">runner_id</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rollout_model</span><span class="p">)],</span>
-            <span class="n">auxiliary_models</span><span class="o">=</span><span class="p">[</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="n">runner_id</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">[</span><span class="n">j</span><span class="p">])]</span>
-                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">))</span>
+            <span class="n">rollout_model_id</span><span class="o">=</span><span class="n">runner_id</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">engine_num</span><span class="p">,</span>
+            <span class="n">auxiliary_model_ids</span><span class="o">=</span><span class="p">[</span>
+                <span class="n">runner_id</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">engine_num</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">))</span>
             <span class="p">],</span>
             <span class="n">config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span>
         <span class="p">)</span>
@@ -1953,54 +1950,6 @@ window.runMermaid = runMermaid;</script>
             <span class="ow">or</span> <span class="n">batch_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_tasks</span>
             <span class="ow">or</span> <span class="n">batch_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">running_tasks</span>
         <span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="Scheduler.wait_all">
-<a class="viewcode-back" href="../../../build_api/trinity.explorer.scheduler.html#trinity.explorer.scheduler.Scheduler.wait_all">[文档]</a>
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">wait_all</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">clear_timeout_tasks</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Wait for all tasks to complete without poping results. If timeout reached, raise TimeoutError.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            timeout (`float`): timeout in seconds. Raise `TimeoutError` when no new tasks is completed within timeout.</span>
-<span class="sd">            clear_timeout_tasks (`bool`): Whether to clear timeout tasks.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">timeout</span> <span class="o">=</span> <span class="n">timeout</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_timeout</span>
-        <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Waiting for all tasks to complete...&quot;</span><span class="p">)</span>
-        <span class="n">last_completed_count</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="k">while</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span> <span class="o">&lt;</span> <span class="n">timeout</span><span class="p">:</span>
-            <span class="n">has_pending</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pending_tasks</span><span class="p">)</span>
-            <span class="n">has_running</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">running_tasks</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">has_pending</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">has_running</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;All tasks completed successfully&quot;</span><span class="p">)</span>
-                <span class="k">return</span>
-
-            <span class="n">completed_count</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tasks</span><span class="p">)</span> <span class="k">for</span> <span class="n">tasks</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">completed_tasks</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-            <span class="k">if</span> <span class="n">completed_count</span> <span class="o">!=</span> <span class="n">last_completed_count</span><span class="p">:</span>
-                <span class="c1"># flush timeout when new tasks are completed</span>
-                <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-                <span class="n">last_completed_count</span> <span class="o">=</span> <span class="n">completed_count</span>
-
-            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
-
-        <span class="n">pending_count</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tasks</span><span class="p">)</span> <span class="k">for</span> <span class="n">tasks</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_tasks</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-        <span class="n">running_count</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">futures</span><span class="p">)</span> <span class="k">for</span> <span class="n">futures</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">running_tasks</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-        <span class="n">error_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Timeout after </span><span class="si">{</span><span class="n">timeout</span><span class="si">}</span><span class="s2"> seconds. Still have </span><span class="si">{</span><span class="n">pending_count</span><span class="si">}</span><span class="s2"> pending tasks and </span><span class="si">{</span><span class="n">running_count</span><span class="si">}</span><span class="s2"> running tasks.&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">clear_timeout_tasks</span><span class="p">:</span>
-            <span class="n">batch_ids_to_abort</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pending_tasks</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">|</span> <span class="bp">self</span><span class="o">.</span><span class="n">running_tasks</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
-            <span class="k">for</span> <span class="n">batch_id</span> <span class="ow">in</span> <span class="n">batch_ids_to_abort</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_clear_timeout_tasks</span><span class="p">(</span><span class="n">batch_id</span><span class="p">)</span>
-            <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span>
-                <span class="o">*</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_restart_runner</span><span class="p">(</span><span class="n">runner_id</span><span class="p">)</span> <span class="k">for</span> <span class="n">runner_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">busy_runners</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span>
-            <span class="p">)</span>
-
-        <span class="k">raise</span> <span class="ne">TimeoutError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Scheduler.get_key_state">

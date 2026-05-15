@@ -365,7 +365,7 @@
 <li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.common.models.html">trinity.common.models package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.sglang_patch.html">trinity.common.models.sglang_patch package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.vllm_patch.html">trinity.common.models.vllm_patch package</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.external_model.html">trinity.common.models.external_model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.allocator.html">trinity.common.models.allocator module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.mm_utils.html">trinity.common.models.mm_utils module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.model.html">trinity.common.models.model module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.sglang_model.html">trinity.common.models.sglang_model module</a></li>
@@ -1121,6 +1121,8 @@ Users can use these features to simplify configuration.</p>
 <span class="w">    </span><span class="nt">engine_num</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
 <span class="w">    </span><span class="nt">tensor_parallel_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
 <span class="w">    </span><span class="nt">enable_history</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="nt">enable_openai_api</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="nt">nnodes</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
 <span class="w">  </span><span class="nt">auxiliary_models</span><span class="p">:</span>
 <span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">model_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Qwen/Qwen2.5-7B-Instruct</span>
 <span class="w">    </span><span class="nt">tensor_parallel_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
@@ -1153,7 +1155,8 @@ Users can use these features to simplify configuration.</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">env_vars</span></code>: Environment variables to be set for every workflow runners.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.engine_type</span></code>: Type of inference engine. Supported options:</p>
 <ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">vllm</span></code>: Use vLLM asynchronous engine.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">vllm</span></code>: Use vLLM engine.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">sglang</span></code>: Use SGLang engine.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">tinker</span></code>: Use Tinker engine.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">external</span></code>: Use external API-based model engine.</p></li>
 </ul>
@@ -1161,7 +1164,9 @@ Users can use these features to simplify configuration.</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.engine_num</span></code>: Number of inference engines.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.tensor_parallel_size</span></code>: Degree of tensor parallelism.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.enable_history</span></code>: Whether to enable model call history recording. If set to <code class="docutils literal notranslate"><span class="pre">true</span></code>, the model wrapper automatically records the return experiences of model calls. Please periodically extract the history via <code class="docutils literal notranslate"><span class="pre">extract_experience_from_history</span></code> to avoid out-of-memory issues. Default is <code class="docutils literal notranslate"><span class="pre">false</span></code>.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">auxiliary_models</span></code>: Additional models used for custom workflows.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.enable_openai_api</span></code>: Whether to enable the openai API provided by Explorer. Default is <code class="docutils literal notranslate"><span class="pre">false</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.nnodes</span></code>: Number of nodes for each engine. Default is <code class="docutils literal notranslate"><span class="pre">1</span></code>. Only take effect when <code class="docutils literal notranslate"><span class="pre">rollout_model.engine_type</span></code> is <code class="docutils literal notranslate"><span class="pre">vllm</span></code> or <code class="docutils literal notranslate"><span class="pre">sglang</span></code>. When <code class="docutils literal notranslate"><span class="pre">nnodes</span></code> is greater than <code class="docutils literal notranslate"><span class="pre">1</span></code>, each engine instance will exclusively occupy the GPU resources of the full <code class="docutils literal notranslate"><span class="pre">nnodes</span></code> nodes (<code class="docutils literal notranslate"><span class="pre">nnodes</span> <span class="pre">*</span> <span class="pre">cluster.gpu_per_node</span></code>); sharing nodes with other instances is not supported.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">auxiliary_models</span></code>: Additional models used for custom workflows, which has the same configuration options as <code class="docutils literal notranslate"><span class="pre">rollout_model</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">eval_interval</span></code>: Interval (in steps) for evaluating the model.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">eval_on_startup</span></code>: Whether to evaluate the model on startup. More precisely, at step 0 with the original model, so it will not be triggered when restarting.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">over_rollout</span></code>: [Experimental] Configurations for over-rollout mechanism, which allows the explorer to proceed with fewer tasks than the full batch size. It effectively increases throughput in scenarios where some tasks take significantly longer to complete than others. Only applicable when dynamic synchronization (<code class="docutils literal notranslate"><span class="pre">synchronizer.sync_style</span></code> is not <code class="docutils literal notranslate"><span class="pre">fixed</span></code>) is used.</p>

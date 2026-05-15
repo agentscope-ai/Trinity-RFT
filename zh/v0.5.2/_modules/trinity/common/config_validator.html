@@ -1277,6 +1277,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">cluster</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">cluster</span>
 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_multinode_inference_models</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+
         <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">engine_type</span> <span class="o">==</span> <span class="s2">&quot;external&quot;</span><span class="p">:</span>
             <span class="k">return</span>
 
@@ -1342,7 +1344,50 @@ window.runMermaid = runMermaid;</script>
                         <span class="s2">&quot;Please change `engine_num` or `tensor_parallel_size` in explorer config.&quot;</span>
                     <span class="p">)</span>
                 <span class="n">cluster</span><span class="o">.</span><span class="n">trainer_node_num</span> <span class="o">=</span> <span class="n">cluster</span><span class="o">.</span><span class="n">trainer_gpu_num</span> <span class="o">//</span> <span class="n">cluster</span><span class="o">.</span><span class="n">gpu_per_node</span>
-                <span class="n">cluster</span><span class="o">.</span><span class="n">trainer_gpu_num_per_node</span> <span class="o">=</span> <span class="n">cluster</span><span class="o">.</span><span class="n">gpu_per_node</span></div>
+                <span class="n">cluster</span><span class="o">.</span><span class="n">trainer_gpu_num_per_node</span> <span class="o">=</span> <span class="n">cluster</span><span class="o">.</span><span class="n">gpu_per_node</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_multinode_inference_models</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate per-engine multi-node inference settings.</span>
+
+<span class="sd">        For now, cross-node inference engines are only supported for vLLM-backed</span>
+<span class="sd">        rollout and auxiliary models.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">model_configs</span> <span class="o">=</span> <span class="p">[</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="p">,</span> <span class="o">*</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">model_config</span> <span class="ow">in</span> <span class="n">model_configs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">model_config</span><span class="o">.</span><span class="n">nnodes</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="ow">not</span> <span class="n">model_config</span><span class="o">.</span><span class="n">engine_type</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;vllm&quot;</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="n">model_config</span><span class="o">.</span><span class="n">engine_type</span> <span class="o">!=</span> <span class="s2">&quot;sglang&quot;</span>
+            <span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Multi-node inference is only supported for vLLM and SGLang engines.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">model_config</span><span class="o">.</span><span class="n">nnodes</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`nnodes` must be &gt;= 1, but got </span><span class="si">{</span><span class="n">model_config</span><span class="o">.</span><span class="n">nnodes</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">model_config</span><span class="o">.</span><span class="n">nnodes</span> <span class="o">&gt;</span> <span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">node_num</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;`nnodes` (</span><span class="si">{</span><span class="n">model_config</span><span class="o">.</span><span class="n">nnodes</span><span class="si">}</span><span class="s2">) cannot exceed cluster.node_num &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">node_num</span><span class="si">}</span><span class="s2">).&quot;</span>
+                <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">model_config</span><span class="o">.</span><span class="n">tensor_parallel_size</span> <span class="o">%</span> <span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">gpu_per_node</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;tensor_parallel_size (</span><span class="si">{</span><span class="n">model_config</span><span class="o">.</span><span class="n">tensor_parallel_size</span><span class="si">}</span><span class="s2">) must be an &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;integer multiple of cluster.gpu_per_node (</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">gpu_per_node</span><span class="si">}</span><span class="s2">) &quot;</span>
+                    <span class="s2">&quot;when `nnodes &gt; 1`, because each cross-node engine must occupy full nodes.&quot;</span>
+                <span class="p">)</span>
+
+            <span class="n">required_nnodes</span> <span class="o">=</span> <span class="n">model_config</span><span class="o">.</span><span class="n">tensor_parallel_size</span> <span class="o">//</span> <span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">gpu_per_node</span>
+            <span class="k">if</span> <span class="n">model_config</span><span class="o">.</span><span class="n">nnodes</span> <span class="o">!=</span> <span class="n">required_nnodes</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;`nnodes` (</span><span class="si">{</span><span class="n">model_config</span><span class="o">.</span><span class="n">nnodes</span><span class="si">}</span><span class="s2">) must equal tensor_parallel_size // &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;cluster.gpu_per_node (</span><span class="si">{</span><span class="n">required_nnodes</span><span class="si">}</span><span class="s2">) when `nnodes &gt; 1`.&quot;</span>
+                <span class="p">)</span></div>
 
 
 

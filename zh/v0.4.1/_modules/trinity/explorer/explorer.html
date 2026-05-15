@@ -1032,7 +1032,8 @@ window.runMermaid = runMermaid;</script>
     <span class="n">SyncMethod</span><span class="p">,</span>
     <span class="n">SyncStyle</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_explorer_models</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models.allocator</span><span class="w"> </span><span class="kn">import</span> <span class="n">Allocator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelWrapper</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.explorer.rollout_coordinator</span><span class="w"> </span><span class="kn">import</span> <span class="n">RolloutCoordinator</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.manager.state_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateManager</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.manager.synchronizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">Synchronizer</span>
@@ -1062,7 +1063,9 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">synchronizer</span> <span class="o">=</span> <span class="n">Synchronizer</span><span class="o">.</span><span class="n">get_actor</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">engine_type</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_models</span> <span class="o">=</span> <span class="n">create_explorer_models</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_allocator</span> <span class="o">=</span> <span class="n">Allocator</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">ModelWrapper</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">ModelWrapper</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">taskset</span> <span class="o">=</span> <span class="p">(</span>
             <span class="n">get_taskset_scheduler</span><span class="p">(</span><span class="n">explorer_state</span><span class="o">=</span><span class="n">explorer_state</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;bench&quot;</span><span class="p">,</span> <span class="s2">&quot;serve&quot;</span><span class="p">}</span>
@@ -1103,11 +1106,28 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Finished initializing Explorer.&quot;</span><span class="p">)</span></div>
 
 
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_wait_for_models_ready</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Wait until rollout models are created before using them.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="n">timeout</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_timeout</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">deadline</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">()</span> <span class="o">+</span> <span class="n">timeout</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Waiting for rollout models to finish initialization.&quot;</span><span class="p">)</span>
+        <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="n">deadline</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">TimeoutError</span><span class="p">(</span>
+                    <span class="s2">&quot;Timed out waiting for rollout models before initializing the weight sync group.&quot;</span>
+                <span class="p">)</span>
+            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Rollout models are ready. Continue weight sync initialization.&quot;</span><span class="p">)</span>
+
 <div class="viewcode-block" id="Explorer.setup_weight_sync_group">
 <a class="viewcode-back" href="../../../build_api/trinity.explorer.explorer.html#trinity.explorer.Explorer.setup_weight_sync_group">[文档]</a>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">setup_weight_sync_group</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">master_address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">master_port</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">state_dict_meta</span><span class="p">:</span> <span class="n">List</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">):</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_models_ready</span><span class="p">()</span>
         <span class="n">base_offset</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_nccl_sync</span> <span class="k">else</span> <span class="mi">0</span>
         <span class="n">world_size</span> <span class="o">=</span> <span class="p">(</span>
             <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">tensor_parallel_size</span> <span class="o">+</span> <span class="n">base_offset</span>
@@ -1117,9 +1137,9 @@ window.runMermaid = runMermaid;</script>
             <span class="sa">f</span><span class="s2">&quot;master_address=</span><span class="si">{</span><span class="n">master_address</span><span class="si">}</span><span class="s2">, master_port=</span><span class="si">{</span><span class="n">master_port</span><span class="si">}</span><span class="s2">, &quot;</span>
             <span class="sa">f</span><span class="s2">&quot;world_size=</span><span class="si">{</span><span class="n">world_size</span><span class="si">}</span><span class="s2">, rank_offset=</span><span class="si">{</span><span class="n">base_offset</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="p">)</span>
-        <span class="c1"># TODO: save state_dict in models</span>
+
         <span class="n">refs</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">model</span><span class="o">.</span><span class="n">init_process_group</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">init_process_group</span><span class="p">(</span>
                 <span class="n">master_address</span><span class="o">=</span><span class="n">master_address</span><span class="p">,</span>
                 <span class="n">master_port</span><span class="o">=</span><span class="n">master_port</span><span class="p">,</span>
                 <span class="n">rank_offset</span><span class="o">=</span><span class="n">i</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">tensor_parallel_size</span>
@@ -1139,17 +1159,18 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../build_api/trinity.explorer.explorer.html#trinity.explorer.Explorer.setup_model_level_weight_sync_group">[文档]</a>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">setup_model_level_weight_sync_group</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Setup process group for each model, only used in serve mode.&quot;&quot;&quot;</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_models_ready</span><span class="p">()</span>
         <span class="n">refs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">world_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">tensor_parallel_size</span>
         <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">:</span>
-            <span class="n">master_address</span><span class="p">,</span> <span class="n">master_port</span> <span class="o">=</span> <span class="k">await</span> <span class="n">model</span><span class="o">.</span><span class="n">get_available_address</span><span class="o">.</span><span class="n">remote</span><span class="p">()</span>
+            <span class="n">master_address</span><span class="p">,</span> <span class="n">master_port</span> <span class="o">=</span> <span class="k">await</span> <span class="n">model</span><span class="o">.</span><span class="n">get_available_address_async</span><span class="p">(</span><span class="n">random_port</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">&quot;Initialize process group for model weight synchronization, &quot;</span>
                 <span class="sa">f</span><span class="s2">&quot;master_address=</span><span class="si">{</span><span class="n">master_address</span><span class="si">}</span><span class="s2">, master_port=</span><span class="si">{</span><span class="n">master_port</span><span class="si">}</span><span class="s2">, &quot;</span>
                 <span class="sa">f</span><span class="s2">&quot;world_size=</span><span class="si">{</span><span class="n">world_size</span><span class="si">}</span><span class="s2">&quot;</span>
             <span class="p">)</span>
             <span class="n">refs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="n">model</span><span class="o">.</span><span class="n">init_process_group</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">init_process_group</span><span class="p">(</span>
                     <span class="n">master_address</span><span class="o">=</span><span class="n">master_address</span><span class="p">,</span>
                     <span class="n">master_port</span><span class="o">=</span><span class="n">master_port</span><span class="p">,</span>
                     <span class="n">rank_offset</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
@@ -1165,9 +1186,14 @@ window.runMermaid = runMermaid;</script>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_checkpoint_weights_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step_num</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Start to update model weights from checkpoint at step </span><span class="si">{</span><span class="n">step_num</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
         <span class="n">step_num</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">set_model_state_dict_with_step_num</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">step_num</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">step_num</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">step_num</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_version</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;No new checkpoint found for step </span><span class="si">{</span><span class="n">step_num</span><span class="si">}</span><span class="s2">. Current model version: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_version</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_version</span>
         <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span>
             <span class="o">*</span><span class="p">[</span>
-                <span class="n">model</span><span class="o">.</span><span class="n">sync_model</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">sync_model_weights</span><span class="p">(</span>
                     <span class="n">step_num</span><span class="p">,</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_method</span><span class="p">,</span>
                     <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_timeout</span><span class="p">,</span>
@@ -1188,7 +1214,7 @@ window.runMermaid = runMermaid;</script>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;New model weights version: </span><span class="si">{</span><span class="n">new_version</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span>
                     <span class="o">*</span><span class="p">[</span>
-                        <span class="n">model</span><span class="o">.</span><span class="n">sync_model</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span>
+                        <span class="n">model</span><span class="o">.</span><span class="n">sync_model_weights</span><span class="p">(</span>
                             <span class="n">new_version</span><span class="p">,</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_method</span><span class="p">,</span>
                             <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_timeout</span><span class="p">,</span>
@@ -1212,7 +1238,7 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">model_version</span> <span class="o">=</span> <span class="n">new_version</span>
         <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span>
             <span class="o">*</span><span class="p">[</span>
-                <span class="n">model</span><span class="o">.</span><span class="n">sync_model</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">sync_model_weights</span><span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">model_version</span><span class="p">,</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_method</span><span class="p">,</span>
                     <span class="n">timeout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_timeout</span><span class="p">,</span>
@@ -1227,33 +1253,26 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Preparation before running.&quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="c1"># make sure all rollout models are ready</span>
-            <span class="n">run_api_ref</span> <span class="o">=</span> <span class="p">[</span><span class="n">model</span><span class="o">.</span><span class="n">prepare</span><span class="o">.</span><span class="n">remote</span><span class="p">()</span> <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">]</span>
-            <span class="n">run_api_ref</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
-                <span class="n">model</span><span class="o">.</span><span class="n">prepare</span><span class="o">.</span><span class="n">remote</span><span class="p">()</span> <span class="k">for</span> <span class="n">models</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_models</span> <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">models</span>
-            <span class="p">)</span>
-            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="n">run_api_ref</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_models</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_allocator</span><span class="o">.</span><span class="n">create_all_models</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;All models are ready.&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_nccl_sync</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;tinker&quot;</span><span class="p">,</span> <span class="s2">&quot;external&quot;</span><span class="p">}:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;serve&quot;</span><span class="p">:</span>
                     <span class="c1"># In serving mode, each engine will setup its own process group</span>
                     <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_model_level_weight_sync_group</span><span class="p">()</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">master_address</span><span class="p">,</span> <span class="n">master_port</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span>
-                        <span class="mi">0</span>
-                    <span class="p">]</span><span class="o">.</span><span class="n">get_available_address</span><span class="o">.</span><span class="n">remote</span><span class="p">()</span>
+                    <span class="n">master_address</span><span class="p">,</span> <span class="n">master_port</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_available_address_async</span><span class="p">(</span>
+                        <span class="n">random_port</span><span class="o">=</span><span class="kc">True</span>
+                    <span class="p">)</span>
                     <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_weight_sync_group</span><span class="p">(</span><span class="n">master_address</span><span class="p">,</span> <span class="n">master_port</span><span class="p">)</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">rollout_coordinator</span> <span class="o">=</span> <span class="n">RolloutCoordinator</span><span class="o">.</span><span class="n">get_actor</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">,</span>
-            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rollout_coordinator</span> <span class="o">=</span> <span class="n">RolloutCoordinator</span><span class="o">.</span><span class="n">get_actor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">rollout_coordinator</span><span class="o">.</span><span class="n">prepare</span><span class="o">.</span><span class="n">remote</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Rollout coordinator is ready.&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">eval_on_startup</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">set_explorer_status</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">RUNNING</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Explorer is ready.&quot;</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error during explorer preparation: </span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
@@ -1528,10 +1547,10 @@ window.runMermaid = runMermaid;</script>
             <span class="bp">self</span><span class="o">.</span><span class="n">monitor</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">handlers</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">models</span><span class="p">:</span>
-            <span class="n">handlers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">shutdown</span><span class="o">.</span><span class="n">remote</span><span class="p">())</span>
+            <span class="n">handlers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">shutdown</span><span class="p">())</span>
         <span class="k">for</span> <span class="n">auxiliary_model_list</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">auxiliary_model_list</span><span class="p">:</span>
-                <span class="n">handlers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">shutdown</span><span class="o">.</span><span class="n">remote</span><span class="p">())</span>
+                <span class="n">handlers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">shutdown</span><span class="p">())</span>
         <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="n">handlers</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">&quot;Explorer (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">) shutdown successfully at step </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">explore_step_num</span><span class="si">}</span><span class="s2">.&quot;</span>

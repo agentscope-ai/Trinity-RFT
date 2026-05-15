@@ -16,7 +16,7 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
-   trinity.common.models.external_model
+   trinity.common.models.allocator
    trinity.common.models.mm_utils
    trinity.common.models.model
    trinity.common.models.sglang_model

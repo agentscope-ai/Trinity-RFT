@@ -413,6 +413,8 @@ explorer:
     engine_num: 1
     tensor_parallel_size: 1
     enable_history: false
+    enable_openai_api: false
+    nnodes: 1
   auxiliary_models:
   - model_path: Qwen/Qwen2.5-7B-Instruct
     tensor_parallel_size: 1
@@ -440,13 +442,16 @@ explorer:
 - `max_retry_times`: Maximum number of retries for a workflow.
 - `env_vars`: Environment variables to be set for every workflow runners.
 - `rollout_model.engine_type`: Type of inference engine. Supported options:
-  - `vllm`: Use vLLM asynchronous engine.
+  - `vllm`: Use vLLM engine.
+  - `sglang`: Use SGLang engine.
   - `tinker`: Use Tinker engine.
   - `external`: Use external API-based model engine.
 - `rollout_model.engine_num`: Number of inference engines.
 - `rollout_model.tensor_parallel_size`: Degree of tensor parallelism.
 - `rollout_model.enable_history`: Whether to enable model call history recording. If set to `true`, the model wrapper automatically records the return experiences of model calls. Please periodically extract the history via `extract_experience_from_history` to avoid out-of-memory issues. Default is `false`.
-- `auxiliary_models`: Additional models used for custom workflows.
+- `rollout_model.enable_openai_api`: Whether to enable the openai API provided by Explorer. Default is `false`.
+- `rollout_model.nnodes`: Number of nodes for each engine. Default is `1`. Only take effect when `rollout_model.engine_type` is `vllm` or `sglang`. When `nnodes` is greater than `1`, each engine instance will exclusively occupy the GPU resources of the full `nnodes` nodes (`nnodes * cluster.gpu_per_node`); sharing nodes with other instances is not supported.
+- `auxiliary_models`: Additional models used for custom workflows, which has the same configuration options as `rollout_model`.
 - `eval_interval`: Interval (in steps) for evaluating the model.
 - `eval_on_startup`: Whether to evaluate the model on startup. More precisely, at step 0 with the original model, so it will not be triggered when restarting.
 - `over_rollout`: [Experimental] Configurations for over-rollout mechanism, which allows the explorer to proceed with fewer tasks than the full batch size. It effectively increases throughput in scenarios where some tasks take significantly longer to complete than others. Only applicable when dynamic synchronization (`synchronizer.sync_style` is not `fixed`) is used.

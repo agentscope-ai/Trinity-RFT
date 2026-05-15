@@ -806,7 +806,7 @@ window.runMermaid = runMermaid;</script>
 <li class="toctree-l3 has-children"><a class="reference internal" href="../../../../build_api/trinity.common.models.html">trinity.common.models package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.sglang_patch.html">trinity.common.models.sglang_patch package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.vllm_patch.html">trinity.common.models.vllm_patch package</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.external_model.html">trinity.common.models.external_model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.allocator.html">trinity.common.models.allocator module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.mm_utils.html">trinity.common.models.mm_utils module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.model.html">trinity.common.models.model module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.sglang_model.html">trinity.common.models.sglang_model module</a></li>
@@ -1137,11 +1137,17 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="ExperiencePipeline.prepare">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.pipelines.experience_pipeline.html#trinity.buffer.pipelines.ExperiencePipeline.prepare">[文档]</a>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_auxiliary_model_wrappers</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models.allocator</span><span class="w"> </span><span class="kn">import</span> <span class="n">Allocator</span>
 
-        <span class="c1"># make sure auxiliary models are ready before creating operators</span>
-        <span class="n">model_wrappers</span> <span class="o">=</span> <span class="k">await</span> <span class="n">get_auxiliary_model_wrappers</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_model_wrappers</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">model_wrappers</span><span class="p">)</span>
+        <span class="n">allocator</span> <span class="o">=</span> <span class="n">Allocator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">auxiliary_model_config</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">):</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">auxiliary_model_config</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="n">i</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_model_wrappers</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">engine_id</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">auxiliary_model_config</span><span class="o">.</span><span class="n">engine_num</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_model_wrappers</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">allocator</span><span class="o">.</span><span class="n">get_model</span><span class="p">(</span><span class="n">auxiliary_model_config</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;auxiliary_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">engine_id</span><span class="p">)</span>
+                <span class="p">)</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_models</span> <span class="o">=</span> <span class="p">(</span>
             <span class="p">{</span>
                 <span class="n">model_name</span><span class="p">:</span> <span class="p">[</span>

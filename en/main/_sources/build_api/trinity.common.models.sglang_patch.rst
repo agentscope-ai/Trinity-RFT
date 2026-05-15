@@ -7,7 +7,8 @@ Submodules
 .. toctree::
    :maxdepth: 4
 
-   trinity.common.models.sglang_patch.api_patch
+   trinity.common.models.sglang_patch.openai_api_patch
+   trinity.common.models.sglang_patch.server_patch
 
 Module contents
 ---------------

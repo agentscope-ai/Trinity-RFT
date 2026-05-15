@@ -410,6 +410,8 @@ explorer:
     engine_num: 1
     tensor_parallel_size: 1
     enable_history: false
+    enable_openai_api: false
+    nnodes: 1
   auxiliary_models:
   - model_path: Qwen/Qwen2.5-7B-Instruct
     tensor_parallel_size: 1
@@ -443,7 +445,9 @@ explorer:
 - `rollout_model.engine_num`: 推理引擎实例的数量。
 - `rollout_model.tensor_parallel_size`: 每个实例的张量并行度。
 - `rollout_model.enable_history`: 是否启用模型调用历史记录功能。若设为 `True`，模型会自动记录调用返回的 experience。请定期通过 `extract_experience_from_history` 提取历史，以避免内存溢出。默认为 `False`。
-- `auxiliary_models`: 用于自定义工作流的辅助模型。
+- `rollout_model.enable_openai_api`: 是否启用 OpenAI API 推理服务。默认为 `False`。
+- `rollout_model.nnodes`: 部署每个推理引擎实例所需的节点数。默认为 `1`。仅在 `rollout_model.engine_type` 为 `vllm` 或 `sglang` 时生效。当 `nnodes` 大于 `1` 时，每个引擎实例将会占用完整的 `nnodes` 个节点的 GPU 资源 (`nnodes * cluster.gpu_per_node`)，不支持与其他实例共享节点。
+- `auxiliary_models`: 用于自定义工作流的辅助模型，配置与 `rollout_model` 相同。
 - `eval_interval`: 模型评估的间隔（以 step 为单位）。
 - `eval_on_startup`: 是否在启动时评估模型。更准确地说，是在第 0 步使用原始模型评估，因此中断训练后重启时不会触发该行为。
 - `over_rollout`: [实验性] 超量 rollout 机制的配置，允许 explorer 在每个步骤中使用少于完整批次大小的任务继续进行。这在某些任务显著耗时较长的场景中能有效地提高吞吐量。仅当使用动态同步（`synchronizer.sync_style` 不是 `fixed`）时适用。

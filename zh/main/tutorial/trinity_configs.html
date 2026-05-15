@@ -371,7 +371,7 @@
 <li class="toctree-l3 has-children"><a class="reference internal" href="../build_api/trinity.common.models.html">trinity.common.models package</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.sglang_patch.html">trinity.common.models.sglang_patch package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.vllm_patch.html">trinity.common.models.vllm_patch package</a></li>
-<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.external_model.html">trinity.common.models.external_model module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.allocator.html">trinity.common.models.allocator module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.mm_utils.html">trinity.common.models.mm_utils module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.model.html">trinity.common.models.model module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.common.models.sglang_model.html">trinity.common.models.sglang_model module</a></li>
@@ -1124,6 +1124,8 @@
 <span class="w">    </span><span class="nt">engine_num</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
 <span class="w">    </span><span class="nt">tensor_parallel_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
 <span class="w">    </span><span class="nt">enable_history</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="nt">enable_openai_api</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">    </span><span class="nt">nnodes</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
 <span class="w">  </span><span class="nt">auxiliary_models</span><span class="p">:</span>
 <span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">model_path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Qwen/Qwen2.5-7B-Instruct</span>
 <span class="w">    </span><span class="nt">tensor_parallel_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
@@ -1164,7 +1166,9 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.engine_num</span></code>: 推理引擎实例的数量。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.tensor_parallel_size</span></code>: 每个实例的张量并行度。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.enable_history</span></code>: 是否启用模型调用历史记录功能。若设为 <code class="docutils literal notranslate"><span class="pre">True</span></code>，模型会自动记录调用返回的 experience。请定期通过 <code class="docutils literal notranslate"><span class="pre">extract_experience_from_history</span></code> 提取历史，以避免内存溢出。默认为 <code class="docutils literal notranslate"><span class="pre">False</span></code>。</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">auxiliary_models</span></code>: 用于自定义工作流的辅助模型。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.enable_openai_api</span></code>: 是否启用 OpenAI API 推理服务。默认为 <code class="docutils literal notranslate"><span class="pre">False</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rollout_model.nnodes</span></code>: 部署每个推理引擎实例所需的节点数。默认为 <code class="docutils literal notranslate"><span class="pre">1</span></code>。仅在 <code class="docutils literal notranslate"><span class="pre">rollout_model.engine_type</span></code> 为 <code class="docutils literal notranslate"><span class="pre">vllm</span></code> 或 <code class="docutils literal notranslate"><span class="pre">sglang</span></code> 时生效。当 <code class="docutils literal notranslate"><span class="pre">nnodes</span></code> 大于 <code class="docutils literal notranslate"><span class="pre">1</span></code> 时，每个引擎实例将会占用完整的 <code class="docutils literal notranslate"><span class="pre">nnodes</span></code> 个节点的 GPU 资源 (<code class="docutils literal notranslate"><span class="pre">nnodes</span> <span class="pre">*</span> <span class="pre">cluster.gpu_per_node</span></code>)，不支持与其他实例共享节点。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">auxiliary_models</span></code>: 用于自定义工作流的辅助模型，配置与 <code class="docutils literal notranslate"><span class="pre">rollout_model</span></code> 相同。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">eval_interval</span></code>: 模型评估的间隔（以 step 为单位）。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">eval_on_startup</span></code>: 是否在启动时评估模型。更准确地说，是在第 0 步使用原始模型评估，因此中断训练后重启时不会触发该行为。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">over_rollout</span></code>: [实验性] 超量 rollout 机制的配置，允许 explorer 在每个步骤中使用少于完整批次大小的任务继续进行。这在某些任务显著耗时较长的场景中能有效地提高吞吐量。仅当使用动态同步（<code class="docutils literal notranslate"><span class="pre">synchronizer.sync_style</span></code> 不是 <code class="docutils literal notranslate"><span class="pre">fixed</span></code>）时适用。</p>
