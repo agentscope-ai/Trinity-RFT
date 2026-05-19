@@ -958,6 +958,12 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                 "After offload actor optimizer during update_actor", logger=self.logger
             )
 
+        # Release reserved GPU memory held by PyTorch's caching allocator after
+        # backward passes. Without this, memory_reserved grows monotonically and
+        # eventually starves vLLM during weight sync in colocate mode.
+        # Matches the pattern in megatron_workers.py update_actor().
+        torch.cuda.empty_cache()
+
         return output
 
     @register(dispatch_mode=make_nd_compute_dataproto_dispatch_fn(mesh_name="actor"))
