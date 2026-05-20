@@ -4,6 +4,7 @@ import re
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 import torch
+import transformers
 
 from trinity.common.config import TrainerConfig
 from trinity.utils.log import get_logger
@@ -57,7 +58,7 @@ def tokenize_and_mask_messages_default(
     """Calculate the assistant token mask.
 
     Args:
-        tokenizer (Any): The tokenizer.
+        tokenizer (Any): The tokenizer or processor.
         messages (List[dict]): Messages with `role` and `content` fields.
         tools (Optional[List[dict]]): The list of tool dictionaries.
         chat_template (str): The chat template with `{% generation %}` symbol.
@@ -79,13 +80,21 @@ def tokenize_and_mask_messages_default(
     common_kwargs = dict(
         tools=tools,
         chat_template=chat_template,
+        tokenize=True,
+        return_dict=True,
         enable_thinking=enable_thinking,
+    )
+    text_kwargs = dict(
         padding=False,
         truncation=True,
         add_special_tokens=False,
-        tokenize=True,
-        return_dict=True,
     )
+    if isinstance(tokenizer, transformers.ProcessorMixin):
+        common_kwargs["processor_kwargs"] = text_kwargs
+        eos_token_id = tokenizer.tokenizer.eos_token_id
+    else:
+        common_kwargs.update(text_kwargs)
+        eos_token_id = tokenizer.eos_token_id
 
     generation_messages = []
     response_messages = []
@@ -132,7 +141,12 @@ def tokenize_and_mask_messages_default(
         prompt_token_ids_list[0] = []
 
     for prompt_token_ids, response_token_ids in zip(prompt_token_ids_list, response_token_ids_list):
-        assistant_token_mask[len(prompt_token_ids) : len(response_token_ids)] = 1
+        prompt_len = len(prompt_token_ids)
+        response_len = len(response_token_ids)
+        if eos_token_id is not None:
+            while response_token_ids[response_len - 1] != eos_token_id:
+                response_len -= 1
+        assistant_token_mask[prompt_len:response_len] = 1
 
     prompt_length = torch.argmax(assistant_token_mask).item()
     return torch.tensor(response_token_ids_list[-1]), assistant_token_mask, prompt_length

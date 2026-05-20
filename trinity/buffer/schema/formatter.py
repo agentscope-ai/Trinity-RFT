@@ -102,9 +102,6 @@ class SFTFormatter(ExperienceFormatter):
         self.video_key = format_config.video_key
         self.enable_thinking = format_config.enable_thinking
         if self.image_key is not None or self.video_key is not None:
-            assert (
-                self.enable_concatenated_multi_turn is False
-            ), "Concatenated multi-turn not supported for multi-modal data yet."
             self.processor = transformers.AutoProcessor.from_pretrained(tokenizer_path)
             self.tokenizer = self.processor.tokenizer
         else:
@@ -159,7 +156,7 @@ class SFTFormatter(ExperienceFormatter):
                 raise ValueError("Invalid JSON format for tools")
         if self.enable_concatenated_multi_turn:
             token_ids, action_mask, prompt_length = self.action_mask_method(
-                tokenizer=self.tokenizer,
+                tokenizer=self.processor or self.tokenizer,
                 messages=messages,
                 tools=tools,
                 chat_template=self.chat_template,
