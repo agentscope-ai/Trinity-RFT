@@ -17,6 +17,7 @@ Submodules
    :maxdepth: 4
 
    trinity.common.models.allocator
+   trinity.common.models.experience_extraction
    trinity.common.models.mm_utils
    trinity.common.models.model
    trinity.common.models.sglang_model

@@ -1010,6 +1010,11 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">InferenceModelConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">RunningStatus</span><span class="p">,</span> <span class="n">SyncMethod</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.experience</span><span class="w"> </span><span class="kn">import</span> <span class="n">Experience</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models.experience_extraction</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">HistoryRecordingStream</span><span class="p">,</span>
+    <span class="n">convert_api_output_to_experience</span><span class="p">,</span>
+    <span class="n">get_routed_experts_layout</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_action_mask_method</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
 
@@ -1416,7 +1421,8 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">RunningStatus</span><span class="o">.</span><span class="n">RUNNING</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">workflow_state</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">request_count</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">state_lock</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state_lock</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_routed_experts_layout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 <div class="viewcode-block" id="ModelWrapper.prepare">
@@ -1425,6 +1431,15 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Prepare some necessary information for the model before inference.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">enable_openai_api</span><span class="p">:</span>
             <span class="k">return</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">enable_return_routed_experts</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">engine_type</span> <span class="o">==</span> <span class="s2">&quot;sglang&quot;</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_routed_experts_layout</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_routed_experts_layout</span> <span class="o">=</span> <span class="n">get_routed_experts_layout</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model_path</span><span class="p">,</span>
+                <span class="n">trust_remote_code</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">trust_remote_code</span><span class="p">,</span>
+            <span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">api_address</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot get API address from the model.&quot;</span><span class="p">)</span>
@@ -1460,6 +1475,26 @@ window.runMermaid = runMermaid;</script>
             <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">exps</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Expected Experience or List[Experience], got </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">exps</span><span class="p">)))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_assert_openai_routed_experts_request_supported</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">extra_body</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Currently, only SGLang OpenAI API supports returning routed_experts, and it only returns</span>
+<span class="sd">        at the response level when n=1. This function asserts that the current request is compatible</span>
+<span class="sd">        with these requirements if routed_experts is requested.&quot;&quot;&quot;</span>
+        <span class="n">requested_routed_experts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">enable_return_routed_experts</span> <span class="ow">or</span> <span class="nb">bool</span><span class="p">(</span>
+            <span class="n">extra_body</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;return_routed_experts&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">requested_routed_experts</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">engine_type</span> <span class="o">!=</span> <span class="s2">&quot;sglang&quot;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Routed experts can only be returned from SGLang engine.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;stream&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Routed experts cannot be returned for streaming requests.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;n&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;SGLang OpenAI API returns routed_experts at response level only; &quot;</span>
+                    <span class="s2">&quot;set n=1 when requesting routed_experts.&quot;</span>
+                <span class="p">)</span>
 
 <div class="viewcode-block" id="ModelWrapper.generate">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.models.model.html#trinity.common.models.model.ModelWrapper.generate">[文档]</a>
@@ -1675,10 +1710,17 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">chat_template_kwargs</span><span class="p">[</span><span class="s2">&quot;enable_thinking&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">enable_thinking</span>
                     <span class="n">extra_body</span><span class="p">[</span><span class="s2">&quot;chat_template_kwargs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chat_template_kwargs</span>
                 <span class="n">extra_body</span><span class="p">[</span><span class="s2">&quot;return_token_ids&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">enable_return_routed_experts</span><span class="p">:</span>
+                    <span class="n">extra_body</span><span class="p">[</span><span class="s2">&quot;return_routed_experts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_assert_openai_routed_experts_request_supported</span><span class="p">(</span><span class="n">extra_body</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
                 <span class="n">response</span> <span class="o">=</span> <span class="n">ori_create</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">extra_body</span><span class="o">=</span><span class="n">extra_body</span><span class="p">,</span> <span class="n">logprobs</span><span class="o">=</span><span class="n">logprobs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;stream&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
                     <span class="k">return</span> <span class="n">HistoryRecordingStream</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="n">is_async</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">convert_api_output_to_experience</span><span class="p">(</span><span class="n">response</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                    <span class="n">convert_api_output_to_experience</span><span class="p">(</span>
+                        <span class="n">response</span><span class="p">,</span> <span class="n">routed_experts_layout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_routed_experts_layout</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
                 <span class="k">return</span> <span class="n">response</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">openai_client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span> <span class="o">=</span> <span class="n">record_chat_completions</span>
@@ -1743,12 +1785,19 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">chat_template_kwargs</span><span class="p">[</span><span class="s2">&quot;enable_thinking&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">enable_thinking</span>
                     <span class="n">extra_body</span><span class="p">[</span><span class="s2">&quot;chat_template_kwargs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">chat_template_kwargs</span>
                 <span class="n">extra_body</span><span class="p">[</span><span class="s2">&quot;return_token_ids&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">enable_return_routed_experts</span><span class="p">:</span>
+                    <span class="n">extra_body</span><span class="p">[</span><span class="s2">&quot;return_routed_experts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_assert_openai_routed_experts_request_supported</span><span class="p">(</span><span class="n">extra_body</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">)</span>
                 <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">ori_create</span><span class="p">(</span>
                     <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">extra_body</span><span class="o">=</span><span class="n">extra_body</span><span class="p">,</span> <span class="n">logprobs</span><span class="o">=</span><span class="n">logprobs</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
                 <span class="p">)</span>
                 <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;stream&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
                     <span class="k">return</span> <span class="n">HistoryRecordingStream</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="n">is_async</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">convert_api_output_to_experience</span><span class="p">(</span><span class="n">response</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                    <span class="n">convert_api_output_to_experience</span><span class="p">(</span>
+                        <span class="n">response</span><span class="p">,</span> <span class="n">routed_experts_layout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_routed_experts_layout</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
                 <span class="k">return</span> <span class="n">response</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">openai_async_client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span> <span class="o">=</span> <span class="n">record_chat_completions</span>
@@ -1871,202 +1920,6 @@ window.runMermaid = runMermaid;</script>
         <span class="n">new_wrapper</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">return</span> <span class="n">new_wrapper</span></div>
 </div>
-
-
-
-<div class="viewcode-block" id="convert_api_output_to_experience">
-<a class="viewcode-back" href="../../../../build_api/trinity.common.models.model.html#trinity.common.models.model.convert_api_output_to_experience">[文档]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">convert_api_output_to_experience</span><span class="p">(</span>
-    <span class="n">output</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert non-stream/stream API outputs to a list of experiences.&quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="s2">&quot;choices&quot;</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_convert_completion_output_to_experience</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">_convert_stream_chunks_to_experience</span><span class="p">(</span><span class="n">output</span><span class="p">)</span></div>
-
-
-
-<div class="viewcode-block" id="HistoryRecordingStream">
-<a class="viewcode-back" href="../../../../build_api/trinity.common.models.model.html#trinity.common.models.model.HistoryRecordingStream">[文档]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">HistoryRecordingStream</span><span class="p">:</span>
-<div class="viewcode-block" id="HistoryRecordingStream.__init__">
-<a class="viewcode-back" href="../../../../build_api/trinity.common.models.model.html#trinity.common.models.model.HistoryRecordingStream.__init__">[文档]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">history</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">],</span> <span class="n">is_async</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_stream</span> <span class="o">=</span> <span class="n">stream</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_history</span> <span class="o">=</span> <span class="n">history</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_chunks</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_recorded</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_is_async</span> <span class="o">=</span> <span class="n">is_async</span>
-        <span class="k">if</span> <span class="n">is_async</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_iterator</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="fm">__aiter__</span><span class="p">()</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_iterator</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="n">stream</span><span class="p">)</span></div>
-
-
-    <span class="c1"># --- Sync methods ---</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_async</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Use &#39;async for&#39; for async streams.&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__next__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_async</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Use &#39;async for&#39; for async streams.&quot;</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">chunk</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_iterator</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_record_history_once</span><span class="p">()</span>
-            <span class="k">raise</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_chunks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">chunk</span>
-
-<div class="viewcode-block" id="HistoryRecordingStream.close">
-<a class="viewcode-back" href="../../../../build_api/trinity.common.models.model.html#trinity.common.models.model.HistoryRecordingStream.close">[文档]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_async</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Use &#39;aclose&#39; for async streams.&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_record_history_once</span><span class="p">()</span>
-        <span class="n">close_fn</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stream</span><span class="p">,</span> <span class="s2">&quot;close&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">close_fn</span><span class="p">):</span>
-            <span class="n">close_fn</span><span class="p">()</span></div>
-
-
-    <span class="c1"># --- Async methods ---</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__aiter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_async</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Use &#39;for&#39; for sync streams.&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span>
-
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="fm">__anext__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_async</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Use &#39;for&#39; for sync streams.&quot;</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">chunk</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_iterator</span><span class="o">.</span><span class="fm">__anext__</span><span class="p">()</span>
-        <span class="k">except</span> <span class="ne">StopAsyncIteration</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_record_history_once</span><span class="p">()</span>
-            <span class="k">raise</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_chunks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">chunk</span>
-
-<div class="viewcode-block" id="HistoryRecordingStream.aclose">
-<a class="viewcode-back" href="../../../../build_api/trinity.common.models.model.html#trinity.common.models.model.HistoryRecordingStream.aclose">[文档]</a>
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">aclose</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_async</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Use &#39;close&#39; for sync streams.&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_record_history_once</span><span class="p">()</span>
-        <span class="n">close_fn</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stream</span><span class="p">,</span> <span class="s2">&quot;aclose&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">close_fn</span><span class="p">):</span>
-            <span class="n">close_result</span> <span class="o">=</span> <span class="n">close_fn</span><span class="p">()</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">close_result</span><span class="p">,</span> <span class="s2">&quot;__await__&quot;</span><span class="p">):</span>
-                <span class="k">await</span> <span class="n">close_result</span>
-            <span class="k">return</span>
-        <span class="n">close_fn</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stream</span><span class="p">,</span> <span class="s2">&quot;close&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">close_fn</span><span class="p">):</span>
-            <span class="n">close_fn</span><span class="p">()</span></div>
-
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_record_history_once</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_recorded</span><span class="p">:</span>
-            <span class="k">return</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_recorded</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_chunks</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_history</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">convert_api_output_to_experience</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_chunks</span><span class="p">))</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="fm">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stream</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span></div>
-
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_convert_completion_output_to_experience</span><span class="p">(</span><span class="n">output</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert non-stream chat completion output to experiences.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="p">[</span>
-        <span class="n">Experience</span><span class="p">(</span>
-            <span class="n">tokens</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
-                <span class="p">(</span>
-                    <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">prompt_token_ids</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span>
-                    <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">choice</span><span class="o">.</span><span class="n">token_ids</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span>
-                <span class="p">)</span>
-            <span class="p">),</span>
-            <span class="n">logprobs</span><span class="o">=</span><span class="n">extract_logprobs</span><span class="p">(</span><span class="n">choice</span><span class="p">),</span>
-            <span class="n">prompt_length</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">prompt_token_ids</span><span class="p">),</span>
-            <span class="n">response_text</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">choice</span><span class="o">.</span><span class="n">message</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
-        <span class="p">)</span>
-        <span class="k">for</span> <span class="n">choice</span> <span class="ow">in</span> <span class="n">output</span><span class="o">.</span><span class="n">choices</span>
-    <span class="p">]</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_convert_stream_chunks_to_experience</span><span class="p">(</span><span class="n">chunks</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert streamed chat completion chunks to experiences.&quot;&quot;&quot;</span>
-    <span class="n">prompt_token_ids</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">by_choice</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
-
-    <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">chunks</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">prompt_token_ids</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="s2">&quot;prompt_token_ids&quot;</span><span class="p">):</span>
-            <span class="n">chunk_prompt_token_ids</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="s2">&quot;prompt_token_ids&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">chunk_prompt_token_ids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">prompt_token_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">chunk_prompt_token_ids</span><span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">choice</span> <span class="ow">in</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="s2">&quot;choices&quot;</span><span class="p">,</span> <span class="p">[])</span> <span class="ow">or</span> <span class="p">[]:</span>
-            <span class="n">idx</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">choice</span><span class="p">,</span> <span class="s2">&quot;index&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">idx</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">by_choice</span><span class="p">:</span>
-                <span class="n">by_choice</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                    <span class="s2">&quot;token_ids&quot;</span><span class="p">:</span> <span class="p">[],</span>
-                    <span class="s2">&quot;logprobs&quot;</span><span class="p">:</span> <span class="p">[],</span>
-                    <span class="s2">&quot;response_text_parts&quot;</span><span class="p">:</span> <span class="p">[],</span>
-                <span class="p">}</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">by_choice</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
-
-            <span class="n">token_ids</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">choice</span><span class="p">,</span> <span class="s2">&quot;token_ids&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">token_ids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;token_ids&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">token_ids</span><span class="p">)</span>
-
-            <span class="n">choice_logprobs</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">choice</span><span class="p">,</span> <span class="s2">&quot;logprobs&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-            <span class="k">if</span> <span class="p">(</span>
-                <span class="n">choice_logprobs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-                <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">choice_logprobs</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-            <span class="p">):</span>
-                <span class="k">for</span> <span class="n">token_logprob</span> <span class="ow">in</span> <span class="n">choice_logprobs</span><span class="o">.</span><span class="n">content</span><span class="p">:</span>
-                    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;logprobs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token_logprob</span><span class="o">.</span><span class="n">logprob</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">token_ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="n">token_id</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">token_logprob</span><span class="p">,</span> <span class="s2">&quot;token_id&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-                        <span class="k">if</span> <span class="n">token_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                            <span class="n">data</span><span class="p">[</span><span class="s2">&quot;token_ids&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">token_id</span><span class="p">)</span>
-
-            <span class="n">delta</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">choice</span><span class="p">,</span> <span class="s2">&quot;delta&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">delta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">delta_content</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">delta</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">delta_content</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">delta_content</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;response_text_parts&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">delta_content</span><span class="p">)</span>
-
-    <span class="n">prompt_token_ids</span> <span class="o">=</span> <span class="n">prompt_token_ids</span> <span class="ow">or</span> <span class="p">[]</span>
-    <span class="n">exps</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">by_choice</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">by_choice</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
-        <span class="n">response_token_ids</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;token_ids&quot;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">response_token_ids</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">continue</span>
-        <span class="n">response_text</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;response_text_parts&quot;</span><span class="p">])</span>
-        <span class="n">exps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="n">Experience</span><span class="p">(</span>
-                <span class="n">tokens</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">prompt_token_ids</span> <span class="o">+</span> <span class="n">response_token_ids</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span>
-                <span class="n">logprobs</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;logprobs&quot;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span>
-                <span class="n">prompt_length</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">prompt_token_ids</span><span class="p">),</span>
-                <span class="n">response_text</span><span class="o">=</span><span class="n">response_text</span><span class="p">,</span>
-            <span class="p">)</span>
-        <span class="p">)</span>
-    <span class="k">return</span> <span class="n">exps</span>
-
-
-<div class="viewcode-block" id="extract_logprobs">
-<a class="viewcode-back" href="../../../../build_api/trinity.common.models.model.html#trinity.common.models.model.extract_logprobs">[文档]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">extract_logprobs</span><span class="p">(</span><span class="n">choice</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract logprobs from a list of logprob dictionaries.&quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">choice</span><span class="p">,</span> <span class="s2">&quot;logprobs&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">choice</span><span class="o">.</span><span class="n">logprobs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
-        <span class="p">[</span><span class="n">logprob</span><span class="o">.</span><span class="n">logprob</span> <span class="k">for</span> <span class="n">logprob</span> <span class="ow">in</span> <span class="n">choice</span><span class="o">.</span><span class="n">logprobs</span><span class="o">.</span><span class="n">content</span><span class="p">],</span>
-        <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
-    <span class="p">)</span></div>
 
 </pre></div>
 

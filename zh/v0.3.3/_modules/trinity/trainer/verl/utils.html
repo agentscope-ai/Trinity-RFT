@@ -1015,11 +1015,45 @@ window.runMermaid = runMermaid;</script>
 <span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_gather_routed_experts</span><span class="p">(</span>
+    <span class="n">experiences</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">],</span> <span class="n">max_prompt_length</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">max_response_length</span><span class="p">:</span> <span class="nb">int</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Pad routed experts to the full left-padded sequence layout expected by verl.&quot;&quot;&quot;</span>
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">experiences</span><span class="p">)</span>
+    <span class="n">total_length</span> <span class="o">=</span> <span class="n">max_prompt_length</span> <span class="o">+</span> <span class="n">max_response_length</span>
+    <span class="n">routed_experts</span> <span class="o">=</span> <span class="n">experiences</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">routed_experts</span>
+    <span class="k">assert</span> <span class="n">routed_experts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;No routed_experts provided.&quot;</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">layer_num</span><span class="p">,</span> <span class="n">topk_num</span> <span class="o">=</span> <span class="n">routed_experts</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">batch_routed_experts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span>
+        <span class="n">batch_size</span><span class="p">,</span>
+        <span class="n">total_length</span><span class="p">,</span>
+        <span class="n">layer_num</span><span class="p">,</span>
+        <span class="n">topk_num</span><span class="p">,</span>
+        <span class="n">dtype</span><span class="o">=</span><span class="n">routed_experts</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">exp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">experiences</span><span class="p">):</span>
+        <span class="n">exp_routed_experts</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">routed_experts</span>
+        <span class="k">assert</span> <span class="n">exp_routed_experts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;No routed_experts provided.&quot;</span>
+        <span class="k">if</span> <span class="n">exp_routed_experts</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;Experience.routed_experts must have shape [seq_length - 1, layer_num, topk].&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">exp_routed_experts</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">!=</span> <span class="p">(</span><span class="n">layer_num</span><span class="p">,</span> <span class="n">topk_num</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;routed_experts shape is inconsistent across experiences.&quot;</span><span class="p">)</span>
+
+        <span class="n">start_pos</span> <span class="o">=</span> <span class="n">max_prompt_length</span> <span class="o">-</span> <span class="n">exp</span><span class="o">.</span><span class="n">prompt_length</span>
+        <span class="n">end_pos</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">start_pos</span> <span class="o">+</span> <span class="n">exp_routed_experts</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">total_length</span><span class="p">)</span>
+        <span class="n">batch_routed_experts</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="n">start_pos</span><span class="p">:</span><span class="n">end_pos</span><span class="p">]</span> <span class="o">=</span> <span class="n">exp_routed_experts</span><span class="p">[:</span> <span class="n">end_pos</span> <span class="o">-</span> <span class="n">start_pos</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">batch_routed_experts</span>
+
+
 <div class="viewcode-block" id="to_data_proto">
 <a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.utils.html#trinity.trainer.verl.utils.to_data_proto">[文档]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">to_data_proto</span><span class="p">(</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">to_data_proto</span><span class="p">(</span>  <span class="c1"># noqa: C901</span>
     <span class="n">experiences</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">],</span> <span class="n">pad_token_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">PreTrainedModel</span><span class="p">,</span> <span class="n">logger</span><span class="p">:</span> <span class="n">Logger</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataProto</span><span class="p">:</span>  <span class="c1"># noqa: C901</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataProto</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert List[Experience] to verl DataProto.&quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">experiences</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;No experiences provided.&quot;</span>
     <span class="k">if</span> <span class="n">experiences</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">experience_type</span> <span class="o">==</span> <span class="s2">&quot;dpo&quot;</span><span class="p">:</span>
@@ -1078,6 +1112,13 @@ window.runMermaid = runMermaid;</script>
     <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;advantages&quot;</span><span class="p">,</span> <span class="s2">&quot;returns&quot;</span><span class="p">,</span> <span class="s2">&quot;teacher_logprobs&quot;</span><span class="p">]:</span>
         <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">experiences</span><span class="p">):</span>
             <span class="n">batch_dict</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">gather_response_attrs</span><span class="p">(</span><span class="n">experiences</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">max_response_length</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">routed_experts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">experiences</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">routed_experts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">experiences</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;routed_experts are not consistent across experiences.&quot;</span><span class="p">)</span>
+        <span class="n">batch_dict</span><span class="p">[</span><span class="s2">&quot;routed_experts&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_gather_routed_experts</span><span class="p">(</span>
+            <span class="n">experiences</span><span class="p">,</span> <span class="n">max_prompt_length</span><span class="p">,</span> <span class="n">max_response_length</span>
+        <span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;get_rope_index&quot;</span><span class="p">):</span>
         <span class="c1"># used for multi-modal model</span>

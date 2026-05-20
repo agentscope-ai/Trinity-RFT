@@ -801,6 +801,7 @@ window.runMermaid = runMermaid;</script>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.sglang_patch.html">trinity.common.models.sglang_patch package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.vllm_patch.html">trinity.common.models.vllm_patch package</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.allocator.html">trinity.common.models.allocator module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.experience_extraction.html">trinity.common.models.experience_extraction module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.mm_utils.html">trinity.common.models.mm_utils module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.model.html">trinity.common.models.model module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.sglang_model.html">trinity.common.models.sglang_model module</a></li>
@@ -1034,6 +1035,10 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">InferenceModelConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">ROLLOUT_WEIGHT_SYNC_GROUP_NAME</span><span class="p">,</span> <span class="n">SyncMethod</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.experience</span><span class="w"> </span><span class="kn">import</span> <span class="n">Experience</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models.experience_extraction</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">decode_sglang_routed_experts</span><span class="p">,</span>
+    <span class="n">get_routed_experts_layout</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseInferenceModel</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.manager.synchronizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">Synchronizer</span>
 
@@ -1226,6 +1231,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">payload</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">&quot;sampling_params&quot;</span><span class="p">:</span> <span class="n">sampling_params</span><span class="p">,</span>
             <span class="s2">&quot;return_logprob&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;return_logprob&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+            <span class="s2">&quot;return_routed_experts&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;return_routed_experts&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
             <span class="s2">&quot;top_logprobs_num&quot;</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;top_logprobs_num&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span>
             <span class="s2">&quot;return_text_in_logprobs&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
             <span class="s2">&quot;input_ids&quot;</span><span class="p">:</span> <span class="n">input_ids</span><span class="p">,</span>
@@ -1271,12 +1277,6 @@ window.runMermaid = runMermaid;</script>
             <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">enable_openai_api</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;SGLANG_GRPC_PORT&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;12345&quot;</span>  <span class="c1"># a dummy port not actually used</span>
         <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;SGLANG_ENABLE_GRPC&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;0&quot;</span>
-        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span>
-            <span class="s2">&quot;NCCL_P2P_DISABLE&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span>
-        <span class="p">)</span>  <span class="c1"># default to disabling NCCL P2P, but preserve any explicit process configuration</span>
-        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span>
-            <span class="s2">&quot;NCCL_SHM_DISABLE&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span>
-        <span class="p">)</span>  <span class="c1"># default to disabling NCCL SHM, but preserve any explicit process configuration</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">api_server_host</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">api_server_port</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">api_server</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span><span class="p">[</span><span class="kc">None</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -1287,7 +1287,8 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">_prepared</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_has_weight_update_group</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">async_lock</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">group_name</span> <span class="o">=</span> <span class="n">ROLLOUT_WEIGHT_SYNC_GROUP_NAME</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">group_name</span> <span class="o">=</span> <span class="n">ROLLOUT_WEIGHT_SYNC_GROUP_NAME</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_routed_experts_layout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 <div class="viewcode-block" id="SGLangRolloutModel.init_process_group">
@@ -1351,6 +1352,8 @@ window.runMermaid = runMermaid;</script>
         <span class="k">async</span> <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">async_lock</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepared</span><span class="p">:</span>
                 <span class="k">return</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">enable_return_routed_experts</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_get_routed_experts_layout</span><span class="p">()</span>
             <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_api_server</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_prepared</span> <span class="o">=</span> <span class="kc">True</span></div>
 
@@ -1370,6 +1373,29 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">normalized_message</span><span class="p">[</span><span class="s2">&quot;content&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text_parts</span><span class="p">)</span>
             <span class="n">normalized_messages</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">normalized_message</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">normalized_messages</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_routed_experts_layout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_routed_experts_layout</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">model_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">model_path</span>
+            <span class="k">assert</span> <span class="n">model_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;model_path must be set to decode routed_experts.&quot;</span>
+            <span class="n">layout</span> <span class="o">=</span> <span class="n">get_routed_experts_layout</span><span class="p">(</span>
+                <span class="n">model_path</span><span class="p">,</span>
+                <span class="n">trust_remote_code</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">trust_remote_code</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">assert</span> <span class="p">(</span>
+                <span class="n">layout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="p">),</span> <span class="s2">&quot;Model config must expose num_hidden_layers and num_experts_per_tok.&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_routed_experts_layout</span> <span class="o">=</span> <span class="n">layout</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_routed_experts_layout</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_extract_routed_experts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">routed_experts_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">total_tokens</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+        <span class="n">routed_experts</span> <span class="o">=</span> <span class="n">decode_sglang_routed_experts</span><span class="p">(</span>
+            <span class="n">routed_experts_str</span><span class="p">,</span>
+            <span class="n">total_tokens</span><span class="p">,</span>
+            <span class="n">layout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_get_routed_experts_layout</span><span class="p">(),</span>
+        <span class="p">)</span>
+        <span class="k">assert</span> <span class="n">routed_experts</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">routed_experts</span>
 
 <div class="viewcode-block" id="SGLangRolloutModel.generate">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.models.sglang_model.html#trinity.common.models.sglang_model.SGLangRolloutModel.generate">[docs]</a>
@@ -1397,6 +1423,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">stop</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;stop&quot;</span><span class="p">),</span>
             <span class="n">ignore_eos</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ignore_eos&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">ignore_eos</span><span class="p">),</span>
             <span class="n">return_logprob</span><span class="o">=</span><span class="n">return_logprob</span><span class="p">,</span>
+            <span class="n">return_routed_experts</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">enable_return_routed_experts</span><span class="p">,</span>
             <span class="n">timeout</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;timeout&quot;</span><span class="p">,</span> <span class="mi">300</span><span class="p">),</span>
         <span class="p">)</span>
 
@@ -1418,6 +1445,17 @@ window.runMermaid = runMermaid;</script>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">response_logprobs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
 
+            <span class="n">routed_experts</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">routed_experts_value</span> <span class="o">=</span> <span class="n">meta_info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;routed_experts&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">enable_return_routed_experts</span> <span class="ow">and</span> <span class="n">routed_experts_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">routed_experts_value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="n">routed_experts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_extract_routed_experts</span><span class="p">(</span>
+                        <span class="n">routed_experts_value</span><span class="p">,</span>
+                        <span class="n">total_tokens</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">prompt_token_ids</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">response_token_ids</span><span class="p">),</span>
+                    <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">routed_experts</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">routed_experts_value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+
             <span class="n">experiences</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="n">Experience</span><span class="p">(</span>
                     <span class="n">tokens</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">prompt_token_ids</span> <span class="o">+</span> <span class="n">response_token_ids</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span>
@@ -1425,6 +1463,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">prompt_length</span><span class="o">=</span><span class="n">prompt_length</span><span class="p">,</span>
                     <span class="n">prompt_text</span><span class="o">=</span><span class="n">prompt_text</span><span class="p">,</span>
                     <span class="n">response_text</span><span class="o">=</span><span class="n">response_text</span><span class="p">,</span>
+                    <span class="n">routed_experts</span><span class="o">=</span><span class="n">routed_experts</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">experiences</span></div>
@@ -1511,6 +1550,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">node_rank</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">node_rank</span><span class="p">,</span>
             <span class="n">master_addr</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">master_addr</span><span class="p">,</span>
             <span class="n">master_port</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">master_port</span><span class="p">,</span>
+            <span class="n">enable_return_routed_experts</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">enable_return_routed_experts</span><span class="p">,</span>
             <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">server_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;http://</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">api_server_host</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">api_server_port</span><span class="si">}</span><span class="s2">&quot;</span>
