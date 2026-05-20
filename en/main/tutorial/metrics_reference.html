@@ -426,6 +426,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.dlc_utils.html">trinity.utils.dlc_utils module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.log.html">trinity.utils.log module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.lora_utils.html">trinity.utils.lora_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.metrics.html">trinity.utils.metrics module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.monitor.html">trinity.utils.monitor module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.plugin_loader.html">trinity.utils.plugin_loader module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.registry.html">trinity.utils.registry module</a></li>
@@ -631,6 +632,7 @@
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#metric-naming-convention">Metric Naming Convention</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#aggregation-type-suffix">Aggregation Type Suffix</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#metric-categories">Metric Categories</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#explorer-metrics">Explorer Metrics</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#rollout-metrics-rollout">Rollout Metrics (<code class="docutils literal notranslate"><span class="pre">rollout/</span></code>)</a></li>
@@ -667,7 +669,67 @@
 <li><p><strong>Category</strong>: Broad functional area (rollout, eval, time, actor, critic, etc.)</p></li>
 <li><p><strong>Taskset name</strong>: Name of the taskset used, only applicable for eval metrics</p></li>
 <li><p><strong>Metric name</strong>: Specific metric being measured</p></li>
-<li><p><strong>Statistic</strong>: Aggregation method (mean, max, min, std, etc.) if applicable</p></li>
+<li><p><strong>Statistic</strong>: Aggregation method (mean, max, min, std, sum, etc.) if applicable</p></li>
+</ul>
+</section>
+<section id="aggregation-type-suffix">
+<h2>Aggregation Type Suffix<a class="headerlink" href="#aggregation-type-suffix" title="Link to this heading">#</a></h2>
+<p>Metric keys can optionally carry an <strong>aggregation type suffix</strong> to control how the metric is aggregated across experiences, runs, tasks, and steps. The suffix is appended to the key with a colon separator:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">metric_name</span><span class="o">&gt;</span><span class="p">:</span><span class="o">&lt;</span><span class="n">agg_type</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>Supported aggregation types:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Suffix</p></th>
+<th class="head"><p>Behavior</p></th>
+<th class="head"><p>Output key example</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><em>(none)</em></p></td>
+<td><p>Mean (default)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">rollout/accuracy/mean</span></code>, <code class="docutils literal notranslate"><span class="pre">/max</span></code>, <code class="docutils literal notranslate"><span class="pre">/min</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">:sum</span></code></p></td>
+<td><p>Sum</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">rollout/total_tokens/sum</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">:max</span></code></p></td>
+<td><p>Maximum</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">rollout/latency/max</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">:min</span></code></p></td>
+<td><p>Minimum</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">rollout/latency/min</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">:last</span></code></p></td>
+<td><p>Last observed value</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">rollout/model_version/last</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Keys without a suffix default to <strong>mean</strong> aggregation, which preserves full backward compatibility with existing workflows and operators.</p>
+<p><strong>Example usage in a workflow:</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Default mean aggregation (backward compatible)</span>
+<span class="n">exp</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;accuracy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.85</span>
+<span class="n">exp</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;reward&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+<span class="c1"># Explicit sum aggregation</span>
+<span class="n">exp</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;total_tokens:sum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span>
+<span class="n">exp</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;time/env_interaction:sum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">elapsed_time</span>
+
+<span class="c1"># Last-value aggregation</span>
+<span class="n">exp</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;model_version:last&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_version</span>
+</pre></div>
+</div>
+<p>All aggregation logic is implemented in <code class="docutils literal notranslate"><span class="pre">trinity.utils.metrics</span></code>, which provides:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">parse_metric_key(key)</span></code>: Parse a metric key into <code class="docutils literal notranslate"><span class="pre">(name,</span> <span class="pre">AggType)</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">aggregate_metrics(metric_dicts,</span> <span class="pre">prefix,</span> <span class="pre">...)</span></code>: Batch-level aggregation (task → step) for training metrics.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">aggregate_eval_metrics(metric_dicts,</span> <span class="pre">prefix,</span> <span class="pre">...)</span></code>: Batch-level aggregation for evaluation metrics.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">aggregate_run_level_metrics(metric_dicts)</span></code>: Experience-level → run-level aggregation.</p></li>
 </ul>
 </section>
 <section id="metric-categories">
@@ -685,15 +747,16 @@
 <ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">rollout/accuracy/mean</span></code>: Average accuracy of generated responses</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">rollout/format_score/mean</span></code>: Average format correctness score</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rollout/total_tokens/sum</span></code>: Total token count (sum aggregation)</p></li>
 </ul>
 </li>
 </ul>
 <p><strong>Metric Aggregation Process</strong>:</p>
 <p>Consider an exploration step with <code class="docutils literal notranslate"><span class="pre">batch_size</span></code> tasks, where each task has <code class="docutils literal notranslate"><span class="pre">repeat_times</span></code> runs. Rollout metrics (e.g., <code class="docutils literal notranslate"><span class="pre">rollout/</span></code>) are computed and aggregated at different levels:</p>
 <ul class="simple">
-<li><p>From <em>experiences</em> to <em>run level</em> (only effective for workflows with <code class="docutils literal notranslate"><span class="pre">can_repeat=False</span></code>): In <code class="docutils literal notranslate"><span class="pre">calculate_run_level_metrics</span></code> function, metrics are aggregated across all experiences generated by each run. This usually accounts for the general multi-turn workflow scenario where a single run may produce multiple experiences.</p></li>
-<li><p>From <em>run level</em> to <em>task level</em>: In <code class="docutils literal notranslate"><span class="pre">calculate_task_level_metrics</span></code> function, metrics are aggregated across <code class="docutils literal notranslate"><span class="pre">repeat_times</span></code> runs of the same task. For example, <code class="docutils literal notranslate"><span class="pre">rollout/accuracy</span></code> is the average accuracy of all runs of the task.</p></li>
-<li><p>From <em>task level</em> to <em>step level</em>: In <code class="docutils literal notranslate"><span class="pre">gather_metrics</span></code> function, metrics are aggregated across all tasks in the step. For example, <code class="docutils literal notranslate"><span class="pre">rollout/accuracy/mean</span></code>, <code class="docutils literal notranslate"><span class="pre">rollout/accuracy/max</span></code>, <code class="docutils literal notranslate"><span class="pre">rollout/accuracy/min</span></code> are the average, max, and min accuracy (<code class="docutils literal notranslate"><span class="pre">rollout/accuracy</span></code>) of all tasks in the step.</p></li>
+<li><p>From <em>experiences</em> to <em>run level</em> (only effective for workflows with <code class="docutils literal notranslate"><span class="pre">can_repeat=False</span></code>): In <code class="docutils literal notranslate"><span class="pre">aggregate_run_level_metrics</span></code>, metrics are aggregated across all experiences generated by each run. The aggregation respects the <code class="docutils literal notranslate"><span class="pre">:agg</span></code> suffix — keys without a suffix are averaged, keys with <code class="docutils literal notranslate"><span class="pre">:sum</span></code> are summed, etc.</p></li>
+<li><p>From <em>run level</em> to <em>task level</em>: In <code class="docutils literal notranslate"><span class="pre">calculate_task_level_metrics</span></code>, metrics are aggregated across <code class="docutils literal notranslate"><span class="pre">repeat_times</span></code> runs of the same task. For example, <code class="docutils literal notranslate"><span class="pre">rollout/accuracy</span></code> is the average accuracy of all runs of the task.</p></li>
+<li><p>From <em>task level</em> to <em>step level</em>: In <code class="docutils literal notranslate"><span class="pre">aggregate_metrics</span></code>, metrics are aggregated across all tasks in the step. For example, <code class="docutils literal notranslate"><span class="pre">rollout/accuracy/mean</span></code>, <code class="docutils literal notranslate"><span class="pre">rollout/accuracy/max</span></code>, <code class="docutils literal notranslate"><span class="pre">rollout/accuracy/min</span></code> are the average, max, and min accuracy (<code class="docutils literal notranslate"><span class="pre">rollout/accuracy</span></code>) of all tasks in the step. For <code class="docutils literal notranslate"><span class="pre">:sum</span></code> metrics, only the <code class="docutils literal notranslate"><span class="pre">/sum</span></code> statistic is output.</p></li>
 </ul>
 <p>The following diagram illustrates the aggregation process for rollout metrics:</p>
 <div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>graph TD
@@ -746,9 +809,9 @@
 <p><strong>Metric Aggregation Process</strong>:</p>
 <p>Consider an evaluation step with <code class="docutils literal notranslate"><span class="pre">len(eval_taskset)</span></code> tasks, where each task has <code class="docutils literal notranslate"><span class="pre">repeat_times</span></code> runs. Evaluation metrics (e.g., <code class="docutils literal notranslate"><span class="pre">eval/</span></code>, <code class="docutils literal notranslate"><span class="pre">bench/</span></code>) are computed and aggregated at different levels:</p>
 <ul class="simple">
-<li><p>From <em>experiences</em> to <em>run level</em> (only effective for workflows with <code class="docutils literal notranslate"><span class="pre">can_repeat=False</span></code>): In <code class="docutils literal notranslate"><span class="pre">calculate_run_level_metrics</span></code> function, metrics are aggregated across all experiences generated by each run. This usually accounts for the general multi-turn workflow scenario where a single run may produce multiple experiences.</p></li>
-<li><p>From <em>run level</em> to <em>task level</em>: In <code class="docutils literal notranslate"><span class="pre">calculate_task_level_metrics</span></code> function, metrics are aggregated across <code class="docutils literal notranslate"><span class="pre">repeat_times</span></code> runs of the same task. For example, <code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy/mean&#64;2</span></code> is the average accuracy of all runs of the task.</p></li>
-<li><p>From <em>task level</em> to <em>step level</em>: In <code class="docutils literal notranslate"><span class="pre">gather_eval_metrics</span></code> function, metrics are aggregated across all tasks in the step. For example, <code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy/mean&#64;2</span></code>, <code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy/std&#64;2</span></code>, <code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy/best&#64;2</span></code>, <code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy/worst&#64;2</span></code> are the average, std, best, and worst accuracy (<code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy</span></code>) of all tasks in the step.</p></li>
+<li><p>From <em>experiences</em> to <em>run level</em> (only effective for workflows with <code class="docutils literal notranslate"><span class="pre">can_repeat=False</span></code>): In <code class="docutils literal notranslate"><span class="pre">aggregate_run_level_metrics</span></code>, metrics are aggregated across all experiences generated by each run.</p></li>
+<li><p>From <em>run level</em> to <em>task level</em>: In <code class="docutils literal notranslate"><span class="pre">calculate_task_level_metrics</span></code>, metrics are aggregated across <code class="docutils literal notranslate"><span class="pre">repeat_times</span></code> runs of the same task. For default (mean) metrics, bootstrap statistics are computed: <code class="docutils literal notranslate"><span class="pre">mean&#64;N</span></code>, <code class="docutils literal notranslate"><span class="pre">std&#64;N</span></code>, <code class="docutils literal notranslate"><span class="pre">best&#64;N</span></code>, <code class="docutils literal notranslate"><span class="pre">worst&#64;N</span></code>. For non-mean metrics (<code class="docutils literal notranslate"><span class="pre">:sum</span></code>, <code class="docutils literal notranslate"><span class="pre">:max</span></code>, etc.), only the corresponding single aggregation is output.</p></li>
+<li><p>From <em>task level</em> to <em>step level</em>: In <code class="docutils literal notranslate"><span class="pre">aggregate_eval_metrics</span></code>, metrics are aggregated across all tasks in the step. For example, <code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy/mean&#64;2</span></code>, <code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy/std&#64;2</span></code>, <code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy/best&#64;2</span></code>, <code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy/worst&#64;2</span></code> are the average, std, best, and worst accuracy (<code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy</span></code>) of all tasks in the step.</p></li>
 </ul>
 <p>The following diagram illustrates the aggregation process on a dummy dataset with three tasks for evaluation metrics. By default, <code class="docutils literal notranslate"><span class="pre">mean&#64;k</span></code>, <code class="docutils literal notranslate"><span class="pre">std&#64;k</span></code>, <code class="docutils literal notranslate"><span class="pre">best&#64;k</span></code>, <code class="docutils literal notranslate"><span class="pre">worst&#64;k</span></code> of the metrics across all evaluation tasks are reported. You can set <code class="docutils literal notranslate"><span class="pre">monitor.detailed_stats</span></code> to <code class="docutils literal notranslate"><span class="pre">True</span></code> in the config to return detailed statistics.</p>
 <div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>graph TD
@@ -912,6 +975,7 @@
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#metric-naming-convention">Metric Naming Convention</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#aggregation-type-suffix">Aggregation Type Suffix</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#metric-categories">Metric Categories</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#explorer-metrics">Explorer Metrics</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#rollout-metrics-rollout">Rollout Metrics (<code class="docutils literal notranslate"><span class="pre">rollout/</span></code>)</a></li>

@@ -432,6 +432,7 @@
 <li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.dlc_utils.html">trinity.utils.dlc_utils module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.log.html">trinity.utils.log module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.lora_utils.html">trinity.utils.lora_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.metrics.html">trinity.utils.metrics module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.monitor.html">trinity.utils.monitor module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.plugin_loader.html">trinity.utils.plugin_loader module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../build_api/trinity.utils.registry.html">trinity.utils.registry module</a></li>
@@ -637,7 +638,8 @@
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">指标命名规范</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">指标类别</a><ul class="nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">聚合类型后缀</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">指标类别</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#explorer">Explorer 相关指标</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#rollout-rollout">Rollout 指标（<code class="docutils literal notranslate"><span class="pre">rollout/</span></code>）</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#eval-bench">评估指标（<code class="docutils literal notranslate"><span class="pre">eval/</span></code>）和基准测试指标（<code class="docutils literal notranslate"><span class="pre">bench/</span></code>）</a></li>
@@ -645,7 +647,7 @@
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trainer">Trainer 相关指标</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">数据处理指标</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">数据处理指标</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#experience-pipeline-experience-pipeline-experience-pipeline-time">Experience Pipeline 相关指标（<code class="docutils literal notranslate"><span class="pre">experience_pipeline/</span></code> 和 <code class="docutils literal notranslate"><span class="pre">experience_pipeline/time/</span></code>）</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#sample">采样相关指标（<code class="docutils literal notranslate"><span class="pre">sample/</span></code>）</a></li>
 </ul>
@@ -673,11 +675,71 @@
 <li><p><strong>Category（类别）</strong>：广泛的功能领域（rollout、eval、time、actor、critic 等）</p></li>
 <li><p><strong>Taskset name（任务集名称）</strong>：使用的任务集名称，仅适用于评估阶段的指标</p></li>
 <li><p><strong>Metric name（指标名称）</strong>：正在测量的具体指标</p></li>
-<li><p><strong>Statistic（统计量）</strong>：统计指标（mean、max、min、std 等，如适用）</p></li>
+<li><p><strong>Statistic（统计量）</strong>：统计指标（mean、max、min、std、sum 等，如适用）</p></li>
 </ul>
 </section>
 <section id="id3">
-<h2>指标类别<a class="headerlink" href="#id3" title="Link to this heading">#</a></h2>
+<h2>聚合类型后缀<a class="headerlink" href="#id3" title="Link to this heading">#</a></h2>
+<p>Metric key 可以通过 <strong>聚合类型后缀</strong> 来控制该指标在 experience、run、task、step 各层级的聚合方式。后缀通过冒号分隔附加在 key 末尾：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">&lt;</span><span class="n">metric_name</span><span class="o">&gt;</span><span class="p">:</span><span class="o">&lt;</span><span class="n">agg_type</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>支持的聚合类型：</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>后缀</p></th>
+<th class="head"><p>行为</p></th>
+<th class="head"><p>输出 key 示例</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><em>（无）</em></p></td>
+<td><p>取平均值（默认）</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">rollout/accuracy/mean</span></code>, <code class="docutils literal notranslate"><span class="pre">/max</span></code>, <code class="docutils literal notranslate"><span class="pre">/min</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">:sum</span></code></p></td>
+<td><p>求和</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">rollout/total_tokens/sum</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">:max</span></code></p></td>
+<td><p>取最大值</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">rollout/latency/max</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">:min</span></code></p></td>
+<td><p>取最小值</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">rollout/latency/min</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">:last</span></code></p></td>
+<td><p>取最后一个值</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">rollout/model_version/last</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>不带后缀的 key 默认使用 <strong>mean</strong> 聚合，这保证了与现有 workflow 和 operator 的完全向后兼容。</p>
+<p><strong>在 workflow 中的使用示例：</strong></p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># 默认 mean 聚合（向后兼容）</span>
+<span class="n">exp</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;accuracy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.85</span>
+<span class="n">exp</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;reward&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+<span class="c1"># 显式 sum 聚合</span>
+<span class="n">exp</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;total_tokens:sum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span>
+<span class="n">exp</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;time/env_interaction:sum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">elapsed_time</span>
+
+<span class="c1"># last 聚合（取最后一个值）</span>
+<span class="n">exp</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;model_version:last&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_version</span>
+</pre></div>
+</div>
+<p>所有聚合逻辑统一实现在 <code class="docutils literal notranslate"><span class="pre">trinity.utils.metrics</span></code> 中，提供以下函数：</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">parse_metric_key(key)</span></code>：将 metric key 解析为 <code class="docutils literal notranslate"><span class="pre">(name,</span> <span class="pre">AggType)</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">aggregate_metrics(metric_dicts,</span> <span class="pre">prefix,</span> <span class="pre">...)</span></code>：训练阶段的 batch 级别聚合（task → step）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">aggregate_eval_metrics(metric_dicts,</span> <span class="pre">prefix,</span> <span class="pre">...)</span></code>：评估阶段的 batch 级别聚合。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">aggregate_run_level_metrics(metric_dicts)</span></code>：experience 级别 → run 级别聚合。</p></li>
+</ul>
+</section>
+<section id="id4">
+<h2>指标类别<a class="headerlink" href="#id4" title="Link to this heading">#</a></h2>
 <p>以下内容按指标来源（生成位置）和指标前缀（指标名称的第一部分）对指标进行分类。</p>
 <section id="explorer">
 <h3>Explorer 相关指标<a class="headerlink" href="#explorer" title="Link to this heading">#</a></h3>
@@ -691,15 +753,16 @@
 <ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">rollout/accuracy/mean</span></code>：生成响应的平均准确率</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">rollout/format_score/mean</span></code>：平均格式正确性分数</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rollout/total_tokens/sum</span></code>：总 token 数量（sum 聚合）</p></li>
 </ul>
 </li>
 </ul>
 <p><strong>指标计算过程</strong>：</p>
 <p>考虑一个包含 <code class="docutils literal notranslate"><span class="pre">batch_size</span></code> 个任务的探索步骤，其中每个任务有 <code class="docutils literal notranslate"><span class="pre">repeat_times</span></code> 次运行。Rollout 指标（例如，<code class="docutils literal notranslate"><span class="pre">rollout/</span></code>）在不同级别的计算过程如下：</p>
 <ul class="simple">
-<li><p>从<em>Experiences</em>到<em>Run 级别</em>（仅对 <code class="docutils literal notranslate"><span class="pre">can_repeat=False</span></code> 的 workflows 有效）：在 <code class="docutils literal notranslate"><span class="pre">calculate_run_level_metrics</span></code> 函数中，在每次 run 生成的所有 experiences 中求平均得到 run 级别指标。这通常是为了适应通用多轮场景，其中单个 run 可能产生多个 experiences。</p></li>
-<li><p>从<em>Run 级别</em>到<em>Task 级别</em>：在 <code class="docutils literal notranslate"><span class="pre">calculate_task_level_metrics</span></code> 函数中，指标跨同一任务的 <code class="docutils literal notranslate"><span class="pre">repeat_times</span></code> 次运行聚合。例如，<code class="docutils literal notranslate"><span class="pre">rollout/accuracy</span></code> 是该任务所有运行的平均准确率。</p></li>
-<li><p>从<em>Task 级别</em>到<em>Step 级别</em>：在 <code class="docutils literal notranslate"><span class="pre">gather_metrics</span></code> 函数中，指标跨步骤中所有任务聚合。例如，<code class="docutils literal notranslate"><span class="pre">rollout/accuracy/mean</span></code>、<code class="docutils literal notranslate"><span class="pre">rollout/accuracy/max</span></code>、<code class="docutils literal notranslate"><span class="pre">rollout/accuracy/min</span></code> 分别是步骤中所有任务的准确率（<code class="docutils literal notranslate"><span class="pre">rollout/accuracy</span></code>）的平均值、最大值和最小值。</p></li>
+<li><p>从 <em>Experiences</em> 到 <em>Run 级别</em>（仅对 <code class="docutils literal notranslate"><span class="pre">can_repeat=False</span></code> 的 workflows 有效）：在 <code class="docutils literal notranslate"><span class="pre">aggregate_run_level_metrics</span></code> 函数中，在每次 run 生成的所有 experiences 中聚合得到 run 级别指标。聚合方式遵循 <code class="docutils literal notranslate"><span class="pre">:agg</span></code> 后缀——不带后缀的 key 取平均，带 <code class="docutils literal notranslate"><span class="pre">:sum</span></code> 的 key 求和，以此类推。</p></li>
+<li><p>从 <em>Run 级别</em> 到 <em>Task 级别</em>：在 <code class="docutils literal notranslate"><span class="pre">calculate_task_level_metrics</span></code> 函数中，指标跨同一任务的 <code class="docutils literal notranslate"><span class="pre">repeat_times</span></code> 次运行聚合。例如，<code class="docutils literal notranslate"><span class="pre">rollout/accuracy</span></code> 是该任务所有运行的平均准确率。</p></li>
+<li><p>从 <em>Task 级别</em> 到 <em>Step 级别</em>：在 <code class="docutils literal notranslate"><span class="pre">aggregate_metrics</span></code> 函数中，指标跨步骤中所有任务聚合。例如，<code class="docutils literal notranslate"><span class="pre">rollout/accuracy/mean</span></code>、<code class="docutils literal notranslate"><span class="pre">rollout/accuracy/max</span></code>、<code class="docutils literal notranslate"><span class="pre">rollout/accuracy/min</span></code> 分别是步骤中所有任务的准确率（<code class="docutils literal notranslate"><span class="pre">rollout/accuracy</span></code>）的平均值、最大值和最小值。对于 <code class="docutils literal notranslate"><span class="pre">:sum</span></code> 类型的指标，仅输出 <code class="docutils literal notranslate"><span class="pre">/sum</span></code> 统计量。</p></li>
 </ul>
 <p>以下图表说明了 rollout 指标的计算过程：</p>
 <div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>graph TD
@@ -753,9 +816,9 @@
 <p><strong>指标计算过程</strong>：</p>
 <p>考虑一个包含 <code class="docutils literal notranslate"><span class="pre">len(eval_taskset)</span></code> 个任务的评估步骤，其中每个任务有 <code class="docutils literal notranslate"><span class="pre">repeat_times</span></code> 次运行。评估指标（例如，<code class="docutils literal notranslate"><span class="pre">eval/</span></code>、<code class="docutils literal notranslate"><span class="pre">bench/</span></code>）在不同级别计算和聚合：</p>
 <ul class="simple">
-<li><p>从<em>Experiences</em>到<em>Run 级别</em>（仅对 <code class="docutils literal notranslate"><span class="pre">can_repeat=False</span></code> 的 workflows 有效）：在 <code class="docutils literal notranslate"><span class="pre">calculate_run_level_metrics</span></code> 函数中，在每次 run 生成的所有 experiences 中求平均得到 run 级别指标。这通常是为了适应通用多轮场景，其中单个 run 可能产生多个 experiences。</p></li>
-<li><p>从<em>Run 级别</em>到<em>Task 级别</em>：在 <code class="docutils literal notranslate"><span class="pre">calculate_task_level_metrics</span></code> 函数中，指标跨同一任务的 <code class="docutils literal notranslate"><span class="pre">repeat_times</span></code> 次运行聚合。例如，<code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy/mean&#64;2</span></code> 是该任务所有运行的平均准确率。</p></li>
-<li><p>从<em>Task 级别</em>到<em>Step 级别</em>：在 <code class="docutils literal notranslate"><span class="pre">gather_eval_metrics</span></code> 函数中，指标跨步骤中所有任务聚合。例如，<code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy/mean&#64;2</span></code>、<code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy/std&#64;2</span></code>、<code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy/best&#64;2</span></code>、<code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy/worst&#64;2</span></code> 分别是步骤中所有任务的准确率（<code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy</span></code>）的平均值、标准差、最佳值和最差值。</p></li>
+<li><p>从 <em>Experiences</em> 到 <em>Run 级别</em>（仅对 <code class="docutils literal notranslate"><span class="pre">can_repeat=False</span></code> 的 workflows 有效）：在 <code class="docutils literal notranslate"><span class="pre">aggregate_run_level_metrics</span></code> 函数中，在每次 run 生成的所有 experiences 中聚合得到 run 级别指标。</p></li>
+<li><p>从 <em>Run 级别</em> 到 <em>Task 级别</em>：在 <code class="docutils literal notranslate"><span class="pre">calculate_task_level_metrics</span></code> 函数中，指标跨同一任务的 <code class="docutils literal notranslate"><span class="pre">repeat_times</span></code> 次运行聚合。对于默认（mean）指标，会计算 bootstrap 统计量：<code class="docutils literal notranslate"><span class="pre">mean&#64;N</span></code>、<code class="docutils literal notranslate"><span class="pre">std&#64;N</span></code>、<code class="docutils literal notranslate"><span class="pre">best&#64;N</span></code>、<code class="docutils literal notranslate"><span class="pre">worst&#64;N</span></code>。对于非 mean 指标（<code class="docutils literal notranslate"><span class="pre">:sum</span></code>、<code class="docutils literal notranslate"><span class="pre">:max</span></code> 等），仅输出对应的单一聚合值。</p></li>
+<li><p>从 <em>Task 级别</em> 到 <em>Step 级别</em>：在 <code class="docutils literal notranslate"><span class="pre">aggregate_eval_metrics</span></code> 函数中，指标跨步骤中所有任务聚合。例如，<code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy/mean&#64;2</span></code>、<code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy/std&#64;2</span></code>、<code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy/best&#64;2</span></code>、<code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy/worst&#64;2</span></code> 分别是步骤中所有任务的准确率（<code class="docutils literal notranslate"><span class="pre">eval/dummy/accuracy</span></code>）的平均值、标准差、最佳值和最差值。</p></li>
 </ul>
 <p>以下图表说明了在包含三个任务的虚拟数据集上评估指标的计算过程。默认情况下，报告所有评估任务中指标的 <code class="docutils literal notranslate"><span class="pre">mean&#64;k</span></code>、<code class="docutils literal notranslate"><span class="pre">std&#64;k</span></code>、<code class="docutils literal notranslate"><span class="pre">best&#64;k</span></code>、<code class="docutils literal notranslate"><span class="pre">worst&#64;k</span></code>。你可以在配置中将 <code class="docutils literal notranslate"><span class="pre">monitor.detailed_stats</span></code> 设置为 <code class="docutils literal notranslate"><span class="pre">True</span></code> 以返回详细统计信息。</p>
 <div class="highlight-mermaid notranslate"><div class="highlight"><pre><span></span>graph TD
@@ -822,8 +885,8 @@
 <h3>Trainer 相关指标<a class="headerlink" href="#trainer" title="Link to this heading">#</a></h3>
 <p>此类别包括跟踪 actor 模型（<code class="docutils literal notranslate"><span class="pre">actor/</span></code>）和 critic 模型（<code class="docutils literal notranslate"><span class="pre">critic/</span></code>）的训练动态的指标，以及一些性能指标（<code class="docutils literal notranslate"><span class="pre">perf/</span></code>、<code class="docutils literal notranslate"><span class="pre">global_seqlen/</span></code>、<code class="docutils literal notranslate"><span class="pre">response_length/</span></code>、<code class="docutils literal notranslate"><span class="pre">prompt_length/</span></code>、<code class="docutils literal notranslate"><span class="pre">time/</span></code>）。这些指标和 <a class="reference external" href="https://github.com/volcengine/verl">veRL</a> 中的指标一致，感兴趣的用户可以参考 <a class="reference external" href="https://verl.readthedocs.io/en/latest/index.html">veRL 文档</a> 了解更多详细信息。</p>
 </section>
-<section id="id4">
-<h3>数据处理指标<a class="headerlink" href="#id4" title="Link to this heading">#</a></h3>
+<section id="id5">
+<h3>数据处理指标<a class="headerlink" href="#id5" title="Link to this heading">#</a></h3>
 <p>此类别包括跟踪通过各种数据处理操作（<code class="docutils literal notranslate"><span class="pre">experience_pipeline/</span></code>）和数据采样统计（<code class="docutils literal notranslate"><span class="pre">sample/</span></code>）的指标。这些指标在步骤（step）级别计算，因为 experience 处理和数据采样会在每个步骤中执行一次。</p>
 <section id="experience-pipeline-experience-pipeline-experience-pipeline-time">
 <h4>Experience Pipeline 相关指标（<code class="docutils literal notranslate"><span class="pre">experience_pipeline/</span></code> 和 <code class="docutils literal notranslate"><span class="pre">experience_pipeline/time/</span></code>）<a class="headerlink" href="#experience-pipeline-experience-pipeline-experience-pipeline-time" title="Link to this heading">#</a></h4>
@@ -919,7 +982,8 @@
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">指标命名规范</a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">指标类别</a><ul class="nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">聚合类型后缀</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">指标类别</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#explorer">Explorer 相关指标</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#rollout-rollout">Rollout 指标（<code class="docutils literal notranslate"><span class="pre">rollout/</span></code>）</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#eval-bench">评估指标（<code class="docutils literal notranslate"><span class="pre">eval/</span></code>）和基准测试指标（<code class="docutils literal notranslate"><span class="pre">bench/</span></code>）</a></li>
@@ -927,7 +991,7 @@
 </ul>
 </li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trainer">Trainer 相关指标</a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">数据处理指标</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">数据处理指标</a><ul class="nav section-nav flex-column">
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#experience-pipeline-experience-pipeline-experience-pipeline-time">Experience Pipeline 相关指标（<code class="docutils literal notranslate"><span class="pre">experience_pipeline/</span></code> 和 <code class="docutils literal notranslate"><span class="pre">experience_pipeline/time/</span></code>）</a></li>
 <li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#sample">采样相关指标（<code class="docutils literal notranslate"><span class="pre">sample/</span></code>）</a></li>
 </ul>

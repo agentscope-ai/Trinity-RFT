@@ -997,7 +997,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.workflows</span><span class="w"> </span><span class="kn">import</span> <span class="n">Task</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.explorer.scheduler</span><span class="w"> </span><span class="kn">import</span> <span class="n">Scheduler</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.monitor</span><span class="w"> </span><span class="kn">import</span> <span class="n">gather_eval_metrics</span><span class="p">,</span> <span class="n">gather_metrics</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">aggregate_eval_metrics</span><span class="p">,</span> <span class="n">aggregate_metrics</span>
 
 <span class="n">BatchId</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
 <span class="n">BatchType</span> <span class="o">=</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;eval&quot;</span><span class="p">]</span>
@@ -1337,15 +1337,15 @@ window.runMermaid = runMermaid;</script>
         <span class="p">]</span>
         <span class="k">if</span> <span class="n">batch_state</span><span class="o">.</span><span class="n">batch_type</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">status_metrics</span><span class="p">:</span>
-                <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">gather_metrics</span><span class="p">(</span><span class="n">status_metrics</span><span class="p">,</span> <span class="s2">&quot;rollout&quot;</span><span class="p">))</span>
+                <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">aggregate_metrics</span><span class="p">(</span><span class="n">status_metrics</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;rollout&quot;</span><span class="p">))</span>
             <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;rollout/finished_task_count&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">batch_state</span><span class="o">.</span><span class="n">completed_task_count</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">prefix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_eval_metric_prefix</span><span class="p">(</span><span class="n">batch_state</span><span class="o">.</span><span class="n">batch_id</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">status_metrics</span><span class="p">:</span>
                 <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
-                    <span class="n">gather_eval_metrics</span><span class="p">(</span>
+                    <span class="n">aggregate_eval_metrics</span><span class="p">(</span>
                         <span class="n">status_metrics</span><span class="p">,</span>
-                        <span class="n">prefix</span><span class="p">,</span>
+                        <span class="n">prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span>
                         <span class="n">detailed_stats</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">detailed_stats</span><span class="p">,</span>
                     <span class="p">)</span>
                 <span class="p">)</span>

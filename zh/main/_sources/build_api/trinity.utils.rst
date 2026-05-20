@@ -12,6 +12,7 @@ Submodules
    trinity.utils.dlc_utils
    trinity.utils.log
    trinity.utils.lora_utils
+   trinity.utils.metrics
    trinity.utils.monitor
    trinity.utils.plugin_loader
    trinity.utils.registry

@@ -867,6 +867,7 @@ window.runMermaid = runMermaid;</script>
 <li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.utils.dlc_utils.html">trinity.utils.dlc_utils module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.utils.log.html">trinity.utils.log module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.utils.lora_utils.html">trinity.utils.lora_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.utils.metrics.html">trinity.utils.metrics module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.utils.monitor.html">trinity.utils.monitor module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.utils.plugin_loader.html">trinity.utils.plugin_loader module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.utils.registry.html">trinity.utils.registry module</a></li>
@@ -1034,15 +1035,15 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">import</span><span class="w"> </span><span class="nn">traceback</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span><span class="p">,</span> <span class="n">deque</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">replace</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ray</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.workflows</span><span class="w"> </span><span class="kn">import</span> <span class="n">Task</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.explorer.workflow_runner</span><span class="w"> </span><span class="kn">import</span> <span class="n">Status</span><span class="p">,</span> <span class="n">WorkflowRunner</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">calculate_task_level_metrics</span>
 
 
 <div class="viewcode-block" id="TaskWrapper">
@@ -1089,103 +1090,6 @@ window.runMermaid = runMermaid;</script>
     <span class="n">task</span><span class="p">:</span> <span class="n">TaskWrapper</span>
     <span class="n">runner_id</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">restart_runner_on_cancel</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span></div>
-
-
-
-<span class="c1"># Adapted from verl/trainer/ppo/metric_utils.py</span>
-<div class="viewcode-block" id="bootstrap_metric">
-<a class="viewcode-back" href="../../../build_api/trinity.explorer.scheduler.html#trinity.explorer.scheduler.bootstrap_metric">[文档]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">bootstrap_metric</span><span class="p">(</span>
-    <span class="n">data</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span>
-    <span class="n">subset_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-    <span class="n">reduce_fns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="nb">float</span><span class="p">]],</span>
-    <span class="n">n_bootstrap</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
-    <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">42</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Performs bootstrap resampling to estimate statistics of metrics.</span>
-
-<span class="sd">    This function uses bootstrap resampling to estimate the mean and standard deviation</span>
-<span class="sd">    of metrics computed by the provided reduction functions on random subsets of the data.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        data: List of data points to bootstrap from.</span>
-<span class="sd">        subset_size: Size of each bootstrap sample.</span>
-<span class="sd">        reduce_fns: List of functions that compute a metric from a subset of data.</span>
-<span class="sd">        n_bootstrap: Number of bootstrap iterations. Defaults to 1000.</span>
-<span class="sd">        seed: Random seed for reproducibility. Defaults to 42.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        A list of tuples, where each tuple contains (mean, std) for a metric</span>
-<span class="sd">        corresponding to each reduction function in reduce_fns.</span>
-
-<span class="sd">    Example:</span>
-<span class="sd">        &gt;&gt;&gt; data = [1, 2, 3, 4, 5]</span>
-<span class="sd">        &gt;&gt;&gt; reduce_fns = [np.mean, np.max]</span>
-<span class="sd">        &gt;&gt;&gt; bootstrap_metric(data, 3, reduce_fns)</span>
-<span class="sd">        [(3.0, 0.5), (4.5, 0.3)]  # Example values</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
-
-    <span class="n">bootstrap_metric_lsts</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">reduce_fns</span><span class="p">))]</span>
-    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_bootstrap</span><span class="p">):</span>
-        <span class="n">bootstrap_idxs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">subset_size</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">bootstrap_data</span> <span class="o">=</span> <span class="p">[</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">bootstrap_idxs</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">reduce_fn</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">reduce_fns</span><span class="p">):</span>
-            <span class="n">bootstrap_metric_lsts</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">reduce_fn</span><span class="p">(</span><span class="n">bootstrap_data</span><span class="p">))</span>
-    <span class="k">return</span> <span class="p">[(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">lst</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">lst</span><span class="p">))</span> <span class="k">for</span> <span class="n">lst</span> <span class="ow">in</span> <span class="n">bootstrap_metric_lsts</span><span class="p">]</span></div>
-
-
-
-<div class="viewcode-block" id="calculate_task_level_metrics">
-<a class="viewcode-back" href="../../../build_api/trinity.explorer.scheduler.html#trinity.explorer.scheduler.calculate_task_level_metrics">[文档]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">calculate_task_level_metrics</span><span class="p">(</span><span class="n">metrics</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">],</span> <span class="n">is_eval</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate task level metrics (mean) from multiple runs of the same task.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        metrics (`List[Dict]`): A list of metric dictionaries from multiple runs of the same task.</span>
-<span class="sd">        is_eval (`bool`): Whether this is an evaluation task.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        `Dict[str, float]`: A dictionary of aggregated metrics, where each metric is averaged over all runs.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">metrics</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">{}</span>
-    <span class="n">aggregated_metrics</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">metrics</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
-                <span class="n">aggregated_metrics</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">is_eval</span><span class="p">:</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">aggregated_metrics</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="s2">&quot;time/task_execution&quot;</span> <span class="ow">in</span> <span class="n">key</span> <span class="ow">or</span> <span class="s2">&quot;time/run_execution&quot;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
-                <span class="n">result</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
-                <span class="k">continue</span>
-
-            <span class="n">n_values</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
-            <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">/mean@</span><span class="si">{</span><span class="n">n_values</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
-            <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">/std@</span><span class="si">{</span><span class="n">n_values</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">n_values</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">ns</span> <span class="o">=</span> <span class="p">[]</span>
-                <span class="n">n</span> <span class="o">=</span> <span class="mi">2</span>
-                <span class="k">while</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="n">n_values</span><span class="p">:</span>
-                    <span class="n">ns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-                    <span class="n">n</span> <span class="o">*=</span> <span class="mi">2</span>
-                <span class="n">ns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">n_values</span><span class="p">)</span>
-
-                <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">ns</span><span class="p">:</span>
-                    <span class="p">[(</span><span class="n">bon_mean</span><span class="p">,</span> <span class="n">bon_std</span><span class="p">),</span> <span class="p">(</span><span class="n">won_mean</span><span class="p">,</span> <span class="n">won_std</span><span class="p">)]</span> <span class="o">=</span> <span class="n">bootstrap_metric</span><span class="p">(</span>
-                        <span class="n">data</span><span class="o">=</span><span class="n">values</span><span class="p">,</span> <span class="n">subset_size</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">reduce_fns</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">],</span> <span class="n">seed</span><span class="o">=</span><span class="mi">42</span>
-                    <span class="p">)</span>
-                    <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">/best@</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bon_mean</span>
-                    <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">/worst@</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">won_mean</span>
-        <span class="k">return</span> <span class="n">result</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">{</span>
-            <span class="n">key</span><span class="p">:</span> <span class="nb">sum</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">aggregated_metrics</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">values</span>
-        <span class="p">}</span></div>
 
 
 

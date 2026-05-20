@@ -9,7 +9,49 @@
 - **Category（类别）**：广泛的功能领域（rollout、eval、time、actor、critic 等）
 - **Taskset name（任务集名称）**：使用的任务集名称，仅适用于评估阶段的指标
 - **Metric name（指标名称）**：正在测量的具体指标
-- **Statistic（统计量）**：统计指标（mean、max、min、std 等，如适用）
+- **Statistic（统计量）**：统计指标（mean、max、min、std、sum 等，如适用）
+
+
+## 聚合类型后缀
+
+Metric key 可以通过 **聚合类型后缀** 来控制该指标在 experience、run、task、step 各层级的聚合方式。后缀通过冒号分隔附加在 key 末尾：
+
+```
+<metric_name>:<agg_type>
+```
+
+支持的聚合类型：
+
+| 后缀 | 行为 | 输出 key 示例 |
+|------|------|-------------|
+| *（无）* | 取平均值（默认） | `rollout/accuracy/mean`, `/max`, `/min` |
+| `:sum` | 求和 | `rollout/total_tokens/sum` |
+| `:max` | 取最大值 | `rollout/latency/max` |
+| `:min` | 取最小值 | `rollout/latency/min` |
+| `:last` | 取最后一个值 | `rollout/model_version/last` |
+
+不带后缀的 key 默认使用 **mean** 聚合，这保证了与现有 workflow 和 operator 的完全向后兼容。
+
+**在 workflow 中的使用示例：**
+
+```python
+# 默认 mean 聚合（向后兼容）
+exp.metrics["accuracy"] = 0.85
+exp.metrics["reward"] = 1.0
+
+# 显式 sum 聚合
+exp.metrics["total_tokens:sum"] = len(tokens)
+exp.metrics["time/env_interaction:sum"] = elapsed_time
+
+# last 聚合（取最后一个值）
+exp.metrics["model_version:last"] = current_version
+```
+
+所有聚合逻辑统一实现在 `trinity.utils.metrics` 中，提供以下函数：
+- `parse_metric_key(key)`：将 metric key 解析为 `(name, AggType)`。
+- `aggregate_metrics(metric_dicts, prefix, ...)`：训练阶段的 batch 级别聚合（task → step）。
+- `aggregate_eval_metrics(metric_dicts, prefix, ...)`：评估阶段的 batch 级别聚合。
+- `aggregate_run_level_metrics(metric_dicts)`：experience 级别 → run 级别聚合。
 
 
 ## 指标类别
@@ -29,16 +71,17 @@ Rollout 指标跟踪模型生成响应的 rollout 阶段的性能。
 - **示例**：
   - `rollout/accuracy/mean`：生成响应的平均准确率
   - `rollout/format_score/mean`：平均格式正确性分数
+  - `rollout/total_tokens/sum`：总 token 数量（sum 聚合）
 
 **指标计算过程**：
 
 考虑一个包含 `batch_size` 个任务的探索步骤，其中每个任务有 `repeat_times` 次运行。Rollout 指标（例如，`rollout/`）在不同级别的计算过程如下：
 
-- 从*Experiences*到*Run 级别*（仅对 `can_repeat=False` 的 workflows 有效）：在 `calculate_run_level_metrics` 函数中，在每次 run 生成的所有 experiences 中求平均得到 run 级别指标。这通常是为了适应通用多轮场景，其中单个 run 可能产生多个 experiences。
+- 从 *Experiences* 到 *Run 级别*（仅对 `can_repeat=False` 的 workflows 有效）：在 `aggregate_run_level_metrics` 函数中，在每次 run 生成的所有 experiences 中聚合得到 run 级别指标。聚合方式遵循 `:agg` 后缀——不带后缀的 key 取平均，带 `:sum` 的 key 求和，以此类推。
 
-- 从*Run 级别*到*Task 级别*：在 `calculate_task_level_metrics` 函数中，指标跨同一任务的 `repeat_times` 次运行聚合。例如，`rollout/accuracy` 是该任务所有运行的平均准确率。
+- 从 *Run 级别* 到 *Task 级别*：在 `calculate_task_level_metrics` 函数中，指标跨同一任务的 `repeat_times` 次运行聚合。例如，`rollout/accuracy` 是该任务所有运行的平均准确率。
 
-- 从*Task 级别*到*Step 级别*：在 `gather_metrics` 函数中，指标跨步骤中所有任务聚合。例如，`rollout/accuracy/mean`、`rollout/accuracy/max`、`rollout/accuracy/min` 分别是步骤中所有任务的准确率（`rollout/accuracy`）的平均值、最大值和最小值。
+- 从 *Task 级别* 到 *Step 级别*：在 `aggregate_metrics` 函数中，指标跨步骤中所有任务聚合。例如，`rollout/accuracy/mean`、`rollout/accuracy/max`、`rollout/accuracy/min` 分别是步骤中所有任务的准确率（`rollout/accuracy`）的平均值、最大值和最小值。对于 `:sum` 类型的指标，仅输出 `/sum` 统计量。
 
 以下图表说明了 rollout 指标的计算过程：
 
@@ -89,11 +132,11 @@ graph TD
 
 考虑一个包含 `len(eval_taskset)` 个任务的评估步骤，其中每个任务有 `repeat_times` 次运行。评估指标（例如，`eval/`、`bench/`）在不同级别计算和聚合：
 
-- 从*Experiences*到*Run 级别*（仅对 `can_repeat=False` 的 workflows 有效）：在 `calculate_run_level_metrics` 函数中，在每次 run 生成的所有 experiences 中求平均得到 run 级别指标。这通常是为了适应通用多轮场景，其中单个 run 可能产生多个 experiences。
+- 从 *Experiences* 到 *Run 级别*（仅对 `can_repeat=False` 的 workflows 有效）：在 `aggregate_run_level_metrics` 函数中，在每次 run 生成的所有 experiences 中聚合得到 run 级别指标。
 
-- 从*Run 级别*到*Task 级别*：在 `calculate_task_level_metrics` 函数中，指标跨同一任务的 `repeat_times` 次运行聚合。例如，`eval/dummy/accuracy/mean@2` 是该任务所有运行的平均准确率。
+- 从 *Run 级别* 到 *Task 级别*：在 `calculate_task_level_metrics` 函数中，指标跨同一任务的 `repeat_times` 次运行聚合。对于默认（mean）指标，会计算 bootstrap 统计量：`mean@N`、`std@N`、`best@N`、`worst@N`。对于非 mean 指标（`:sum`、`:max` 等），仅输出对应的单一聚合值。
 
-- 从*Task 级别*到*Step 级别*：在 `gather_eval_metrics` 函数中，指标跨步骤中所有任务聚合。例如，`eval/dummy/accuracy/mean@2`、`eval/dummy/accuracy/std@2`、`eval/dummy/accuracy/best@2`、`eval/dummy/accuracy/worst@2` 分别是步骤中所有任务的准确率（`eval/dummy/accuracy`）的平均值、标准差、最佳值和最差值。
+- 从 *Task 级别* 到 *Step 级别*：在 `aggregate_eval_metrics` 函数中，指标跨步骤中所有任务聚合。例如，`eval/dummy/accuracy/mean@2`、`eval/dummy/accuracy/std@2`、`eval/dummy/accuracy/best@2`、`eval/dummy/accuracy/worst@2` 分别是步骤中所有任务的准确率（`eval/dummy/accuracy`）的平均值、标准差、最佳值和最差值。
 
 以下图表说明了在包含三个任务的虚拟数据集上评估指标的计算过程。默认情况下，报告所有评估任务中指标的 `mean@k`、`std@k`、`best@k`、`worst@k`。你可以在配置中将 `monitor.detailed_stats` 设置为 `True` 以返回详细统计信息。
 
