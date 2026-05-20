@@ -182,7 +182,7 @@ async def get_model_wrapper(
     handlers = []
     for i, (actor_name, bundle_id) in enumerate(actor_bundle_list):
         engine_config = deepcopy(config)
-        engine_config.name = actor_name
+        engine_config.ray_actor_name = actor_name
         engine_config.node_rank = i
         handlers.append(
             ray.remote(actor_cls)

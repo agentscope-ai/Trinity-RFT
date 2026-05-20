@@ -29,8 +29,8 @@ class InferenceModel(ABC):
 
     def __init__(self, config: InferenceModelConfig) -> None:
         self.config = config
-        self.name = config.name
-        self.logger = get_logger(self.name or __name__, in_ray_actor=True)
+        self.ray_actor_name = config.ray_actor_name
+        self.logger = get_logger(self.ray_actor_name or __name__, in_ray_actor=True)
         builtins.print = lambda *args, **kwargs: self.logger.info(" ".join(map(str, args)))
         self._prepared = False
         self.master_addr: Optional[str] = None

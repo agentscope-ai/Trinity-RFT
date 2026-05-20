@@ -512,6 +512,7 @@ class ModelConfig:
 class InferenceModelConfig:
     # ! DO NOT SET in explorer.rollout_model, automatically set from config.model.model_path
     model_path: Optional[str] = None
+    # Used by AgentScope Tunner
     name: Optional[str] = None
     trust_remote_code: bool = False
 
@@ -583,6 +584,7 @@ class InferenceModelConfig:
     bundle_indices: str = ""
     engine_id: int = 0
     ray_namespace: Optional[str] = None
+    ray_actor_name: Optional[str] = None
     cuda_visible_devices: Optional[str] = None
 
     # ! DO NOT SET, automatically set from model.lora_configs
