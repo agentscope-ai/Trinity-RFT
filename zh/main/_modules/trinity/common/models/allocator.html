@@ -1089,8 +1089,8 @@ window.runMermaid = runMermaid;</script>
             <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;auxiliary_</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span> <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">auxiliary_models</span><span class="p">)</span>
         <span class="p">]</span>
         <span class="n">bundles</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">engine_bundle_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">bundle_engine_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">actor_bundle_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">bundle_actor_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">bundle_id</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">for</span> <span class="n">role</span><span class="p">,</span> <span class="n">config</span> <span class="ow">in</span> <span class="n">model_configs</span><span class="p">:</span>
             <span class="n">gpus_per_bundle</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">tensor_parallel_size</span> <span class="o">//</span> <span class="n">config</span><span class="o">.</span><span class="n">nnodes</span>
@@ -1098,11 +1098,11 @@ window.runMermaid = runMermaid;</script>
                 <span class="k">for</span> <span class="n">node_id</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">nnodes</span><span class="p">):</span>
                     <span class="n">bundles</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;GPU&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">gpus_per_bundle</span><span class="p">),</span> <span class="s2">&quot;CPU&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">})</span>
                     <span class="n">actor_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_actor_name</span><span class="p">(</span><span class="n">role</span><span class="p">,</span> <span class="n">engine_id</span><span class="p">,</span> <span class="n">node_id</span><span class="p">)</span>
-                    <span class="n">engine_bundle_map</span><span class="p">[</span><span class="n">actor_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">bundle_id</span>
-                    <span class="n">bundle_engine_map</span><span class="p">[</span><span class="n">bundle_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">actor_name</span>
+                    <span class="n">actor_bundle_map</span><span class="p">[</span><span class="n">actor_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">bundle_id</span>
+                    <span class="n">bundle_actor_map</span><span class="p">[</span><span class="n">bundle_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">actor_name</span>
                     <span class="n">bundle_id</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">return</span> <span class="n">BundleResult</span><span class="p">(</span>
-            <span class="n">bundles</span><span class="o">=</span><span class="n">bundles</span><span class="p">,</span> <span class="n">actor_bundle_map</span><span class="o">=</span><span class="n">engine_bundle_map</span><span class="p">,</span> <span class="n">bundle_actor_map</span><span class="o">=</span><span class="n">bundle_engine_map</span>
+            <span class="n">bundles</span><span class="o">=</span><span class="n">bundles</span><span class="p">,</span> <span class="n">actor_bundle_map</span><span class="o">=</span><span class="n">actor_bundle_map</span><span class="p">,</span> <span class="n">bundle_actor_map</span><span class="o">=</span><span class="n">bundle_actor_map</span>
         <span class="p">)</span></div>
 
 
@@ -1225,19 +1225,20 @@ window.runMermaid = runMermaid;</script>
     <span class="n">pg</span><span class="p">:</span> <span class="n">PlacementGroup</span><span class="p">,</span>
     <span class="n">actor_bundle_list</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ModelWrapper</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the Ray actor for the vLLM model.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the Ray actor wrapper for the inference model.</span>
 
 <span class="sd">    Args:</span>
+<span class="sd">        actor_cls: The actor class to instantiate (e.g., vLLMRolloutModel, SGLangRolloutModel).</span>
 <span class="sd">        config (InferenceModelConfig): The model config.</span>
-<span class="sd">        pg (PlacementGroup): The placement group for the actor.</span>
-<span class="sd">        engine_id (int): The engine ID for the actor.</span>
-<span class="sd">        actor_bundle_list (List[Tuple[str, int]]): The list of actor names and their corresponding bundle IDs.</span>
+<span class="sd">        pg (PlacementGroup): The placement group for the actors.</span>
+<span class="sd">        actor_bundle_list (List[Tuple[str, int]]): The list of (actor_name, bundle_id) tuples for distributed setup.</span>
 <span class="sd">    Returns:</span>
-<span class="sd">        ModelWrapper: A wrapper for the vLLM model actor.</span>
+<span class="sd">        ModelWrapper: A wrapper for the model actors with distributed communication setup.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">handlers</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">actor_name</span><span class="p">,</span> <span class="n">bundle_id</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">actor_bundle_list</span><span class="p">):</span>
         <span class="n">engine_config</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="n">engine_config</span><span class="o">.</span><span class="n">ray_actor_name</span> <span class="o">=</span> <span class="n">actor_name</span>
         <span class="n">engine_config</span><span class="o">.</span><span class="n">node_rank</span> <span class="o">=</span> <span class="n">i</span>
         <span class="n">handlers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="n">ray</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">actor_cls</span><span class="p">)</span>
