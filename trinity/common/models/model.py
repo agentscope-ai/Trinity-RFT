@@ -2,6 +2,7 @@
 """Base Model Class"""
 
 import asyncio
+import builtins
 import copy
 import socket
 from abc import ABC, abstractmethod
@@ -26,9 +27,11 @@ if TYPE_CHECKING:
 class InferenceModel(ABC):
     """A model for high performance for rollout inference."""
 
-    def __init__(self, config: InferenceModelConfig) -> None:
+    def __init__(self, config: InferenceModelConfig, name: Optional[str] = None) -> None:
         self.config = config
-        self.logger = get_logger(__name__)
+        self.name = name
+        self.logger = get_logger(name or __name__, in_ray_actor=True)
+        builtins.print = lambda *args, **kwargs: self.logger.info(" ".join(map(str, args)))
         self._prepared = False
         self.master_addr: Optional[str] = None
         self.master_port: Optional[int] = None
@@ -141,8 +144,8 @@ class InferenceModel(ABC):
 class BaseInferenceModel(InferenceModel):
     """Base class for inference models containing common logic."""
 
-    def __init__(self, config: InferenceModelConfig) -> None:
-        super().__init__(config)
+    def __init__(self, config: InferenceModelConfig, name: Optional[str] = None) -> None:
+        super().__init__(config, name)
         self.tokenizer = None
         self.chat_template = None
         if self.config.chat_template:

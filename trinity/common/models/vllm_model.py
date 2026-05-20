@@ -27,13 +27,15 @@ class vLLMRolloutModel(BaseInferenceModel):
 
     Args:
         config (Config): The config.
+        name (Optional[str]): The name of the model.
     """
 
     def __init__(
         self,
         config: InferenceModelConfig,
+        name: Optional[str] = None,
     ) -> None:
-        super().__init__(config)
+        super().__init__(config, name)
         if config.cuda_visible_devices:
             # only for colocate mode
             os.environ["CUDA_VISIBLE_DEVICES"] = config.cuda_visible_devices

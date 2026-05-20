@@ -79,16 +79,23 @@ class WorkerExtension:
                 ray.get(self.synchronizer.set_model_state_dict.remote(state_dict, model_version))
         if self._state_dict_meta is None:
             self._state_dict_meta = ray.get(self.synchronizer.get_state_dict_meta.remote())
-        for name, dtype_str, shape in self._state_dict_meta:
-            if self._weight_update_rank == 0:
-                weight = state_dict[name]
-                weight = weight.to(self.device)
-            else:
-                dtype = getattr(torch, dtype_str)
-                weight = torch.empty(shape, dtype=dtype, device=self.device)
-            torch.distributed.broadcast(weight, 0, group=self._model_update_group)
-            weight = weight.type(self.model_config.dtype)
-            self.model_runner.model.load_weights(weights=[(name, weight)])
-            del weight
+
+        def _weight_iterator():
+            for name, dtype_str, shape in self._state_dict_meta:
+                if self._weight_update_rank == 0:
+                    weight = state_dict[name]
+                    weight = weight.to(self.device)
+                else:
+                    dtype = getattr(torch, dtype_str)
+                    weight = torch.empty(shape, dtype=dtype, device=self.device)
+                torch.distributed.broadcast(weight, 0, group=self._model_update_group)
+                yield (name, weight)
+
+        from vllm.config import set_current_vllm_config
+
+        with set_current_vllm_config(self.model_runner.vllm_config):
+            self.model_runner.reload_weights(
+                weights_iterator=_weight_iterator(),
+                is_checkpoint_format=True,
+            )
         torch.cuda.synchronize()
-        torch.cuda.empty_cache()

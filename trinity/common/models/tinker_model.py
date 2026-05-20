@@ -19,8 +19,9 @@ class TinkerModel(BaseInferenceModel):
     def __init__(
         self,
         config: InferenceModelConfig,
+        name: Optional[str] = None,
     ) -> None:
-        super().__init__(config)
+        super().__init__(config, name)
         self.model_version = -1
         self.synchronizer = Synchronizer.get_actor(namespace=ray.get_runtime_context().namespace)
         self.model = None

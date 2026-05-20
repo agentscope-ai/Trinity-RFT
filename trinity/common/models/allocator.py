@@ -195,7 +195,7 @@ async def get_model_wrapper(
                     placement_group_bundle_index=bundle_id,
                 ),
             )
-            .remote(config=engine_config)
+            .remote(config=engine_config, name=actor_name)
         )
     if len(actor_bundle_list) > 1:
         # get master address and port from the first handler and set it to all handlers for distributed communication
