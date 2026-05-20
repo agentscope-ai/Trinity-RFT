@@ -99,3 +99,4 @@ class WorkerExtension:
                 is_checkpoint_format=True,
             )
         torch.cuda.synchronize()
+        torch.cuda.empty_cache()
