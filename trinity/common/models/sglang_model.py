@@ -213,9 +213,8 @@ class SGLangRolloutModel(BaseInferenceModel):
     def __init__(
         self,
         config: InferenceModelConfig,
-        name: Optional[str] = None,
     ) -> None:
-        super().__init__(config, name)
+        super().__init__(config)
         if config.cuda_visible_devices:
             os.environ["CUDA_VISIBLE_DEVICES"] = config.cuda_visible_devices
         if not self.config.enable_openai_api:

@@ -49,8 +49,8 @@ class Allocator:
             (f"auxiliary_{index}", model) for index, model in enumerate(auxiliary_models)
         ]
         bundles: List[Dict[str, float]] = []
-        engine_bundle_map: Dict[str, int] = {}
-        bundle_engine_map: Dict[int, str] = {}
+        actor_bundle_map: Dict[str, int] = {}
+        bundle_actor_map: Dict[int, str] = {}
         bundle_id = 0
         for role, config in model_configs:
             gpus_per_bundle = config.tensor_parallel_size // config.nnodes
@@ -58,11 +58,11 @@ class Allocator:
                 for node_id in range(config.nnodes):
                     bundles.append({"GPU": float(gpus_per_bundle), "CPU": 1})
                     actor_name = self.get_actor_name(role, engine_id, node_id)
-                    engine_bundle_map[actor_name] = bundle_id
-                    bundle_engine_map[bundle_id] = actor_name
+                    actor_bundle_map[actor_name] = bundle_id
+                    bundle_actor_map[bundle_id] = actor_name
                     bundle_id += 1
         return BundleResult(
-            bundles=bundles, actor_bundle_map=engine_bundle_map, bundle_actor_map=bundle_engine_map
+            bundles=bundles, actor_bundle_map=actor_bundle_map, bundle_actor_map=bundle_actor_map
         )
 
     def analyze_placement_group(self, pg: PlacementGroup, bundle_result: BundleResult):
@@ -169,19 +169,20 @@ async def get_model_wrapper(
     pg: PlacementGroup,
     actor_bundle_list: List[Tuple[str, int]],
 ) -> ModelWrapper:
-    """Get the Ray actor for the vLLM model.
+    """Get the Ray actor wrapper for the inference model.
 
     Args:
+        actor_cls: The actor class to instantiate (e.g., vLLMRolloutModel, SGLangRolloutModel).
         config (InferenceModelConfig): The model config.
-        pg (PlacementGroup): The placement group for the actor.
-        engine_id (int): The engine ID for the actor.
-        actor_bundle_list (List[Tuple[str, int]]): The list of actor names and their corresponding bundle IDs.
+        pg (PlacementGroup): The placement group for the actors.
+        actor_bundle_list (List[Tuple[str, int]]): The list of (actor_name, bundle_id) tuples for distributed setup.
     Returns:
-        ModelWrapper: A wrapper for the vLLM model actor.
+        ModelWrapper: A wrapper for the model actors with distributed communication setup.
     """
     handlers = []
     for i, (actor_name, bundle_id) in enumerate(actor_bundle_list):
         engine_config = deepcopy(config)
+        engine_config.name = actor_name
         engine_config.node_rank = i
         handlers.append(
             ray.remote(actor_cls)
@@ -195,7 +196,7 @@ async def get_model_wrapper(
                     placement_group_bundle_index=bundle_id,
                 ),
             )
-            .remote(config=engine_config, name=actor_name)
+            .remote(config=engine_config)
         )
     if len(actor_bundle_list) > 1:
         # get master address and port from the first handler and set it to all handlers for distributed communication

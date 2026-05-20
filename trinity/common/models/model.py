@@ -27,10 +27,10 @@ if TYPE_CHECKING:
 class InferenceModel(ABC):
     """A model for high performance for rollout inference."""
 
-    def __init__(self, config: InferenceModelConfig, name: Optional[str] = None) -> None:
+    def __init__(self, config: InferenceModelConfig) -> None:
         self.config = config
-        self.name = name
-        self.logger = get_logger(name or __name__, in_ray_actor=True)
+        self.name = config.name
+        self.logger = get_logger(self.name or __name__, in_ray_actor=True)
         builtins.print = lambda *args, **kwargs: self.logger.info(" ".join(map(str, args)))
         self._prepared = False
         self.master_addr: Optional[str] = None
@@ -144,8 +144,8 @@ class InferenceModel(ABC):
 class BaseInferenceModel(InferenceModel):
     """Base class for inference models containing common logic."""
 
-    def __init__(self, config: InferenceModelConfig, name: Optional[str] = None) -> None:
-        super().__init__(config, name)
+    def __init__(self, config: InferenceModelConfig) -> None:
+        super().__init__(config)
         self.tokenizer = None
         self.chat_template = None
         if self.config.chat_template:
