@@ -1016,6 +1016,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">transformers</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">TrainerConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
@@ -1074,7 +1075,7 @@ window.runMermaid = runMermaid;</script>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate the assistant token mask.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        tokenizer (Any): The tokenizer.</span>
+<span class="sd">        tokenizer (Any): The tokenizer or processor.</span>
 <span class="sd">        messages (List[dict]): Messages with `role` and `content` fields.</span>
 <span class="sd">        tools (Optional[List[dict]]): The list of tool dictionaries.</span>
 <span class="sd">        chat_template (str): The chat template with `{% generation %}` symbol.</span>
@@ -1096,13 +1097,19 @@ window.runMermaid = runMermaid;</script>
     <span class="n">common_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
         <span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">,</span>
         <span class="n">chat_template</span><span class="o">=</span><span class="n">chat_template</span><span class="p">,</span>
+        <span class="n">tokenize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">return_dict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">enable_thinking</span><span class="o">=</span><span class="n">enable_thinking</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">text_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
         <span class="n">padding</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="n">truncation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="n">add_special_tokens</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">tokenize</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">return_dict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">,</span> <span class="n">transformers</span><span class="o">.</span><span class="n">ProcessorMixin</span><span class="p">):</span>
+        <span class="n">common_kwargs</span><span class="p">[</span><span class="s2">&quot;processor_kwargs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">text_kwargs</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">common_kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">text_kwargs</span><span class="p">)</span>
 
     <span class="n">generation_messages</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">response_messages</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1149,7 +1156,9 @@ window.runMermaid = runMermaid;</script>
         <span class="n">prompt_token_ids_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="k">for</span> <span class="n">prompt_token_ids</span><span class="p">,</span> <span class="n">response_token_ids</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">prompt_token_ids_list</span><span class="p">,</span> <span class="n">response_token_ids_list</span><span class="p">):</span>
-        <span class="n">assistant_token_mask</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">prompt_token_ids</span><span class="p">)</span> <span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">response_token_ids</span><span class="p">)]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">prompt_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">prompt_token_ids</span><span class="p">)</span>
+        <span class="n">response_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">response_token_ids</span><span class="p">)</span>
+        <span class="n">assistant_token_mask</span><span class="p">[</span><span class="n">prompt_len</span><span class="p">:</span><span class="n">response_len</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
 
     <span class="n">prompt_length</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">assistant_token_mask</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">response_token_ids_list</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span> <span class="n">assistant_token_mask</span><span class="p">,</span> <span class="n">prompt_length</span></div>

@@ -1130,9 +1130,6 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">video_key</span> <span class="o">=</span> <span class="n">format_config</span><span class="o">.</span><span class="n">video_key</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">enable_thinking</span> <span class="o">=</span> <span class="n">format_config</span><span class="o">.</span><span class="n">enable_thinking</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">image_key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">video_key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">enable_concatenated_multi_turn</span> <span class="ow">is</span> <span class="kc">False</span>
-            <span class="p">),</span> <span class="s2">&quot;Concatenated multi-turn not supported for multi-modal data yet.&quot;</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">processor</span> <span class="o">=</span> <span class="n">transformers</span><span class="o">.</span><span class="n">AutoProcessor</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">tokenizer_path</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">tokenizer</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1188,7 +1185,7 @@ window.runMermaid = runMermaid;</script>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid JSON format for tools&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_concatenated_multi_turn</span><span class="p">:</span>
             <span class="n">token_ids</span><span class="p">,</span> <span class="n">action_mask</span><span class="p">,</span> <span class="n">prompt_length</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_mask_method</span><span class="p">(</span>
-                <span class="n">tokenizer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">,</span>
+                <span class="n">tokenizer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">processor</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">,</span>
                 <span class="n">messages</span><span class="o">=</span><span class="n">messages</span><span class="p">,</span>
                 <span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">,</span>
                 <span class="n">chat_template</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">chat_template</span><span class="p">,</span>
