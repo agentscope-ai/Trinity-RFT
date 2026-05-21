@@ -15,7 +15,9 @@ class TestTokenizeAndMaskMessagesDefault(unittest.TestCase):
 
     def setUp(self):
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(get_model_path())
-        self.processor = transformers.AutoProcessor.from_pretrained(get_vision_language_model_path())
+        self.processor = transformers.AutoProcessor.from_pretrained(
+            get_vision_language_model_path()
+        )
         return super().setUp()
 
     def test_normal_conversation_data(self):
@@ -34,11 +36,11 @@ class TestTokenizeAndMaskMessagesDefault(unittest.TestCase):
 
         if "Qwen3.5" in get_model_path():
             # For Qwen3.5
-            expected_mask = torch.tensor([0] * 26 + [1] * 11 + [0], dtype=torch.int)
+            expected_mask = torch.tensor([0] * 26 + [1] * 12, dtype=torch.int)
             expected_prompt_length = 26
         else:
             # For Qwen3
-            expected_mask = torch.tensor([0] * 24 + [1] * 13 + [0], dtype=torch.int)
+            expected_mask = torch.tensor([0] * 24 + [1] * 14, dtype=torch.int)
             expected_prompt_length = 24
 
         self.assertTrue(
@@ -83,11 +85,11 @@ class TestTokenizeAndMaskMessagesDefault(unittest.TestCase):
 
         if "Qwen3.5" in get_model_path():
             # For Qwen3.5
-            expected_mask = torch.tensor([0] * 22 + [1] * 8 + [0], dtype=torch.int)
+            expected_mask = torch.tensor([0] * 22 + [1] * 9, dtype=torch.int)
             expected_prompt_length = 22
         else:
             # For Qwen3
-            expected_mask = torch.tensor([0] * 20 + [1] * 10 + [0], dtype=torch.int)
+            expected_mask = torch.tensor([0] * 20 + [1] * 11, dtype=torch.int)
             expected_prompt_length = 20
 
         self.assertTrue(
@@ -129,9 +131,9 @@ class TestTokenizeAndMaskMessagesDefault(unittest.TestCase):
             enable_thinking=True,
         )
 
-        if "Qwen3.5" in get_model_path():
+        if "Qwen3.5" in get_vision_language_model_path():
             # For Qwen3.5
-            expected_mask = torch.tensor([0] * 271 + [1] * 17 + [0], dtype=torch.int)
+            expected_mask = torch.tensor([0] * 271 + [1] * 18, dtype=torch.int)
             expected_prompt_length = 271
 
         self.assertTrue(

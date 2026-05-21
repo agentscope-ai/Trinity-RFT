@@ -91,10 +91,8 @@ def tokenize_and_mask_messages_default(
     )
     if isinstance(tokenizer, transformers.ProcessorMixin):
         common_kwargs["processor_kwargs"] = text_kwargs
-        eos_token_id = tokenizer.tokenizer.eos_token_id
     else:
         common_kwargs.update(text_kwargs)
-        eos_token_id = tokenizer.eos_token_id
 
     generation_messages = []
     response_messages = []
@@ -143,9 +141,6 @@ def tokenize_and_mask_messages_default(
     for prompt_token_ids, response_token_ids in zip(prompt_token_ids_list, response_token_ids_list):
         prompt_len = len(prompt_token_ids)
         response_len = len(response_token_ids)
-        if eos_token_id is not None:
-            while response_token_ids[response_len - 1] != eos_token_id:
-                response_len -= 1
         assistant_token_mask[prompt_len:response_len] = 1
 
     prompt_length = torch.argmax(assistant_token_mask).item()
