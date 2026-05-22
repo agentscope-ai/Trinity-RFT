@@ -376,6 +376,18 @@ def get_unittest_dataset_config(dataset_name: str = "countdown", split: str = "t
                 image_key="images",
             ),
         )
+    elif dataset_name == "qwenpaw_sft":
+        return ExperienceBufferConfig(
+            name=dataset_name,
+            path=os.path.join(os.path.dirname(__file__), "template", "data", "qwenpaw_sft"),
+            split="train",
+            storage_type=StorageType.FILE.value,
+            format=FormatConfig(
+                prompt_type=PromptType.MESSAGES,
+                messages_key="messages",
+                tools_key="tools",
+            ),
+        )
     else:
         raise ValueError(f"Unknown dataset name: {dataset_name}")
 

@@ -1,5 +1,6 @@
 import unittest
 
+import transformers
 from datasets import load_dataset
 from transformers import AutoTokenizer
 
@@ -318,10 +319,9 @@ class TestFormatter(unittest.TestCase):
         formatter = FORMATTER.get("sft")(
             tokenizer_path=get_vision_language_model_path(), format_config=storage_config.format
         )
-        self.assertIsNotNone(formatter.processor)
-        IMAGE_TOKEN_ID = formatter.processor.image_token_id
+        self.assertIsInstance(formatter.processor_or_tokenizer, transformers.ProcessorMixin)
+        IMAGE_TOKEN_ID = formatter.processor_or_tokenizer.image_token_id
         ds = load_dataset(storage_config.path, split=storage_config.split)
-        count = 0
         for sample in ds:
             exp = formatter.format(sample)
             self.assertIsInstance(exp, Experience)
@@ -330,6 +330,31 @@ class TestFormatter(unittest.TestCase):
             self.assertIsNotNone(exp.prompt_length)
             self.assertTrue(exp.prompt_length < len(exp.tokens))
             self.assertIsNotNone(exp.multi_modal_inputs)
-            self.assertTrue(len(exp.multi_modal_inputs) > 0)
-            count += 1
-        self.assertEqual(count, 8)  # there are total 8 samples in geometry dataset
+            self.assertTrue(len(exp.multi_modal_inputs) > 1)
+        self.assertEqual(len(ds), 8)  # there are total 8 samples in geometry dataset
+
+    def test_agentic_sft_formatter(self):
+        storage_config = get_unittest_dataset_config("qwenpaw_sft")
+
+        formatter = FORMATTER.get("sft")(
+            tokenizer_path=get_vision_language_model_path(), format_config=storage_config.format
+        )
+        self.assertIsInstance(formatter.processor_or_tokenizer, transformers.ProcessorMixin)
+        IMAGE_TOKEN_ID = formatter.processor_or_tokenizer.image_token_id
+        VIDEO_TOKEN_ID = formatter.processor_or_tokenizer.video_token_id
+        ds = load_dataset(storage_config.path, split=storage_config.split)
+        mm_cnt = 0
+        for sample in ds:
+            exp = formatter.format(sample)
+            self.assertIsInstance(exp, Experience)
+            self.assertIsNotNone(exp.tokens)
+            self.assertIsNotNone(exp.prompt_length)
+            self.assertTrue(exp.prompt_length < len(exp.tokens))
+            self.assertIsNotNone(exp.multi_modal_inputs)
+            if IMAGE_TOKEN_ID in exp.tokens or VIDEO_TOKEN_ID in exp.tokens:
+                self.assertTrue(len(exp.multi_modal_inputs) > 1)
+                mm_cnt += 1
+            else:
+                self.assertEqual(len(exp.multi_modal_inputs), 1)
+        self.assertEqual(len(ds), 6)  # there are total 6 samples in qwenpaw_sft dataset
+        self.assertEqual(mm_cnt, 1)  # only 1 sample has multi-modal content in qwenpaw_sft dataset

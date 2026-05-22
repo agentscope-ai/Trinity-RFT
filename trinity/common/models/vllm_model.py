@@ -187,7 +187,7 @@ class vLLMRolloutModel(BaseInferenceModel):
                 await self._initialize_tokenizer()
             if self.client_mm_processor is None:
                 self.client_mm_processor = ClientMultiModalProcessor(
-                    model_name=self.config.model_path,
+                    model_path=self.config.model_path,  # type: ignore
                 )
             conversation, multi_modal_data, _ = self.client_mm_processor.process_messages(messages)
             tokenizer_or_processor = self.tokenizer

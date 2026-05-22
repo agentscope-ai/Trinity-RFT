@@ -22,8 +22,10 @@ Compatibility:
 """
 import asyncio
 import re
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+import transformers
 from vllm.config import ModelConfig
 from vllm.entrypoints.chat_utils import (
     ChatTemplateContentFormat,
@@ -35,7 +37,6 @@ from vllm.inputs import MultiModalDataDict, MultiModalUUIDDict
 from vllm.multimodal import MULTIMODAL_REGISTRY
 
 from trinity.utils.log import get_logger
-
 
 _MM_TYPE_TO_URL_FIELD = {
     "image": "image_url",
@@ -101,6 +102,27 @@ def build_multi_modal_data(
     raise NotImplementedError(
         f"Processor '{processor_class_name}' not supported. Only Qwen/Kimi/Glm VL processors are supported."
     )
+
+
+def should_use_auto_processor(model_path: str) -> bool:
+    p = Path(model_path)
+    if p.is_file():
+        p = p.parent
+    if not p.is_dir():
+        return False
+
+    processor_files = (
+        "processor_config.json",
+        "preprocessor_config.json",
+        "video_preprocessor_config.json",
+    )
+    return any((p / name).is_file() for name in processor_files)
+
+
+def processor_or_tokenizer_cls(model_path: str) -> Any:
+    if should_use_auto_processor(model_path):
+        return transformers.AutoProcessor
+    return transformers.AutoTokenizer
 
 
 def build_mm_input_for_training(
@@ -374,7 +396,7 @@ class ClientMultiModalProcessor:
 
         return conversation, mm_data, mm_uuids
 
-    def _normalize_messages_for_vllm(
+    def _normalize_messages_for_vllm(  # noqa: C901
         self, messages: list[dict[str, Any]]
     ) -> list[dict[str, Any]]:
         """Normalize legacy multimodal content parts for vLLM parser.

@@ -229,13 +229,16 @@ class BaseInferenceModel(InferenceModel):
         """
         if self.tokenizer is None:
             await self._initialize_tokenizer()
-        token_ids, action_mask, prompt_length = self.action_mask_method(
-            tokenizer=self.tokenizer,
+        inputs = self.action_mask_method(
+            tokenizer=copy.deepcopy(self.tokenizer),
             messages=messages,
             tools=tools,
             chat_template=self.chat_template,
             enable_thinking=self.enable_thinking,
-        )  # (seq_length, ), (seq_length, )
+        )
+        token_ids = inputs["input_ids"][0]  # (seq_length, )
+        action_mask = inputs["assistant_masks"][0]  # (seq_length, )
+        prompt_length = action_mask.argmax().item()
 
         assert token_ids is not None
         truncate_status = None

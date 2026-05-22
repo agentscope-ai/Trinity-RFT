@@ -12,7 +12,6 @@ from transformers import AutoConfig, AutoTokenizer
 
 from tests.tools import (
     CHAT_TEMPLATE,
-    CHAT_TEMPLATE_QWEN2_5,
     RayUnittestBaseAsync,
     get_api_model_path,
     get_model_path,
@@ -23,10 +22,6 @@ from trinity.common.config import Config
 from trinity.common.constants import MODEL_PATH_ENV_VAR
 from trinity.common.models.allocator import Allocator
 from trinity.common.models.model import ModelWrapper
-from trinity.common.models.utils import (
-    tokenize_and_mask_messages_default,
-    tokenize_and_mask_messages_hf,
-)
 from trinity.manager.synchronizer import Synchronizer
 
 DEBUG = False
@@ -1010,113 +1005,6 @@ class TestTinkerAsyncAPIServer(TestAsyncAPIServer):
 
     async def test_api_async(self):
         await super().test_api_async()
-
-
-class TestTokenizer(unittest.TestCase):
-    def test_action_mask(self):
-        messages = [
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": "What's the weather like today?"},
-            {
-                "role": "assistant",
-                "content": "I'm sorry, but as an AI language model, I don't have access to real-time weather information. To get accurate weather information for your location, you can check a weather website or app, or look outside if possible.",
-            },
-            {"role": "user", "content": "OK, thanks!"},
-            {
-                "role": "assistant",
-                "content": "You're welcome! If you have any other questions, feel free to ask.",
-            },
-        ]
-        tokenizer = AutoTokenizer.from_pretrained(get_model_path())
-        token_ids, action_mask, prompt_length = tokenize_and_mask_messages_default(
-            tokenizer=tokenizer,
-            messages=messages,
-            chat_template=CHAT_TEMPLATE_QWEN2_5,
-        )
-        token_ids_hf, action_mask_hf, prompt_length_hf = tokenize_and_mask_messages_hf(
-            tokenizer=tokenizer,
-            messages=messages,
-            chat_template=CHAT_TEMPLATE_QWEN2_5,
-        )
-        self.assertEqual(token_ids.shape, token_ids_hf.shape)
-        self.assertEqual(action_mask.shape, action_mask_hf.shape)
-        self.assertTrue(torch.equal(token_ids, token_ids_hf))
-        self.assertTrue(torch.equal(action_mask, action_mask_hf))
-        self.assertEqual(prompt_length, prompt_length_hf)
-
-    def test_action_mask_with_tools(self):
-        messages = [
-            {
-                "role": "system",
-                "content": "You are a helpful assistant with access to various tools. Use them when needed to help users.",
-            },
-            {"role": "user", "content": "What's the weather like in Beijing today?"},
-            {
-                "role": "assistant",
-                "content": "Let me get the weather for you.",
-                "tool_calls": [
-                    {
-                        "id": "call_abc123",
-                        "type": "function",
-                        "function": {
-                            "name": "get_weather",
-                            "arguments": '{"location": "Beijing", "unit": "celsius"}',
-                        },
-                    }
-                ],
-            },
-            {
-                "role": "tool",
-                "content": '{"temperature": 22, "condition": "sunny", "humidity": 45}',
-                "tool_call_id": "call_abc123",
-            },
-            {
-                "role": "assistant",
-                "content": "The weather in Beijing today is sunny with a temperature of 22°C and humidity at 45%. It's a pleasant day!",
-            },
-        ]
-        tools = [
-            {
-                "type": "function",
-                "function": {
-                    "name": "get_weather",
-                    "description": "Get the current weather in a given location",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "location": {
-                                "type": "string",
-                                "description": "The city and state, e.g. San Francisco, CA",
-                            },
-                            "unit": {
-                                "type": "string",
-                                "enum": ["celsius", "fahrenheit"],
-                                "description": "The temperature unit",
-                            },
-                        },
-                        "required": ["location"],
-                    },
-                },
-            }
-        ]
-        tokenizer = AutoTokenizer.from_pretrained(get_model_path())
-        token_ids, action_mask, prompt_length = tokenize_and_mask_messages_default(
-            tokenizer=tokenizer,
-            messages=messages,
-            tools=tools,
-            chat_template=CHAT_TEMPLATE_QWEN2_5,
-        )
-        token_ids_hf, action_mask_hf, prompt_length_hf = tokenize_and_mask_messages_hf(
-            tokenizer=tokenizer,
-            messages=messages,
-            tools=tools,
-            chat_template=CHAT_TEMPLATE_QWEN2_5,
-        )
-        self.assertEqual(token_ids.shape, token_ids_hf.shape)
-        self.assertEqual(action_mask.shape, action_mask_hf.shape)
-        self.assertTrue(torch.equal(token_ids, token_ids_hf))
-        self.assertTrue(torch.equal(action_mask, action_mask_hf))
-        self.assertEqual(prompt_length, prompt_length_hf)
 
 
 @parameterized_class(

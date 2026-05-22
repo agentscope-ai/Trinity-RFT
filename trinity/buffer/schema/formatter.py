@@ -2,11 +2,10 @@ import json
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
 
-import transformers
-
 from trinity.common.config import FormatConfig, StorageConfig
 from trinity.common.constants import PromptType
 from trinity.common.experience import Experience
+from trinity.common.models.mm_utils import processor_or_tokenizer_cls
 from trinity.common.models.utils import get_action_mask_method
 from trinity.common.rewards import REWARD_FUNCTIONS
 from trinity.common.workflows import WORKFLOWS, Task
@@ -101,12 +100,8 @@ class SFTFormatter(ExperienceFormatter):
         self.image_key = format_config.image_key
         self.video_key = format_config.video_key
         self.enable_thinking = format_config.enable_thinking
-        if self.image_key is not None or self.video_key is not None:
-            self.processor = transformers.AutoProcessor.from_pretrained(tokenizer_path)
-            self.tokenizer = self.processor.tokenizer
-        else:
-            self.processor = None
-            self.tokenizer = transformers.AutoTokenizer.from_pretrained(tokenizer_path)
+        tokenizer_cls = processor_or_tokenizer_cls(tokenizer_path)
+        self.processor_or_tokenizer = tokenizer_cls.from_pretrained(tokenizer_path)
         self.chat_template = format_config.chat_template
         # For messages type
         if self.prompt_type == PromptType.MESSAGES:
@@ -133,7 +128,6 @@ class SFTFormatter(ExperienceFormatter):
         Args:
             messages (List[Dict]): The list of message dictionaries.
             tools (Optional[List[Dict]|str], optional): The list of tool dictionaries or a JSON string. Defaults to None.
-            mm_data (Optional[Dict], optional): Multi-modal data such as images or videos. Defaults to None.
 
         Returns:
             Experience: The resulting Experience object.
@@ -155,77 +149,51 @@ class SFTFormatter(ExperienceFormatter):
                 )
                 raise ValueError("Invalid JSON format for tools")
         if self.enable_concatenated_multi_turn:
-            token_ids, action_mask, prompt_length = self.action_mask_method(
-                tokenizer=self.processor or self.tokenizer,
+            inputs = self.action_mask_method(
+                tokenizer=self.processor_or_tokenizer,
                 messages=messages,
                 tools=tools,
                 chat_template=self.chat_template,
                 enable_thinking=self.enable_thinking,
             )
+            token_ids = inputs.pop("input_ids")[0]
+            action_mask = inputs.pop("assistant_masks")[0]
+            prompt_length = action_mask.argmax().item()
             return Experience(
                 tokens=token_ids,
                 action_mask=action_mask[prompt_length:],
                 prompt_length=prompt_length,
                 messages=messages,
-            )
-        if self.image_key or self.video_key:
-            from trinity.common.models.mm_utils import (
-                build_mm_input_for_training,
-                build_multi_modal_data,
-            )
-
-            full_text = self.processor.apply_chat_template(
-                messages,
-                tokenize=False,
-                add_generation_prompt=True,
-                chat_template=self.chat_template,
-            )
-            prompt = self.processor.apply_chat_template(
-                messages[:-1],
-                tokenize=False,
-                add_generation_prompt=True,
-                chat_template=self.chat_template,
-            )
-            multi_modal_data = build_multi_modal_data(self.processor, messages)
-            full_text_inputs = build_mm_input_for_training(
-                self.processor,
-                full_text,
-                multi_modal_data,
-            )
-            tokens = full_text_inputs.pop("input_ids")[0]
-            full_text_inputs.pop("attention_mask", None)
-            prompt_text_inputs = build_mm_input_for_training(
-                self.processor,
-                prompt,
-                multi_modal_data,
-            )
-            return Experience(
-                tokens=tokens,
-                prompt_length=len(prompt_text_inputs["input_ids"][0]),
-                messages=messages,
-                multi_modal_inputs=full_text_inputs,
+                multi_modal_inputs=inputs,
             )
         else:
-            token_ids = self.tokenizer.apply_chat_template(
+            common_kwargs = dict(
+                chat_template=self.chat_template,
+                tools=tools,
+                tokenize=True,
+                return_tensors="pt",
+                enable_thinking=self.enable_thinking,
+            )
+            inputs = self.processor_or_tokenizer.apply_chat_template(
                 messages,
-                tools=tools,
                 add_generation_prompt=False,
-                return_tensors="pt",
-                chat_template=self.chat_template,
-                return_dict=False,
-            )[0]
-            prompt_tokens_ids = self.tokenizer.apply_chat_template(
+                return_dict=True,
+                **common_kwargs,
+            )
+            prompt_tokens_ids = self.processor_or_tokenizer.apply_chat_template(
                 messages[:-1],
-                tools=tools,
                 add_generation_prompt=True,
-                return_tensors="pt",
-                chat_template=self.chat_template,
                 return_dict=False,
+                **common_kwargs,
             )[0]
+            token_ids = inputs.pop("input_ids")[0]
+            inputs.pop("attention_mask", None)  # remove attention mask if exists
+            inputs.pop("assistant_masks", None)  # remove assistant_masks if exists
             return Experience(
                 tokens=token_ids,
                 prompt_length=len(prompt_tokens_ids),
                 messages=messages,
+                multi_modal_inputs=inputs,
             )
 
     def format(self, sample: Dict) -> Experience:
@@ -293,7 +261,8 @@ class DPOFormatter(ExperienceFormatter):
     """
 
     def __init__(self, tokenizer_path: str, format_config: FormatConfig):
-        self.tokenizer = transformers.AutoTokenizer.from_pretrained(tokenizer_path)
+        tokenizer_cls = processor_or_tokenizer_cls(tokenizer_path)
+        self.processor_or_tokenizer = tokenizer_cls.from_pretrained(tokenizer_path)
         self.prompt_type = format_config.prompt_type
         self.chat_template = format_config.chat_template
         if self.prompt_type == PromptType.PLAINTEXT:
@@ -313,21 +282,21 @@ class DPOFormatter(ExperienceFormatter):
     def _messages_to_experience(
         self, prompt_messages, chosen_messages, rejected_messages
     ) -> Experience:
-        prompt_tokens = self.tokenizer.apply_chat_template(
+        prompt_tokens = self.processor_or_tokenizer.apply_chat_template(
             prompt_messages,
             add_generation_prompt=True,
             return_tensors="pt",
             chat_template=self.chat_template,
             return_dict=False,
         )[0]
-        chosen_tokens = self.tokenizer.apply_chat_template(
+        chosen_tokens = self.processor_or_tokenizer.apply_chat_template(
             prompt_messages + chosen_messages,
             add_generation_prompt=False,
             return_tensors="pt",
             chat_template=self.chat_template,
             return_dict=False,
         )[0][len(prompt_tokens) :]
-        rejected_tokens = self.tokenizer.apply_chat_template(
+        rejected_tokens = self.processor_or_tokenizer.apply_chat_template(
             prompt_messages + rejected_messages,
             add_generation_prompt=False,
             return_tensors="pt",
