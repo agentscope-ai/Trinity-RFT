@@ -13,8 +13,8 @@ from trinity.common.config import InferenceModelConfig
 from trinity.common.constants import SyncMethod
 from trinity.common.experience import Experience
 from trinity.common.models.mm_utils import (
+    ClientMultiModalProcessor,
     build_mm_input_for_training,
-    build_multi_modal_data,
     has_multi_modal_content,
 )
 from trinity.common.models.model import BaseInferenceModel
@@ -82,6 +82,7 @@ class vLLMRolloutModel(BaseInferenceModel):
         self.default_lora_path = config.lora_kwargs.pop("default_lora_path", None)
         self.logprobs_no_prefix_cache = True
         self.processor = None
+        self.client_mm_processor = None
         self.state_dict_meta = None
         self.model_version = 0  # TODO: resume the value from the checkpoint
         self.api_server_host = None
@@ -182,20 +183,25 @@ class vLLMRolloutModel(BaseInferenceModel):
         """
         is_mm_message = has_multi_modal_content(messages)
         if is_mm_message:
-            if self.processor is None:
-                await self._initialize_processor()
-            tokenizer_or_processor = self.processor
+            if self.tokenizer is None:
+                await self._initialize_tokenizer()
+            if self.client_mm_processor is None:
+                self.client_mm_processor = ClientMultiModalProcessor(
+                    model_name=self.config.model_path,
+                )
+            conversation, multi_modal_data, _ = self.client_mm_processor.process_messages(messages)
+            tokenizer_or_processor = self.tokenizer
         else:
             if self.tokenizer is None:
                 await self._initialize_tokenizer()
             tokenizer_or_processor = self.tokenizer
 
-        prompt = self.apply_chat_template(tokenizer_or_processor, messages)
+        prompt_messages = conversation if is_mm_message else messages
+        prompt = self.apply_chat_template(tokenizer_or_processor, prompt_messages)
         if is_mm_message:
-            multi_modal_data = build_multi_modal_data(self.processor, messages)
             prompt = {
                 "prompt": prompt,
-                "multi_modal_data": multi_modal_data,
+                "multi_modal_data": multi_modal_data or {},
             }
         return await self.generate(prompt=prompt, lora_request=lora_request, **kwargs)
 
@@ -246,6 +252,8 @@ class vLLMRolloutModel(BaseInferenceModel):
             }  # is_valid is True: returned_seq is token_ids
             multi_modal_inputs = None
         else:  # multi modal
+            if self.processor is None:
+                await self._initialize_processor()
             multi_modal_inputs = build_mm_input_for_training(self.processor, **prompt)
             multi_modal_inputs.pop("input_ids", None)
             multi_modal_inputs.pop("attention_mask", None)
