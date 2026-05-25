@@ -1,6 +1,12 @@
 import datetime
+import sys
+from unittest.mock import MagicMock
 
 import pytest
+
+# naive_dapo_score imports posix-only `resource`; mock on Windows before collection.
+if sys.platform == "win32" and "resource" not in sys.modules:
+    sys.modules["resource"] = MagicMock()
 
 
 # Get the result of each test

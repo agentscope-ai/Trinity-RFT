@@ -30,7 +30,9 @@ class MathDAPORewardFn(RewardFn):
         truth: str,
         **kwargs,
     ) -> dict[str, float]:
-        accuracy_score = compute_score(response, truth)
+        correct = compute_score(response, truth) >= 0.5
+        # DAPO paper (Sec. 2.4): +1 / -1 rule-based outcome reward
+        accuracy_score = 1.0 if correct else -1.0
 
         format_score = 0.0
 

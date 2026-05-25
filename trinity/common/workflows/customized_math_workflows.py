@@ -3,6 +3,8 @@
 
 from typing import List
 
+import torch
+
 from trinity.common.experience import Experience
 from trinity.common.rewards.math_reward import MathBoxedRewardFn
 from trinity.common.workflows.workflow import SimpleWorkflow, Task
@@ -80,6 +82,8 @@ class MathBoxedWorkflow(SimpleWorkflow):
             reward = sum(reward_dict.values())
             response.reward = reward
             response.eid.run = i + self.run_id_base
+            if response.truncate_status == "response_truncated" and response.action_mask is not None:
+                response.action_mask = torch.zeros_like(response.action_mask, dtype=torch.bool)
 
             if not self.use_base:
                 self.logger.debug(
@@ -122,6 +126,8 @@ class AsyncMathBoxedWorkflow(MathBoxedWorkflow):
             reward = sum(reward_dict.values())
             response.reward = reward
             response.eid.run = i + self.run_id_base
+            if response.truncate_status == "response_truncated" and response.action_mask is not None:
+                response.action_mask = torch.zeros_like(response.action_mask, dtype=torch.bool)
 
             if not self.use_base:
                 self.logger.debug(

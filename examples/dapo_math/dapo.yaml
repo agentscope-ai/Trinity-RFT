@@ -6,14 +6,22 @@ model:
   max_response_tokens: 20480
   max_model_len: 21504
 algorithm:
-  algorithm_type: grpo
+  algorithm_type: dapo
   repeat_times: 16
   optimizer:
     lr: 1e-6
     lr_warmup_steps: 20
+  kl_loss_fn: none
   policy_loss_fn_args:
     clip_range_low: 0.2
     clip_range_high: 0.28
+    clip_ratio_c: 1.0e6
+    loss_agg_mode: token-mean
+data_processor:
+  experience_pipeline:
+    operators:
+      - name: mask_response_truncated
+      - name: dapo_dynamic_sampling
 cluster:
   node_num: 1
   gpu_per_node: 8

@@ -129,6 +129,34 @@ class GRPOAlgorithm(AlgorithmType):
         }
 
 
+class DAPOAlgorithm(AlgorithmType):
+    """DAPO (Decoupled Clip and Dynamic sAmpling Policy Optimization).
+
+    Critic-free group RL for long-CoT reasoning. Reuses GRPO grouped advantages and
+    PPO policy loss; DAPO-specific clip, token-level loss, dynamic sampling, and
+    overlong reward shaping are configured in YAML (see examples/dapo_math and
+    docs/dapo_trinity_implementation_spec.md).
+    """
+
+    use_critic: bool = False
+    use_reference: bool = False
+    compute_advantage_in_trainer: bool = False
+    can_balance_batch: bool = True
+    schema: str = "experience"
+
+    @classmethod
+    def default_config(cls) -> Dict:
+        return {
+            "repeat_times": 16,
+            "advantage_fn": "grpo",
+            "sample_strategy": "default",
+            "policy_loss_fn": "ppo",
+            "kl_penalty_fn": "none",
+            "kl_loss_fn": "none",
+            "entropy_loss_fn": "default",
+        }
+
+
 class ReinforcePlusPlusAlgorithm(AlgorithmType):
     """Reinforce++ algorithm."""
 

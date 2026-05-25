@@ -62,6 +62,7 @@ def set_repeat_times(**kwargs):
     key = kwargs.get("key")
     grouped_adv_algorithms = [
         "grpo",
+        "dapo",
         "opmd",
         "rloo",
     ]
