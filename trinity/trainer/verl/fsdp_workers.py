@@ -1040,6 +1040,11 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
 
         output = output.to("cpu")
 
+        # Release reserved GPU memory after ref model forward pass.
+        # Without this, memory_reserved grows after each ref_log_prob call,
+        # eventually causing OOM in subsequent training steps.
+        torch.cuda.empty_cache()
+
         # https://pytorch.org/docs/stable/notes/fsdp.html#fsdp-notes
         # unshard the root FSDP module
         if self.world_size > 1:
