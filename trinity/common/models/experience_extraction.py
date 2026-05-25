@@ -6,7 +6,6 @@ from torch import Tensor
 from transformers import AutoConfig
 
 from trinity.common.experience import Experience
-from trinity.common.models.mm_utils import MultiModalRender
 
 
 def get_routed_experts_layout(
@@ -48,17 +47,15 @@ def decode_sglang_routed_experts(
 
 
 def convert_api_output_to_experience(
-    messages,
     output,
-    mm_render: MultiModalRender = None,
+    multi_modal_inputs: Optional[dict[str, torch.Tensor]] = None,
     routed_experts_layout: Optional[Tuple[int, int]] = None,
 ) -> List[Experience]:
     """Convert a non-stream API output to a list of experiences."""
     return _convert_completion_output_to_experience(
-        messages,
         output,
-        mm_render,
-        routed_experts_layout,
+        multi_modal_inputs=multi_modal_inputs,
+        routed_experts_layout=routed_experts_layout,
     )
 
 
@@ -140,16 +137,10 @@ class HistoryRecordingStream:
 
 
 def _convert_completion_output_to_experience(
-    messages,
     output,
-    mm_render: MultiModalRender = None,
+    multi_modal_inputs: Optional[dict[str, torch.Tensor]] = None,
     routed_experts_layout: Optional[Tuple[int, int]] = None,
 ) -> List[Experience]:
-    if mm_render is not None:
-        multi_modal_inputs = mm_render.build_mm_input_for_training(messages=messages)
-    else:
-        multi_modal_inputs = None
-
     return [
         Experience(
             tokens=torch.cat(

@@ -550,6 +550,15 @@ class ModelWrapper:
     async def get_message_token_len(self, messages: List[dict]) -> int:
         return await self.model.get_message_token_len.remote(messages)
 
+    def _get_multi_modal_inputs(self, messages: List[dict]) -> Optional[dict[str, torch.Tensor]]:
+        if should_use_processor(self.model_path):
+            if self._mm_render is None:
+                self._mm_render = vLLMMultiModalRender(  # TODO: support sglang
+                    self.model_path,
+                )
+            return self._mm_render.build_mm_input_for_training(messages=messages)
+        return None
+
     def get_openai_client(self) -> "openai.OpenAI":
         """Get the openai client.
 
@@ -613,19 +622,15 @@ class ModelWrapper:
                 if self.config.enable_return_routed_experts:
                     extra_body["return_routed_experts"] = True
                 self._assert_openai_routed_experts_request_supported(extra_body, kwargs)
-                messages = args[-2] if len(args) > 2 else kwargs.get("messages")
                 response = ori_create(*args, extra_body=extra_body, logprobs=logprobs, **kwargs)
                 if kwargs.get("stream", False):
                     return HistoryRecordingStream(response, self.history, is_async=False)
-                if should_use_processor(self.model_path) and self._mm_render is None:
-                    self._mm_render = vLLMMultiModalRender(  # TODO: support sglang
-                        self.model_path,
-                    )
+                messages = args[-2] if len(args) > 2 else kwargs.get("messages")
+                multi_modal_inputs = self._get_multi_modal_inputs(messages)
                 self.history.extend(
                     convert_api_output_to_experience(
-                        messages,
                         response,
-                        mm_render=self._mm_render,
+                        multi_modal_inputs=multi_modal_inputs,
                         routed_experts_layout=self._routed_experts_layout,
                     )
                 )
@@ -698,9 +703,13 @@ class ModelWrapper:
                 )
                 if kwargs.get("stream", False):
                     return HistoryRecordingStream(response, self.history, is_async=True)
+                messages = args[-2] if len(args) > 2 else kwargs.get("messages")
+                multi_modal_inputs = self._get_multi_modal_inputs(messages)
                 self.history.extend(
                     convert_api_output_to_experience(
-                        response, routed_experts_layout=self._routed_experts_layout
+                        response,
+                        multi_modal_inputs=multi_modal_inputs,
+                        routed_experts_layout=self._routed_experts_layout,
                     )
                 )
                 return response
