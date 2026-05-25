@@ -1,5 +1,6 @@
 """SQL database storage"""
 
+import os
 import time
 from abc import abstractmethod
 from typing import Dict, List, Optional
@@ -98,6 +99,9 @@ class SQLExperienceStorage(SQLStorage):
         self.max_timeout = config.max_read_timeout
         self.batch_size = config.batch_size
         self.enable_replay = config.replay_buffer is not None and config.replay_buffer.enable
+        self.max_experience_bytes = int(
+            os.getenv("TRINITY_SQL_MAX_EXPERIENCE_BYTES", str(32 * 1024 * 1024))
+        )
         # TODO: optimize the following logic
         if config.schema_type == "experience":
             # NOTE: consistent with the old version of experience buffer
@@ -107,10 +111,46 @@ class SQLExperienceStorage(SQLStorage):
             self._read_method = self._read_fifo
 
     def write(self, data: List[Experience]) -> None:
+        experience_models = []
+        skipped = 0
+        for exp in data:
+            model = self.table_model_cls.from_experience(exp)
+            payload = model.experience_bytes
+            if (
+                self.max_experience_bytes > 0
+                and payload is not None
+                and len(payload) > self.max_experience_bytes
+            ):
+                skipped += 1
+                self.logger.warning(
+                    "Skip oversized experience: size=%s bytes > limit=%s bytes (task_id=%s run_id=%s msg_id=%s)",
+                    len(payload),
+                    self.max_experience_bytes,
+                    str(exp.eid.task),
+                    exp.eid.run,
+                    str(exp.eid.suffix),
+                )
+                continue
+            experience_models.append(model)
+
+        if not experience_models:
+            self.logger.warning(
+                "Skip SQL write: no valid experiences in batch. total=%s skipped=%s limit=%s",
+                len(data),
+                skipped,
+                self.max_experience_bytes,
+            )
+            return
+
         with retry_session(self.session, self.max_retry_times, self.max_retry_interval) as session:
-            experience_models = [self.table_model_cls.from_experience(exp) for exp in data]
             session.add_all(experience_models)
-        self.logger.info(f"Write {len(experience_models)} experiences to SQL storage.")
+        self.logger.info(
+            "Write %s experiences to SQL storage (input=%s skipped=%s limit=%s).",
+            len(experience_models),
+            len(data),
+            skipped,
+            self.max_experience_bytes,
+        )
 
     def _read_fifo(self, batch_size: int) -> List[Experience]:
         """Read experiences in FIFO order."""
