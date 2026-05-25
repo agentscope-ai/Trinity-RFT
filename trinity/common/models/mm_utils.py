@@ -26,6 +26,8 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+import numpy as np
+import torch
 import transformers
 from vllm.config import ModelConfig
 from vllm.entrypoints.chat_utils import (
@@ -35,7 +37,6 @@ from vllm.entrypoints.chat_utils import (
     parse_chat_messages_async,
 )
 from vllm.inputs import MultiModalDataDict
-from vllm.multimodal import MULTIMODAL_REGISTRY
 
 from trinity.utils.log import get_logger
 
@@ -251,16 +252,11 @@ class vLLMMultiModalRender(MultiModalRender):
 
         # Initialize multimodal processor if the model supports it
         self.mm_processor = None
-        if self.model_config.is_multimodal_model:
-            try:
-                self.mm_processor = MULTIMODAL_REGISTRY.create_processor(self.model_config)
-                self.logger.info("Initialized multimodal processor for model: %s", model_path)
-            except Exception as e:
-                self.logger.warning(
-                    "Failed to initialize multimodal processor: %s. "
-                    "Some multimodal features may be unavailable.",
-                    e,
-                )
+        if should_use_processor(model_path):
+            self.mm_processor = transformers.AutoProcessor.from_pretrained(
+                self.model_config.model,
+                trust_remote_code=self.model_config.trust_remote_code,
+            )
 
         # Store media connector configuration
         self._media_connector_config = {
@@ -275,6 +271,7 @@ class vLLMMultiModalRender(MultiModalRender):
         self,
         *,
         messages: List[Dict[str, Any]] = None,
+        input_ids: List[List[int]] = None,
         multi_modal_data: Dict[str, List] = None,
     ) -> Dict[str, Any] | None:
         """Tokenize prompt and integrate processed media inputs for model training.
@@ -303,6 +300,12 @@ class vLLMMultiModalRender(MultiModalRender):
             return None
 
         if messages is not None:
+            if input_ids is not None:
+                self.logger.warning(
+                    "Both `messages` and `input_ids` are provided. "
+                    "Only `messages` will be used for building multi-modal inputs."
+                )
+            input_ids = self.mm_processor.apply_chat_template(messages, tokenize=True)
             if multi_modal_data is not None:
                 self.logger.warning(
                     "Both `messages` and `multi_modal_data` are provided. "
@@ -310,10 +313,22 @@ class vLLMMultiModalRender(MultiModalRender):
                 )
             _, multi_modal_data = self.process_messages(messages)
 
+        if input_ids is None:
+            raise ValueError(
+                "No `messages` or `input_ids` provided. Cannot build multi-modal inputs without prompt context."
+            )
+        input_ids = np.array(input_ids)
+        if input_ids.ndim == 1:
+            input_ids = input_ids.reshape(1, -1)
+
         if not multi_modal_data:
             return None
 
-        multi_modal_inputs = {}
+        multi_modal_inputs = {
+            "mm_token_type_ids": torch.tensor(
+                self.mm_processor.create_mm_token_type_ids(input_ids), dtype=torch.int
+            )
+        }
         if images := multi_modal_data.get("image", None):
             images = [img.media for img in images]
             image_inputs = self.mm_processor.image_processor(images=images, return_tensors="pt")

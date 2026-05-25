@@ -19,7 +19,6 @@ from tests.tools import (
     get_template_config,
 )
 from trinity.common.config import Config
-from trinity.common.constants import MODEL_PATH_ENV_VAR
 from trinity.common.models.allocator import Allocator
 from trinity.common.models.model import ModelWrapper
 from trinity.manager.synchronizer import Synchronizer
@@ -582,9 +581,26 @@ class TestAPIServer(VLLMTestBase):
             self.model_wrapper_no_history.extract_experience_from_history()
         self.assertEqual(len(self.model_wrapper_no_history.history), 0)
 
-    @unittest.skipIf(
-        "Qwen3.5" not in os.getenv(MODEL_PATH_ENV_VAR, ""), "This test is only for Qwen3.5 series"
-    )
+
+class TestAPIServerWithQwen35(VLLMTestBase):
+    async def asyncSetUp(self):
+        self.config = get_template_config()
+        self.config.mode = "explore"
+        self.config.model.model_path = get_api_model_path()
+        self.config.explorer.rollout_model.engine_type = "vllm"
+        self.config.explorer.rollout_model.engine_num = 1
+        self.config.explorer.rollout_model.chat_template = CHAT_TEMPLATE
+        self.config.explorer.rollout_model.tensor_parallel_size = 1
+        self.config.explorer.rollout_model.enable_openai_api = True
+        self.config.explorer.rollout_model.enable_auto_tool_choice = True
+        self.config.explorer.rollout_model.tool_call_parser = "qwen3_coder"
+        self.config.explorer.rollout_model.enable_history = True
+
+        self.config.check_and_update()
+        self.engines, self.auxiliary_engines = await create_test_models(self.config)
+        self.model_wrapper = self.engines[0]
+        self.model_wrapper_no_history = clone_wrapper(self.model_wrapper, enable_history=False)
+
     async def test_reasoning_content(self):
         openai_client = self.model_wrapper.get_openai_client()
         model_id = openai_client.models.list().data[0].id
@@ -642,6 +658,44 @@ class TestAPIServer(VLLMTestBase):
         self.tokenizer = AutoTokenizer.from_pretrained(self.config.model.model_path)
         text = self.tokenizer.decode(exps[0].tokens.tolist())
         self.assertIn("Use `list_agents` tool to get the list of agents.", text)
+
+    async def test_multi_modal_content(self):
+        openai_client = self.model_wrapper.get_openai_client()
+        model_id = openai_client.models.list().data[0].id
+        # test multi-modal content
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": "https://qianwen-res.oss-accelerate.aliyuncs.com/Qwen3.5/demo/CI_Demo/mathv-1327.jpg"
+                        },
+                    },
+                    {
+                        "type": "text",
+                        "text": "The centres of the four illustrated circles are in the corners of the square. The two big circles touch each other and also the two little circles. With which factor do you have to multiply the radii of the little circles to obtain the radius of the big circles?\nChoices:\n(A) $\\frac{2}{9}$\n(B) $\\sqrt{5}$\n(C) $0.8 \\cdot \\pi$\n(D) 2.5\n(E) $1+\\sqrt{2}$",
+                    },
+                ],
+            },
+        ]
+        _ = openai_client.chat.completions.create(
+            model=model_id,
+            messages=messages,
+            n=1,
+            temperature=0.5,
+            logprobs=True,
+            top_logprobs=0,
+        )
+        exps = self.model_wrapper.extract_experience_from_history()
+        self.assertEqual(len(exps), 1)
+        exp = exps[0]
+        # self.assertGreater(len(exp.multi_modal_inputs), 1)
+        self.assertSetEqual(
+            set(exp.multi_modal_inputs.keys()),
+            {"mm_token_type_ids", "pixel_values", "image_grid_thw"},
+        )
 
 
 SYSTEM_PROMPT = """

@@ -253,10 +253,8 @@ class vLLMRolloutModel(BaseInferenceModel):
                     model_path=self.config.model_path,  # type: ignore
                 )
             multi_modal_inputs = self.mm_render.build_mm_input_for_training(
-                multi_modal_data=prompt.get("multi_modal_data", {})
+                messages=prompt["prompt"], multi_modal_data=prompt.get("multi_modal_data", {})
             )
-            multi_modal_inputs.pop("input_ids", None)
-            multi_modal_inputs.pop("attention_mask", None)
 
         output = await self._generate_internal(prompt=prompt, lora_request=lora_request, **kwargs)
         experiences = [
