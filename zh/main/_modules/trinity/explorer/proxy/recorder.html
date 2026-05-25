@@ -1032,7 +1032,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.orm</span><span class="w"> </span><span class="kn">import</span> <span class="n">sessionmaker</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">init_engine</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">retry_session</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_with_retry_session</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.experience</span><span class="w"> </span><span class="kn">import</span> <span class="n">Experience</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
 
@@ -1060,9 +1060,12 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../build_api/trinity.explorer.proxy.recorder.html#trinity.explorer.proxy.recorder.HistoryRecorder.record_history">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">record_history</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">experiences</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Save experience to the database.&quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="n">retry_session</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">)</span> <span class="k">as</span> <span class="n">db</span><span class="p">:</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">operation</span><span class="p">(</span><span class="n">db</span><span class="p">):</span>
             <span class="n">exps</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">from_experience</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span> <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">experiences</span><span class="p">]</span>
-            <span class="n">db</span><span class="o">.</span><span class="n">add_all</span><span class="p">(</span><span class="n">exps</span><span class="p">)</span></div>
+            <span class="n">db</span><span class="o">.</span><span class="n">add_all</span><span class="p">(</span><span class="n">exps</span><span class="p">)</span>
+
+        <span class="n">run_with_retry_session</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="n">operation</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="HistoryRecorder.update_reward">
@@ -1087,7 +1090,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            the first call will return the updated experiences; subsequent calls will return</span>
 <span class="sd">            an empty list.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">with</span> <span class="n">retry_session</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">)</span> <span class="k">as</span> <span class="n">db</span><span class="p">:</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">operation</span><span class="p">(</span><span class="n">db</span><span class="p">):</span>
             <span class="c1"># Lock and retrieve records that have not been consumed yet.</span>
             <span class="n">records</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="p">)</span>
@@ -1111,7 +1115,9 @@ window.runMermaid = runMermaid;</script>
 
             <span class="c1"># The session commit is handled by the `retry_session` context manager.</span>
             <span class="n">updated_experiences</span> <span class="o">=</span> <span class="p">[</span><span class="n">record</span><span class="o">.</span><span class="n">to_experience</span><span class="p">()</span> <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">records</span><span class="p">]</span>
-            <span class="k">return</span> <span class="n">updated_experiences</span></div>
+            <span class="k">return</span> <span class="n">updated_experiences</span>
+
+        <span class="k">return</span> <span class="n">run_with_retry_session</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="n">operation</span><span class="p">)</span></div>
 </div>
 
 

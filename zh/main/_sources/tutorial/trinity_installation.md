@@ -10,8 +10,8 @@
 请确保您的系统满足以下要求：
 
 - **Python**：3.10 – 3.12
-- **CUDA**：12.8 或更高版本
-- **GPU**：至少一块 [compute capability](https://developer.nvidia.com/cuda/gpus) 为 8.0 或更高的 NVIDIA GPU（例如 RTX 30 系列、A100、H100）
+- **CUDA**：13.0 或更高版本
+- **GPU**：至少一块 [compute capability](https://developer.nvidia.com/cuda/gpus) 为 9.0 或更高的 NVIDIA GPU（例如 RTX 40 系列、H100）
 
 ### 如果您没有 GPU 或不希望使用 GPU
 

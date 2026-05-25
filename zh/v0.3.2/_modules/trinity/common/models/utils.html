@@ -1252,7 +1252,10 @@ window.runMermaid = runMermaid;</script>
             <span class="p">):</span>
                 <span class="k">return</span> <span class="s2">&quot;megatron&quot;</span><span class="p">,</span> <span class="n">checkpoint_dir</span>
             <span class="k">else</span><span class="p">:</span>  <span class="c1"># hf checkpointing</span>
-                <span class="k">return</span> <span class="n">load_huggingface_state_dict</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">checkpoint_dir</span><span class="p">,</span> <span class="s2">&quot;huggingface&quot;</span><span class="p">))</span>
+                <span class="k">return</span> <span class="n">load_huggingface_state_dict</span><span class="p">(</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">checkpoint_dir</span><span class="p">,</span> <span class="s2">&quot;huggingface&quot;</span><span class="p">),</span>
+                    <span class="n">trust_remote_code</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">trust_remote_code</span><span class="p">,</span>
+                <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported strategy: </span><span class="si">{</span><span class="n">strategy</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
@@ -1337,10 +1340,19 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="load_huggingface_state_dict">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.models.utils.html#trinity.common.models.utils.load_huggingface_state_dict">[文档]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">load_huggingface_state_dict</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_huggingface_state_dict</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">trust_remote_code</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">transformers</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_hf_auto_model_class</span>
 
-    <span class="n">model</span> <span class="o">=</span> <span class="n">transformers</span><span class="o">.</span><span class="n">AutoModelForCausalLM</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">)</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">transformers</span><span class="o">.</span><span class="n">AutoConfig</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
+        <span class="n">checkpoint_path</span><span class="p">,</span>
+        <span class="n">trust_remote_code</span><span class="o">=</span><span class="n">trust_remote_code</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">auto_model_cls</span> <span class="o">=</span> <span class="n">get_hf_auto_model_class</span><span class="p">(</span><span class="n">model_config</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">auto_model_cls</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
+        <span class="n">checkpoint_path</span><span class="p">,</span>
+        <span class="n">trust_remote_code</span><span class="o">=</span><span class="n">trust_remote_code</span><span class="p">,</span>
+    <span class="p">)</span>
     <span class="k">return</span> <span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span></div>
 
 
