@@ -36,9 +36,10 @@ python bench.py gsm8k --node_num 1 --gpu_per_node 8 --model_path /your/model/pat
 | `--dlc` | Use when running in Aliyun PAI DLC environment |
 | `--node_num` | Number of nodes in the cluster (default: 1) |
 | `--gpu_per_node` | Number of GPUs per node (default: 8) |
-| `--vllm_engine_num` | Number of vLLM engines to use |
-| `--vllm_tp_size` | Tensor parallel size for vLLM |
-| `--explorer_trainer_ratio` | Ratio of explorer engine number to trainer GPU number (default: 0.6), used when `--vllm_engine_num` is not specified |
+| `--engine_num` | Number of inference engines to use |
+| `--tp_size` | Tensor parallel size for each inference engine |
+| `--engine_type` | Inference engine type, choose `vllm` or `sglang` |
+| `--explorer_trainer_ratio` | Ratio of explorer engine number to trainer GPU number (default: 0.6), used when `--engine_num` is not specified |
 | `--model_path` | Path to the main model checkpoint |
 | `--critic_model_path` | Path to the critic model checkpoint |
 | `--taskset_path` | Path to the taskset file |

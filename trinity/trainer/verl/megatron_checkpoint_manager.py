@@ -19,14 +19,13 @@ Modified from https://github.com/volcengine/verl/blob/v0.7.1/verl/utils/checkpoi
 import inspect
 import json
 import os
-from collections.abc import Callable
 from dataclasses import asdict
+from enum import Enum
 from typing import Optional
 
 import ray
 import torch
 import torch.distributed
-from megatron.core.transformer.enums import AttnBackend
 from transformers import GenerationConfig
 from verl.utils.checkpoint.megatron_checkpoint_manager import (
     MegatronCheckpointManager as OldMegatronCheckpointManager,
@@ -58,6 +57,10 @@ class MegatronCheckpointManager(OldMegatronCheckpointManager):
         ray_namespace: str = "",
         **kwargs,
     ):
+        from megatron.core.dist_checkpointing.strategies.async_utils import (
+            AsyncCallsQueue,
+        )
+
         super().__init__(
             *args,
             **kwargs,
@@ -71,6 +74,7 @@ class MegatronCheckpointManager(OldMegatronCheckpointManager):
         self.latest_tokenizer_save_step = None
         self.latest_extra_state_save_step = None
         self.latest_hf_model_save_step = None
+        self._async_calls = AsyncCallsQueue()
 
     def _is_latest_registered_checkpoint(self, path: str) -> bool:
         if not self.previous_saved_paths:
@@ -81,6 +85,62 @@ class MegatronCheckpointManager(OldMegatronCheckpointManager):
         if self._is_latest_registered_checkpoint(new_path):
             return
         super().register_checkpoint(new_path, max_ckpt_to_keep)
+
+    def _infer_max_position_embeddings(self, hf_config) -> Optional[int]:
+        rope_scaling = getattr(hf_config, "rope_scaling", None)
+        if not isinstance(rope_scaling, dict):
+            return None
+        if rope_scaling.get("rope_type") != "yarn":
+            return None
+
+        original_max_position_embeddings = rope_scaling.get("original_max_position_embeddings")
+        if original_max_position_embeddings is None:
+            return None
+
+        factor = rope_scaling.get("factor", 1.0)
+        try:
+            return int(float(original_max_position_embeddings) * float(factor))
+        except (TypeError, ValueError):
+            return None
+
+    def _patch_hf_config_for_save(self, hf_config) -> None:
+        if hf_config is None or hasattr(hf_config, "max_position_embeddings"):
+            return
+
+        max_position_embeddings = self._infer_max_position_embeddings(hf_config)
+        if max_position_embeddings is None:
+            return
+
+        setattr(hf_config, "max_position_embeddings", max_position_embeddings)
+
+    def _patch_save_configs(self) -> None:
+        self._patch_hf_config_for_save(getattr(self, "hf_config", None))
+        bridge_hf_config = getattr(getattr(self, "bridge", None), "hf_config", None)
+        if bridge_hf_config is not self.hf_config:
+            self._patch_hf_config_for_save(bridge_hf_config)
+
+    def _to_json_safe(self, value):
+        if value is None or isinstance(value, (bool, int, float, str)):
+            return value
+        if isinstance(value, (torch.dtype, Enum)):
+            return str(value)
+        if callable(value):
+            return None
+        if isinstance(value, dict):
+            sanitized = {}
+            for key, item in value.items():
+                sanitized_item = self._to_json_safe(item)
+                if sanitized_item is not None:
+                    sanitized[key] = sanitized_item
+            return sanitized
+        if isinstance(value, (list, tuple, set)):
+            sanitized = []
+            for item in value:
+                sanitized_item = self._to_json_safe(item)
+                if sanitized_item is not None:
+                    sanitized.append(sanitized_item)
+            return sanitized
+        return str(value)
 
     def _save_state_dict(self, local_path, global_step, max_ckpt_to_keep=None) -> bool:
         """
@@ -190,6 +250,7 @@ class MegatronCheckpointManager(OldMegatronCheckpointManager):
                     logger=self.logger,
                 )
                 hf_ckpt_path = get_hf_model_checkpoint_path(local_path)
+                self._patch_save_configs()
                 if self.vanilla_bridge:
                     extended_args = {}
                     mbridge_config = getattr(self.checkpoint_config, "mbridge_config", None) or {}
@@ -224,9 +285,7 @@ class MegatronCheckpointManager(OldMegatronCheckpointManager):
                 async_save_request is not None
             ), "Async save request should not be None when using async save."
             async_save_request.add_finalize_fn(finalize_save_fn)
-            from megatron.core.dist_checkpointing.strategies.base import async_calls
-
-            async_calls.schedule_async_request(async_save_request)
+            self._async_calls.schedule_async_request(async_save_request)
         else:
             finalize_save_fn()
 
@@ -257,6 +316,7 @@ class MegatronCheckpointManager(OldMegatronCheckpointManager):
                 if self.processing_class is not None:
                     self.processing_class.save_pretrained(hf_config_tokenizer_path)
                 # Save huggingface config
+                self._patch_save_configs()
                 self.hf_config.save_pretrained(hf_config_tokenizer_path)
                 if hasattr(self.hf_config, "name_or_path") and self.hf_config.name_or_path:
                     try:
@@ -312,18 +372,7 @@ class MegatronCheckpointManager(OldMegatronCheckpointManager):
             transformer_config_dict = asdict(self.transformer_config)
             for k in backup:
                 setattr(self.transformer_config, k, backup[k])
-            to_convert_types = {torch.dtype: str, AttnBackend: str}
-            ignore_types = [Callable]
-            pop_keys = []
-            for key, value in transformer_config_dict.items():
-                if type(value) in to_convert_types:
-                    transformer_config_dict[key] = to_convert_types[type(value)](value)
-                if type(value) in ignore_types:
-                    pop_keys.append(key)
-                if callable(value):
-                    pop_keys.append(key)
-            for key in pop_keys:
-                transformer_config_dict.pop(key)
+            transformer_config_dict = self._to_json_safe(transformer_config_dict)
             transformer_config_path = get_transformer_config_checkpoint_path(local_path)
             with open(transformer_config_path, "w") as f:
                 json.dump(transformer_config_dict, f, indent=2)
@@ -349,6 +398,7 @@ class MegatronCheckpointManager(OldMegatronCheckpointManager):
             # wait for everyone to dump to local
             if self.bridge is not None:
                 hf_model_ckpt_path = get_hf_model_checkpoint_path(local_path)
+                self._patch_save_configs()
                 if self.vanilla_bridge:
                     extended_args = {}
                     mbridge_config = getattr(self.checkpoint_config, "mbridge_config", None) or {}
@@ -470,3 +520,9 @@ class MegatronCheckpointManager(OldMegatronCheckpointManager):
 
         if self.rank == 0:
             self.register_checkpoint(local_path, max_ckpt_to_keep)
+
+    def finalize_async_calls(self, blocking: bool = False) -> None:
+        self._async_calls.maybe_finalize_async_calls(blocking=blocking)
+
+    def wait_on_save_thread(self) -> None:
+        self.finalize_async_calls(blocking=True)

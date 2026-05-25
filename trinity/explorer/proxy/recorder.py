@@ -3,7 +3,7 @@ from typing import Dict, List, Set
 from sqlalchemy.orm import sessionmaker
 
 from trinity.buffer.schema import init_engine
-from trinity.buffer.utils import retry_session
+from trinity.buffer.utils import run_with_retry_session
 from trinity.common.experience import Experience
 from trinity.utils.log import get_logger
 
@@ -24,9 +24,12 @@ class HistoryRecorder:
 
     def record_history(self, experiences: List[Experience]) -> None:
         """Save experience to the database."""
-        with retry_session(self.session) as db:
+
+        def operation(db):
             exps = [self.table_model_cls.from_experience(exp) for exp in experiences]
             db.add_all(exps)
+
+        run_with_retry_session(self.session, operation)
 
     def update_reward(
         self, reward: float, msg_ids: list, run_id: int, task_id: str
@@ -48,7 +51,8 @@ class HistoryRecorder:
             the first call will return the updated experiences; subsequent calls will return
             an empty list.
         """
-        with retry_session(self.session) as db:
+
+        def operation(db):
             # Lock and retrieve records that have not been consumed yet.
             records = (
                 db.query(self.table_model_cls)
@@ -73,6 +77,8 @@ class HistoryRecorder:
             # The session commit is handled by the `retry_session` context manager.
             updated_experiences = [record.to_experience() for record in records]
             return updated_experiences
+
+        return run_with_retry_session(self.session, operation)
 
 
 class MemoryHistoryRecorder:

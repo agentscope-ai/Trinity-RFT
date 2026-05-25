@@ -22,6 +22,7 @@ PLUGIN_DIRS_ENV_VAR = "TRINITY_PLUGIN_DIRS"
 LOG_DIR_ENV_VAR = "TRINITY_LOG_DIR"  # log dir
 LOG_LEVEL_ENV_VAR = "TRINITY_LOG_LEVEL"  # global log level
 LOG_NODE_IP_ENV_VAR = "TRINITY_LOG_NODE_IP"  # whether to organize logs by node IP
+MAX_EXP_BYTES_ENV_VAR = "TRINITY_MAX_EXP_SIZE"  # max size for each experience in bytes
 
 
 # constants

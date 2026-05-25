@@ -790,7 +790,8 @@ class TrainerConfig:
 
     save_strategy: SaveStrategy = SaveStrategy.UNRESTRICTED
     max_checkpoints_to_keep: Optional[int] = None
-
+    # ! DO NOT SET
+    trust_remote_code: bool = False
     trainer_config: Any = field(default_factory=dict)
     trainer_config_path: str = ""  # deprecated, use `trainer_config` instead
 
