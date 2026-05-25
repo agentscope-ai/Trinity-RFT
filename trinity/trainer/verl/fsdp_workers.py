@@ -292,7 +292,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
             if self._is_offload_param:
                 offload_fsdp_model_to_cpu(self.actor_module_fsdp)
             torch.distributed.barrier()
-            torch.cuda.empty_cache()
+            get_torch_device().empty_cache()
 
     @kimi_vl_monkey_patch_decorator
     def _build_model_optimizer(  # noqa: C901
@@ -793,6 +793,8 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                 trust_remote_code=trust_remote_code,
             )
 
+        get_torch_device().empty_cache()
+
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
     def setup_weight_sync_group(self):
         if self.config.synchronizer.sync_method == SyncMethod.NCCL:
@@ -818,7 +820,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                                     (realname, str(param.dtype).split(".")[-1], tuple(param.shape))
                                 )
                             param = None
-                        torch.cuda.empty_cache()
+                        get_torch_device().empty_cache()
                 else:  # fsdp2
                     for name, param in model.named_parameters():
                         self.state_dict_meta.append(
@@ -962,7 +964,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
         # backward passes. Without this, memory_reserved grows monotonically and
         # eventually starves vLLM during weight sync in colocate mode.
         # Matches the pattern in megatron_workers.py update_actor().
-        torch.cuda.empty_cache()
+        get_torch_device().empty_cache()
 
         return output
 
@@ -1045,6 +1047,11 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
             output = DataProto.from_dict(tensors={"ref_log_prob": outputs["log_probs"]})
 
         output = output.to("cpu")
+
+        # Release reserved GPU memory after ref model forward pass.
+        # Without this, memory_reserved grows after each ref_log_prob call,
+        # eventually causing OOM in subsequent training steps.
+        get_torch_device().empty_cache()
 
         # https://pytorch.org/docs/stable/notes/fsdp.html#fsdp-notes
         # unshard the root FSDP module
@@ -1635,6 +1642,8 @@ class CriticWorker(Worker, DistProfilerExtension):
             ray_namespace=self.config.ray_namespace,
             trust_remote_code=self.config.model.get("trust_remote_code", False),
         )
+
+        get_torch_device().empty_cache()
 
     @register(dispatch_mode=make_nd_compute_dataproto_dispatch_fn(mesh_name="critic"))
     @DistProfiler.annotate(color="cyan", role="compute_values")

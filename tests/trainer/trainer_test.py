@@ -155,8 +155,18 @@ class TestTrainerCountdown(BaseTrainerCase):
         convert_command(self.config.checkpoint_job_dir)
         hf_dir_step_4 = os.listdir(os.path.join(checkpoint_step_4, "actor", "huggingface"))
         hf_dir_step_8 = os.listdir(os.path.join(checkpoint_step_8, "actor", "huggingface"))
-        self.assertIn("model.safetensors", hf_dir_step_4)
-        self.assertIn("model.safetensors", hf_dir_step_8)
+        self.assertTrue(
+            any(
+                file.startswith("model.safetensors") and file.endswith(".safetensors")
+                for file in hf_dir_step_4
+            )
+        )
+        self.assertTrue(
+            any(
+                file.startswith("model.safetensors") and file.endswith(".safetensors")
+                for file in hf_dir_step_8
+            )
+        )
         self.assertEqual(step_num, 8)
         ray.init(ignore_reinit_error=True, namespace=self.config.ray_namespace)
         # test bench mode
@@ -241,25 +251,27 @@ class TestStepAheadAsyncRL(BaseTrainerCase):
 
 
 @parameterized_class(
-    ("strategy", "offloading", "engine_type"),
+    ("strategy", "offloading", "engine_type", "entropy_loss_fn"),
     [
-        ("megatron", False, "vllm"),
-        ("fsdp2", False, "vllm"),
-        ("megatron", True, "sglang"),
-        ("fsdp2", True, "sglang"),
+        ("megatron", False, "vllm", "none"),
+        ("fsdp2", False, "vllm", "none"),
+        ("megatron", True, "sglang", "default"),
+        ("fsdp2", True, "sglang", "default"),
     ],
 )
 class TestTrainerGSM8K(BaseTrainerCase):
     def test_trainer(self):
         """Test GSM8K."""
         # test both mode
-        self.config.model.model_path = get_api_model_path()
         self.config.algorithm.algorithm_type = "grpo"
         self.config.algorithm.repeat_times = 4
         self.config.algorithm.advantage_fn = "grpo"
         self.config.algorithm.advantage_fn_args = {
             "epsilon": 1e-6,
         }
+        self.config.algorithm.entropy_loss_fn = self.entropy_loss_fn
+        if self.offloading:
+            self.config.model.model_path = get_api_model_path()
         # self.config.algorithm.repeat_times = 8  # TODO: used for real testing
         # self.config.buffer.batch_size = 96  # TODO: used for real testing
         # FOR MULTI-NODE TESTING, PLEASE MAKE SURE YOU HAVE 3 NODES
@@ -271,12 +283,6 @@ class TestTrainerGSM8K(BaseTrainerCase):
         self.config.buffer.total_epochs = 1
         self.config.buffer.explorer_input.taskset = get_unittest_dataset_config("gsm8k")
         self.config.trainer.trainer_strategy = self.strategy
-        if self.strategy == "megatron":
-            # Megatron not support packing for now, so we need to set the following configs
-            # to make sure the input is not packed.
-            # Remove after we support packing in Megatron.
-            self.config.trainer.use_dynamic_bsz = False
-            self.config.trainer.use_remove_padding = False
         self.config.check_and_update()
         self.config.trainer.trainer_config.trainer.max_actor_ckpt_to_keep = 2
         actor_rollout_ref = self.config.trainer.trainer_config.actor_rollout_ref
@@ -299,6 +305,12 @@ class TestTrainerGSM8K(BaseTrainerCase):
         actor_metrics = parser.metric_list("actor")
         self.assertGreater(len(actor_metrics), 0)
         self.assertEqual(parser.metric_max_step(actor_metrics[0]), 4)
+        entropy_loss_metrics = parser.metric_list("actor/entropy_loss")
+        if self.entropy_loss_fn == "none":
+            self.assertEqual(len(entropy_loss_metrics), 0)
+        else:
+            self.assertGreater(len(entropy_loss_metrics), 0)
+            self.assertEqual(parser.metric_max_step(entropy_loss_metrics[0]), 4)
         response_metrics = parser.metric_list("response_length")
         self.assertGreater(len(response_metrics), 0)
         self.assertEqual(parser.metric_max_step(response_metrics[0]), 4)
@@ -824,13 +836,14 @@ class TestTrainerCheckpointSave(unittest.TestCase):
         )
 
         megatron_dist_ckpt_items = {
-            "__0_1.distcp",
+            "__0_0.distcp",
             "__1_0.distcp",
             "common.pt",
             ".metadata",
             "metadata.json",
-            "__1_1.distcp",
-            "__0_0.distcp",
+            # for Megatron < 0.18
+            # "__0_1.distcp",
+            # "__1_1.distcp",
         }
         start_time = time.time()
         while not stop_event.is_set() and time.time() - start_time < 60 * 10:

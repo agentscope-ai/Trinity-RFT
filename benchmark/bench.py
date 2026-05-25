@@ -14,19 +14,32 @@ from trinity.common.constants import MODEL_PATH_ENV_VAR, SyncStyle
 from trinity.utils.dlc_utils import get_dlc_env_vars
 
 
-def set_engine_num(config, args):
+def set_rollout_engine_config(config, args):
     config["cluster"]["node_num"] = args.node_num
     config["cluster"]["gpu_per_node"] = args.gpu_per_node
     batch_size = config["buffer"]["batch_size"] * config["algorithm"]["repeat_times"]
     if config["mode"] == "train":
         return
 
-    if args.vllm_tp_size is not None:
-        config["explorer"]["rollout_model"]["tensor_parallel_size"] = args.vllm_tp_size
-    tensor_parallel_size = config["explorer"]["rollout_model"]["tensor_parallel_size"]
+    rollout_model_config = config["explorer"]["rollout_model"]
 
-    if args.vllm_engine_num is not None:
-        config["explorer"]["rollout_model"]["engine_num"] = args.vllm_engine_num
+    if args.engine_type is not None:
+        rollout_model_config["engine_type"] = args.engine_type
+    if args.tp_size is not None:
+        rollout_model_config["tensor_parallel_size"] = args.tp_size
+    tensor_parallel_size = rollout_model_config["tensor_parallel_size"]
+
+    if tensor_parallel_size > args.gpu_per_node:
+        assert tensor_parallel_size % args.gpu_per_node == 0, (
+            "Please adjust the value of `tensor_parallel_size` so that it is an integer "
+            "multiple of `gpu_per_node` for cross-node inference."
+        )
+        rollout_model_config["nnodes"] = tensor_parallel_size // args.gpu_per_node
+    else:
+        rollout_model_config["nnodes"] = 1
+
+    if args.engine_num is not None:
+        rollout_model_config["engine_num"] = args.engine_num
     else:  # auto set engine_num
         opt_explorer_num, opt_ratio_diff = None, float("inf")
         total_gpu_num = args.node_num * args.gpu_per_node
@@ -49,9 +62,11 @@ def set_engine_num(config, args):
                     trainer_gpu_num, opt_explorer_num, opt_ratio_diff
                 )
         else:  # multi node
-            assert (
-                args.gpu_per_node % tensor_parallel_size == 0
-            ), "Please adjust the value of `tensor_parallel_size` so that it is a divisor of `gpu_per_node`."
+            if tensor_parallel_size <= args.gpu_per_node:
+                assert args.gpu_per_node % tensor_parallel_size == 0, (
+                    "Please adjust the value of `tensor_parallel_size` so that it is a divisor "
+                    "of `gpu_per_node`, or an integer multiple of `gpu_per_node` for cross-node inference."
+                )
             for trainer_node_num in range(1, args.node_num):
                 trainer_gpu_num = args.gpu_per_node * trainer_node_num
                 opt_explorer_num, opt_ratio_diff = update_opt_explorer_num(
@@ -60,7 +75,7 @@ def set_engine_num(config, args):
         assert (
             opt_explorer_num is not None
         ), "Cannot find a suitable explorer number. Please check the value of `train_batch_size`."
-        config["explorer"]["rollout_model"]["engine_num"] = opt_explorer_num
+        rollout_model_config["engine_num"] = opt_explorer_num
 
 
 def check_taskset_path(dataset_name: str, taskset_path: str) -> str:
@@ -174,7 +189,7 @@ def prepare_configs(args, rank, current_time):
 
         config["name"] += f"-{current_time_str}"
         config["checkpoint_root_dir"] = os.path.join(run_path, "checkpoints")
-        set_engine_num(config, args)
+        set_rollout_engine_config(config, args)
         config["model"]["model_path"] = (
             args.model_path
             or config["model"]["model_path"]
@@ -280,10 +295,27 @@ if __name__ == "__main__":
         "--gpu_per_node", type=int, default=8, help="Specify the number of GPUs per node."
     )
     parser.add_argument(
-        "--vllm_engine_num", type=int, default=None, help="Specify the number of vLLM engines."
+        "--engine_num",
+        "--vllm_engine_num",
+        dest="engine_num",
+        type=int,
+        default=None,
+        help="Specify the number of inference engines.",
     )
     parser.add_argument(
-        "--vllm_tp_size", type=int, default=None, help="Specify the number of vLLM tp size."
+        "--tp_size",
+        "--vllm_tp_size",
+        dest="tp_size",
+        type=int,
+        default=None,
+        help="Specify the tensor parallel size for each inference engine.",
+    )
+    parser.add_argument(
+        "--engine_type",
+        type=str,
+        default=None,
+        choices=["vllm", "sglang"],
+        help="Specify the inference engine type.",
     )
     parser.add_argument(
         "--explorer_trainer_ratio",

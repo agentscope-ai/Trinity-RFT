@@ -1222,6 +1222,8 @@ class TrainerConfigValidator(ConfigValidator):
         if config.model.external_model.enable:
             return
 
+        config.trainer.trust_remote_code = config.model.trust_remote_code
+
         if config.trainer.trainer_type == "verl":
             if config.trainer.ulysses_sequence_parallel_size < 1:
                 self.logger.warning(

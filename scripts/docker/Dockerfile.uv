@@ -50,7 +50,7 @@ RUN . /opt/venv/bin/activate && \
 
 # Install Transformer Engine
 RUN . /opt/venv/bin/activate && \
-    git clone --branch stable --depth 1 --recursive https://github.com/NVIDIA/TransformerEngine.git /tmp/TransformerEngine && \
+    git clone --branch v2.14.1 --depth 1 --recursive https://github.com/NVIDIA/TransformerEngine.git /tmp/TransformerEngine && \
     MAX_JOBS=${BUILD_JOBS} \
     CMAKE_BUILD_PARALLEL_LEVEL=${BUILD_JOBS} \
     NVTE_BUILD_THREADS_PER_JOB=${NVTE_BUILD_THREADS_PER_JOB} \
@@ -63,7 +63,7 @@ RUN . /opt/venv/bin/activate && MAX_JOBS=${BUILD_JOBS} \
     CMAKE_BUILD_PARALLEL_LEVEL=${BUILD_JOBS} \
     NVTE_BUILD_THREADS_PER_JOB=${NVTE_BUILD_THREADS_PER_JOB} \
     uv pip install -e .[qwen3_5] --no-build-isolation && \
-    uv pip install megatron-core[mlm]==0.16.1 --no-build-isolation && \
+    uv pip install git+https://github.com/NVIDIA/Megatron-LM.git@38986a98aae6a0cc4c8ae7b435db3288a890b0cb --no-build-isolation && \
     uv pip install git+https://github.com/ISEEKYAN/mbridge.git@90c4633a6cdcfe5d29723d7b145d32f6f5e73303 && \
     NVCC_APPEND_FLAGS="--threads ${NVCC_THREADS}" APEX_PARALLEL_BUILD=${BUILD_JOBS} \
     uv pip install -v --no-build-isolation \
@@ -72,13 +72,8 @@ RUN . /opt/venv/bin/activate && MAX_JOBS=${BUILD_JOBS} \
     git+https://github.com/NVIDIA/apex.git
 
 # Install SGLang
-RUN RUSTUP_HOME=/usr/local/rustup CARGO_HOME=/usr/local/cargo \
-    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-RUN . /opt/venv/bin/activate && . /usr/local/cargo/env && \
-    git clone -b v0.5.11 https://github.com/sgl-project/sglang.git /tmp/sglang && \
-    uv pip install /tmp/sglang/python && \
-    rm -rf /tmp/sglang && \
-    uv pip install transformers==5.8.0
+RUN . /opt/venv/bin/activate && uv pip install sglang==0.5.12 --prerelease=allow && \
+    uv pip install transformers==5.8.1
 
 # Set Env variables
 # ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/local/nvidia/lib:/usr/local/nvidia/lib64:/usr/local/cuda/lib64

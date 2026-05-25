@@ -244,7 +244,10 @@ def load_state_dict(checkpoint_dir: str, config: TrainerConfig) -> Union[dict, T
             ):
                 return "megatron", checkpoint_dir
             else:  # hf checkpointing
-                return load_huggingface_state_dict(os.path.join(checkpoint_dir, "huggingface"))
+                return load_huggingface_state_dict(
+                    os.path.join(checkpoint_dir, "huggingface"),
+                    trust_remote_code=config.trust_remote_code,
+                )
         else:
             raise ValueError(f"Unsupported strategy: {strategy}")
     else:
@@ -320,10 +323,19 @@ def load_fsdp_state_dict_from_verl_checkpoint(checkpoint_path: str) -> dict:  # 
     return merged_state_dict
 
 
-def load_huggingface_state_dict(checkpoint_path: str):
+def load_huggingface_state_dict(checkpoint_path: str, trust_remote_code: bool = False):
     import transformers
+    from verl.utils.model import get_hf_auto_model_class
 
-    model = transformers.AutoModelForCausalLM.from_pretrained(checkpoint_path)
+    model_config = transformers.AutoConfig.from_pretrained(
+        checkpoint_path,
+        trust_remote_code=trust_remote_code,
+    )
+    auto_model_cls = get_hf_auto_model_class(model_config)
+    model = auto_model_cls.from_pretrained(
+        checkpoint_path,
+        trust_remote_code=trust_remote_code,
+    )
     return model.state_dict()
 
 

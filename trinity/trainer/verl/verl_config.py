@@ -180,7 +180,7 @@ class Actor:
     clip_ratio: float = 0.2
     clip_ratio_low: Optional[float] = None
     clip_ratio_high: Optional[float] = None
-    entropy_coeff: float = 0.001
+    entropy_coeff: float = 0
     use_kl_loss: bool = False
 
 
