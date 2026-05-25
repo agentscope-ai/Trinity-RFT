@@ -16,12 +16,13 @@ Note:
     Relies on `qwen_vl_utils.process_vision_info` for media extraction.
 
 Compatibility:
-    `ClientMultiModalProcessor` normalizes legacy transformers-style message parts
+    `MultiModalRender` normalizes legacy transformers-style message parts
     (e.g., type=image with url/path/base64) into vLLM/OpenAI-style part schema
     before calling vLLM `parse_chat_messages`.
 """
 import asyncio
 import re
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -33,7 +34,7 @@ from vllm.entrypoints.chat_utils import (
     parse_chat_messages,
     parse_chat_messages_async,
 )
-from vllm.inputs import MultiModalDataDict, MultiModalUUIDDict
+from vllm.inputs import MultiModalDataDict
 from vllm.multimodal import MULTIMODAL_REGISTRY
 
 from trinity.utils.log import get_logger
@@ -53,58 +54,7 @@ _LEGACY_MM_VALUE_KEYS = {
 }
 
 
-def is_qwen_like_processor(processor: Any) -> bool:
-    return re.search(r"(Qwen|Kimi|Glm).*Processor", processor.__class__.__name__) is not None
-
-
-def build_multi_modal_data(
-    processor: Any,
-    messages: List[Dict],
-) -> Dict[str, Any]:
-    """Extract and preprocess vision inputs from multi-modal messages for vLLM inference.
-
-    Processes messages containing image/video placeholders using model-specific vision utilities.
-    Returns structured media inputs compatible with vLLM's multi-modal API.
-
-    Args:
-        processor: Vision-language processor instance (must have class name containing
-                   ("Qwen", "Kimi" OR "Glm") AND "Processor").
-        messages: List of conversation messages in model-expected format. Each message's "content"
-                  may be a string or list of content items (text/image/video dictionaries).
-
-    Returns:
-        Dictionary containing processed media inputs with keys:
-        - "image": List of processed image objects (if images exist)
-        - "video": List of processed video objects (if videos exist)
-        Keys are omitted when no corresponding media is present.
-
-    Raises:
-        NotImplementedError: If processor class name doesn't match supported patterns.
-        ImportError: If required `qwen_vl_utils` module is unavailable.
-
-    Example:
-        >>> messages = [{"role": "user", "content": [{"type": "image", "image": "img.jpg"}, {"type": "text", "text": "Describe this"}]}]
-        >>> build_multi_modal_data(processor, messages)
-        {"image": [processed_image]}
-    """
-    processor_class_name = processor.__class__.__name__
-    if is_qwen_like_processor(processor):
-        from qwen_vl_utils import process_vision_info
-
-        image_inputs, video_inputs = process_vision_info(messages)
-        multi_modal_data = {}
-        if image_inputs:
-            multi_modal_data["image"] = image_inputs
-        if video_inputs:
-            multi_modal_data["video"] = video_inputs
-
-        return multi_modal_data
-    raise NotImplementedError(
-        f"Processor '{processor_class_name}' not supported. Only Qwen/Kimi/Glm VL processors are supported."
-    )
-
-
-def should_use_auto_processor(model_path: str) -> bool:
+def should_use_processor(model_path: str) -> bool:
     p = Path(model_path)
     if p.is_file():
         p = p.parent
@@ -120,49 +70,9 @@ def should_use_auto_processor(model_path: str) -> bool:
 
 
 def processor_or_tokenizer_cls(model_path: str) -> Any:
-    if should_use_auto_processor(model_path):
+    if should_use_processor(model_path):
         return transformers.AutoProcessor
     return transformers.AutoTokenizer
-
-
-def build_mm_input_for_training(
-    processor: Any, prompt: str, multi_modal_data: Dict[str, List]
-) -> Dict[str, Any]:
-    """Tokenize prompt and integrate processed media inputs for model training.
-
-    Combines text prompt with preprocessed image/video data into model-ready tensor inputs.
-    Handles padding and tensor conversion for training workflows.
-
-    Args:
-        processor: Vision-language processor instance.
-        prompt: Plain text prompt WITHOUT media tags (e.g., "Describe this image").
-                Media placement is handled via `multi_modal_data`, not prompt tags.
-        multi_modal_data: Dictionary from `build_multi_modal_data()` containing:
-                          {"image": [...], "video": [...]} (keys optional)
-
-    Returns:
-        Dictionary of model inputs including:
-        - input_ids: Tokenized prompt IDs
-        - attention_mask: Attention mask tensor
-        - pixel_values: Processed image tensors (if images provided)
-        - pixel_values_videos: Processed video tensors (if videos provided)
-        All tensors converted to PyTorch format (`return_tensors="pt"`).
-
-    Raises:
-        ValueError: If media counts mismatch prompt expectations (handled internally by processor).
-
-    Note:
-        Prompt should NOT contain <image>/<video> tags here. Media association is managed
-        through the structured `multi_modal_data` dictionary.
-    """
-    inputs = processor(
-        text=[prompt],
-        images=multi_modal_data.get("image", None),
-        videos=multi_modal_data.get("video", None),
-        padding=True,
-        return_tensors="pt",
-    )
-    return dict(inputs)
 
 
 def build_mm_message(
@@ -267,7 +177,34 @@ def has_multi_modal_content(messages: List[Dict]) -> bool:
     return False
 
 
-class ClientMultiModalProcessor:
+class MultiModalRender(ABC):
+    """
+    Client-side processor that mirrors server's multimodal handling.
+    """
+
+    def __init__(self, model_path: str, *args, **kwargs):
+        pass
+
+    @abstractmethod
+    def process_messages(
+        self,
+        messages: list[dict[str, Any]],
+        *args,
+        **kwargs,
+    ):
+        pass
+
+    @abstractmethod
+    async def process_messages_async(
+        self,
+        messages: list[dict[str, Any]],
+        *args,
+        **kwargs,
+    ):
+        pass
+
+
+class vLLMMultiModalRender(MultiModalRender):
     """
     Client-side processor that mirrors vLLM server's multimodal handling.
 
@@ -334,16 +271,65 @@ class ClientMultiModalProcessor:
 
         self.trust_request_chat_template = trust_request_chat_template
 
+    def build_mm_input_for_training(
+        self,
+        *,
+        messages: List[Dict[str, Any]] = None,
+        multi_modal_data: Dict[str, List] = None,
+    ) -> Dict[str, Any] | None:
+        """Tokenize prompt and integrate processed media inputs for model training.
+
+        Combines text prompt with preprocessed image/video data into model-ready tensor inputs.
+        Handles padding and tensor conversion for training workflows.
+
+        Args:
+            multi_modal_data: Dictionary from `build_multi_modal_data()` containing:
+                            {"image": [...], "video": [...]} (keys optional)
+
+        Returns:
+            Dictionary of model inputs including:
+            - pixel_values: Processed image tensors (if images provided)
+            - pixel_values_videos: Processed video tensors (if videos provided)
+            All tensors converted to PyTorch format (`return_tensors="pt"`).
+
+        Raises:
+            ValueError: If media counts mismatch prompt expectations (handled internally by processor).
+
+        Note:
+            Prompt should NOT contain <image>/<video> tags here. Media association is managed
+            through the structured `multi_modal_data` dictionary.
+        """
+        if self.mm_processor is None:
+            return None
+
+        if messages is not None:
+            if multi_modal_data is not None:
+                self.logger.warning(
+                    "Both `messages` and `multi_modal_data` are provided. "
+                    "Only `messages` will be used."
+                )
+            _, multi_modal_data = self.process_messages(messages)
+
+        if not multi_modal_data:
+            return None
+
+        multi_modal_inputs = {}
+        if images := multi_modal_data.get("image", None):
+            images = [img.media for img in images]
+            image_inputs = self.mm_processor.image_processor(images=images, return_tensors="pt")
+            multi_modal_inputs.update(image_inputs)
+        if videos := multi_modal_data.get("video", None):
+            videos = [vid.media for vid in videos]
+            video_inputs = self.mm_processor.video_processor(videos=videos, return_tensors="pt")
+            multi_modal_inputs.update(video_inputs)
+        return multi_modal_inputs
+
     def process_messages(
         self,
         messages: list[dict[str, Any]],
         content_format: ChatTemplateContentFormat = "string",
         use_async: bool = False,
-    ) -> tuple[
-        list[ConversationMessage],
-        Optional[MultiModalDataDict],
-        Optional[MultiModalUUIDDict],
-    ]:
+    ) -> tuple[list[ConversationMessage], Optional[MultiModalDataDict],]:
         """
         Process chat messages and extract multimodal data.
 
@@ -355,14 +341,14 @@ class ClientMultiModalProcessor:
             use_async: Whether to use async processing for media fetching
 
         Returns:
-            Tuple of (conversation, mm_data, mm_uuids) matching server output
+            Tuple of (conversation, mm_data) matching server output
         """
         if use_async:
             return asyncio.run(self.process_messages_async(messages, content_format))
 
         normalized_messages = self._normalize_messages_for_vllm(messages)
 
-        conversation, mm_data, mm_uuids = parse_chat_messages(
+        conversation, mm_data, _ = parse_chat_messages(
             messages=normalized_messages,
             model_config=self.model_config,
             content_format=content_format,
@@ -370,23 +356,19 @@ class ClientMultiModalProcessor:
             mm_processor_kwargs=self.mm_processor_kwargs,
         )
 
-        return conversation, mm_data, mm_uuids
+        return conversation, mm_data
 
     async def process_messages_async(
         self,
         messages: list[dict[str, Any]],
         content_format: ChatTemplateContentFormat = "string",
-    ) -> tuple[
-        list[ConversationMessage],
-        Optional[MultiModalDataDict],
-        Optional[MultiModalUUIDDict],
-    ]:
+    ) -> tuple[list[ConversationMessage], Optional[MultiModalDataDict],]:
         """
         Async version of process_messages for concurrent media fetching.
         """
         normalized_messages = self._normalize_messages_for_vllm(messages)
 
-        conversation, mm_data, mm_uuids = await parse_chat_messages_async(
+        conversation, mm_data, _ = await parse_chat_messages_async(
             messages=normalized_messages,
             model_config=self.model_config,
             content_format=content_format,
@@ -394,7 +376,7 @@ class ClientMultiModalProcessor:
             mm_processor_kwargs=self.mm_processor_kwargs,
         )
 
-        return conversation, mm_data, mm_uuids
+        return conversation, mm_data
 
     def _normalize_messages_for_vllm(  # noqa: C901
         self, messages: list[dict[str, Any]]

@@ -386,6 +386,7 @@ def get_unittest_dataset_config(dataset_name: str = "countdown", split: str = "t
                 prompt_type=PromptType.MESSAGES,
                 messages_key="messages",
                 tools_key="tools",
+                enable_concatenated_multi_turn=True,
             ),
         )
     else:

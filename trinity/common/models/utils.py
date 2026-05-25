@@ -42,7 +42,7 @@ def tokenize_and_mask_messages_hf(
     tools: Optional[List[dict]] = None,
     chat_template: Optional[str] = None,
     enable_thinking: Optional[bool] = None,
-) -> Tuple[dict[str, torch.Tensor], int]:
+) -> dict[str, torch.Tensor]:
     """Calculate the assistant token mask with `chat_template`.
 
     Args:
@@ -78,7 +78,7 @@ def tokenize_and_mask_messages_default(
     tools: Optional[List[dict]] = None,
     chat_template: Optional[str] = None,
     enable_thinking: Optional[bool] = None,
-) -> Tuple[torch.Tensor, torch.Tensor, int]:
+) -> dict[str, torch.Tensor]:
     """Calculate the assistant token mask.
 
     Args:
@@ -129,10 +129,9 @@ def tokenize_and_mask_messages_default(
     token_dict = tokenizer.apply_chat_template(
         messages,
         add_generation_prompt=False,
-        return_tensors="pt",
         **common_kwargs,
     )
-    assistant_token_mask = torch.zeros_like(token_dict["input_ids"], dtype=torch.int)
+    assistant_masks = torch.zeros(len(token_dict["input_ids"][0]), dtype=torch.int)
 
     if len(generation_messages) != 0:
         first_generation_message_empty_flag = len(generation_messages[0]) == 0
@@ -158,11 +157,13 @@ def tokenize_and_mask_messages_default(
         ):
             prompt_len = len(prompt_token_ids)
             response_len = len(response_token_ids)
-            assistant_token_mask[0][prompt_len:response_len] = 1
+            assistant_masks[prompt_len:response_len] = 1
 
     token_dict.pop("attention_mask", None)  # remove attention mask if exists
-    token_dict["assistant_masks"] = assistant_token_mask
-    return token_dict
+    output = {"assistant_masks": assistant_masks.unsqueeze(0)}
+    for key, value in token_dict.items():
+        output[key] = torch.tensor(value)
+    return output
 
 
 def get_action_mask_method(chat_template: Optional[str] = None) -> Callable:

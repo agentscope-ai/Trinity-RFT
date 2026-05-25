@@ -22,6 +22,7 @@ from trinity.common.models.experience_extraction import (
     convert_api_output_to_experience,
     get_routed_experts_layout,
 )
+from trinity.common.models.mm_utils import should_use_processor, vLLMMultiModalRender
 from trinity.common.models.utils import get_action_mask_method
 from trinity.utils.log import get_logger
 
@@ -363,6 +364,7 @@ class ModelWrapper:
         self.request_count = 0
         self.state_lock = asyncio.Lock()
         self._routed_experts_layout: Optional[Tuple[int, int]] = None
+        self._mm_render = None
 
     async def prepare(self) -> None:
         """Prepare some necessary information for the model before inference."""
@@ -611,12 +613,20 @@ class ModelWrapper:
                 if self.config.enable_return_routed_experts:
                     extra_body["return_routed_experts"] = True
                 self._assert_openai_routed_experts_request_supported(extra_body, kwargs)
+                messages = args[-2] if len(args) > 2 else kwargs.get("messages")
                 response = ori_create(*args, extra_body=extra_body, logprobs=logprobs, **kwargs)
                 if kwargs.get("stream", False):
                     return HistoryRecordingStream(response, self.history, is_async=False)
+                if should_use_processor(self.model_path) and self._mm_render is None:
+                    self._mm_render = vLLMMultiModalRender(  # TODO: support sglang
+                        self.model_path,
+                    )
                 self.history.extend(
                     convert_api_output_to_experience(
-                        response, routed_experts_layout=self._routed_experts_layout
+                        messages,
+                        response,
+                        mm_render=self._mm_render,
+                        routed_experts_layout=self._routed_experts_layout,
                     )
                 )
                 return response
