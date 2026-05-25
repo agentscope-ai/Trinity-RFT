@@ -67,10 +67,27 @@ class DAPODynamicSamplingFilter(ExperienceOperator):
         metric_key: str = "accuracy",
         correct_threshold: float = 0.0,
     ) -> None:
+        """Initialize the dynamic sampling filter.
+
+        Args:
+            metric_key: Metric name used to determine rollout correctness.
+            correct_threshold: Minimum score treated as correct.
+        """
         self.metric_key = metric_key
         self.correct_threshold = correct_threshold
 
     def _outcome_score(self, exp: Experience) -> float:
+        """Extract the outcome score from an experience.
+
+        Args:
+            exp: Experience to evaluate.
+
+        Returns:
+            float: Outcome score used for correctness decisions.
+
+        Raises:
+            ValueError: If neither the configured metric nor reward is available.
+        """
         if exp.metrics and self.metric_key in exp.metrics:
             return float(exp.metrics[self.metric_key])
         if exp.reward is not None:
@@ -80,9 +97,25 @@ class DAPODynamicSamplingFilter(ExperienceOperator):
         )
 
     def _is_correct(self, exp: Experience) -> bool:
+        """Determine whether an experience is correct.
+
+        Args:
+            exp: Experience to evaluate.
+
+        Returns:
+            bool: True when the outcome score exceeds the threshold.
+        """
         return self._outcome_score(exp) > self.correct_threshold
 
     def process(self, exps: List[Experience]) -> Tuple[List[Experience], dict]:
+        """Keep only mixed-correctness groups for DAPO training.
+
+        Args:
+            exps: Experiences grouped by task id during filtering.
+
+        Returns:
+            Tuple[List[Experience], dict]: Filtered experiences and filtering metrics.
+        """
         result_exps = []
         original_count = len(exps)
         dropped_all_correct = 0
@@ -116,6 +149,14 @@ class MaskResponseTruncatedOperator(ExperienceOperator):
     """
 
     def process(self, exps: List[Experience]) -> Tuple[List[Experience], dict]:
+        """Mask action positions for truncated responses.
+
+        Args:
+            exps: Experiences to process.
+
+        Returns:
+            Tuple[List[Experience], dict]: Original experiences and masking metrics.
+        """
         masked_count = 0
         for exp in exps:
             if exp.truncate_status == "response_truncated" and exp.action_mask is not None:

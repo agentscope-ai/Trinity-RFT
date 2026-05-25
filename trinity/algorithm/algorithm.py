@@ -146,6 +146,11 @@ class DAPOAlgorithm(AlgorithmType):
 
     @classmethod
     def default_config(cls) -> Dict:
+        """Return DAPO default algorithm configuration.
+
+        Returns:
+            Dict: Default training configuration for DAPO.
+        """
         return {
             "repeat_times": 16,
             "advantage_fn": "grpo",
