@@ -31,7 +31,6 @@ from transformers import GenerationConfig
 from verl.utils.checkpoint.megatron_checkpoint_manager import (
     MegatronCheckpointManager as OldMegatronCheckpointManager,
 )
-from verl.utils.checkpoint.megatron_checkpoint_manager import logger
 from verl.utils.fs import local_mkdir_safe
 from verl.utils.logger import log_with_rank
 from verl.utils.megatron.dist_checkpointing import save_dist_checkpointing
@@ -112,14 +111,14 @@ class MegatronCheckpointManager(OldMegatronCheckpointManager):
                 self.should_save_extra,
                 metadata=sharded_sd_metadata,
             )
-            # log_with_rank(f"Generated state dict for saving: {state_dict.keys()}", rank=self.rank, logger=logger)
+            # log_with_rank(f"Generated state dict for saving: {state_dict.keys()}", rank=self.rank, logger=self.logger)
             # for vpp_rank, model in enumerate(self.model):
             #     if len(self.model) > 1:
             #         model_i_keys = state_dict[f"model{vpp_rank}"].keys()
-            #         log_with_rank(f"Generated state dict for saving: {model_i_keys}", rank=self.rank, logger=logger)
+            #         log_with_rank(f"Generated state dict for saving: {model_i_keys}", rank=self.rank, logger=self.logger)
             #     else:
             #         log_with_rank(
-            #             f"Generated state dict for saving: {state_dict['model'].keys()}", rank=self.rank, logger=logger
+            #             f"Generated state dict for saving: {state_dict['model'].keys()}", rank=self.rank, logger=self.logger
             #         )
             # Start Async save if enabled
             async_save_request = save_dist_checkpointing(
@@ -180,7 +179,7 @@ class MegatronCheckpointManager(OldMegatronCheckpointManager):
                 log_with_rank(
                     f"Saved adapter-only checkpoint to {adapter_ckpt_path}",
                     rank=self.rank,
-                    logger=logger,
+                    logger=self.logger,
                     log_only_rank_0=True,
                 )
             elif self.use_hf_checkpoint:
@@ -188,7 +187,7 @@ class MegatronCheckpointManager(OldMegatronCheckpointManager):
                 log_with_rank(
                     f"Saving HF model checkpoint to {local_path} with bridge",
                     rank=self.rank,
-                    logger=logger,
+                    logger=self.logger,
                 )
                 hf_ckpt_path = get_hf_model_checkpoint_path(local_path)
                 if self.vanilla_bridge:
@@ -204,7 +203,7 @@ class MegatronCheckpointManager(OldMegatronCheckpointManager):
                     self.bridge.save_hf_weights(self.model, hf_ckpt_path)
 
                 log_with_rank(
-                    f"Saved bridge checkpoint to {hf_ckpt_path}", rank=self.rank, logger=logger
+                    f"Saved bridge checkpoint to {hf_ckpt_path}", rank=self.rank, logger=self.logger
                 )
 
         def finalize_save_fn():
@@ -216,7 +215,7 @@ class MegatronCheckpointManager(OldMegatronCheckpointManager):
             log_with_rank(
                 f"Dist checkpointing save completed for {dist_checkpoint_path}",
                 rank=self.rank,
-                logger=logger,
+                logger=self.logger,
             )
             ray.get(self.checkpoint_monitor.notify_finished.remote(global_step, True))
 
@@ -271,7 +270,7 @@ class MegatronCheckpointManager(OldMegatronCheckpointManager):
                 log_with_rank(
                     f"Saved Huggingface config and tokenizer to {hf_config_tokenizer_path}",
                     rank=self.rank,
-                    logger=logger,
+                    logger=self.logger,
                     log_only_rank_0=True,
                 )
 
@@ -397,12 +396,12 @@ class MegatronCheckpointManager(OldMegatronCheckpointManager):
                     log_with_rank(
                         f"Saved Huggingface config and tokenizer to {hf_model_ckpt_path}",
                         rank=self.rank,
-                        logger=logger,
+                        logger=self.logger,
                         log_only_rank_0=True,
                     )
 
         except Exception:
-            logger.error(
+            self.logger.error(
                 f"Failed to save Huggingface model to {local_path}, you can try to set `use_mbridge=true` to save it.",
                 exc_info=True,
             )

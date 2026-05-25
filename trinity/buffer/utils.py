@@ -37,6 +37,6 @@ def retry_session(session_maker, max_retry_times: int = 2, max_retry_interval: f
                 if attempt < retries - 1:
                     time.sleep(max_retry_interval)
         logger.error("Max retry attempts reached, raising exception.")
-        raise last_exception
+        raise last_exception  # type: ignore
     finally:
         session.close()

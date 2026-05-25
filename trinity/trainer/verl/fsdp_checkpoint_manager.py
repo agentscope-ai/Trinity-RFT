@@ -36,7 +36,7 @@ from transformers.dynamic_module_utils import custom_object_save
 from verl.utils.checkpoint.fsdp_checkpoint_manager import (
     FSDPCheckpointManager as OldFSDPCheckpointManager,
 )
-from verl.utils.checkpoint.fsdp_checkpoint_manager import FSDPConfig, logger
+from verl.utils.checkpoint.fsdp_checkpoint_manager import FSDPConfig
 from verl.utils.device import is_cuda_available
 from verl.utils.fs import local_mkdir_safe
 from verl.utils.fsdp_utils import (
@@ -110,6 +110,8 @@ class FSDPCheckpointManager(OldFSDPCheckpointManager):
         Args:
             global_step (int): The current training step number.
         """
+        if global_step == 0:
+            return
         assert self.synchronizer is not None
         state_dict = get_fsdp_full_state_dict(self.model, offload_to_cpu=True, rank0_only=True)
         self._upload_state_dict(state_dict, global_step)
@@ -139,7 +141,7 @@ class FSDPCheckpointManager(OldFSDPCheckpointManager):
             log_with_rank(
                 f"Saved {prefix} to {os.path.abspath(path)}",
                 rank=self.rank,
-                logger=logger,
+                logger=self.logger,
             )
             ray.get(self.checkpoint_monitor.notify_finished.remote(global_step, is_state_dict))
 
@@ -280,7 +282,7 @@ class FSDPCheckpointManager(OldFSDPCheckpointManager):
             log_with_rank(
                 f"Saved model config and tokenizer class to {os.path.abspath(hf_config_tokenizer_path)}",
                 rank=self.rank,
-                logger=logger,
+                logger=self.logger,
                 log_only_rank_0=True,
             )
 
@@ -343,7 +345,7 @@ class FSDPCheckpointManager(OldFSDPCheckpointManager):
                 if generation_config is not None:
                     save_model.generation_config = generation_config
                 else:
-                    logger.warning(
+                    self.logger.warning(
                         f"{self.__class__.__name__}.save_checkpoint: Generation config file not found in, "
                         "using a generation config created from the model config when saving hf_model."
                     )
@@ -364,7 +366,7 @@ class FSDPCheckpointManager(OldFSDPCheckpointManager):
                 log_with_rank(
                     f"Saved hf_model to {os.path.abspath(hf_local_path)}",
                     rank=self.rank,
-                    logger=logger,
+                    logger=self.logger,
                     log_only_rank_0=True,
                 )
                 ray.get(self.checkpoint_monitor.notify_finished.remote(global_step))
