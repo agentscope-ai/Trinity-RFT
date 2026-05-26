@@ -67,7 +67,7 @@ def convert_api_output_to_experience(
     )
 
 
-class HistoryRecordingStream:
+class HistoryRecordingStream:  # TODO: add multi-modal support
     def __init__(self, stream, history: List[Experience], is_async: bool = False) -> None:
         self._stream = stream
         self._history = history

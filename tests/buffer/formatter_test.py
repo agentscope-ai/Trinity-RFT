@@ -352,9 +352,18 @@ class TestFormatter(unittest.TestCase):
             self.assertTrue(exp.prompt_length < len(exp.tokens))
             self.assertIsNotNone(exp.multi_modal_inputs)
             if IMAGE_TOKEN_ID in exp.tokens or VIDEO_TOKEN_ID in exp.tokens:
-                self.assertTrue(len(exp.multi_modal_inputs) > 1)
+                self.assertSetEqual(
+                    set(exp.multi_modal_inputs.keys()),
+                    {"mm_token_type_ids", "pixel_values", "image_grid_thw"},
+                )
+                self.assertEqual(
+                    exp.multi_modal_inputs["mm_token_type_ids"].size(1),
+                    len(exp.tokens),
+                )
                 mm_cnt += 1
             else:
                 self.assertEqual(len(exp.multi_modal_inputs), 1)
-        self.assertEqual(len(ds), 6)  # there are total 6 samples in qwenpaw_sft dataset
-        self.assertEqual(mm_cnt, 1)  # only 1 sample has multi-modal content in qwenpaw_sft dataset
+        self.assertEqual(len(ds), 4)  # there are total 4 samples in qwenpaw_sft dataset
+        self.assertEqual(
+            mm_cnt, 2
+        )  # only 2 samples have multi-modal content in qwenpaw_sft dataset
