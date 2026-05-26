@@ -127,7 +127,7 @@ cd Trinity-RFT
 
 # 构建 Docker 镜像
 ## 提示：可根据需要修改 Dockerfile 添加镜像源或设置 API 密钥
-docker build -f scripts/docker/Dockerfile.uv -t trinity-rft:latest .
+docker build -f docker/Dockerfile -t trinity-rft:latest .
 
 # 运行容器，请将 <path_to_your_data_and_checkpoints> 替换为实际需要挂载的路径
 docker run -it \

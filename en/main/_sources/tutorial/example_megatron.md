@@ -42,7 +42,7 @@ We provide a Docker setup to simplify environment management.
 Trinity-RFT's provided Docker already has Megatron-LM related dependencies pre-installed. You can either use our provided Docker image directly or customize the Dockerfile to build your own image as needed.
 
 ```bash
-docker build -f scripts/docker/Dockerfile.uv -t trinity-rft-megatron:latest .
+docker build -f docker/Dockerfile -t trinity-rft-megatron:latest .
 ```
 
 > 💡 You can customize the Dockerfile before building — for example, to add pip mirrors or set API keys.
