@@ -1027,6 +1027,7 @@ window.runMermaid = runMermaid;</script>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.operators</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExperienceOperator</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.experience</span><span class="w"> </span><span class="kn">import</span> <span class="n">Experience</span><span class="p">,</span> <span class="n">group_by</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">aggregate_metrics</span>
 
 
 <div class="viewcode-block" id="RewardFilter">
@@ -1074,20 +1075,28 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../../build_api/trinity.buffer.operators.filters.reward_filter.html#trinity.buffer.operators.filters.reward_filter.RewardSTDFilter.process">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exps</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">],</span> <span class="nb">dict</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Filter experiences based on reward std.&quot;&quot;&quot;</span>
-        <span class="n">metrics</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">metrics</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">result_exps</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">original_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">exps</span><span class="p">)</span>
         <span class="n">grouped_experiences</span> <span class="o">=</span> <span class="n">group_by</span><span class="p">(</span><span class="n">exps</span><span class="p">,</span> <span class="n">id_type</span><span class="o">=</span><span class="s2">&quot;task&quot;</span><span class="p">)</span>
+        <span class="n">metrics_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">group_exps</span> <span class="ow">in</span> <span class="n">grouped_experiences</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">group_exps</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
                 <span class="k">continue</span>
             <span class="n">rewards</span> <span class="o">=</span> <span class="p">[</span><span class="n">exp</span><span class="o">.</span><span class="n">reward</span> <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">group_exps</span><span class="p">]</span>
             <span class="n">variance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">rewards</span><span class="p">)</span>
+            <span class="n">metrics_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;reward_mean&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">rewards</span><span class="p">),</span>
+                    <span class="s2">&quot;reward_std&quot;</span><span class="p">:</span> <span class="n">variance</span><span class="p">,</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
             <span class="k">if</span> <span class="n">variance</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="p">:</span>
                 <span class="k">continue</span>
             <span class="n">result_exps</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">group_exps</span><span class="p">)</span>
         <span class="n">final_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">result_exps</span><span class="p">)</span>
-        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;filtered_count&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">original_count</span> <span class="o">-</span> <span class="n">final_count</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;operator_filtered_count&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">original_count</span> <span class="o">-</span> <span class="n">final_count</span>
+        <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">aggregate_metrics</span><span class="p">(</span><span class="n">metrics_list</span><span class="p">,</span> <span class="s2">&quot;origin_group_advantages&quot;</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">result_exps</span><span class="p">,</span> <span class="n">metrics</span></div>
 </div>
 

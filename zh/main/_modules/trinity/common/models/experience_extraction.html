@@ -1084,16 +1084,30 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="convert_api_output_to_experience">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.models.experience_extraction.html#trinity.common.models.experience_extraction.convert_api_output_to_experience">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">convert_api_output_to_experience</span><span class="p">(</span>
-    <span class="n">output</span><span class="p">,</span> <span class="n">routed_experts_layout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">output</span><span class="p">,</span>
+    <span class="n">multi_modal_inputs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">routed_experts_layout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a non-stream API output to a list of experiences.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">_convert_completion_output_to_experience</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">routed_experts_layout</span><span class="p">)</span></div>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a non-stream API output to a list of experiences.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        output: Completion output from API client.</span>
+<span class="sd">        multi_modal_inputs: Optional training-time multimodal tensors aligned</span>
+<span class="sd">            with the prompt tokens.</span>
+<span class="sd">        routed_experts_layout: Optional `(num_layers, topk)` layout used to</span>
+<span class="sd">            decode routed experts.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_convert_completion_output_to_experience</span><span class="p">(</span>
+        <span class="n">output</span><span class="p">,</span>
+        <span class="n">multi_modal_inputs</span><span class="o">=</span><span class="n">multi_modal_inputs</span><span class="p">,</span>
+        <span class="n">routed_experts_layout</span><span class="o">=</span><span class="n">routed_experts_layout</span><span class="p">,</span>
+    <span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="HistoryRecordingStream">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.models.experience_extraction.html#trinity.common.models.experience_extraction.HistoryRecordingStream">[文档]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">HistoryRecordingStream</span><span class="p">:</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">HistoryRecordingStream</span><span class="p">:</span>  <span class="c1"># TODO: add multi-modal support</span>
 <div class="viewcode-block" id="HistoryRecordingStream.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.models.experience_extraction.html#trinity.common.models.experience_extraction.HistoryRecordingStream.__init__">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream</span><span class="p">,</span> <span class="n">history</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">],</span> <span class="n">is_async</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -1180,8 +1194,27 @@ window.runMermaid = runMermaid;</script>
 
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_combine_output_token_ids</span><span class="p">(</span>
+    <span class="n">output_token_ids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="n">multi_modal_inputs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="k">if</span> <span class="n">multi_modal_inputs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">multi_modal_inputs</span><span class="p">[</span><span class="s2">&quot;mm_token_type_ids&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span>
+    <span class="n">multi_modal_inputs</span><span class="p">[</span><span class="s2">&quot;mm_token_type_ids&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">concat</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="n">multi_modal_inputs</span><span class="p">[</span><span class="s2">&quot;mm_token_type_ids&quot;</span><span class="p">],</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">output_token_ids</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">),</span>
+        <span class="p">],</span>
+        <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">multi_modal_inputs</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_convert_completion_output_to_experience</span><span class="p">(</span>
-    <span class="n">output</span><span class="p">,</span> <span class="n">routed_experts_layout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">output</span><span class="p">,</span>
+    <span class="n">multi_modal_inputs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">routed_experts_layout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
     <span class="k">return</span> <span class="p">[</span>
         <span class="n">Experience</span><span class="p">(</span>
@@ -1199,6 +1232,7 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">total_tokens</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">prompt_token_ids</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">choice</span><span class="o">.</span><span class="n">token_ids</span><span class="p">),</span>
                 <span class="n">routed_experts_layout</span><span class="o">=</span><span class="n">routed_experts_layout</span><span class="p">,</span>
             <span class="p">),</span>
+            <span class="n">multi_modal_inputs</span><span class="o">=</span><span class="n">_combine_output_token_ids</span><span class="p">(</span><span class="n">choice</span><span class="o">.</span><span class="n">token_ids</span><span class="p">,</span> <span class="n">multi_modal_inputs</span><span class="p">),</span>
         <span class="p">)</span>
         <span class="k">for</span> <span class="n">choice</span> <span class="ow">in</span> <span class="n">output</span><span class="o">.</span><span class="n">choices</span>
     <span class="p">]</span>

@@ -597,9 +597,7 @@
 <button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="搜索" aria-label="搜索" data-bs-placement="bottom" data-bs-toggle="tooltip">
     <i class="fa-solid fa-magnifying-glass fa-lg"></i>
 </button>
-<button class="sidebar-toggle secondary-toggle btn btn-sm pst-navbar-icon" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
-    <span class="fa-solid fa-list"></span>
-</button>
+
 </div></div>
       
     </div>
@@ -615,31 +613,6 @@
     <div id="print-main-content">
         <div id="jb-print-toc">
             
-            <div>
-                <h2> 目录 </h2>
-            </div>
-            <nav aria-label="Page">
-                <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillWorkflow</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.is_async"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillWorkflow.is_async</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.can_reset"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillWorkflow.can_reset</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.can_repeat"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillWorkflow.can_repeat</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.__init__"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillWorkflow.__init__()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.reset"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillWorkflow.reset()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.set_repeat_times"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillWorkflow.set_repeat_times()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.rollout_args"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillWorkflow.rollout_args</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.format_messages"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillWorkflow.format_messages()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.compute_reward"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillWorkflow.compute_reward()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.run_async"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillWorkflow.run_async()</span></code></a></li>
-</ul>
-</li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillMathWorkflow"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillMathWorkflow</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillMathWorkflow.format_messages"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillMathWorkflow.format_messages()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillMathWorkflow.compute_reward"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillMathWorkflow.compute_reward()</span></code></a></li>
-</ul>
-</li>
-</ul>
-            </nav>
         </div>
     </div>
 </div>
@@ -649,123 +622,8 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="module-trinity.common.workflows.on_policy_distill_workflow">
-<span id="trinity-common-workflows-on-policy-distill-workflow-module"></span><h1>trinity.common.workflows.on_policy_distill_workflow module<a class="headerlink" href="#module-trinity.common.workflows.on_policy_distill_workflow" title="Link to this heading">#</a></h1>
-<p>On-Policy Distillation Workflow.</p>
-<p>Reference: Tinker library's on-policy distillation implementation.</p>
-<p>Algorithm:
-1. Student samples trajectories (with logprobs)
-2. Teacher computes logprobs on same trajectories
-3. Store teacher_logprobs in experience.info[&quot;teacher_logprobs&quot;]
-4. Trainer's advantage_fn computes: advantages = teacher_logprobs - student_logprobs
-5. Train with importance_sampling loss</p>
-<dl class="py class">
-<dt class="sig sig-object py" id="trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">trinity.common.workflows.on_policy_distill_workflow.</span></span><span class="sig-name descname"><span class="pre">OnPolicyDistillWorkflow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">task</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="trinity.common.workflows.workflow.html#trinity.common.workflows.workflow.Task" title="trinity.common.workflows.workflow.Task"><span class="pre">Task</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="trinity.common.models.model.html#trinity.common.models.model.ModelWrapper" title="trinity.common.models.model.ModelWrapper"><span class="pre">ModelWrapper</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">auxiliary_models</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="trinity.common.models.model.html#trinity.common.models.model.ModelWrapper" title="trinity.common.models.model.ModelWrapper"><span class="pre">ModelWrapper</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/common/workflows/on_policy_distill_workflow.html#OnPolicyDistillWorkflow"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow" title="Link to this definition">#</a></dt>
-<dd><p>基类：<a class="reference internal" href="trinity.common.workflows.workflow.html#trinity.common.workflows.workflow.Workflow" title="trinity.common.workflows.workflow.Workflow"><code class="xref py py-class docutils literal notranslate"><span class="pre">Workflow</span></code></a></p>
-<p>On-policy distillation workflow.</p>
-<p>Computes and stores teacher_logprobs in experience.info.
-The advantage_fn in trainer will compute:</p>
-<blockquote>
-<div><p>advantages = teacher_logprobs - student_logprobs</p>
-</div></blockquote>
-<p>Note: This workflow does NOT use reward_fn because:
-- Advantage is computed from teacher-student logprobs difference
-- No external reward signal is needed</p>
-<dl class="py attribute">
-<dt class="sig sig-object py" id="trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.is_async">
-<span class="sig-name descname"><span class="pre">is_async</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.is_async" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.can_reset">
-<span class="sig-name descname"><span class="pre">can_reset</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.can_reset" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py attribute">
-<dt class="sig sig-object py" id="trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.can_repeat">
-<span class="sig-name descname"><span class="pre">can_repeat</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.can_repeat" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.__init__">
-<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">task</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="trinity.common.workflows.workflow.html#trinity.common.workflows.workflow.Task" title="trinity.common.workflows.workflow.Task"><span class="pre">Task</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="trinity.common.models.model.html#trinity.common.models.model.ModelWrapper" title="trinity.common.models.model.ModelWrapper"><span class="pre">ModelWrapper</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">auxiliary_models</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="trinity.common.models.model.html#trinity.common.models.model.ModelWrapper" title="trinity.common.models.model.ModelWrapper"><span class="pre">ModelWrapper</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/common/workflows/on_policy_distill_workflow.html#OnPolicyDistillWorkflow.__init__"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.__init__" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.reset">
-<span class="sig-name descname"><span class="pre">reset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">task</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="trinity.common.workflows.workflow.html#trinity.common.workflows.workflow.Task" title="trinity.common.workflows.workflow.Task"><span class="pre">Task</span></a></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/common/workflows/on_policy_distill_workflow.html#OnPolicyDistillWorkflow.reset"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.reset" title="Link to this definition">#</a></dt>
-<dd><p>Reset the workflow with a new task.</p>
-<p>Unlike BaseSimpleWorkflow, this does NOT require reward_fn.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.set_repeat_times">
-<span class="sig-name descname"><span class="pre">set_repeat_times</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repeat_times</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_id_base</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/common/workflows/on_policy_distill_workflow.html#OnPolicyDistillWorkflow.set_repeat_times"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.set_repeat_times" title="Link to this definition">#</a></dt>
-<dd><p>Set the number of times to repeat the workflow.
-:param repeat_times: number of times to repeat the workflow (if repeatable).
-:type repeat_times: int
-:param run_id_base: base run_id for setting run_id in experiences.
-:type run_id_base: int</p>
-</dd></dl>
-
-<dl class="py property">
-<dt class="sig sig-object py" id="trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.rollout_args">
-<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">rollout_args</span></span><a class="headerlink" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.rollout_args" title="Link to this definition">#</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.format_messages">
-<span class="sig-name descname"><span class="pre">format_messages</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/common/workflows/on_policy_distill_workflow.html#OnPolicyDistillWorkflow.format_messages"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.format_messages" title="Link to this definition">#</a></dt>
-<dd><p>Format messages for the instruct model.</p>
-<p>Default format: system_prompt (optional) + task_desc + reply_prefix (optional)</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.compute_reward">
-<span class="sig-name descname"><span class="pre">compute_reward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">response</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="trinity.common.experience.html#trinity.common.experience.Experience" title="trinity.common.experience.Experience"><span class="pre">Experience</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/trinity/common/workflows/on_policy_distill_workflow.html#OnPolicyDistillWorkflow.compute_reward"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.compute_reward" title="Link to this definition">#</a></dt>
-<dd><p>Compute reward for a response.</p>
-<p>In base class, returns 0.0 as advantage is computed from teacher-student logprobs.
-Subclasses can override this to compute actual rewards.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.run_async">
-<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">run_async</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="trinity.common.experience.html#trinity.common.experience.Experience" title="trinity.common.experience.Experience"><span class="pre">Experience</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/trinity/common/workflows/on_policy_distill_workflow.html#OnPolicyDistillWorkflow.run_async"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.run_async" title="Link to this definition">#</a></dt>
-<dd><p>Run workflow in async and return a list of experiences.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillMathWorkflow">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">trinity.common.workflows.on_policy_distill_workflow.</span></span><span class="sig-name descname"><span class="pre">OnPolicyDistillMathWorkflow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">task</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="trinity.common.workflows.workflow.html#trinity.common.workflows.workflow.Task" title="trinity.common.workflows.workflow.Task"><span class="pre">Task</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="trinity.common.models.model.html#trinity.common.models.model.ModelWrapper" title="trinity.common.models.model.ModelWrapper"><span class="pre">ModelWrapper</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">auxiliary_models</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="trinity.common.models.model.html#trinity.common.models.model.ModelWrapper" title="trinity.common.models.model.ModelWrapper"><span class="pre">ModelWrapper</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/common/workflows/on_policy_distill_workflow.html#OnPolicyDistillMathWorkflow"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillMathWorkflow" title="Link to this definition">#</a></dt>
-<dd><p>基类：<a class="reference internal" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow" title="trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow"><code class="xref py py-class docutils literal notranslate"><span class="pre">OnPolicyDistillWorkflow</span></code></a></p>
-<p>On-policy distillation workflow with Qwen2.5-Math style format.</p>
-<p>This workflow:
-- Uses Qwen2.5-Math style prompt format (same as math_eval_workflow)
-- Computes accuracy using verify_math_answer as reward
-- Suitable for math reasoning tasks like GSM8K, MATH, etc.</p>
-<dl class="py method">
-<dt class="sig sig-object py" id="trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillMathWorkflow.format_messages">
-<span class="sig-name descname"><span class="pre">format_messages</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/common/workflows/on_policy_distill_workflow.html#OnPolicyDistillMathWorkflow.format_messages"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillMathWorkflow.format_messages" title="Link to this definition">#</a></dt>
-<dd><p>Format messages using Qwen2.5-Math style.</p>
-<blockquote>
-<div><p>System prompt: &quot;You are a helpful assistant.&quot;
-User prompt: &quot;{question}</p>
-</div></blockquote>
-<p>Please reason step by step, and put your final answer within boxed{}.&quot;</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillMathWorkflow.compute_reward">
-<span class="sig-name descname"><span class="pre">compute_reward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">response</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="trinity.common.experience.html#trinity.common.experience.Experience" title="trinity.common.experience.Experience"><span class="pre">Experience</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="../_modules/trinity/common/workflows/on_policy_distill_workflow.html#OnPolicyDistillMathWorkflow.compute_reward"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillMathWorkflow.compute_reward" title="Link to this definition">#</a></dt>
-<dd><p>Compute accuracy as reward using Qwen2.5-Math evaluation.</p>
-<p>Returns 1.0 if answer is correct, 0.0 otherwise.</p>
-</dd></dl>
-
-</dd></dl>
-
+  <section id="trinity-common-workflows-on-policy-distill-workflow-module">
+<h1>trinity.common.workflows.on_policy_distill_workflow module<a class="headerlink" href="#trinity-common-workflows-on-policy-distill-workflow-module" title="Link to this heading">#</a></h1>
 </section>
 
 
@@ -803,40 +661,6 @@ User prompt: &quot;{question}</p>
             </div>
             
             
-              
-                <dialog id="pst-secondary-sidebar-modal"></dialog>
-                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
-
-
-  <div class="sidebar-secondary-item"><div
-    id="pst-page-navigation-heading-2"
-    class="page-toc tocsection onthispage">
-    <i class="fa-solid fa-list"></i> 目录
-  </div>
-  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
-    <ul class="visible nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillWorkflow</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.is_async"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillWorkflow.is_async</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.can_reset"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillWorkflow.can_reset</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.can_repeat"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillWorkflow.can_repeat</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.__init__"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillWorkflow.__init__()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.reset"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillWorkflow.reset()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.set_repeat_times"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillWorkflow.set_repeat_times()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.rollout_args"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillWorkflow.rollout_args</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.format_messages"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillWorkflow.format_messages()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.compute_reward"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillWorkflow.compute_reward()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillWorkflow.run_async"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillWorkflow.run_async()</span></code></a></li>
-</ul>
-</li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillMathWorkflow"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillMathWorkflow</span></code></a><ul class="nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillMathWorkflow.format_messages"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillMathWorkflow.format_messages()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillMathWorkflow.compute_reward"><code class="docutils literal notranslate"><span class="pre">OnPolicyDistillMathWorkflow.compute_reward()</span></code></a></li>
-</ul>
-</li>
-</ul>
-  </nav></div>
-
-</div></div>
               
             
           </div>
