@@ -6,7 +6,7 @@
 # docker run -it --gpus all --shm-size="64g" --rm -v $PWD:/workspace -v <root_path_of_data_and_checkpoints>:/data trinity-rft:latest
 #
 # Note:
-# 1. This Dockerfile uses 'uv' to create a virtual environment for better package management. If you want a simpler setup without 'uv', please refer to `scripts/docker/Dockerfile`.
+# 1. This Dockerfile uses 'uv' to create a virtual environment for better package management.
 # 2. The uv virtual environment is created at `/opt/venv`, use `source /opt/venv/bin/activate` to activate it.
 # 3. Make sure to use `uv pip` to install packages within the virtual environment.
 
@@ -40,7 +40,7 @@ RUN pip install uv && uv venv /opt/venv --python=python3.12
 
 # Install  Trinity-RFT
 RUN . /opt/venv/bin/activate && \
-    uv pip install -e.[mm,dev,tinker,data,agent] && \
+    uv pip install -e .[mm,dev,tinker,data,agent] && \
     uv pip install vllm==0.21.0
 
 # Install flash attention
