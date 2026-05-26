@@ -582,7 +582,7 @@ class TestAPIServer(VLLMTestBase):
         self.assertEqual(len(self.model_wrapper_no_history.history), 0)
 
 
-class TestAPIServerWithQwen35(VLLMTestBase):
+class TestQwen35APIServerReasoning(VLLMTestBase):
     async def asyncSetUp(self):
         self.config = get_template_config()
         self.config.mode = "explore"
@@ -599,7 +599,6 @@ class TestAPIServerWithQwen35(VLLMTestBase):
         self.config.check_and_update()
         self.engines, self.auxiliary_engines = await create_test_models(self.config)
         self.model_wrapper = self.engines[0]
-        self.model_wrapper_no_history = clone_wrapper(self.model_wrapper, enable_history=False)
 
     async def test_reasoning_content(self):
         openai_client = self.model_wrapper.get_openai_client()
@@ -659,6 +658,25 @@ class TestAPIServerWithQwen35(VLLMTestBase):
         text = self.tokenizer.decode(exps[0].tokens.tolist())
         self.assertIn("Use `list_agents` tool to get the list of agents.", text)
 
+
+class TestQwen35APIServerMultiModal(VLLMTestBase):
+    async def asyncSetUp(self):
+        self.config = get_template_config()
+        self.config.mode = "explore"
+        self.config.model.model_path = get_api_model_path()
+        self.config.explorer.rollout_model.engine_type = "vllm"
+        self.config.explorer.rollout_model.engine_num = 1
+        self.config.explorer.rollout_model.chat_template = CHAT_TEMPLATE
+        self.config.explorer.rollout_model.tensor_parallel_size = 1
+        self.config.explorer.rollout_model.enable_openai_api = True
+        self.config.explorer.rollout_model.enable_auto_tool_choice = True
+        self.config.explorer.rollout_model.tool_call_parser = "qwen3_coder"
+        self.config.explorer.rollout_model.enable_history = True
+
+        self.config.check_and_update()
+        self.engines, self.auxiliary_engines = await create_test_models(self.config)
+        self.model_wrapper = self.engines[0]
+
     async def test_multi_modal_content(self):
         openai_client = self.model_wrapper.get_openai_client()
         model_id = openai_client.models.list().data[0].id
@@ -691,11 +709,11 @@ class TestAPIServerWithQwen35(VLLMTestBase):
         exps = self.model_wrapper.extract_experience_from_history()
         self.assertEqual(len(exps), 1)
         exp = exps[0]
-        # self.assertGreater(len(exp.multi_modal_inputs), 1)
         self.assertSetEqual(
             set(exp.multi_modal_inputs.keys()),
             {"mm_token_type_ids", "pixel_values", "image_grid_thw"},
         )
+        self.assertEqual(exp.multi_modal_inputs["mm_token_type_ids"].size(1), len(exp.tokens))
 
 
 SYSTEM_PROMPT = """

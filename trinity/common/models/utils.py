@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import re
+from copy import deepcopy
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 import torch
@@ -129,9 +130,10 @@ def tokenize_and_mask_messages_default(
     token_dict = tokenizer.apply_chat_template(
         messages,
         add_generation_prompt=False,
-        **common_kwargs,
+        return_tensors="pt",
+        **deepcopy(common_kwargs),
     )
-    assistant_masks = torch.zeros(len(token_dict["input_ids"][0]), dtype=torch.int)
+    assistant_masks = torch.zeros_like(token_dict["input_ids"]).squeeze()
 
     if len(generation_messages) != 0:
         first_generation_message_empty_flag = len(generation_messages[0]) == 0
@@ -141,12 +143,12 @@ def tokenize_and_mask_messages_default(
         prompt_token_ids_list = tokenizer.apply_chat_template(
             generation_messages,
             add_generation_prompt=True,
-            **common_kwargs,
+            **deepcopy(common_kwargs),
         )["input_ids"]
         response_token_ids_list = tokenizer.apply_chat_template(
             response_messages,
             add_generation_prompt=False,
-            **common_kwargs,
+            **deepcopy(common_kwargs),
         )["input_ids"]
         if first_generation_message_empty_flag:
             # the first message is from assistant, so set the first prompt_token_ids to empty
@@ -160,10 +162,8 @@ def tokenize_and_mask_messages_default(
             assistant_masks[prompt_len:response_len] = 1
 
     token_dict.pop("attention_mask", None)  # remove attention mask if exists
-    output = {"assistant_masks": assistant_masks.unsqueeze(0)}
-    for key, value in token_dict.items():
-        output[key] = torch.tensor(value)
-    return output
+    token_dict["assistant_masks"] = assistant_masks.unsqueeze(0)
+    return token_dict
 
 
 def get_action_mask_method(chat_template: Optional[str] = None) -> Callable:

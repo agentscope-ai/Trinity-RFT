@@ -21,6 +21,7 @@ Compatibility:
     before calling vLLM `parse_chat_messages`.
 """
 import asyncio
+import json
 import re
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -271,58 +272,30 @@ class vLLMMultiModalRender(MultiModalRender):
         self,
         *,
         messages: List[Dict[str, Any]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
         input_ids: List[List[int]] = None,
         multi_modal_data: Dict[str, List] = None,
     ) -> Dict[str, Any] | None:
-        """Tokenize prompt and integrate processed media inputs for model training.
-
-        Combines text prompt with preprocessed image/video data into model-ready tensor inputs.
-        Handles padding and tensor conversion for training workflows.
-
-        Args:
-            multi_modal_data: Dictionary from `build_multi_modal_data()` containing:
-                            {"image": [...], "video": [...]} (keys optional)
-
-        Returns:
-            Dictionary of model inputs including:
-            - pixel_values: Processed image tensors (if images provided)
-            - pixel_values_videos: Processed video tensors (if videos provided)
-            All tensors converted to PyTorch format (`return_tensors="pt"`).
-
-        Raises:
-            ValueError: If media counts mismatch prompt expectations (handled internally by processor).
-
-        Note:
-            Prompt should NOT contain <image>/<video> tags here. Media association is managed
-            through the structured `multi_modal_data` dictionary.
-        """
+        """Builds multi-modal inputs for training."""
         if self.mm_processor is None:
             return None
 
-        if messages is not None:
-            if input_ids is not None:
-                self.logger.warning(
-                    "Both `messages` and `input_ids` are provided. "
-                    "Only `messages` will be used for building multi-modal inputs."
-                )
-            input_ids = self.mm_processor.apply_chat_template(messages, tokenize=True)
-            if multi_modal_data is not None:
-                self.logger.warning(
-                    "Both `messages` and `multi_modal_data` are provided. "
-                    "Only `messages` will be used."
-                )
-            _, multi_modal_data = self.process_messages(messages)
-
         if input_ids is None:
-            raise ValueError(
-                "No `messages` or `input_ids` provided. Cannot build multi-modal inputs without prompt context."
+            if messages is None:
+                raise ValueError("Either `messages` or `input_ids` must be provided.")
+            normalized_messages = self._normalize_messages_for_vllm(messages)
+            input_ids = self.mm_processor.apply_chat_template(
+                normalized_messages, tools=tools, tokenize=True
             )
         input_ids = np.array(input_ids)
         if input_ids.ndim == 1:
             input_ids = input_ids.reshape(1, -1)
 
-        if not multi_modal_data:
-            return None
+        if multi_modal_data is None:
+            if messages is not None:
+                _, multi_modal_data = self.process_messages(messages)
+            if multi_modal_data is None:
+                return None
 
         multi_modal_inputs = {
             "mm_token_type_ids": torch.tensor(
@@ -401,6 +374,10 @@ class vLLMMultiModalRender(MultiModalRender):
         vLLM `parse_chat_messages` accepts OpenAI-style parts (image_url,
         video_url, audio_url, image_pil, etc.). This function rewrites common
         legacy transformers-style variants into that schema.
+
+        It also normalizes tool call arguments for tokenizer compatibility:
+        OpenAI-style payloads usually store function.arguments as JSON string,
+        while some chat templates expect a mapping when rendering tool calls.
         """
 
         def _infer_modality(part: dict[str, Any]) -> Optional[str]:
@@ -441,15 +418,87 @@ class vLLMMultiModalRender(MultiModalRender):
 
             return dict(part)
 
+        def _to_builtin(value: Any) -> Any:
+            if isinstance(value, dict):
+                return {k: _to_builtin(v) for k, v in value.items()}
+            if isinstance(value, list):
+                return [_to_builtin(v) for v in value]
+            if isinstance(value, tuple):
+                return [_to_builtin(v) for v in value]
+
+            # OpenAI SDK / Pydantic models
+            if hasattr(value, "model_dump"):
+                try:
+                    return _to_builtin(value.model_dump())
+                except Exception:
+                    pass
+            if hasattr(value, "dict"):
+                try:
+                    return _to_builtin(value.dict())
+                except Exception:
+                    pass
+
+            return value
+
+        def _normalize_tool_calls(tool_calls: Any) -> Any:
+            if not isinstance(tool_calls, list):
+                return tool_calls
+
+            normalized_tool_calls = []
+            for tool_call in tool_calls:
+                tool_call = _to_builtin(tool_call)
+                if not isinstance(tool_call, dict):
+                    normalized_tool_calls.append(tool_call)
+                    continue
+
+                normalized_tool_call = dict(tool_call)
+                function = normalized_tool_call.get("function")
+                if isinstance(function, dict):
+                    normalized_function = dict(function)
+                    arguments = normalized_function.get("arguments")
+                    if isinstance(arguments, str):
+                        stripped = arguments.strip()
+                        if stripped == "":
+                            normalized_function["arguments"] = {}
+                        else:
+                            try:
+                                parsed = json.loads(stripped)
+                                if isinstance(parsed, dict):
+                                    normalized_function["arguments"] = parsed
+                            except json.JSONDecodeError:
+                                # Keep original arguments string for invalid JSON.
+                                pass
+                    normalized_tool_call["function"] = normalized_function
+
+                normalized_tool_calls.append(normalized_tool_call)
+
+            return normalized_tool_calls
+
         normalized_messages: list[dict[str, Any]] = []
         for message in messages:
-            content = message.get("content")
+            message = _to_builtin(message)
+            if not isinstance(message, dict):
+                self.logger.warning(
+                    "Unexpected message type for vLLM normalization: %s. Falling back to text content.",
+                    type(message),
+                )
+                normalized_messages.append({"role": "user", "content": str(message)})
+                continue
+
+            normalized_message = dict(message)
+            if "tool_calls" in normalized_message:
+                normalized_message["tool_calls"] = _normalize_tool_calls(
+                    normalized_message.get("tool_calls")
+                )
+
+            content = normalized_message.get("content")
             if not isinstance(content, list):
-                normalized_messages.append(dict(message))
+                normalized_messages.append(normalized_message)
                 continue
 
             normalized_content = []
             for part in content:
+                part = _to_builtin(part)
                 if not isinstance(part, dict):
                     normalized_content.append(part)
                     continue
@@ -461,7 +510,6 @@ class vLLMMultiModalRender(MultiModalRender):
 
                 normalized_content.append(dict(part))
 
-            normalized_message = dict(message)
             normalized_message["content"] = normalized_content
             normalized_messages.append(normalized_message)
 

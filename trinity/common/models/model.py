@@ -231,7 +231,7 @@ class BaseInferenceModel(InferenceModel):
         if self.tokenizer is None:
             await self._initialize_tokenizer()
         inputs = self.action_mask_method(
-            tokenizer=copy.deepcopy(self.tokenizer),
+            tokenizer=self.tokenizer,
             messages=messages,
             tools=tools,
             chat_template=self.chat_template,
@@ -550,13 +550,21 @@ class ModelWrapper:
     async def get_message_token_len(self, messages: List[dict]) -> int:
         return await self.model.get_message_token_len.remote(messages)
 
-    def _get_multi_modal_inputs(self, messages: List[dict]) -> Optional[dict[str, torch.Tensor]]:
+    def _get_multi_modal_inputs(
+        self,
+        *,
+        messages: List[dict] = None,
+        tools: Optional[List[dict]] = None,
+        input_ids: Optional[List[int]] = None,
+    ) -> Optional[dict[str, torch.Tensor]]:
         if should_use_processor(self.model_path):
             if self._mm_render is None:
                 self._mm_render = vLLMMultiModalRender(  # TODO: support sglang
                     self.model_path,
                 )
-            return self._mm_render.build_mm_input_for_training(messages=messages)
+            return self._mm_render.build_mm_input_for_training(
+                messages=messages, tools=tools, input_ids=input_ids
+            )
         return None
 
     def get_openai_client(self) -> "openai.OpenAI":
@@ -626,7 +634,10 @@ class ModelWrapper:
                 if kwargs.get("stream", False):
                     return HistoryRecordingStream(response, self.history, is_async=False)
                 messages = args[-2] if len(args) > 2 else kwargs.get("messages")
-                multi_modal_inputs = self._get_multi_modal_inputs(messages)
+                tools = kwargs.get("tools", None)
+                multi_modal_inputs = self._get_multi_modal_inputs(
+                    messages=messages, tools=tools, input_ids=response.prompt_token_ids
+                )
                 self.history.extend(
                     convert_api_output_to_experience(
                         response,
@@ -704,7 +715,10 @@ class ModelWrapper:
                 if kwargs.get("stream", False):
                     return HistoryRecordingStream(response, self.history, is_async=True)
                 messages = args[-2] if len(args) > 2 else kwargs.get("messages")
-                multi_modal_inputs = self._get_multi_modal_inputs(messages)
+                tools = kwargs.get("tools", None)
+                multi_modal_inputs = self._get_multi_modal_inputs(
+                    messages=messages, tools=tools, input_ids=response.prompt_token_ids
+                )
                 self.history.extend(
                     convert_api_output_to_experience(
                         response,
