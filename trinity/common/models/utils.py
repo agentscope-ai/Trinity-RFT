@@ -53,8 +53,9 @@ def tokenize_and_mask_messages_hf(
         chat_template (str): The chat template with `{% generation %}` symbol.
 
     Returns:
-
-        `int`: Prompt length.
+        `dict[str, torch.Tensor]`: A token dictionary returned by
+            `apply_chat_template`, containing at least `input_ids` and
+            `assistant_masks`.
     """
     common_kwargs = _get_common_kwargs(
         tokenizer,
@@ -89,9 +90,8 @@ def tokenize_and_mask_messages_default(
         chat_template (str): The chat template with `{% generation %}` symbol.
 
     Returns:
-        `torch.Tensor`: The token_ids (sequence_length)
-        `torch.Tensor`: Assistant_masks (sequence_length).
-        `int`: Prompt length.
+        `dict[str, torch.Tensor]`: A token dictionary containing
+            `input_ids` and `assistant_masks`.
 
     Note:
         This method is based on the assumption that as the number of chat rounds increases,

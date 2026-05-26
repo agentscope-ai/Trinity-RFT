@@ -51,7 +51,15 @@ def convert_api_output_to_experience(
     multi_modal_inputs: Optional[dict[str, torch.Tensor]] = None,
     routed_experts_layout: Optional[Tuple[int, int]] = None,
 ) -> List[Experience]:
-    """Convert a non-stream API output to a list of experiences."""
+    """Convert a non-stream API output to a list of experiences.
+
+    Args:
+        output: Completion output from API client.
+        multi_modal_inputs: Optional training-time multimodal tensors aligned
+            with the prompt tokens.
+        routed_experts_layout: Optional `(num_layers, topk)` layout used to
+            decode routed experts.
+    """
     return _convert_completion_output_to_experience(
         output,
         multi_modal_inputs=multi_modal_inputs,

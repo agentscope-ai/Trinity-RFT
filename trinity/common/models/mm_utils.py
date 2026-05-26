@@ -1,19 +1,22 @@
 """Utilities for processing multi-modal data (images/videos) for specific vision-language models.
 
-Supported models:
-- Qwen2.5-VL, Qwen3-VL series
-- Kimi VL series
-- GLM VL series
+Main capabilities:
+- Parse prompts with media tags (`<image>` / `<video>`)
+- Detect multi-modal content in conversation messages
+- Normalize legacy transformers-style media parts to vLLM/OpenAI-style schema
+- Build training-time multimodal inputs with model processor
+- Keep client-side parsing behavior aligned with vLLM server parsing
 
 Provides functions to:
 1. Parse prompts with media tags (<image>/<video>)
 2. Validate multi-modal content in conversations
-3. Preprocess media inputs for inference/training
-4. Construct model-compatible message formats
+3. Normalize and preprocess media inputs for inference/training
+4. Construct vLLM-compatible message formats
 
 Note:
-    Only processors with class names containing both ("Qwen", "Kimi" OR "Glm") AND "Processor" are supported.
-    Relies on `qwen_vl_utils.process_vision_info` for media extraction.
+    Processor availability is detected from local model assets
+    (e.g., processor/preprocessor config files). The implementation does not
+    rely on model-class-name matching.
 
 Compatibility:
     `MultiModalRender` normalizes legacy transformers-style message parts
@@ -188,6 +191,17 @@ class MultiModalRender(ABC):
         pass
 
     @abstractmethod
+    def build_mm_input_for_training(
+        self,
+        *,
+        messages: List[Dict[str, Any]] = None,
+        tools: Optional[List[Dict[str, Any]]] = None,
+        input_ids: List[List[int]] = None,
+        multi_modal_data: Dict[str, List] = None,
+    ) -> Dict[str, Any] | None:
+        pass
+
+    @abstractmethod
     def process_messages(
         self,
         messages: list[dict[str, Any]],
@@ -276,7 +290,35 @@ class vLLMMultiModalRender(MultiModalRender):
         input_ids: List[List[int]] = None,
         multi_modal_data: Dict[str, List] = None,
     ) -> Dict[str, Any] | None:
-        """Builds multi-modal inputs for training."""
+        """Build multimodal tensors aligned with training token sequence.
+
+        Args:
+            messages: Optional chat messages used to derive token ids and/or
+                multimodal payloads when not provided explicitly.
+            tools: Optional tool schema list passed to
+                `mm_processor.apply_chat_template` when tokenizing messages.
+            input_ids: Optional token ids (shape `(seq_len,)` or
+                `(batch_size, seq_len)`). When omitted, token ids are generated
+                from `messages`.
+            multi_modal_data: Optional multimodal payload returned by
+                `process_messages` (e.g., image/video media items). When omitted,
+                it is inferred from `messages`.
+
+        Returns:
+            A dictionary containing multimodal training tensors, including
+            `mm_token_type_ids` and media-processor outputs (for example image
+            and/or video tensors), or `None` when multimodal processing is not
+            available or no multimodal content exists.
+
+        Raises:
+            ValueError: If both `input_ids` and `messages` are missing.
+
+        Notes:
+            - Requires an initialized multimodal processor (`self.mm_processor`).
+              If unavailable for the current model, returns `None`.
+            - 1D `input_ids` are reshaped to `(1, seq_len)` to satisfy processor
+              expectations.
+        """
         if self.mm_processor is None:
             return None
 
