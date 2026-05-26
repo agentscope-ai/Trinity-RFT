@@ -64,7 +64,7 @@ class FSDPCheckpointManager(OldFSDPCheckpointManager):
 
     def __init__(self, *args, ray_namespace: str = "", trust_remote_code: bool = False, **kwargs):
         super().__init__(*args, **kwargs)
-        self.logger = get_logger(in_ray_actor=True)
+        self.logger = get_logger()
         self.synchronizer = Synchronizer.get_actor(namespace=ray_namespace)
         self.checkpoint_monitor = CheckpointMonitor.get_actor(
             namespace=ray_namespace,

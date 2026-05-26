@@ -23,7 +23,6 @@ Compatibility:
     (e.g., type=image with url/path/base64) into vLLM/OpenAI-style part schema
     before calling vLLM `parse_chat_messages`.
 """
-import asyncio
 import json
 import re
 from abc import ABC, abstractmethod
@@ -358,7 +357,6 @@ class vLLMMultiModalRender(MultiModalRender):
         self,
         messages: list[dict[str, Any]],
         content_format: ChatTemplateContentFormat = "string",
-        use_async: bool = False,
     ) -> tuple[list[ConversationMessage], Optional[MultiModalDataDict],]:
         """
         Process chat messages and extract multimodal data.
@@ -368,14 +366,10 @@ class vLLMMultiModalRender(MultiModalRender):
         Args:
             messages: List of chat messages with potential multimodal content
             content_format: Chat template content format ("string" or "openai")
-            use_async: Whether to use async processing for media fetching
 
         Returns:
             Tuple of (conversation, mm_data) matching server output
         """
-        if use_async:
-            return asyncio.run(self.process_messages_async(messages, content_format))
-
         normalized_messages = self._normalize_messages_for_vllm(messages)
 
         conversation, mm_data, _ = parse_chat_messages(

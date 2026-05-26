@@ -182,7 +182,7 @@ class vLLMRolloutModel(BaseInferenceModel):
             self.mm_render = vLLMMultiModalRender(
                 model_path=self.config.model_path,  # type: ignore
             )
-        prompt_messages, multi_modal_data = self.mm_render.process_messages(messages)
+        prompt_messages, multi_modal_data = await self.mm_render.process_messages_async(messages)
         if multi_modal_data is not None:
             if self.processor is None:
                 await self._initialize_processor()
