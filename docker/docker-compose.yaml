@@ -1,74 +1,78 @@
 services:
   trinity-node-1:
-    image: trinity-rft-unittest:20260523
-    cap_add:
-      - SYS_PTRACE
+    image: ${TRINITY_DOCKER_IMAGE}
     pull_policy: never
     command: bash -c "source /opt/venv/bin/activate && uv pip install -e .[dev] && ray start --head --dashboard-host 0.0.0.0 --include-dashboard true --block"
     environment:
-      - HF_ENDPOINT=https://hf-mirror.com
+      - HF_ENDPOINT=${TRINITY_HF_ENDPOINT}
       - HF_HUB_DISABLE_PROGRESS_BARS=1
+      - UV_DEFAULT_INDEX=${TRINITY_PYPI_INDEX_URL}
       - RAY_ADDRESS=auto
       - TRINITY_CHECKPOINT_ROOT_DIR=/mnt/checkpoints
       - TRINITY_TASKSET_PATH=/mnt/data
       - TRINITY_EVAL_TASKSET_PATH=/mnt/data
       - TRINITY_SFT_DATASET_PATH=/mnt/data
-      - TRINITY_MODEL_PATH=/mnt/models/Qwen3-0.6B
-      - TRINITY_API_MODEL_PATH=/mnt/models/Qwen3.5-0.8B
-      - TRINITY_MOE_MODEL_PATH=/mnt/models/Qwen3.5-35B-A3B
-      - TRINITY_VLM_MODEL_PATH=/mnt/models/Qwen3.5-0.8B
-      - TRINITY_ALTERNATIVE_VLM_MODEL_PATH=/mnt/models/Qwen3.5-0.8B
+      - TRINITY_MODEL_PATH=/mnt/Qwen3-0.6B
+      - TRINITY_API_MODEL_PATH=/mnt/Qwen3.5-0.8B
+      - TRINITY_MOE_MODEL_PATH=/mnt/Qwen3.5-35B-A3B
+      - TRINITY_VLM_MODEL_PATH=/mnt/Qwen3.5-0.8B
+      - TRINITY_ALTERNATIVE_VLM_MODEL_PATH=/mnt/Qwen3.5-0.8B
       - VIRTUAL_ENV=/opt/venv
     working_dir: /workspace
     networks:
       - trinity-network
     volumes:
-      - trinity-volume:/mnt
-      - ../../..:/workspace
+      - ..:/workspace
+      - ${TRINITY_MOUNT_DIR}:/mnt
+    # Hardware constraint: this container must have at least 2 GPUs and 64G shared memory.
     shm_size: "64G"
     deploy:
       resources:
         reservations:
           devices:
           - driver: nvidia
-            device_ids: ['4', '5']
+            device_ids:
+              - "${TRINITY_NODE1_GPU_0}"
+              - "${TRINITY_NODE1_GPU_1}"
             capabilities: [gpu]
+    ports:
+      - "${TRINITY_RAY_DASHBOARD_PORT}:8265"  # Ray dashboard
 
   trinity-node-2:
-    image: trinity-rft-unittest:20260523
+    image: ${TRINITY_DOCKER_IMAGE}
     cap_add:
       - SYS_PTRACE
     pull_policy: never
     command: bash -c "source /opt/venv/bin/activate && uv pip install -e .[dev] && ray start --address=trinity-node-1:6379 --block"
     environment:
-      - HF_ENDPOINT=https://hf-mirror.com
+      - HF_ENDPOINT=${TRINITY_HF_ENDPOINT}
       - HF_HUB_DISABLE_PROGRESS_BARS=1
+      - UV_DEFAULT_INDEX=${TRINITY_PYPI_INDEX_URL}
       - TRINITY_CHECKPOINT_ROOT_DIR=/mnt/checkpoints
       - TRINITY_TASKSET_PATH=/mnt/data
-      - TRINITY_MODEL_PATH=/mnt/models/Qwen3-0.6B
-      - TRINITY_MOE_MODEL_PATH=/mnt/models/Qwen3.5-35B-A3B
+      - TRINITY_MODEL_PATH=/mnt/Qwen3-0.6B
+      - TRINITY_MOE_MODEL_PATH=/mnt/Qwen3.5-35B-A3B
       - VIRTUAL_ENV=/opt/venv
     working_dir: /workspace
     volumes:
-      - trinity-volume:/mnt
-      - ../../..:/workspace
+      - ..:/workspace
+      - ${TRINITY_MOUNT_DIR}:/mnt
     depends_on:
       - trinity-node-1
     networks:
       - trinity-network
+    # Hardware constraint: this container must have at least 2 GPUs and 64G shared memory.
     shm_size: "64G"
     deploy:
       resources:
         reservations:
           devices:
           - driver: nvidia
-            device_ids: ['6', '7']
+            device_ids:
+              - "${TRINITY_NODE2_GPU_0}"
+              - "${TRINITY_NODE2_GPU_1}"
             capabilities: [gpu]
 
 networks:
   trinity-network:
     driver: bridge
-
-volumes:
-  trinity-volume:
-    external: true

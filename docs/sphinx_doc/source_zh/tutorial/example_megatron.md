@@ -47,7 +47,7 @@ pip install -v --disable-pip-version-check --no-cache-dir --no-build-isolation \
 Trinity-RFT 提供的 Docker 已经预装了 Megatron-LM 相关依赖。你可以直接使用我们提供的 Docker 镜像，或者根据需要自定义 Dockerfile 来构建镜像。
 
 ```bash
-docker build -f scripts/docker/Dockerfile.uv -t trinity-rft:latest .
+docker build -f docker/Dockerfile -t trinity-rft:latest .
 ```
 
 > 💡 你可以在构建前自定义 Dockerfile —— 例如添加 pip 镜像源或设置 API 密钥。

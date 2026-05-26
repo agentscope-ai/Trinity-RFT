@@ -126,7 +126,7 @@ cd Trinity-RFT
 
 # Build the Docker image
 ## Tip: You can modify the Dockerfile to add mirrors or set API keys
-docker build -f scripts/docker/Dockerfile.uv -t trinity-rft:latest .
+docker build -f docker/Dockerfile -t trinity-rft:latest .
 
 # Run the container, replacing <path_to_your_data_and_checkpoints> with your actual path
 docker run -it \

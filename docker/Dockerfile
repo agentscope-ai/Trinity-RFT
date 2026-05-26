@@ -2,7 +2,7 @@
 # Build and run the docker image with the following command:
 #
 # cd <Trinity-RFT root dir>
-# docker build -f scripts/docker/Dockerfile.uv -t trinity-rft:latest .
+# docker build -f docker/Dockerfile -t trinity-rft:latest .
 # docker run -it --gpus all --shm-size="64g" --rm -v $PWD:/workspace -v <root_path_of_data_and_checkpoints>:/data trinity-rft:latest
 #
 # Note:
