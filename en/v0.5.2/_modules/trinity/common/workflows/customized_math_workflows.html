@@ -1021,6 +1021,8 @@ window.runMermaid = runMermaid;</script>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.experience</span><span class="w"> </span><span class="kn">import</span> <span class="n">Experience</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.rewards.math_reward</span><span class="w"> </span><span class="kn">import</span> <span class="n">MathBoxedRewardFn</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.workflows.workflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimpleWorkflow</span><span class="p">,</span> <span class="n">Task</span>
@@ -1108,6 +1110,11 @@ window.runMermaid = runMermaid;</script>
             <span class="n">reward</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">reward_dict</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
             <span class="n">response</span><span class="o">.</span><span class="n">reward</span> <span class="o">=</span> <span class="n">reward</span>
             <span class="n">response</span><span class="o">.</span><span class="n">eid</span><span class="o">.</span><span class="n">run</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_id_base</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">truncate_status</span> <span class="o">==</span> <span class="s2">&quot;response_truncated&quot;</span>
+                <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">action_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="p">):</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">action_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">action_mask</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_base</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
@@ -1156,6 +1163,11 @@ window.runMermaid = runMermaid;</script>
             <span class="n">reward</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">reward_dict</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
             <span class="n">response</span><span class="o">.</span><span class="n">reward</span> <span class="o">=</span> <span class="n">reward</span>
             <span class="n">response</span><span class="o">.</span><span class="n">eid</span><span class="o">.</span><span class="n">run</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_id_base</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">truncate_status</span> <span class="o">==</span> <span class="s2">&quot;response_truncated&quot;</span>
+                <span class="ow">and</span> <span class="n">response</span><span class="o">.</span><span class="n">action_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="p">):</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">action_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">action_mask</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_base</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>

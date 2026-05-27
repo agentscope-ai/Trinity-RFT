@@ -657,6 +657,15 @@
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.algorithm.algorithm.GRPOAlgorithm.default_config"><code class="docutils literal notranslate"><span class="pre">GRPOAlgorithm.default_config()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.algorithm.algorithm.DAPOAlgorithm"><code class="docutils literal notranslate"><span class="pre">DAPOAlgorithm</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.algorithm.algorithm.DAPOAlgorithm.use_critic"><code class="docutils literal notranslate"><span class="pre">DAPOAlgorithm.use_critic</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.algorithm.algorithm.DAPOAlgorithm.use_reference"><code class="docutils literal notranslate"><span class="pre">DAPOAlgorithm.use_reference</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.algorithm.algorithm.DAPOAlgorithm.compute_advantage_in_trainer"><code class="docutils literal notranslate"><span class="pre">DAPOAlgorithm.compute_advantage_in_trainer</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.algorithm.algorithm.DAPOAlgorithm.can_balance_batch"><code class="docutils literal notranslate"><span class="pre">DAPOAlgorithm.can_balance_batch</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.algorithm.algorithm.DAPOAlgorithm.schema"><code class="docutils literal notranslate"><span class="pre">DAPOAlgorithm.schema</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.algorithm.algorithm.DAPOAlgorithm.default_config"><code class="docutils literal notranslate"><span class="pre">DAPOAlgorithm.default_config()</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.algorithm.algorithm.ReinforcePlusPlusAlgorithm"><code class="docutils literal notranslate"><span class="pre">ReinforcePlusPlusAlgorithm</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.algorithm.algorithm.ReinforcePlusPlusAlgorithm.use_critic"><code class="docutils literal notranslate"><span class="pre">ReinforcePlusPlusAlgorithm.use_critic</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.algorithm.algorithm.ReinforcePlusPlusAlgorithm.use_reference"><code class="docutils literal notranslate"><span class="pre">ReinforcePlusPlusAlgorithm.use_reference</span></code></a></li>
@@ -1001,6 +1010,56 @@
 <dt class="sig sig-object py" id="trinity.algorithm.algorithm.GRPOAlgorithm.default_config">
 <em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">default_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="../_modules/trinity/algorithm/algorithm.html#GRPOAlgorithm.default_config"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.algorithm.algorithm.GRPOAlgorithm.default_config" title="Link to this definition">#</a></dt>
 <dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="trinity.algorithm.algorithm.DAPOAlgorithm">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">trinity.algorithm.algorithm.</span></span><span class="sig-name descname"><span class="pre">DAPOAlgorithm</span></span><a class="reference internal" href="../_modules/trinity/algorithm/algorithm.html#DAPOAlgorithm"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.algorithm.algorithm.DAPOAlgorithm" title="Link to this definition">#</a></dt>
+<dd><p>基类：<a class="reference internal" href="#trinity.algorithm.algorithm.AlgorithmType" title="trinity.algorithm.algorithm.AlgorithmType"><code class="xref py py-class docutils literal notranslate"><span class="pre">AlgorithmType</span></code></a></p>
+<p>DAPO (Decoupled Clip and Dynamic sAmpling Policy Optimization).</p>
+<p>Critic-free group RL for long-CoT reasoning. Reuses GRPO grouped advantages and
+PPO policy loss; DAPO-specific clip, token-level loss, dynamic sampling, and
+overlong reward shaping are configured in YAML (see examples/dapo_math and
+docs/dapo_trinity_implementation_spec.md).</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="trinity.algorithm.algorithm.DAPOAlgorithm.use_critic">
+<span class="sig-name descname"><span class="pre">use_critic</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#trinity.algorithm.algorithm.DAPOAlgorithm.use_critic" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="trinity.algorithm.algorithm.DAPOAlgorithm.use_reference">
+<span class="sig-name descname"><span class="pre">use_reference</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#trinity.algorithm.algorithm.DAPOAlgorithm.use_reference" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="trinity.algorithm.algorithm.DAPOAlgorithm.compute_advantage_in_trainer">
+<span class="sig-name descname"><span class="pre">compute_advantage_in_trainer</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#trinity.algorithm.algorithm.DAPOAlgorithm.compute_advantage_in_trainer" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="trinity.algorithm.algorithm.DAPOAlgorithm.can_balance_batch">
+<span class="sig-name descname"><span class="pre">can_balance_batch</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></em><a class="headerlink" href="#trinity.algorithm.algorithm.DAPOAlgorithm.can_balance_batch" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="trinity.algorithm.algorithm.DAPOAlgorithm.schema">
+<span class="sig-name descname"><span class="pre">schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'experience'</span></em><a class="headerlink" href="#trinity.algorithm.algorithm.DAPOAlgorithm.schema" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.algorithm.algorithm.DAPOAlgorithm.default_config">
+<em class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">default_config</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span></span></span><a class="reference internal" href="../_modules/trinity/algorithm/algorithm.html#DAPOAlgorithm.default_config"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.algorithm.algorithm.DAPOAlgorithm.default_config" title="Link to this definition">#</a></dt>
+<dd><p>Return DAPO default algorithm configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">返回<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Default training configuration for DAPO.</p>
+</dd>
+<dt class="field-even">返回类型<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dict</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -1786,6 +1845,15 @@ Same structure as On-Policy Distill but with JSD advantage function.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.algorithm.algorithm.GRPOAlgorithm.can_balance_batch"><code class="docutils literal notranslate"><span class="pre">GRPOAlgorithm.can_balance_batch</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.algorithm.algorithm.GRPOAlgorithm.schema"><code class="docutils literal notranslate"><span class="pre">GRPOAlgorithm.schema</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.algorithm.algorithm.GRPOAlgorithm.default_config"><code class="docutils literal notranslate"><span class="pre">GRPOAlgorithm.default_config()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.algorithm.algorithm.DAPOAlgorithm"><code class="docutils literal notranslate"><span class="pre">DAPOAlgorithm</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.algorithm.algorithm.DAPOAlgorithm.use_critic"><code class="docutils literal notranslate"><span class="pre">DAPOAlgorithm.use_critic</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.algorithm.algorithm.DAPOAlgorithm.use_reference"><code class="docutils literal notranslate"><span class="pre">DAPOAlgorithm.use_reference</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.algorithm.algorithm.DAPOAlgorithm.compute_advantage_in_trainer"><code class="docutils literal notranslate"><span class="pre">DAPOAlgorithm.compute_advantage_in_trainer</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.algorithm.algorithm.DAPOAlgorithm.can_balance_batch"><code class="docutils literal notranslate"><span class="pre">DAPOAlgorithm.can_balance_batch</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.algorithm.algorithm.DAPOAlgorithm.schema"><code class="docutils literal notranslate"><span class="pre">DAPOAlgorithm.schema</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.algorithm.algorithm.DAPOAlgorithm.default_config"><code class="docutils literal notranslate"><span class="pre">DAPOAlgorithm.default_config()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.algorithm.algorithm.ReinforcePlusPlusAlgorithm"><code class="docutils literal notranslate"><span class="pre">ReinforcePlusPlusAlgorithm</span></code></a><ul class="nav section-nav flex-column">

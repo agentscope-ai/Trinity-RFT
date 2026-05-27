@@ -1177,6 +1177,45 @@ window.runMermaid = runMermaid;</script>
 
 
 
+<div class="viewcode-block" id="DAPOAlgorithm">
+<a class="viewcode-back" href="../../../build_api/trinity.algorithm.algorithm.html#trinity.algorithm.DAPOAlgorithm">[文档]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DAPOAlgorithm</span><span class="p">(</span><span class="n">AlgorithmType</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;DAPO (Decoupled Clip and Dynamic sAmpling Policy Optimization).</span>
+
+<span class="sd">    Critic-free group RL for long-CoT reasoning. Reuses GRPO grouped advantages and</span>
+<span class="sd">    PPO policy loss; DAPO-specific clip, token-level loss, dynamic sampling, and</span>
+<span class="sd">    overlong reward shaping are configured in YAML (see examples/dapo_math and</span>
+<span class="sd">    docs/dapo_trinity_implementation_spec.md).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">use_critic</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">use_reference</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">compute_advantage_in_trainer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">can_balance_batch</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;experience&quot;</span>
+
+<div class="viewcode-block" id="DAPOAlgorithm.default_config">
+<a class="viewcode-back" href="../../../build_api/trinity.algorithm.algorithm.html#trinity.algorithm.DAPOAlgorithm.default_config">[文档]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">default_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return DAPO default algorithm configuration.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            Dict: Default training configuration for DAPO.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;repeat_times&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
+            <span class="s2">&quot;advantage_fn&quot;</span><span class="p">:</span> <span class="s2">&quot;grpo&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;sample_strategy&quot;</span><span class="p">:</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;policy_loss_fn&quot;</span><span class="p">:</span> <span class="s2">&quot;ppo&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;kl_penalty_fn&quot;</span><span class="p">:</span> <span class="s2">&quot;none&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;kl_loss_fn&quot;</span><span class="p">:</span> <span class="s2">&quot;none&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;entropy_loss_fn&quot;</span><span class="p">:</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+        <span class="p">}</span></div>
+</div>
+
+
+
 <div class="viewcode-block" id="ReinforcePlusPlusAlgorithm">
 <a class="viewcode-back" href="../../../build_api/trinity.algorithm.algorithm.html#trinity.algorithm.ReinforcePlusPlusAlgorithm">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ReinforcePlusPlusAlgorithm</span><span class="p">(</span><span class="n">AlgorithmType</span><span class="p">):</span>
