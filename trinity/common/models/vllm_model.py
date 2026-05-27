@@ -13,7 +13,10 @@ from transformers import AutoProcessor
 from trinity.common.config import InferenceModelConfig
 from trinity.common.constants import SyncMethod
 from trinity.common.experience import Experience
-from trinity.common.models.mm_utils import vLLMMultiModalRender
+from trinity.common.models.mm_utils import (
+    combine_output_token_ids,
+    vLLMMultiModalRender,
+)
 from trinity.common.models.model import BaseInferenceModel
 from trinity.common.models.vllm_patch import get_vllm_version
 
@@ -249,15 +252,17 @@ class vLLMRolloutModel(BaseInferenceModel):
         else:  # multi modal
             if self.processor is None:
                 await self._initialize_processor()
+
+        output = await self._generate_internal(prompt=prompt, lora_request=lora_request, **kwargs)
+        if not isinstance(prompt, str):
             if self.mm_render is None:
                 self.mm_render = vLLMMultiModalRender(
                     model_path=self.config.model_path,  # type: ignore
                 )
             multi_modal_inputs = self.mm_render.build_mm_input_for_training(
-                messages=prompt["prompt"], multi_modal_data=prompt.get("multi_modal_data", {})
+                input_ids=output.prompt_token_ids,
+                multi_modal_data=prompt.get("multi_modal_data", {}),
             )
-
-        output = await self._generate_internal(prompt=prompt, lora_request=lora_request, **kwargs)
         experiences = [
             Experience(
                 tokens=torch.cat(
@@ -280,7 +285,9 @@ class vLLMRolloutModel(BaseInferenceModel):
                 prompt_length=len(output.prompt_token_ids),
                 prompt_text=self.tokenizer.decode(output.prompt_token_ids),
                 response_text=output.outputs[i].text,
-                multi_modal_inputs=multi_modal_inputs,
+                multi_modal_inputs=combine_output_token_ids(
+                    output.outputs[i].token_ids, multi_modal_inputs
+                ),
                 routed_experts=self._extract_routed_experts(output, i),
             )
             for i in range(len(output.outputs))
