@@ -1024,17 +1024,15 @@ window.runMermaid = runMermaid;</script>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">streamlit</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">st</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.orm</span><span class="w"> </span><span class="kn">import</span> <span class="n">sessionmaker</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoTokenizer</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">init_engine</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.storage.sql</span><span class="w"> </span><span class="kn">import</span> <span class="n">SQLExperienceStorage</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">StorageConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.experience</span><span class="w"> </span><span class="kn">import</span> <span class="n">Experience</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.experience_visualizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_experience_token_view</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
 
 
 <div class="viewcode-block" id="SQLExperienceViewer">
@@ -1043,34 +1041,21 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="SQLExperienceViewer.__init__">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.viewer.html#trinity.buffer.viewer.SQLExperienceViewer.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">StorageConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sql_</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">in_ray_actor</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`path` is required for SQL storage type.&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span> <span class="o">=</span> <span class="n">init_engine</span><span class="p">(</span>
-            <span class="n">db_url</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>
-            <span class="n">table_name</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-            <span class="n">schema_type</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">schema_type</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">sessionmaker</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">storage</span> <span class="o">=</span> <span class="n">SQLExperienceStorage</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SQLExperienceViewer.get_experiences">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.viewer.html#trinity.buffer.viewer.SQLExperienceViewer.get_experiences">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_experiences</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Viewing experiences from offset </span><span class="si">%s</span><span class="s2"> with limit </span><span class="si">%s</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">offset</span><span class="p">,</span> <span class="n">limit</span><span class="p">)</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
-            <span class="n">query</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="p">)</span><span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="n">limit</span><span class="p">)</span>
-            <span class="n">results</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
-            <span class="n">exps</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">to_experience</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">results</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">exps</span></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_experiences</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">offset</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">filters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">offset</span><span class="o">=</span><span class="n">offset</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SQLExperienceViewer.total_experiences">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.viewer.html#trinity.buffer.viewer.SQLExperienceViewer.total_experiences">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">total_experiences</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">()</span> <span class="k">as</span> <span class="n">session</span><span class="p">:</span>
-            <span class="n">count</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">count</span></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">total_experiences</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="n">filters</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SQLExperienceViewer.run_viewer">
@@ -1121,7 +1106,6 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="get_color_for_action_mask">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.viewer.html#trinity.buffer.viewer.get_color_for_action_mask">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_color_for_action_mask</span><span class="p">(</span><span class="n">action_mask_value</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return color based on action_mask value&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">action_mask_value</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">return</span> <span class="s2">&quot;#c8e6c9&quot;</span>
     <span class="k">else</span><span class="p">:</span>
@@ -1132,20 +1116,16 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="render_token_detail_html">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.viewer.html#trinity.buffer.viewer.render_token_detail_html">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">render_token_detail_html</span><span class="p">(</span><span class="n">html</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Render token detail in the adaptive expanded panel style.&quot;&quot;&quot;</span>
-    <span class="k">with</span> <span class="n">st</span><span class="o">.</span><span class="n">container</span><span class="p">(</span><span class="n">border</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-        <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**🔍 Response Tokens Detail:**&quot;</span><span class="p">)</span>
-        <span class="n">st</span><span class="o">.</span><span class="n">html</span><span class="p">(</span><span class="n">html</span><span class="p">)</span></div>
+    <span class="n">st</span><span class="o">.</span><span class="n">html</span><span class="p">(</span><span class="n">html</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="render_experience">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.viewer.html#trinity.buffer.viewer.render_experience">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">render_experience</span><span class="p">(</span><span class="n">exp</span><span class="p">:</span> <span class="n">Experience</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Render a single experience sequence in Streamlit.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Render a single experience in Streamlit.&quot;&quot;&quot;</span>
     <span class="n">token_view</span> <span class="o">=</span> <span class="n">build_experience_token_view</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">)</span>
 
-    <span class="c1"># HTML escape function</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">html_escape</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">(</span>
             <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&amp;&quot;</span><span class="p">,</span> <span class="s2">&quot;&amp;amp;&quot;</span><span class="p">)</span>
@@ -1155,108 +1135,105 @@ window.runMermaid = runMermaid;</script>
             <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&amp;#39;&quot;</span><span class="p">)</span>
         <span class="p">)</span>
 
-    <span class="c1"># === Use Streamlit Native Components for Prompt and Response ===</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Header with EID</span>
     <span class="n">st</span><span class="o">.</span><span class="n">subheader</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Experience [</span><span class="si">{</span><span class="n">exp</span><span class="o">.</span><span class="n">eid</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
 
-    <span class="c1"># Prompt section using st.text_area</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**📝 Prompt:**&quot;</span><span class="p">)</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">code</span><span class="p">(</span><span class="n">token_view</span><span class="o">.</span><span class="n">prompt_text</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wrap_lines</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">line_numbers</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># Reward and metadata first (before prompt/response)</span>
+    <span class="n">col_reward</span><span class="p">,</span> <span class="n">col_metrics</span><span class="p">,</span> <span class="n">col_info</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">columns</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">col_reward</span><span class="p">:</span>
+        <span class="n">reward_val</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">reward</span> <span class="k">if</span> <span class="n">exp</span><span class="o">.</span><span class="n">reward</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**Reward**&quot;</span><span class="p">)</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">reward_val</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">`&quot;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">col_metrics</span><span class="p">:</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**Metrics**&quot;</span><span class="p">)</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">json</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">metrics</span> <span class="ow">or</span> <span class="p">{},</span> <span class="n">expanded</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">col_info</span><span class="p">:</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**Info**&quot;</span><span class="p">)</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">json</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">info</span> <span class="ow">or</span> <span class="p">{},</span> <span class="n">expanded</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-    <span class="c1"># Response section using st.text_area</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**💬 Response:**&quot;</span><span class="p">)</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">code</span><span class="p">(</span><span class="n">token_view</span><span class="o">.</span><span class="n">response_text</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wrap_lines</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">line_numbers</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># Prompt (collapsed by default)</span>
+    <span class="k">with</span> <span class="n">st</span><span class="o">.</span><span class="n">expander</span><span class="p">(</span><span class="s2">&quot;Prompt&quot;</span><span class="p">,</span> <span class="n">expanded</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">code</span><span class="p">(</span><span class="n">token_view</span><span class="o">.</span><span class="n">prompt_text</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wrap_lines</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">line_numbers</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="c1"># Reward and other info</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**🏆 Reward and Other Info:**&quot;</span><span class="p">)</span>
-    <span class="n">reward</span><span class="p">,</span> <span class="n">info</span><span class="p">,</span> <span class="n">metrics</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">columns</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
-    <span class="n">reward</span><span class="o">.</span><span class="n">metric</span><span class="p">(</span><span class="s2">&quot;**Reward:**&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">exp</span><span class="o">.</span><span class="n">reward</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="mf">0.0</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="n">metrics</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**Metrics:**&quot;</span><span class="p">)</span>
-    <span class="n">metrics</span><span class="o">.</span><span class="n">json</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">metrics</span> <span class="ow">or</span> <span class="p">{},</span> <span class="n">expanded</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**Info:**&quot;</span><span class="p">)</span>
-    <span class="n">info</span><span class="o">.</span><span class="n">json</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">info</span> <span class="ow">or</span> <span class="p">{},</span> <span class="n">expanded</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="c1"># Response (collapsed by default)</span>
+    <span class="k">with</span> <span class="n">st</span><span class="o">.</span><span class="n">expander</span><span class="p">(</span><span class="s2">&quot;Response&quot;</span><span class="p">,</span> <span class="n">expanded</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">code</span><span class="p">(</span><span class="n">token_view</span><span class="o">.</span><span class="n">response_text</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wrap_lines</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">line_numbers</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="c1"># Build HTML only for Response Tokens Detail</span>
-    <span class="n">html</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">    &lt;style&gt;</span>
-<span class="s2">        .token-detail-root * {</span>
-<span class="s2">            margin: 0;</span>
-<span class="s2">            padding: 0;</span>
-<span class="s2">            box-sizing: border-box;</span>
-<span class="s2">        }</span>
-
-<span class="s2">        .token-detail-root {</span>
-<span class="s2">            font-family: -apple-system, BlinkMacSystemFont, &#39;Segoe UI&#39;, &#39;Roboto&#39;, sans-serif;</span>
-<span class="s2">            padding: 10px;</span>
-<span class="s2">        }</span>
-
-<span class="s2">        .token-detail-root .token-container {</span>
-<span class="s2">            display: flex;</span>
-<span class="s2">            flex-wrap: wrap;</span>
-<span class="s2">            gap: 5px;</span>
-<span class="s2">            padding: 15px;</span>
-<span class="s2">            background-color: white;</span>
-<span class="s2">            border-radius: 5px;</span>
-<span class="s2">        }</span>
-
-<span class="s2">        .token-detail-root .token-box {</span>
-<span class="s2">            display: inline-flex;</span>
-<span class="s2">            flex-direction: column;</span>
-<span class="s2">            align-items: center;</span>
-<span class="s2">            padding: 8px 12px;</span>
-<span class="s2">            border-radius: 5px;</span>
-<span class="s2">            border: 1px solid #ddd;</span>
-<span class="s2">            min-width: 60px;</span>
-<span class="s2">            transition: transform 0.2s, box-shadow 0.2s;</span>
-<span class="s2">        }</span>
-
-<span class="s2">        .token-detail-root .token-box:hover {</span>
-<span class="s2">            transform: scale(1.5);</span>
-<span class="s2">            box-shadow: 0 4px 8px rgba(0,0,0,0.2);</span>
-<span class="s2">            z-index: 10;</span>
-<span class="s2">        }</span>
-
-<span class="s2">        .token-detail-root .token-text {</span>
-<span class="s2">            font-family: &#39;Courier New&#39;, monospace;</span>
-<span class="s2">            font-size: 14px;</span>
-<span class="s2">            font-weight: bold;</span>
-<span class="s2">            margin-bottom: 5px;</span>
-<span class="s2">            text-align: center;</span>
-<span class="s2">            word-break: break-all;</span>
-<span class="s2">            max-width: 100px;</span>
-<span class="s2">        }</span>
-
-<span class="s2">        .token-detail-root .token-logprob {</span>
-<span class="s2">            font-size: 11px;</span>
-<span class="s2">            color: #555;</span>
-<span class="s2">            font-family: &#39;Courier New&#39;, monospace;</span>
-<span class="s2">            text-align: center;</span>
-<span class="s2">        }</span>
-<span class="s2">    &lt;/style&gt;</span>
-<span class="s2">    &lt;div class=&quot;token-detail-root&quot;&gt;</span>
-<span class="s2">        &lt;div class=&quot;token-container&quot;&gt;</span>
-<span class="s2">    &quot;&quot;&quot;</span>
-
-    <span class="c1"># Add each response token</span>
-    <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">token_view</span><span class="o">.</span><span class="n">response_tokens</span><span class="p">:</span>
-        <span class="n">bg_color</span> <span class="o">=</span> <span class="n">get_color_for_action_mask</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">is_action</span><span class="p">))</span>
-
-        <span class="c1"># Handle special character display</span>
-        <span class="n">token_display</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">token_text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;␣&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;↵&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;⇥&quot;</span><span class="p">)</span>
-        <span class="n">token_display</span> <span class="o">=</span> <span class="n">html_escape</span><span class="p">(</span><span class="n">token_display</span><span class="p">)</span>
-        <span class="n">logprob_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">token</span><span class="o">.</span><span class="n">logprob</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">logprob</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;N/A&quot;</span>
-
-        <span class="n">html</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">                &lt;div class=&quot;token-box&quot; style=&quot;background-color: </span><span class="si">{</span><span class="n">bg_color</span><span class="si">}</span><span class="s2">;&quot;&gt;</span>
-<span class="s2">                    &lt;div class=&quot;token-text&quot;&gt;</span><span class="si">{</span><span class="n">token_display</span><span class="si">}</span><span class="s2">&lt;/div&gt;</span>
-<span class="s2">                    &lt;div class=&quot;token-logprob&quot;&gt;</span><span class="si">{</span><span class="n">logprob_text</span><span class="si">}</span><span class="s2">&lt;/div&gt;</span>
-<span class="s2">                &lt;/div&gt;</span>
+    <span class="c1"># Response Tokens Detail (collapsed by default)</span>
+    <span class="k">with</span> <span class="n">st</span><span class="o">.</span><span class="n">expander</span><span class="p">(</span><span class="s2">&quot;Response Tokens Detail&quot;</span><span class="p">,</span> <span class="n">expanded</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">html</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">        &lt;style&gt;</span>
+<span class="s2">            .token-detail-root * {</span>
+<span class="s2">                margin: 0;</span>
+<span class="s2">                padding: 0;</span>
+<span class="s2">                box-sizing: border-box;</span>
+<span class="s2">            }</span>
+<span class="s2">            .token-detail-root {</span>
+<span class="s2">                font-family: -apple-system, BlinkMacSystemFont, &#39;Segoe UI&#39;, &#39;Roboto&#39;, sans-serif;</span>
+<span class="s2">                padding: 10px;</span>
+<span class="s2">            }</span>
+<span class="s2">            .token-detail-root .token-container {</span>
+<span class="s2">                display: flex;</span>
+<span class="s2">                flex-wrap: wrap;</span>
+<span class="s2">                gap: 4px;</span>
+<span class="s2">                padding: 12px;</span>
+<span class="s2">                background-color: #fafafa;</span>
+<span class="s2">                border-radius: 6px;</span>
+<span class="s2">            }</span>
+<span class="s2">            .token-detail-root .token-box {</span>
+<span class="s2">                display: inline-flex;</span>
+<span class="s2">                flex-direction: column;</span>
+<span class="s2">                align-items: center;</span>
+<span class="s2">                padding: 6px 10px;</span>
+<span class="s2">                border-radius: 4px;</span>
+<span class="s2">                border: 1px solid #e0e0e0;</span>
+<span class="s2">                min-width: 50px;</span>
+<span class="s2">                transition: transform 0.2s, box-shadow 0.2s;</span>
+<span class="s2">            }</span>
+<span class="s2">            .token-detail-root .token-box:hover {</span>
+<span class="s2">                transform: scale(1.5);</span>
+<span class="s2">                box-shadow: 0 4px 12px rgba(0,0,0,0.15);</span>
+<span class="s2">                z-index: 10;</span>
+<span class="s2">            }</span>
+<span class="s2">            .token-detail-root .token-text {</span>
+<span class="s2">                font-family: &#39;Courier New&#39;, monospace;</span>
+<span class="s2">                font-size: 13px;</span>
+<span class="s2">                font-weight: 600;</span>
+<span class="s2">                margin-bottom: 3px;</span>
+<span class="s2">                text-align: center;</span>
+<span class="s2">                word-break: break-all;</span>
+<span class="s2">                max-width: 90px;</span>
+<span class="s2">            }</span>
+<span class="s2">            .token-detail-root .token-logprob {</span>
+<span class="s2">                font-size: 10px;</span>
+<span class="s2">                color: #666;</span>
+<span class="s2">                font-family: &#39;Courier New&#39;, monospace;</span>
+<span class="s2">                text-align: center;</span>
+<span class="s2">            }</span>
+<span class="s2">        &lt;/style&gt;</span>
+<span class="s2">        &lt;div class=&quot;token-detail-root&quot;&gt;</span>
+<span class="s2">            &lt;div class=&quot;token-container&quot;&gt;</span>
 <span class="s2">        &quot;&quot;&quot;</span>
-    <span class="n">html</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">        &lt;/div&gt;</span>
-<span class="s2">    &lt;/div&gt;</span>
-<span class="s2">    &quot;&quot;&quot;</span>
 
-    <span class="n">render_token_detail_html</span><span class="p">(</span><span class="n">html</span><span class="p">)</span></div>
+        <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">token_view</span><span class="o">.</span><span class="n">response_tokens</span><span class="p">:</span>
+            <span class="n">bg_color</span> <span class="o">=</span> <span class="n">get_color_for_action_mask</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">is_action</span><span class="p">))</span>
+            <span class="n">token_display</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">token_text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;␣&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;↵&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;⇥&quot;</span><span class="p">)</span>
+            <span class="n">token_display</span> <span class="o">=</span> <span class="n">html_escape</span><span class="p">(</span><span class="n">token_display</span><span class="p">)</span>
+            <span class="n">logprob_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">token</span><span class="o">.</span><span class="n">logprob</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">logprob</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;N/A&quot;</span>
+
+            <span class="n">html</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">                    &lt;div class=&quot;token-box&quot; style=&quot;background-color: </span><span class="si">{</span><span class="n">bg_color</span><span class="si">}</span><span class="s2">;&quot;&gt;</span>
+<span class="s2">                        &lt;div class=&quot;token-text&quot;&gt;</span><span class="si">{</span><span class="n">token_display</span><span class="si">}</span><span class="s2">&lt;/div&gt;</span>
+<span class="s2">                        &lt;div class=&quot;token-logprob&quot;&gt;</span><span class="si">{</span><span class="n">logprob_text</span><span class="si">}</span><span class="s2">&lt;/div&gt;</span>
+<span class="s2">                    &lt;/div&gt;</span>
+<span class="s2">            &quot;&quot;&quot;</span>
+        <span class="n">html</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            &lt;/div&gt;</span>
+<span class="s2">        &lt;/div&gt;</span>
+<span class="s2">        &quot;&quot;&quot;</span>
+        <span class="n">render_token_detail_html</span><span class="p">(</span><span class="n">html</span><span class="p">)</span></div>
 
 
 
@@ -1264,16 +1241,8 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.viewer.html#trinity.buffer.viewer.parse_args">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">parse_args</span><span class="p">():</span>
     <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Experience Visualizer&quot;</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--db-url&quot;</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to the experience database.&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--table&quot;</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Name of the experience table.&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--db-url&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to the experience database.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--table&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Name of the experience table.&quot;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
         <span class="s2">&quot;--schema&quot;</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
@@ -1281,122 +1250,165 @@ window.runMermaid = runMermaid;</script>
         <span class="n">choices</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;experience&quot;</span><span class="p">,</span> <span class="s2">&quot;sft&quot;</span><span class="p">),</span>
         <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Schema type of the experience table.&quot;</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--tokenizer&quot;</span><span class="p">,</span>
-        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-        <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to the tokenizer.&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--tokenizer&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to the tokenizer.&quot;</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="get_viewer">
+<a class="viewcode-back" href="../../../build_api/trinity.buffer.viewer.html#trinity.buffer.viewer.get_viewer">[docs]</a>
+<span class="nd">@st</span><span class="o">.</span><span class="n">cache_resource</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_viewer</span><span class="p">(</span><span class="n">db_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">schema_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SQLExperienceViewer</span><span class="p">:</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">StorageConfig</span><span class="p">()</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">table_name</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">db_url</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">schema_type</span> <span class="o">=</span> <span class="n">schema_type</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">storage_type</span> <span class="o">=</span> <span class="s2">&quot;sql&quot;</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">wrap_in_ray</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="n">SQLExperienceViewer</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="main">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.viewer.html#trinity.buffer.viewer.main">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>  <span class="c1"># noqa: [C901]</span>
     <span class="n">args</span> <span class="o">=</span> <span class="n">parse_args</span><span class="p">()</span>
 
-    <span class="c1"># Initialize SQLExperienceViewer</span>
-    <span class="n">config</span> <span class="o">=</span> <span class="n">StorageConfig</span><span class="p">()</span>
-    <span class="n">config</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">table</span>
-    <span class="n">config</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">db_url</span>
-    <span class="n">config</span><span class="o">.</span><span class="n">schema_type</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">schema</span>
-    <span class="n">config</span><span class="o">.</span><span class="n">storage_type</span> <span class="o">=</span> <span class="s2">&quot;sql&quot;</span>
-    <span class="n">viewer</span> <span class="o">=</span> <span class="n">SQLExperienceViewer</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+    <span class="n">viewer</span> <span class="o">=</span> <span class="n">get_viewer</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">db_url</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">table</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">schema</span><span class="p">)</span>
 
-    <span class="n">st</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;🎯 Trinity-RFT Experience Visualizer&quot;</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Trinity-RFT Experience Visualizer&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Initialize session state</span>
     <span class="k">if</span> <span class="s2">&quot;page&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">:</span>
         <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">=</span> <span class="mi">1</span>
 
-    <span class="c1"># Add instructions</span>
-    <span class="k">with</span> <span class="n">st</span><span class="o">.</span><span class="n">expander</span><span class="p">(</span><span class="s2">&quot;ℹ️ Instructions&quot;</span><span class="p">):</span>
-        <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        - **Green background**: action_mask = 1</span>
-<span class="sd">        - **Red background**: action_mask = 0</span>
-<span class="sd">        - **Top**: Token text (special characters: space=␣, newline=↵, tab=⇥)</span>
-<span class="sd">        - **Bottom**: Logprob value of the token</span>
-<span class="sd">        - Hover over token to zoom in</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="p">)</span>
+    <span class="c1"># === Sidebar: Filters ===</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">header</span><span class="p">(</span><span class="s2">&quot;Filters&quot;</span><span class="p">)</span>
 
-    <span class="c1"># Get total sequence number</span>
-    <span class="n">total_seq_num</span> <span class="o">=</span> <span class="n">viewer</span><span class="o">.</span><span class="n">total_experiences</span><span class="p">()</span>
+    <span class="c1"># Reward range filter</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**Reward Range**&quot;</span><span class="p">)</span>
+    <span class="n">col_rmin</span><span class="p">,</span> <span class="n">col_rmax</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">columns</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">col_rmin</span><span class="p">:</span>
+        <span class="n">reward_min_str</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;Min&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;reward_min&quot;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">col_rmax</span><span class="p">:</span>
+        <span class="n">reward_max_str</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;Max&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;reward_max&quot;</span><span class="p">)</span>
+    <span class="n">reward_min</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">reward_min_str</span><span class="p">)</span> <span class="k">if</span> <span class="n">reward_min_str</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">reward_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">reward_max_str</span><span class="p">)</span> <span class="k">if</span> <span class="n">reward_max_str</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">else</span> <span class="kc">None</span>
 
-    <span class="c1"># Sidebar configuration</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">header</span><span class="p">(</span><span class="s2">&quot;⚙️ Settings&quot;</span><span class="p">)</span>
+    <span class="c1"># Model version range filter</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**Model Version Range**&quot;</span><span class="p">)</span>
+    <span class="n">col_vmin</span><span class="p">,</span> <span class="n">col_vmax</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">columns</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">col_vmin</span><span class="p">:</span>
+        <span class="n">mv_min_str</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;Min&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;mv_min&quot;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">col_vmax</span><span class="p">:</span>
+        <span class="n">mv_max_str</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;Max&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;mv_max&quot;</span><span class="p">)</span>
+    <span class="n">model_version_min</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">mv_min_str</span><span class="p">)</span> <span class="k">if</span> <span class="n">mv_min_str</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">model_version_max</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">mv_max_str</span><span class="p">)</span> <span class="k">if</span> <span class="n">mv_max_str</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">else</span> <span class="kc">None</span>
 
-    <span class="c1"># Pagination settings</span>
-    <span class="n">experiences_per_page</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">slider</span><span class="p">(</span>
-        <span class="s2">&quot;Experiences per page&quot;</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">5</span>
-    <span class="p">)</span>
-    <span class="c1"># Calculate total pages</span>
-    <span class="n">total_pages</span> <span class="o">=</span> <span class="p">(</span><span class="n">total_seq_num</span> <span class="o">+</span> <span class="n">experiences_per_page</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="n">experiences_per_page</span>
+    <span class="c1"># Task ID exact match filter</span>
+    <span class="n">task_id_filter</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;Task ID (exact match)&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;task_id&quot;</span><span class="p">)</span>
 
-    <span class="c1"># Page selection (sidebar)</span>
-    <span class="n">current_page</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span>
-        <span class="s2">&quot;Select page&quot;</span><span class="p">,</span>
-        <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-        <span class="n">max_value</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">total_pages</span><span class="p">),</span>
-        <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-        <span class="n">value</span><span class="o">=</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span><span class="p">,</span>
-    <span class="p">)</span>
-    <span class="k">if</span> <span class="n">current_page</span> <span class="o">!=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span><span class="p">:</span>
-        <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">=</span> <span class="n">current_page</span>
+    <span class="c1"># Apply filters button</span>
+    <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="s2">&quot;Apply Filters&quot;</span><span class="p">,</span> <span class="n">use_container_width</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+        <span class="n">new_filters</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">reward_min</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">new_filters</span><span class="p">[</span><span class="s2">&quot;reward_min&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reward_min</span>
+        <span class="k">if</span> <span class="n">reward_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">new_filters</span><span class="p">[</span><span class="s2">&quot;reward_max&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reward_max</span>
+        <span class="k">if</span> <span class="n">model_version_min</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">new_filters</span><span class="p">[</span><span class="s2">&quot;model_version_min&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">model_version_min</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">model_version_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">new_filters</span><span class="p">[</span><span class="s2">&quot;model_version_max&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">model_version_max</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">task_id_filter</span><span class="p">:</span>
+            <span class="n">new_filters</span><span class="p">[</span><span class="s2">&quot;task_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">task_id_filter</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">active_filters</span> <span class="o">=</span> <span class="n">new_filters</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="n">st</span><span class="o">.</span><span class="n">rerun</span><span class="p">()</span>
 
-    <span class="c1"># Show statistics</span>
+    <span class="c1"># Use committed filters from session state</span>
+    <span class="k">if</span> <span class="s2">&quot;active_filters&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">:</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">active_filters</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">filters</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">active_filters</span>
+
+    <span class="c1"># Sidebar bottom: per-page setting (low-profile)</span>
     <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">metric</span><span class="p">(</span><span class="s2">&quot;Total experiences&quot;</span><span class="p">,</span> <span class="n">total_seq_num</span><span class="p">)</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">metric</span><span class="p">(</span><span class="s2">&quot;Total pages&quot;</span><span class="p">,</span> <span class="n">total_pages</span><span class="p">)</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">metric</span><span class="p">(</span><span class="s2">&quot;Current page&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">total_pages</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">experiences_per_page</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span>
+        <span class="s2">&quot;Per page&quot;</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;per_page&quot;</span>
+    <span class="p">)</span>
 
-    <span class="c1"># Calculate offset</span>
+    <span class="c1"># Query total with filters</span>
+    <span class="n">total_seq_num</span> <span class="o">=</span> <span class="n">viewer</span><span class="o">.</span><span class="n">total_experiences</span><span class="p">(</span><span class="n">filters</span><span class="o">=</span><span class="n">filters</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">total_pages</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="n">total_seq_num</span> <span class="o">+</span> <span class="n">experiences_per_page</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">//</span> <span class="n">experiences_per_page</span><span class="p">)</span>
+
+    <span class="c1"># Clamp current page</span>
+    <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">&gt;</span> <span class="n">total_pages</span><span class="p">:</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">=</span> <span class="n">total_pages</span>
+
+    <span class="c1"># Calculate offset and fetch</span>
     <span class="n">offset</span> <span class="o">=</span> <span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">experiences_per_page</span>
-
-    <span class="c1"># Get experiences for current page</span>
-    <span class="n">experiences</span> <span class="o">=</span> <span class="n">viewer</span><span class="o">.</span><span class="n">get_experiences</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="n">experiences_per_page</span><span class="p">)</span>
+    <span class="n">experiences</span> <span class="o">=</span> <span class="n">viewer</span><span class="o">.</span><span class="n">get_experiences</span><span class="p">(</span><span class="n">offset</span><span class="p">,</span> <span class="n">experiences_per_page</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="n">filters</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="n">tokenizer</span> <span class="o">=</span> <span class="n">AutoTokenizer</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">)</span>
 
-    <span class="c1"># Generate catalog in sidebar</span>
-    <span class="n">exp_catalog</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># [(eid, subheader_text)]</span>
+    <span class="c1"># Sidebar: table of contents</span>
     <span class="k">if</span> <span class="n">experiences</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">experiences</span><span class="p">:</span>
-            <span class="n">exp_catalog</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">eid</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">exp_catalog</span><span class="p">:</span>
         <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
         <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**Contents**&quot;</span><span class="p">)</span>
-        <span class="n">catalog_md</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">&quot;- [ </span><span class="si">{</span><span class="n">eid</span><span class="si">}</span><span class="s2"> ](#exp-</span><span class="si">{</span><span class="n">eid</span><span class="si">}</span><span class="s2">)&quot;</span> <span class="k">for</span> <span class="n">eid</span> <span class="ow">in</span> <span class="n">exp_catalog</span><span class="p">])</span>
-        <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="n">catalog_md</span><span class="p">,</span> <span class="n">unsafe_allow_html</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">experiences</span><span class="p">:</span>
+            <span class="n">eid_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">eid</span><span class="p">)</span>
+            <span class="n">reward_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">exp</span><span class="o">.</span><span class="n">reward</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">exp</span><span class="o">.</span><span class="n">reward</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;N/A&quot;</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;- [</span><span class="si">{</span><span class="n">eid_str</span><span class="si">}</span><span class="s2">](#experience-</span><span class="si">{</span><span class="n">eid_str</span><span class="si">}</span><span class="s2">) (r=</span><span class="si">{</span><span class="n">reward_str</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
+                <span class="n">unsafe_allow_html</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
 
+    <span class="c1"># Render experiences</span>
     <span class="k">if</span> <span class="n">experiences</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">experiences</span><span class="p">:</span>
-            <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&lt;a name=&quot;exp-</span><span class="si">{</span><span class="n">exp</span><span class="o">.</span><span class="n">eid</span><span class="si">}</span><span class="s1">&quot;&gt;&lt;/a&gt;&#39;</span><span class="p">,</span> <span class="n">unsafe_allow_html</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&lt;a name=&quot;experience-</span><span class="si">{</span><span class="n">exp</span><span class="o">.</span><span class="n">eid</span><span class="si">}</span><span class="s1">&quot;&gt;&lt;/a&gt;&#39;</span><span class="p">,</span> <span class="n">unsafe_allow_html</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">render_experience</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">st</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No experience data found&quot;</span><span class="p">)</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No experiences found matching the current filters.&quot;</span><span class="p">)</span>
 
-    <span class="c1"># Pagination navigation</span>
+    <span class="c1"># === Bottom: Pagination ===</span>
     <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
-    <span class="n">col1</span><span class="p">,</span> <span class="n">col2</span><span class="p">,</span> <span class="n">col3</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">columns</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
 
-    <span class="k">with</span> <span class="n">col1</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="s2">&quot;⬅️ Previous Page&quot;</span><span class="p">):</span>
-                <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">-</span> <span class="mi">1</span>
-                <span class="n">st</span><span class="o">.</span><span class="n">rerun</span><span class="p">()</span>
-
-    <span class="k">with</span> <span class="n">col2</span><span class="p">:</span>
-        <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;&lt;center&gt;Page </span><span class="si">{</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span><span class="si">}</span><span class="s2"> / </span><span class="si">{</span><span class="n">total_pages</span><span class="si">}</span><span class="s2">&lt;/center&gt;&quot;</span><span class="p">,</span> <span class="n">unsafe_allow_html</span><span class="o">=</span><span class="kc">True</span>
+    <span class="c1"># Row 1: Previous | [current_page] / total_pages | Next</span>
+    <span class="n">col_prev</span><span class="p">,</span> <span class="n">col_page_input</span><span class="p">,</span> <span class="n">col_slash</span><span class="p">,</span> <span class="n">col_total</span><span class="p">,</span> <span class="n">col_next</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">columns</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="k">with</span> <span class="n">col_prev</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="s2">&quot;Previous&quot;</span><span class="p">,</span> <span class="n">disabled</span><span class="o">=</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">)):</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">-=</span> <span class="mi">1</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">rerun</span><span class="p">()</span>
+    <span class="k">with</span> <span class="n">col_page_input</span><span class="p">:</span>
+        <span class="n">new_page</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span>
+            <span class="s2">&quot;page&quot;</span><span class="p">,</span>
+            <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">max_value</span><span class="o">=</span><span class="n">total_pages</span><span class="p">,</span>
+            <span class="n">value</span><span class="o">=</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span><span class="p">,</span>
+            <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">label_visibility</span><span class="o">=</span><span class="s2">&quot;collapsed&quot;</span><span class="p">,</span>
+            <span class="n">key</span><span class="o">=</span><span class="s2">&quot;page_input&quot;</span><span class="p">,</span>
         <span class="p">)</span>
-    <span class="k">with</span> <span class="n">col3</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">&lt;</span> <span class="n">total_pages</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="s2">&quot;Next Page ➡️&quot;</span><span class="p">):</span>
-                <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">+</span> <span class="mi">1</span>
-                <span class="n">st</span><span class="o">.</span><span class="n">rerun</span><span class="p">()</span></div>
+        <span class="k">if</span> <span class="n">new_page</span> <span class="o">!=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span><span class="p">:</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">=</span> <span class="n">new_page</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">rerun</span><span class="p">()</span>
+    <span class="k">with</span> <span class="n">col_slash</span><span class="p">:</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span>
+            <span class="s2">&quot;&lt;div style=&#39;text-align:center;line-height:38px;&#39;&gt;/&lt;/div&gt;&quot;</span><span class="p">,</span>
+            <span class="n">unsafe_allow_html</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">with</span> <span class="n">col_total</span><span class="p">:</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;&lt;div style=&#39;line-height:38px;&#39;&gt;</span><span class="si">{</span><span class="n">total_pages</span><span class="si">}</span><span class="s2">&lt;/div&gt;&quot;</span><span class="p">,</span>
+            <span class="n">unsafe_allow_html</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">with</span> <span class="n">col_next</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="s2">&quot;Next&quot;</span><span class="p">,</span> <span class="n">disabled</span><span class="o">=</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">&gt;=</span> <span class="n">total_pages</span><span class="p">)):</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">rerun</span><span class="p">()</span>
+
+    <span class="c1"># Row 2: total count</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">caption</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">total_seq_num</span><span class="si">}</span><span class="s2"> experiences in total&quot;</span><span class="p">)</span></div>
 
 
 

@@ -1054,29 +1054,32 @@ window.runMermaid = runMermaid;</script>
 
 
 
+<span class="c1"># ============================================================</span>
+<span class="c1"># Experience Models (meta + blob split)</span>
+<span class="c1"># ============================================================</span>
+
+
 <div class="viewcode-block" id="ExperienceModel">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.schema.sql_schema.html#trinity.buffer.schema.ExperienceModel">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ExperienceModel</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>  <span class="c1"># type: ignore</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;SQLAlchemy model for Experience.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;SQLAlchemy model for Experience metadata.&quot;&quot;&quot;</span>
 
     <span class="n">__abstract__</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="nb">id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoincrement</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">timestamp</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">DateTime</span><span class="p">,</span> <span class="n">server_default</span><span class="o">=</span><span class="n">func</span><span class="o">.</span><span class="n">now</span><span class="p">())</span>
-    <span class="n">task_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">(</span><span class="mi">64</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># associated task id</span>
-    <span class="n">run_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># associated run id</span>
-    <span class="n">msg_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">(</span><span class="mi">64</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># associated message id</span>
-    <span class="c1"># serialized experience object</span>
+    <span class="n">task_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">(</span><span class="mi">64</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">run_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">msg_id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">String</span><span class="p">(</span><span class="mi">64</span><span class="p">),</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">model_version</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">experience_bytes</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">LargeBinary</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">reward</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">reward</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Float</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">consumed</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <div class="viewcode-block" id="ExperienceModel.to_experience">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.schema.sql_schema.html#trinity.buffer.schema.ExperienceModel.to_experience">[文档]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">to_experience</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Experience</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the experience from the database.&quot;&quot;&quot;</span>
-        <span class="n">exp</span> <span class="o">=</span> <span class="n">Experience</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">experience_bytes</span><span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_experience</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blob_bytes</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Experience</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the experience from metadata + blob bytes.&quot;&quot;&quot;</span>
+        <span class="n">exp</span> <span class="o">=</span> <span class="n">Experience</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">blob_bytes</span><span class="p">)</span>
         <span class="n">exp</span><span class="o">.</span><span class="n">eid</span><span class="o">.</span><span class="n">task</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_id</span>
         <span class="n">exp</span><span class="o">.</span><span class="n">eid</span><span class="o">.</span><span class="n">run</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_id</span>
         <span class="n">exp</span><span class="o">.</span><span class="n">eid</span><span class="o">.</span><span class="n">suffix</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">msg_id</span>
@@ -1089,76 +1092,93 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.schema.sql_schema.html#trinity.buffer.schema.ExperienceModel.from_experience">[文档]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_experience</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">experience</span><span class="p">:</span> <span class="n">Experience</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the experience to database.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create meta row from experience (blob stored separately).&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
-            <span class="n">experience_bytes</span><span class="o">=</span><span class="n">experience</span><span class="o">.</span><span class="n">serialize</span><span class="p">(),</span>
             <span class="n">reward</span><span class="o">=</span><span class="n">experience</span><span class="o">.</span><span class="n">reward</span><span class="p">,</span>
             <span class="n">task_id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">experience</span><span class="o">.</span><span class="n">eid</span><span class="o">.</span><span class="n">task</span><span class="p">),</span>
             <span class="n">run_id</span><span class="o">=</span><span class="n">experience</span><span class="o">.</span><span class="n">eid</span><span class="o">.</span><span class="n">run</span><span class="p">,</span>
             <span class="n">msg_id</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">experience</span><span class="o">.</span><span class="n">eid</span><span class="o">.</span><span class="n">suffix</span><span class="p">),</span>
-            <span class="n">model_version</span><span class="o">=</span><span class="n">experience</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;model_version&quot;</span><span class="p">],</span>
+            <span class="n">model_version</span><span class="o">=</span><span class="n">experience</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;model_version&quot;</span><span class="p">),</span>
         <span class="p">)</span></div>
 </div>
 
 
 
+<div class="viewcode-block" id="BlobModel">
+<a class="viewcode-back" href="../../../../build_api/trinity.buffer.schema.sql_schema.html#trinity.buffer.schema.BlobModel">[文档]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">BlobModel</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>  <span class="c1"># type: ignore</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Unified blob storage model for all experience types.&quot;&quot;&quot;</span>
+
+    <span class="n">__abstract__</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="nb">id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">experience_bytes</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">LargeBinary</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># ============================================================</span>
+<span class="c1"># SFT Models (meta + blob split)</span>
+<span class="c1"># ============================================================</span>
+
+
 <div class="viewcode-block" id="SFTDataModel">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.schema.sql_schema.html#trinity.buffer.schema.SFTDataModel">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SFTDataModel</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>  <span class="c1"># type: ignore</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;SQLAlchemy model for SFT data.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;SQLAlchemy model for SFT data metadata.&quot;&quot;&quot;</span>
 
     <span class="n">__abstract__</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="nb">id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoincrement</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">message_list</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">JSON</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">experience_bytes</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">LargeBinary</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <div class="viewcode-block" id="SFTDataModel.to_experience">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.schema.sql_schema.html#trinity.buffer.schema.SFTDataModel.to_experience">[文档]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">to_experience</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Experience</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the experience from the database.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">Experience</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">experience_bytes</span><span class="p">)</span></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_experience</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blob_bytes</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Experience</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the experience from metadata + blob bytes.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Experience</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">blob_bytes</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SFTDataModel.from_experience">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.schema.sql_schema.html#trinity.buffer.schema.SFTDataModel.from_experience">[文档]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_experience</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">experience</span><span class="p">:</span> <span class="n">Experience</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the experience to database.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create meta row from experience (blob stored separately).&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
-            <span class="n">experience_bytes</span><span class="o">=</span><span class="n">experience</span><span class="o">.</span><span class="n">serialize</span><span class="p">(),</span>
             <span class="n">message_list</span><span class="o">=</span><span class="n">experience</span><span class="o">.</span><span class="n">messages</span><span class="p">,</span>
         <span class="p">)</span></div>
 </div>
 
 
 
+<span class="c1"># ============================================================</span>
+<span class="c1"># DPO Models (meta + blob split)</span>
+<span class="c1"># ============================================================</span>
+
+
 <div class="viewcode-block" id="DPODataModel">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.schema.sql_schema.html#trinity.buffer.schema.DPODataModel">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DPODataModel</span><span class="p">(</span><span class="n">Base</span><span class="p">):</span>  <span class="c1"># type: ignore</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;SQLAlchemy model for DPO data.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;SQLAlchemy model for DPO data metadata.&quot;&quot;&quot;</span>
 
     <span class="n">__abstract__</span> <span class="o">=</span> <span class="kc">True</span>
 
     <span class="nb">id</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">Integer</span><span class="p">,</span> <span class="n">primary_key</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">autoincrement</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">chosen_message_list</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">JSON</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">rejected_message_list</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">JSON</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">experience_bytes</span> <span class="o">=</span> <span class="n">Column</span><span class="p">(</span><span class="n">LargeBinary</span><span class="p">,</span> <span class="n">nullable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 <div class="viewcode-block" id="DPODataModel.to_experience">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.schema.sql_schema.html#trinity.buffer.schema.DPODataModel.to_experience">[文档]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">to_experience</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Experience</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the experience from the database.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">Experience</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">experience_bytes</span><span class="p">)</span></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_experience</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">blob_bytes</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Experience</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load the experience from metadata + blob bytes.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Experience</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">blob_bytes</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DPODataModel.from_experience">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.schema.sql_schema.html#trinity.buffer.schema.DPODataModel.from_experience">[文档]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_experience</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">experience</span><span class="p">:</span> <span class="n">Experience</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the experience to database.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create meta row from experience (blob stored separately).&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
-            <span class="n">experience_bytes</span><span class="o">=</span><span class="n">experience</span><span class="o">.</span><span class="n">serialize</span><span class="p">(),</span>
             <span class="n">chosen_message_list</span><span class="o">=</span><span class="n">experience</span><span class="o">.</span><span class="n">chosen_messages</span><span class="p">,</span>
             <span class="n">rejected_message_list</span><span class="o">=</span><span class="n">experience</span><span class="o">.</span><span class="n">rejected_messages</span><span class="p">,</span>
         <span class="p">)</span></div>
@@ -1166,34 +1186,73 @@ window.runMermaid = runMermaid;</script>
 
 
 
+<span class="c1"># ============================================================</span>
+<span class="c1"># Engine initialization</span>
+<span class="c1"># ============================================================</span>
+
+
 <div class="viewcode-block" id="init_engine">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.schema.sql_schema.html#trinity.buffer.schema.init_engine">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">init_engine</span><span class="p">(</span><span class="n">db_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">schema_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the sqlalchemy engine.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the sqlalchemy engine.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        For task schema: (engine, table_cls)</span>
+<span class="sd">        For experience/sft/dpo schema: (engine, meta_cls, blob_cls)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">SQL_SCHEMA</span>
+
     <span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
     <span class="n">engine</span> <span class="o">=</span> <span class="n">create_engine</span><span class="p">(</span><span class="n">db_url</span><span class="p">,</span> <span class="n">poolclass</span><span class="o">=</span><span class="n">NullPool</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">schema_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">schema_type</span> <span class="o">=</span> <span class="s2">&quot;task&quot;</span>
 
-    <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">SQL_SCHEMA</span>
-
     <span class="n">base_class</span> <span class="o">=</span> <span class="n">SQL_SCHEMA</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">schema_type</span><span class="p">)</span>
 
-    <span class="n">table_attrs</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="n">schema_type</span> <span class="o">==</span> <span class="s2">&quot;task&quot;</span><span class="p">:</span>
+        <span class="n">table_attrs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;__tablename__&quot;</span><span class="p">:</span> <span class="n">table_name</span><span class="p">,</span>
+            <span class="s2">&quot;__abstract__&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">&quot;__table_args__&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;keep_existing&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+        <span class="p">}</span>
+        <span class="n">table_cls</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">table_name</span><span class="p">,</span> <span class="p">(</span><span class="n">base_class</span><span class="p">,),</span> <span class="n">table_attrs</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">create_all</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">checkfirst</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Created table </span><span class="si">{</span><span class="n">table_name</span><span class="si">}</span><span class="s2"> for schema type </span><span class="si">{</span><span class="n">schema_type</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">OperationalError</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to create table </span><span class="si">{</span><span class="n">table_name</span><span class="si">}</span><span class="s2">, assuming it already exists.&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">engine</span><span class="p">,</span> <span class="n">table_cls</span>
+
+    <span class="c1"># For experience/sft/dpo: create both meta and blob tables</span>
+    <span class="n">meta_attrs</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">&quot;__tablename__&quot;</span><span class="p">:</span> <span class="n">table_name</span><span class="p">,</span>
         <span class="s2">&quot;__abstract__&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
         <span class="s2">&quot;__table_args__&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;keep_existing&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
     <span class="p">}</span>
-    <span class="n">table_cls</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">table_name</span><span class="p">,</span> <span class="p">(</span><span class="n">base_class</span><span class="p">,),</span> <span class="n">table_attrs</span><span class="p">)</span>
+    <span class="n">meta_cls</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">table_name</span><span class="si">}</span><span class="s2">_meta&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">base_class</span><span class="p">,),</span> <span class="n">meta_attrs</span><span class="p">)</span>
+
+    <span class="n">blob_table_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">table_name</span><span class="si">}</span><span class="s2">_blob&quot;</span>
+    <span class="n">blob_attrs</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;__tablename__&quot;</span><span class="p">:</span> <span class="n">blob_table_name</span><span class="p">,</span>
+        <span class="s2">&quot;__abstract__&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">&quot;__table_args__&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;keep_existing&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+    <span class="p">}</span>
+    <span class="n">blob_cls</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">table_name</span><span class="si">}</span><span class="s2">_blob&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">BlobModel</span><span class="p">,),</span> <span class="n">blob_attrs</span><span class="p">)</span>
 
     <span class="k">try</span><span class="p">:</span>
         <span class="n">Base</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">create_all</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">checkfirst</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Created table </span><span class="si">{</span><span class="n">table_name</span><span class="si">}</span><span class="s2"> for schema type </span><span class="si">{</span><span class="n">schema_type</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Created tables </span><span class="si">{</span><span class="n">table_name</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">blob_table_name</span><span class="si">}</span><span class="s2"> for schema type </span><span class="si">{</span><span class="n">schema_type</span><span class="si">}</span><span class="s2">.&quot;</span>
+        <span class="p">)</span>
     <span class="k">except</span> <span class="n">OperationalError</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to create table </span><span class="si">{</span><span class="n">table_name</span><span class="si">}</span><span class="s2">, assuming it already exists.&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Failed to create tables </span><span class="si">{</span><span class="n">table_name</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">blob_table_name</span><span class="si">}</span><span class="s2">, assuming they already exist.&quot;</span>
+        <span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">engine</span><span class="p">,</span> <span class="n">table_cls</span></div>
+    <span class="k">return</span> <span class="n">engine</span><span class="p">,</span> <span class="n">meta_cls</span><span class="p">,</span> <span class="n">blob_cls</span></div>
 
 </pre></div>
 
