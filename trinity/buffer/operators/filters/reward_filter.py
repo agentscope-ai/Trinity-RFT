@@ -92,9 +92,7 @@ class DAPODynamicSamplingFilter(ExperienceOperator):
             return float(exp.metrics[self.metric_key])
         if exp.reward is not None:
             return float(exp.reward)
-        raise ValueError(
-            f"Experience missing '{self.metric_key}' in metrics and has no reward."
-        )
+        raise ValueError(f"Experience missing '{self.metric_key}' in metrics and has no reward.")
 
     def _is_correct(self, exp: Experience) -> bool:
         """Determine whether an experience is correct.
