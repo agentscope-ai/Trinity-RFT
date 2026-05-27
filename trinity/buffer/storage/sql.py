@@ -39,19 +39,27 @@ class SQLStorage:
         self.logger.info(
             f"Init engine {config.path} with table {config.name} with schema {config.schema_type}"
         )
-        self.engine, self.table_model_cls = init_engine(
-            db_url=config.path,
-            table_name=config.name,
-            schema_type=config.schema_type,
-        )
+        self._init_tables(config)
         self.logger.info(f"Init SQL storage at {config.path}")
-        self.session = sessionmaker(bind=self.engine)
         self.max_retry_times = config.max_retry_times
         self.max_retry_interval = config.max_retry_interval
         self.ref_count = 0
         self.stopped = False
-        # Assume that the auto-increment ID starts counting from 1, so the default offset should be 0.
         self.offset = config.index
+
+    def _init_tables(self, config: StorageConfig) -> None:
+        """Initialize engine and table classes. Subclasses may override."""
+        result = init_engine(
+            db_url=config.path,  # type: ignore
+            table_name=config.name,
+            schema_type=config.schema_type,
+        )
+        if config.schema_type is None or config.schema_type == "task":
+            self.engine, self.table_model_cls = result
+            self.blob_model_cls = None
+        else:
+            self.engine, self.table_model_cls, self.blob_model_cls = result
+        self.session = sessionmaker(bind=self.engine)
 
     @classmethod
     def get_wrapper(cls, config: StorageConfig):
@@ -103,33 +111,30 @@ class SQLExperienceStorage(SQLStorage):
         self.max_experience_bytes = int(
             os.getenv(MAX_EXP_BYTES_ENV_VAR, 1024 * 1024 * 32)  # default 32MB
         )
-        # TODO: optimize the following logic
         if config.schema_type == "experience":
-            # NOTE: consistent with the old version of experience buffer
             self._read_method = self._read_priority
         else:
-            # SFT / DPO uses FIFO style
             self._read_method = self._read_fifo
 
     def write(self, data: List[Experience]) -> None:
         def operation(session):
-            experience_models = []
             for exp in data:
-                exp_model = self.table_model_cls.from_experience(exp)
-                # TODO: this is a temporary solution to avoid OOM when loading large experience into memory,
-                # we need a better way to handle this in the future
+                exp_bytes = exp.serialize()
                 if (
                     self.max_experience_bytes > 0
-                    and exp_model.experience_bytes is not None
-                    and len(exp_model.experience_bytes) > self.max_experience_bytes
+                    and exp_bytes is not None
+                    and len(exp_bytes) > self.max_experience_bytes
                 ):
                     self.logger.warning(
-                        f"Experience {exp_model.id} size {exp_model.experience_bytes} bytes exceeds the "
-                        f"max_experience_bytes {self.max_experience_bytes} bytes, it may cause OOM when loading into memory."
+                        f"Experience size {len(exp_bytes)} bytes exceeds the "
+                        f"max_experience_bytes {self.max_experience_bytes} bytes, skipping."
                     )
                     continue
-                experience_models.append(exp_model)
-            session.add_all(experience_models)
+                meta_row = self.table_model_cls.from_experience(exp)
+                session.add(meta_row)
+                session.flush()
+                blob_row = self.blob_model_cls(id=meta_row.id, experience_bytes=exp_bytes)
+                session.add(blob_row)
 
         run_with_retry_session(
             self.session,
@@ -138,6 +143,22 @@ class SQLExperienceStorage(SQLStorage):
             self.max_retry_interval,
         )
         self.logger.info(f"Write {len(data)} experiences to SQL storage.")
+
+    def _fetch_blobs(self, session, ids: List[int]) -> Dict[int, bytes]:
+        """Batch fetch blob bytes by meta ids."""
+        blobs = session.query(self.blob_model_cls).filter(self.blob_model_cls.id.in_(ids)).all()
+        return {b.id: b.experience_bytes for b in blobs}
+
+    def _assemble_experiences(self, meta_rows, blob_map: Dict[int, bytes]) -> List[Experience]:
+        """Combine meta rows with blob bytes into Experience objects."""
+        experiences = []
+        for row in meta_rows:
+            blob_bytes = blob_map.get(row.id)
+            if blob_bytes is None:
+                self.logger.warning(f"Missing blob for experience id={row.id}, skipping.")
+                continue
+            experiences.append(row.to_experience(blob_bytes))
+        return experiences
 
     def _read_fifo(self, batch_size: int) -> List[Experience]:
         """Read experiences in FIFO order."""
@@ -153,18 +174,20 @@ class SQLExperienceStorage(SQLStorage):
                 raise StopIteration()
 
             def operation(session):
-                experiences = (
+                meta_rows = (
                     session.query(self.table_model_cls)
                     .filter(self.table_model_cls.id > self.offset)
                     .order_by(asc(self.table_model_cls.id))
                     .limit(batch_size - len(exp_list))
                     .all()
                 )
-                if not experiences:
+                if not meta_rows:
                     return [], None
+                ids = [row.id for row in meta_rows]
+                blob_map = self._fetch_blobs(session, ids)
                 return (
-                    [self.table_model_cls.to_experience(exp) for exp in experiences],
-                    experiences[-1].id,
+                    self._assemble_experiences(meta_rows, blob_map),
+                    meta_rows[-1].id,
                 )
 
             experiences, next_offset = run_with_retry_session(
@@ -201,7 +224,7 @@ class SQLExperienceStorage(SQLStorage):
                     query = query.filter(self.table_model_cls.model_version >= min_model_version)
                 if not self.enable_replay:
                     query = query.filter(self.table_model_cls.consumed == 0)
-                experiences = (
+                meta_rows = (
                     query.order_by(
                         asc(self.table_model_cls.consumed), desc(self.table_model_cls.id)
                     )
@@ -209,18 +232,19 @@ class SQLExperienceStorage(SQLStorage):
                     .with_for_update()
                     .all()
                 )
-                if len(experiences) != batch_size:
-                    return len(experiences), False, []
+                if len(meta_rows) != batch_size:
+                    return len(meta_rows), False, []
 
-                ids = [exp.id for exp in experiences]
+                ids = [row.id for row in meta_rows]
                 session.query(self.table_model_cls).filter(self.table_model_cls.id.in_(ids)).update(
                     {self.table_model_cls.consumed: self.table_model_cls.consumed + 1},
                     synchronize_session=False,
                 )
+                blob_map = self._fetch_blobs(session, ids)
                 return (
-                    len(experiences),
+                    len(meta_rows),
                     True,
-                    [self.table_model_cls.to_experience(exp) for exp in experiences],
+                    self._assemble_experiences(meta_rows, blob_map),
                 )
 
             latest_batch_size, has_full_batch, experiences = run_with_retry_session(
@@ -240,6 +264,60 @@ class SQLExperienceStorage(SQLStorage):
             self.logger.info(f"Waiting for {batch_size - len(exp_list)} more experiences...")
             time.sleep(1)
         return exp_list
+
+    def _build_filter_conditions(self, filters: Optional[Dict] = None):
+        """Build SQLAlchemy filter conditions from a filter dict."""
+        conditions = []
+        if not filters:
+            return conditions
+        if filters.get("reward_min") is not None:
+            conditions.append(self.table_model_cls.reward >= filters["reward_min"])
+        if filters.get("reward_max") is not None:
+            conditions.append(self.table_model_cls.reward <= filters["reward_max"])
+        if filters.get("model_version_min") is not None:
+            conditions.append(self.table_model_cls.model_version >= filters["model_version_min"])
+        if filters.get("model_version_max") is not None:
+            conditions.append(self.table_model_cls.model_version <= filters["model_version_max"])
+        if filters.get("task_id"):
+            conditions.append(self.table_model_cls.task_id == filters["task_id"])
+        return conditions
+
+    def count(self, filters: Optional[Dict] = None) -> int:
+        """Count experiences matching the given filters."""
+        from sqlalchemy import and_
+
+        def operation(session):
+            query = session.query(self.table_model_cls)
+            conditions = self._build_filter_conditions(filters)
+            if conditions:
+                query = query.filter(and_(*conditions))
+            return query.count()
+
+        return run_with_retry_session(
+            self.session, operation, self.max_retry_times, self.max_retry_interval
+        )
+
+    def query(
+        self, offset: int = 0, limit: int = 10, filters: Optional[Dict] = None
+    ) -> List[Experience]:
+        """Query experiences with pagination and filters."""
+        from sqlalchemy import and_
+
+        def operation(session):
+            q = session.query(self.table_model_cls)
+            conditions = self._build_filter_conditions(filters)
+            if conditions:
+                q = q.filter(and_(*conditions))
+            meta_rows = q.offset(offset).limit(limit).all()
+            if not meta_rows:
+                return []
+            ids = [row.id for row in meta_rows]
+            blob_map = self._fetch_blobs(session, ids)
+            return self._assemble_experiences(meta_rows, blob_map)
+
+        return run_with_retry_session(
+            self.session, operation, self.max_retry_times, self.max_retry_interval
+        )
 
     def read(self, batch_size: Optional[int] = None, **kwargs) -> List[Experience]:
         if self.stopped:

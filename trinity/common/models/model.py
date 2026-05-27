@@ -22,6 +22,7 @@ from trinity.common.models.experience_extraction import (
     convert_api_output_to_experience,
     get_routed_experts_layout,
 )
+from trinity.common.models.mm_utils import should_use_processor, vLLMMultiModalRender
 from trinity.common.models.utils import get_action_mask_method
 from trinity.utils.log import get_logger
 
@@ -229,13 +230,16 @@ class BaseInferenceModel(InferenceModel):
         """
         if self.tokenizer is None:
             await self._initialize_tokenizer()
-        token_ids, action_mask, prompt_length = self.action_mask_method(
+        inputs = self.action_mask_method(
             tokenizer=self.tokenizer,
             messages=messages,
             tools=tools,
             chat_template=self.chat_template,
             enable_thinking=self.enable_thinking,
-        )  # (seq_length, ), (seq_length, )
+        )
+        token_ids = inputs["input_ids"][0]  # (seq_length, )
+        action_mask = inputs["assistant_masks"][0]  # (seq_length, )
+        prompt_length = action_mask.argmax().item()
 
         assert token_ids is not None
         truncate_status = None
@@ -360,6 +364,7 @@ class ModelWrapper:
         self.request_count = 0
         self.state_lock = asyncio.Lock()
         self._routed_experts_layout: Optional[Tuple[int, int]] = None
+        self._mm_render = None
 
     async def prepare(self) -> None:
         """Prepare some necessary information for the model before inference."""
@@ -545,6 +550,23 @@ class ModelWrapper:
     async def get_message_token_len(self, messages: List[dict]) -> int:
         return await self.model.get_message_token_len.remote(messages)
 
+    def _get_multi_modal_inputs(
+        self,
+        *,
+        messages: List[dict] = None,
+        tools: Optional[List[dict]] = None,
+        input_ids: Optional[List[int]] = None,
+    ) -> Optional[dict[str, torch.Tensor]]:
+        if should_use_processor(self.model_path):
+            if self._mm_render is None:
+                self._mm_render = vLLMMultiModalRender(  # TODO: support sglang
+                    self.model_path,
+                )
+            return self._mm_render.build_mm_input_for_training(
+                messages=messages, tools=tools, input_ids=input_ids
+            )
+        return None
+
     def get_openai_client(self) -> "openai.OpenAI":
         """Get the openai client.
 
@@ -611,9 +633,16 @@ class ModelWrapper:
                 response = ori_create(*args, extra_body=extra_body, logprobs=logprobs, **kwargs)
                 if kwargs.get("stream", False):
                     return HistoryRecordingStream(response, self.history, is_async=False)
+                messages = args[-2] if len(args) > 2 else kwargs.get("messages")
+                tools = kwargs.get("tools", None)
+                multi_modal_inputs = self._get_multi_modal_inputs(
+                    messages=messages, tools=tools, input_ids=response.prompt_token_ids
+                )
                 self.history.extend(
                     convert_api_output_to_experience(
-                        response, routed_experts_layout=self._routed_experts_layout
+                        response,
+                        multi_modal_inputs=multi_modal_inputs,
+                        routed_experts_layout=self._routed_experts_layout,
                     )
                 )
                 return response
@@ -685,9 +714,16 @@ class ModelWrapper:
                 )
                 if kwargs.get("stream", False):
                     return HistoryRecordingStream(response, self.history, is_async=True)
+                messages = args[-2] if len(args) > 2 else kwargs.get("messages")
+                tools = kwargs.get("tools", None)
+                multi_modal_inputs = self._get_multi_modal_inputs(
+                    messages=messages, tools=tools, input_ids=response.prompt_token_ids
+                )
                 self.history.extend(
                     convert_api_output_to_experience(
-                        response, routed_experts_layout=self._routed_experts_layout
+                        response,
+                        multi_modal_inputs=multi_modal_inputs,
+                        routed_experts_layout=self._routed_experts_layout,
                     )
                 )
                 return response

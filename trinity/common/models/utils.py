@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 import re
+from copy import deepcopy
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 import torch
@@ -10,73 +11,13 @@ from trinity.common.config import TrainerConfig
 from trinity.utils.log import get_logger
 
 
-def tokenize_and_mask_messages_hf(
+def _get_common_kwargs(
     tokenizer: Any,
-    messages: List[dict],
+    *,
     tools: Optional[List[dict]] = None,
     chat_template: Optional[str] = None,
     enable_thinking: Optional[bool] = None,
-) -> Tuple[torch.Tensor, torch.Tensor, int]:
-    """Calculate the assistant token mask with `chat_template`.
-
-    Args:
-        tokenizer (Any): The tokenizer.
-        messages (List[dict]): Messages with `role` and `content` fields.
-        tools (Optional[List[dict]]): The list of tool dictionaries.
-        chat_template (str): The chat template with `{% generation %}` symbol.
-
-    Returns:
-        `torch.Tensor`: The token_ids (sequence_length)
-        `torch.Tensor`: Assistant_masks (sequence_length).
-        `int`: Prompt length.
-    """
-    token_dict = tokenizer.apply_chat_template(
-        messages,
-        tools=tools,
-        chat_template=chat_template,
-        add_generation_prompt=False,
-        enable_thinking=enable_thinking,
-        padding=False,
-        truncation=True,
-        return_tensors="pt",
-        add_special_tokens=False,
-        return_assistant_tokens_mask=True,
-        return_dict=True,
-    )
-    # find the first assistant token, the tokens before are prompt tokens
-    prompt_length = torch.argmax(token_dict["assistant_masks"][0]).item()
-    return token_dict["input_ids"][0], token_dict["assistant_masks"][0], prompt_length
-
-
-def tokenize_and_mask_messages_default(
-    tokenizer: Any,
-    messages: List[dict],
-    tools: Optional[List[dict]] = None,
-    chat_template: Optional[str] = None,
-    enable_thinking: Optional[bool] = None,
-) -> Tuple[torch.Tensor, torch.Tensor, int]:
-    """Calculate the assistant token mask.
-
-    Args:
-        tokenizer (Any): The tokenizer or processor.
-        messages (List[dict]): Messages with `role` and `content` fields.
-        tools (Optional[List[dict]]): The list of tool dictionaries.
-        chat_template (str): The chat template with `{% generation %}` symbol.
-
-    Returns:
-        `torch.Tensor`: The token_ids (sequence_length)
-        `torch.Tensor`: Assistant_masks (sequence_length).
-        `int`: Prompt length.
-
-    Note:
-        This method is based on the assumption that as the number of chat rounds increases,
-        the tokens of the previous round are exactly the prefix tokens of the next round.
-        If the assumption is not met, the function may produce incorrect results.
-        Please check the chat template before using this method.
-    """
-    if len(messages) == 0:
-        raise ValueError("Messages should not be empty")
-
+):
     common_kwargs = dict(
         tools=tools,
         chat_template=chat_template,
@@ -93,6 +34,80 @@ def tokenize_and_mask_messages_default(
         common_kwargs["processor_kwargs"] = text_kwargs
     else:
         common_kwargs.update(text_kwargs)
+    return common_kwargs
+
+
+def tokenize_and_mask_messages_hf(
+    tokenizer: Any,
+    messages: List[dict],
+    tools: Optional[List[dict]] = None,
+    chat_template: Optional[str] = None,
+    enable_thinking: Optional[bool] = None,
+) -> dict[str, torch.Tensor]:
+    """Calculate the assistant token mask with `chat_template`.
+
+    Args:
+        tokenizer (Any): The tokenizer or processor.
+        messages (List[dict]): Messages with `role` and `content` fields.
+        tools (Optional[List[dict]]): The list of tool dictionaries.
+        chat_template (str): The chat template with `{% generation %}` symbol.
+
+    Returns:
+        `dict[str, torch.Tensor]`: A token dictionary returned by
+            `apply_chat_template`, containing at least `input_ids` and
+            `assistant_masks`.
+    """
+    common_kwargs = _get_common_kwargs(
+        tokenizer,
+        tools=tools,
+        chat_template=chat_template,
+        enable_thinking=enable_thinking,
+    )
+    token_dict = tokenizer.apply_chat_template(
+        messages,
+        add_generation_prompt=False,
+        return_assistant_tokens_mask=True,
+        return_tensors="pt",
+        **common_kwargs,
+    )
+    token_dict.pop("attention_mask", None)  # remove attention mask if exists
+    return token_dict
+
+
+def tokenize_and_mask_messages_default(
+    tokenizer: Any,
+    messages: List[dict],
+    tools: Optional[List[dict]] = None,
+    chat_template: Optional[str] = None,
+    enable_thinking: Optional[bool] = None,
+) -> dict[str, torch.Tensor]:
+    """Calculate the assistant token mask.
+
+    Args:
+        tokenizer (Any): The tokenizer or processor.
+        messages (List[dict]): Messages with `role` and `content` fields.
+        tools (Optional[List[dict]]): The list of tool dictionaries.
+        chat_template (str): The chat template with `{% generation %}` symbol.
+
+    Returns:
+        `dict[str, torch.Tensor]`: A token dictionary containing
+            `input_ids` and `assistant_masks`.
+
+    Note:
+        This method is based on the assumption that as the number of chat rounds increases,
+        the tokens of the previous round are exactly the prefix tokens of the next round.
+        If the assumption is not met, the function may produce incorrect results.
+        Please check the chat template before using this method.
+    """
+    if len(messages) == 0:
+        raise ValueError("Messages should not be empty")
+
+    common_kwargs = _get_common_kwargs(
+        tokenizer,
+        tools=tools,
+        chat_template=chat_template,
+        enable_thinking=enable_thinking,
+    )
 
     generation_messages = []
     response_messages = []
@@ -111,40 +126,44 @@ def tokenize_and_mask_messages_default(
         if message["role"] == "assistant":
             generation_messages.append(messages[:idx])
             response_messages.append(messages[: idx + 1])
-        elif idx == len(messages) - 1:
-            response_messages.append(messages)
 
-    # response_messages contains at least one message, so response_token_ids_list is not empty
-    response_token_ids_list = tokenizer.apply_chat_template(
-        response_messages,
+    token_dict = tokenizer.apply_chat_template(
+        messages,
         add_generation_prompt=False,
-        **common_kwargs,
-    )["input_ids"]
-    assistant_token_mask = torch.zeros(len(response_token_ids_list[-1]), dtype=torch.int)
+        return_tensors="pt",
+        **deepcopy(common_kwargs),
+    )
+    assistant_masks = torch.zeros_like(token_dict["input_ids"]).squeeze()
 
-    if len(generation_messages) == 0:  # no assistant message
-        return torch.tensor(response_token_ids_list[-1]), assistant_token_mask, 0
+    if len(generation_messages) != 0:
+        first_generation_message_empty_flag = len(generation_messages[0]) == 0
+        if first_generation_message_empty_flag:
+            # the first message is from assistant, so generation_messages[0] is empty
+            generation_messages[0] = response_messages[0]
+        prompt_token_ids_list = tokenizer.apply_chat_template(
+            generation_messages,
+            add_generation_prompt=True,
+            **deepcopy(common_kwargs),
+        )["input_ids"]
+        response_token_ids_list = tokenizer.apply_chat_template(
+            response_messages,
+            add_generation_prompt=False,
+            **deepcopy(common_kwargs),
+        )["input_ids"]
+        if first_generation_message_empty_flag:
+            # the first message is from assistant, so set the first prompt_token_ids to empty
+            prompt_token_ids_list[0] = []
 
-    first_generation_message_empty_flag = len(generation_messages[0]) == 0
-    if first_generation_message_empty_flag:
-        # the first message is from assistant, so generation_messages[0] is empty
-        generation_messages[0] = response_messages[0]
-    prompt_token_ids_list = tokenizer.apply_chat_template(
-        generation_messages,
-        add_generation_prompt=True,
-        **common_kwargs,
-    )["input_ids"]
-    if first_generation_message_empty_flag:
-        # the first message is from assistant, so set the first prompt_token_ids to empty
-        prompt_token_ids_list[0] = []
+        for prompt_token_ids, response_token_ids in zip(
+            prompt_token_ids_list, response_token_ids_list
+        ):
+            prompt_len = len(prompt_token_ids)
+            response_len = len(response_token_ids)
+            assistant_masks[prompt_len:response_len] = 1
 
-    for prompt_token_ids, response_token_ids in zip(prompt_token_ids_list, response_token_ids_list):
-        prompt_len = len(prompt_token_ids)
-        response_len = len(response_token_ids)
-        assistant_token_mask[prompt_len:response_len] = 1
-
-    prompt_length = torch.argmax(assistant_token_mask).item()
-    return torch.tensor(response_token_ids_list[-1]), assistant_token_mask, prompt_length
+    token_dict.pop("attention_mask", None)  # remove attention mask if exists
+    token_dict["assistant_masks"] = assistant_masks.unsqueeze(0)
+    return token_dict
 
 
 def get_action_mask_method(chat_template: Optional[str] = None) -> Callable:

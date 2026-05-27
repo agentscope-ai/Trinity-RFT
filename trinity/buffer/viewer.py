@@ -1,43 +1,28 @@
 import argparse
 import sys
 from pathlib import Path
-from typing import Any, List
+from typing import Any, Dict, List, Optional
 
 import streamlit as st
-from sqlalchemy.orm import sessionmaker
 from transformers import AutoTokenizer
 
-from trinity.buffer.schema import init_engine
+from trinity.buffer.storage.sql import SQLExperienceStorage
 from trinity.common.config import StorageConfig
 from trinity.common.experience import Experience
 from trinity.common.experience_visualizer import build_experience_token_view
-from trinity.utils.log import get_logger
 
 
 class SQLExperienceViewer:
     def __init__(self, config: StorageConfig) -> None:
-        self.logger = get_logger(f"sql_{config.name}", in_ray_actor=True)
-        if not config.path:
-            raise ValueError("`path` is required for SQL storage type.")
-        self.engine, self.table_model_cls = init_engine(
-            db_url=config.path,
-            table_name=config.name,
-            schema_type=config.schema_type,
-        )
-        self.session = sessionmaker(bind=self.engine)
+        self.storage = SQLExperienceStorage(config)
 
-    def get_experiences(self, offset: int, limit: int = 10) -> List[Experience]:
-        self.logger.info("Viewing experiences from offset %s with limit %s.", offset, limit)
-        with self.session() as session:
-            query = session.query(self.table_model_cls).offset(offset).limit(limit)
-            results = query.all()
-            exps = [self.table_model_cls.to_experience(row) for row in results]
-        return exps
+    def get_experiences(
+        self, offset: int, limit: int = 10, filters: Optional[Dict] = None
+    ) -> List[Experience]:
+        return self.storage.query(offset=offset, limit=limit, filters=filters)
 
-    def total_experiences(self) -> int:
-        with self.session() as session:
-            count = session.query(self.table_model_cls).count()
-        return count
+    def total_experiences(self, filters: Optional[Dict] = None) -> int:
+        return self.storage.count(filters=filters)
 
     @staticmethod
     def run_viewer(
@@ -81,7 +66,6 @@ st.set_page_config(page_title="Trinity-RFT Experience Visualizer", layout="wide"
 
 
 def get_color_for_action_mask(action_mask_value: int) -> str:
-    """Return color based on action_mask value"""
     if action_mask_value == 1:
         return "#c8e6c9"
     else:
@@ -89,17 +73,13 @@ def get_color_for_action_mask(action_mask_value: int) -> str:
 
 
 def render_token_detail_html(html: str) -> None:
-    """Render token detail in the adaptive expanded panel style."""
-    with st.container(border=True):
-        st.markdown("**🔍 Response Tokens Detail:**")
-        st.html(html)
+    st.html(html)
 
 
 def render_experience(exp: Experience, tokenizer: Any) -> None:
-    """Render a single experience sequence in Streamlit."""
+    """Render a single experience in Streamlit."""
     token_view = build_experience_token_view(exp, tokenizer)
 
-    # HTML escape function
     def html_escape(text):
         return (
             text.replace("&", "&amp;")
@@ -109,122 +89,111 @@ def render_experience(exp: Experience, tokenizer: Any) -> None:
             .replace("'", "&#39;")
         )
 
-    # === Use Streamlit Native Components for Prompt and Response ===
+    st.markdown("---")
+
+    # Header with EID
     st.subheader(f"Experience [{exp.eid}]")
 
-    # Prompt section using st.text_area
-    st.markdown("**📝 Prompt:**")
-    st.code(token_view.prompt_text, language=None, wrap_lines=True, line_numbers=True)
+    # Reward and metadata first (before prompt/response)
+    col_reward, col_metrics, col_info = st.columns(3)
+    with col_reward:
+        reward_val = exp.reward if exp.reward is not None else 0.0
+        st.markdown("**Reward**")
+        st.markdown(f"`{reward_val:.4f}`")
+    with col_metrics:
+        st.markdown("**Metrics**")
+        st.json(exp.metrics or {}, expanded=True)
+    with col_info:
+        st.markdown("**Info**")
+        st.json(exp.info or {}, expanded=False)
 
-    # Response section using st.text_area
-    st.markdown("**💬 Response:**")
-    st.code(token_view.response_text, language=None, wrap_lines=True, line_numbers=True)
+    # Prompt (collapsed by default)
+    with st.expander("Prompt", expanded=False):
+        st.code(token_view.prompt_text, language=None, wrap_lines=True, line_numbers=True)
 
-    # Reward and other info
-    st.markdown("**🏆 Reward and Other Info:**")
-    reward, info, metrics = st.columns(3)
-    reward.metric("**Reward:**", f"{exp.reward or 0.0:.4f}")
-    metrics.markdown("**Metrics:**")
-    metrics.json(exp.metrics or {}, expanded=False)
-    info.markdown("**Info:**")
-    info.json(exp.info or {}, expanded=False)
+    # Response (collapsed by default)
+    with st.expander("Response", expanded=False):
+        st.code(token_view.response_text, language=None, wrap_lines=True, line_numbers=True)
 
-    # Build HTML only for Response Tokens Detail
-    html = """
-    <style>
-        .token-detail-root * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        .token-detail-root {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            padding: 10px;
-        }
-
-        .token-detail-root .token-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            padding: 15px;
-            background-color: white;
-            border-radius: 5px;
-        }
-
-        .token-detail-root .token-box {
-            display: inline-flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 8px 12px;
-            border-radius: 5px;
-            border: 1px solid #ddd;
-            min-width: 60px;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .token-detail-root .token-box:hover {
-            transform: scale(1.5);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            z-index: 10;
-        }
-
-        .token-detail-root .token-text {
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 5px;
-            text-align: center;
-            word-break: break-all;
-            max-width: 100px;
-        }
-
-        .token-detail-root .token-logprob {
-            font-size: 11px;
-            color: #555;
-            font-family: 'Courier New', monospace;
-            text-align: center;
-        }
-    </style>
-    <div class="token-detail-root">
-        <div class="token-container">
-    """
-
-    # Add each response token
-    for token in token_view.response_tokens:
-        bg_color = get_color_for_action_mask(int(token.is_action))
-
-        # Handle special character display
-        token_display = token.token_text.replace(" ", "␣").replace("\n", "↵").replace("\t", "⇥")
-        token_display = html_escape(token_display)
-        logprob_text = f"{token.logprob:.4f}" if token.logprob is not None else "N/A"
-
-        html += f"""
-                <div class="token-box" style="background-color: {bg_color};">
-                    <div class="token-text">{token_display}</div>
-                    <div class="token-logprob">{logprob_text}</div>
-                </div>
+    # Response Tokens Detail (collapsed by default)
+    with st.expander("Response Tokens Detail", expanded=False):
+        html = """
+        <style>
+            .token-detail-root * {
+                margin: 0;
+                padding: 0;
+                box-sizing: border-box;
+            }
+            .token-detail-root {
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+                padding: 10px;
+            }
+            .token-detail-root .token-container {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px;
+                padding: 12px;
+                background-color: #fafafa;
+                border-radius: 6px;
+            }
+            .token-detail-root .token-box {
+                display: inline-flex;
+                flex-direction: column;
+                align-items: center;
+                padding: 6px 10px;
+                border-radius: 4px;
+                border: 1px solid #e0e0e0;
+                min-width: 50px;
+                transition: transform 0.2s, box-shadow 0.2s;
+            }
+            .token-detail-root .token-box:hover {
+                transform: scale(1.5);
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 10;
+            }
+            .token-detail-root .token-text {
+                font-family: 'Courier New', monospace;
+                font-size: 13px;
+                font-weight: 600;
+                margin-bottom: 3px;
+                text-align: center;
+                word-break: break-all;
+                max-width: 90px;
+            }
+            .token-detail-root .token-logprob {
+                font-size: 10px;
+                color: #666;
+                font-family: 'Courier New', monospace;
+                text-align: center;
+            }
+        </style>
+        <div class="token-detail-root">
+            <div class="token-container">
         """
-    html += """
-        </div>
-    </div>
-    """
 
-    render_token_detail_html(html)
+        for token in token_view.response_tokens:
+            bg_color = get_color_for_action_mask(int(token.is_action))
+            token_display = token.token_text.replace(" ", "␣").replace("\n", "↵").replace("\t", "⇥")
+            token_display = html_escape(token_display)
+            logprob_text = f"{token.logprob:.4f}" if token.logprob is not None else "N/A"
+
+            html += f"""
+                    <div class="token-box" style="background-color: {bg_color};">
+                        <div class="token-text">{token_display}</div>
+                        <div class="token-logprob">{logprob_text}</div>
+                    </div>
+            """
+        html += """
+            </div>
+        </div>
+        """
+        render_token_detail_html(html)
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Experience Visualizer")
-    parser.add_argument(
-        "--db-url",
-        type=str,
-        help="Path to the experience database.",
-    )
-    parser.add_argument(
-        "--table",
-        type=str,
-        help="Name of the experience table.",
-    )
+    parser.add_argument("--db-url", type=str, help="Path to the experience database.")
+    parser.add_argument("--table", type=str, help="Name of the experience table.")
     parser.add_argument(
         "--schema",
         type=str,
@@ -232,119 +201,159 @@ def parse_args():
         choices=("experience", "sft"),
         help="Schema type of the experience table.",
     )
-    parser.add_argument(
-        "--tokenizer",
-        type=str,
-        required=True,
-        help="Path to the tokenizer.",
-    )
+    parser.add_argument("--tokenizer", type=str, required=True, help="Path to the tokenizer.")
     return parser.parse_args()
 
 
-def main():
+@st.cache_resource
+def get_viewer(db_url: str, table_name: str, schema_type: str) -> SQLExperienceViewer:
+    config = StorageConfig()
+    config.name = table_name
+    config.path = db_url
+    config.schema_type = schema_type
+    config.storage_type = "sql"
+    config.wrap_in_ray = False
+    return SQLExperienceViewer(config)
+
+
+def main():  # noqa: [C901]
     args = parse_args()
 
-    # Initialize SQLExperienceViewer
-    config = StorageConfig()
-    config.name = args.table
-    config.path = args.db_url
-    config.schema_type = args.schema
-    config.storage_type = "sql"
-    viewer = SQLExperienceViewer(config)
+    viewer = get_viewer(args.db_url, args.table, args.schema)
 
-    st.title("🎯 Trinity-RFT Experience Visualizer")
+    st.title("Trinity-RFT Experience Visualizer")
+
+    # Initialize session state
     if "page" not in st.session_state:
         st.session_state.page = 1
 
-    # Add instructions
-    with st.expander("ℹ️ Instructions"):
-        st.markdown(
-            """
-        - **Green background**: action_mask = 1
-        - **Red background**: action_mask = 0
-        - **Top**: Token text (special characters: space=␣, newline=↵, tab=⇥)
-        - **Bottom**: Logprob value of the token
-        - Hover over token to zoom in
-        """
-        )
+    # === Sidebar: Filters ===
+    st.sidebar.header("Filters")
 
-    # Get total sequence number
-    total_seq_num = viewer.total_experiences()
+    # Reward range filter
+    st.sidebar.markdown("**Reward Range**")
+    col_rmin, col_rmax = st.sidebar.columns(2)
+    with col_rmin:
+        reward_min_str = st.text_input("Min", value="", key="reward_min")
+    with col_rmax:
+        reward_max_str = st.text_input("Max", value="", key="reward_max")
+    reward_min = float(reward_min_str) if reward_min_str.strip() else None
+    reward_max = float(reward_max_str) if reward_max_str.strip() else None
 
-    # Sidebar configuration
-    st.sidebar.header("⚙️ Settings")
+    # Model version range filter
+    st.sidebar.markdown("**Model Version Range**")
+    col_vmin, col_vmax = st.sidebar.columns(2)
+    with col_vmin:
+        mv_min_str = st.text_input("Min", value="", key="mv_min")
+    with col_vmax:
+        mv_max_str = st.text_input("Max", value="", key="mv_max")
+    model_version_min = int(mv_min_str) if mv_min_str.strip() else None
+    model_version_max = int(mv_max_str) if mv_max_str.strip() else None
 
-    # Pagination settings
-    experiences_per_page = st.sidebar.slider(
-        "Experiences per page", min_value=1, max_value=20, value=5
-    )
-    # Calculate total pages
-    total_pages = (total_seq_num + experiences_per_page - 1) // experiences_per_page
+    # Task ID exact match filter
+    task_id_filter = st.sidebar.text_input("Task ID (exact match)", value="", key="task_id")
 
-    # Page selection (sidebar)
-    current_page = st.sidebar.number_input(
-        "Select page",
-        min_value=1,
-        max_value=max(1, total_pages),
-        step=1,
-        value=st.session_state.page,
-    )
-    if current_page != st.session_state.page:
-        st.session_state.page = current_page
+    # Apply filters button
+    if st.sidebar.button("Apply Filters", use_container_width=True):
+        new_filters: Dict = {}
+        if reward_min is not None:
+            new_filters["reward_min"] = reward_min
+        if reward_max is not None:
+            new_filters["reward_max"] = reward_max
+        if model_version_min is not None:
+            new_filters["model_version_min"] = int(model_version_min)
+        if model_version_max is not None:
+            new_filters["model_version_max"] = int(model_version_max)
+        if task_id_filter:
+            new_filters["task_id"] = task_id_filter
+        st.session_state.active_filters = new_filters
+        st.session_state.page = 1
         st.rerun()
 
-    # Show statistics
+    # Use committed filters from session state
+    if "active_filters" not in st.session_state:
+        st.session_state.active_filters = {}
+    filters: Dict = st.session_state.active_filters
+
+    # Sidebar bottom: per-page setting (low-profile)
     st.sidebar.markdown("---")
-    st.sidebar.metric("Total experiences", total_seq_num)
-    st.sidebar.metric("Total pages", total_pages)
-    st.sidebar.metric("Current page", f"{st.session_state.page}/{total_pages}")
+    experiences_per_page = st.sidebar.number_input(
+        "Per page", min_value=1, max_value=50, value=10, step=1, key="per_page"
+    )
 
-    # Calculate offset
+    # Query total with filters
+    total_seq_num = viewer.total_experiences(filters=filters or None)
+    total_pages = max(1, (total_seq_num + experiences_per_page - 1) // experiences_per_page)
+
+    # Clamp current page
+    if st.session_state.page > total_pages:
+        st.session_state.page = total_pages
+
+    # Calculate offset and fetch
     offset = (st.session_state.page - 1) * experiences_per_page
-
-    # Get experiences for current page
-    experiences = viewer.get_experiences(offset, experiences_per_page)
+    experiences = viewer.get_experiences(offset, experiences_per_page, filters=filters or None)
 
     tokenizer = AutoTokenizer.from_pretrained(args.tokenizer)
 
-    # Generate catalog in sidebar
-    exp_catalog = []  # [(eid, subheader_text)]
+    # Sidebar: table of contents
     if experiences:
-        for exp in experiences:
-            exp_catalog.append(exp.eid)
-
-    if exp_catalog:
         st.sidebar.markdown("---")
         st.sidebar.markdown("**Contents**")
-        catalog_md = "\n".join([f"- [ {eid} ](#exp-{eid})" for eid in exp_catalog])
-        st.sidebar.markdown(catalog_md, unsafe_allow_html=True)
+        for exp in experiences:
+            eid_str = str(exp.eid)
+            reward_str = f"{exp.reward:.2f}" if exp.reward is not None else "N/A"
+            st.sidebar.markdown(
+                f"- [{eid_str}](#experience-{eid_str}) (r={reward_str})",
+                unsafe_allow_html=True,
+            )
 
+    # Render experiences
     if experiences:
         for exp in experiences:
-            st.markdown(f'<a name="exp-{exp.eid}"></a>', unsafe_allow_html=True)
+            st.markdown(f'<a name="experience-{exp.eid}"></a>', unsafe_allow_html=True)
             render_experience(exp, tokenizer)
     else:
-        st.warning("No experience data found")
+        st.info("No experiences found matching the current filters.")
 
-    # Pagination navigation
+    # === Bottom: Pagination ===
     st.markdown("---")
-    col1, col2, col3 = st.columns([1, 2, 1])
 
-    with col1:
-        if st.session_state.page > 1:
-            if st.button("⬅️ Previous Page"):
-                st.session_state.page = st.session_state.page - 1
-                st.rerun()
-
-    with col2:
-        st.markdown(
-            f"<center>Page {st.session_state.page} / {total_pages}</center>", unsafe_allow_html=True
+    # Row 1: Previous | [current_page] / total_pages | Next
+    col_prev, col_page_input, col_slash, col_total, col_next = st.columns([1, 1, 0.3, 0.7, 1])
+    with col_prev:
+        if st.button("Previous", disabled=(st.session_state.page <= 1)):
+            st.session_state.page -= 1
+            st.rerun()
+    with col_page_input:
+        new_page = st.number_input(
+            "page",
+            min_value=1,
+            max_value=total_pages,
+            value=st.session_state.page,
+            step=1,
+            label_visibility="collapsed",
+            key="page_input",
         )
-    with col3:
-        if st.session_state.page < total_pages:
-            if st.button("Next Page ➡️"):
-                st.session_state.page = st.session_state.page + 1
-                st.rerun()
+        if new_page != st.session_state.page:
+            st.session_state.page = new_page
+            st.rerun()
+    with col_slash:
+        st.markdown(
+            "<div style='text-align:center;line-height:38px;'>/</div>",
+            unsafe_allow_html=True,
+        )
+    with col_total:
+        st.markdown(
+            f"<div style='line-height:38px;'>{total_pages}</div>",
+            unsafe_allow_html=True,
+        )
+    with col_next:
+        if st.button("Next", disabled=(st.session_state.page >= total_pages)):
+            st.session_state.page += 1
+            st.rerun()
+
+    # Row 2: total count
+    st.caption(f"{total_seq_num} experiences in total")
 
 
 if __name__ == "__main__":

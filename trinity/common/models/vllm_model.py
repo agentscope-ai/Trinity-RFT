@@ -3,8 +3,9 @@
 import asyncio
 import os
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
+import numpy as np
 import torch
 from packaging.version import parse as parse_version
 from transformers import AutoProcessor
@@ -12,11 +13,7 @@ from transformers import AutoProcessor
 from trinity.common.config import InferenceModelConfig
 from trinity.common.constants import SyncMethod
 from trinity.common.experience import Experience
-from trinity.common.models.mm_utils import (
-    build_mm_input_for_training,
-    build_multi_modal_data,
-    has_multi_modal_content,
-)
+from trinity.common.models.mm_utils import vLLMMultiModalRender
 from trinity.common.models.model import BaseInferenceModel
 from trinity.common.models.vllm_patch import get_vllm_version
 
@@ -82,6 +79,7 @@ class vLLMRolloutModel(BaseInferenceModel):
         self.default_lora_path = config.lora_kwargs.pop("default_lora_path", None)
         self.logprobs_no_prefix_cache = True
         self.processor = None
+        self.mm_render = None
         self.state_dict_meta = None
         self.model_version = 0  # TODO: resume the value from the checkpoint
         self.api_server_host = None
@@ -180,8 +178,12 @@ class vLLMRolloutModel(BaseInferenceModel):
         Returns:
             A list of experiences.
         """
-        is_mm_message = has_multi_modal_content(messages)
-        if is_mm_message:
+        if self.mm_render is None:
+            self.mm_render = vLLMMultiModalRender(
+                model_path=self.config.model_path,  # type: ignore
+            )
+        prompt_messages, multi_modal_data = await self.mm_render.process_messages_async(messages)
+        if multi_modal_data is not None:
             if self.processor is None:
                 await self._initialize_processor()
             tokenizer_or_processor = self.processor
@@ -190,12 +192,11 @@ class vLLMRolloutModel(BaseInferenceModel):
                 await self._initialize_tokenizer()
             tokenizer_or_processor = self.tokenizer
 
-        prompt = self.apply_chat_template(tokenizer_or_processor, messages)
-        if is_mm_message:
-            multi_modal_data = build_multi_modal_data(self.processor, messages)
+        prompt = self.apply_chat_template(tokenizer_or_processor, prompt_messages)
+        if multi_modal_data is not None:
             prompt = {
                 "prompt": prompt,
-                "multi_modal_data": multi_modal_data,
+                "multi_modal_data": multi_modal_data or {},
             }
         return await self.generate(prompt=prompt, lora_request=lora_request, **kwargs)
 
@@ -246,9 +247,15 @@ class vLLMRolloutModel(BaseInferenceModel):
             }  # is_valid is True: returned_seq is token_ids
             multi_modal_inputs = None
         else:  # multi modal
-            multi_modal_inputs = build_mm_input_for_training(self.processor, **prompt)
-            multi_modal_inputs.pop("input_ids", None)
-            multi_modal_inputs.pop("attention_mask", None)
+            if self.processor is None:
+                await self._initialize_processor()
+            if self.mm_render is None:
+                self.mm_render = vLLMMultiModalRender(
+                    model_path=self.config.model_path,  # type: ignore
+                )
+            multi_modal_inputs = self.mm_render.build_mm_input_for_training(
+                messages=prompt["prompt"], multi_modal_data=prompt.get("multi_modal_data", {})
+            )
 
         output = await self._generate_internal(prompt=prompt, lora_request=lora_request, **kwargs)
         experiences = [
@@ -371,6 +378,7 @@ class vLLMRolloutModel(BaseInferenceModel):
             SampleResponse: The sample response.
         """
         from tinker.types import SampledSequence, SampleResponse
+        from tinker.types.topk_prompt_logprobs import TopkPromptLogprobs
 
         params = {
             "max_tokens": (
@@ -391,62 +399,68 @@ class vLLMRolloutModel(BaseInferenceModel):
             params["skip_reading_prefix_cache"] = True
         if sampling_params.stop is not None:
             params["stop"] = sampling_params.stop
+        prompt_token_ids = prompt.to_ints()
         req_output = await self._generate_internal(
-            prompt={"prompt_token_ids": prompt.to_ints()},
+            prompt={"prompt_token_ids": prompt_token_ids},
             lora_request=lora_request,
             **params,
         )
         sequences = []
-        # vLLM's prompt_logprobs output does not include a value for the first token.
-        # Initialize with [None] to align with the prompt tokens.
-        topk_prompt_logprobs_list: List[Optional[List[Tuple[int, float]]]] = [None]
-        prompt_logprobs: List[Optional[float]] = [None]
+        prompt_logprobs_np = None
+        topk_prompt_logprobs_np = None
 
         # collect prompt logprobs
         if include_prompt_logprobs:
-            for logprob_dict in req_output.prompt_logprobs[1:]:
-                prompt_logprobs.append(next(iter(logprob_dict.values())).logprob)
+            prompt_logprobs_np = np.full(len(prompt_token_ids), np.nan, dtype=np.float32)
+            if topk_prompt_logprobs > 0:
+                topk_token_ids = np.zeros(
+                    (len(prompt_token_ids), topk_prompt_logprobs), dtype=np.int32
+                )
+                topk_logprobs = np.full(
+                    (len(prompt_token_ids), topk_prompt_logprobs),
+                    -99999.0,  # align with tinker's TopkPromptLogprobs
+                    dtype=np.float32,
+                )
+
+            for prompt_idx, logprob_dict in enumerate(req_output.prompt_logprobs[1:], start=1):
+                prompt_logprobs_np[prompt_idx] = next(iter(logprob_dict.values())).logprob
                 if topk_prompt_logprobs > 0:
-                    # collect top-k prompt logprobs
-                    # logprob_dict: {token_id: Logprob(logprob, rank, ...), ...}
                     logprob_items = list(logprob_dict.items())
-                    # sort by Logprob.rank
                     logprob_items_sorted = sorted(logprob_items, key=lambda x: x[1].rank)
-                    # pick topk
                     topk = logprob_items_sorted[:topk_prompt_logprobs]
-                    # record as (token_id, logprob)
-                    topk_prompt_logprobs_list.append(
-                        [(token_id, logprob.logprob) for token_id, logprob in topk]
-                    )
+                    for topk_idx, (token_id, logprob) in enumerate(topk):
+                        topk_token_ids[prompt_idx, topk_idx] = token_id
+                        topk_logprobs[prompt_idx, topk_idx] = logprob.logprob
+
+            if topk_prompt_logprobs > 0:
+                topk_prompt_logprobs_np = TopkPromptLogprobs(
+                    token_ids=topk_token_ids,
+                    logprobs=topk_logprobs,
+                )
         # collect response sequences
         for seq_output in req_output.outputs:
             seq = SampledSequence(
                 stop_reason="length" if seq_output.finish_reason == "length" else "stop",
-                tokens=seq_output.token_ids,
-                logprobs=[
-                    next(iter(logprob_dict.values())).logprob
-                    for logprob_dict in seq_output.logprobs
-                ],
+                tokens_np=np.asarray(seq_output.token_ids, dtype=np.int32),
+                logprobs_np=np.asarray(
+                    [
+                        next(iter(logprob_dict.values())).logprob
+                        for logprob_dict in seq_output.logprobs
+                    ],
+                    dtype=np.float32,
+                ),
             )
             sequences.append(seq)
         return SampleResponse(
             sequences=sequences,
-            prompt_logprobs=prompt_logprobs if include_prompt_logprobs else None,
-            topk_prompt_logprobs=(
-                topk_prompt_logprobs_list
-                if include_prompt_logprobs and topk_prompt_logprobs > 0
-                else None
-            ),
+            prompt_logprobs_np=prompt_logprobs_np,
+            topk_prompt_logprobs_np=topk_prompt_logprobs_np,
         )
 
     async def _generate_internal(self, prompt: Any, lora_request=None, **kwargs) -> Any:
         # Send the request to the LLM engine.
         self.request_id += 1
-        generate_kwargs = (
-            {"tokenization_kwargs": self.tokenization_kwargs}
-            if self.vllm_version > parse_version("0.16.0")
-            else {}
-        )
+        generate_kwargs = {"tokenization_kwargs": self.tokenization_kwargs}
         stream = self.async_llm.generate(
             request_id=str(self.request_id),
             prompt=prompt,

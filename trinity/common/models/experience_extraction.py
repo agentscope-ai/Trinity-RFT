@@ -47,13 +47,27 @@ def decode_sglang_routed_experts(
 
 
 def convert_api_output_to_experience(
-    output, routed_experts_layout: Optional[Tuple[int, int]] = None
+    output,
+    multi_modal_inputs: Optional[dict[str, torch.Tensor]] = None,
+    routed_experts_layout: Optional[Tuple[int, int]] = None,
 ) -> List[Experience]:
-    """Convert a non-stream API output to a list of experiences."""
-    return _convert_completion_output_to_experience(output, routed_experts_layout)
+    """Convert a non-stream API output to a list of experiences.
+
+    Args:
+        output: Completion output from API client.
+        multi_modal_inputs: Optional training-time multimodal tensors aligned
+            with the prompt tokens.
+        routed_experts_layout: Optional `(num_layers, topk)` layout used to
+            decode routed experts.
+    """
+    return _convert_completion_output_to_experience(
+        output,
+        multi_modal_inputs=multi_modal_inputs,
+        routed_experts_layout=routed_experts_layout,
+    )
 
 
-class HistoryRecordingStream:
+class HistoryRecordingStream:  # TODO: add multi-modal support
     def __init__(self, stream, history: List[Experience], is_async: bool = False) -> None:
         self._stream = stream
         self._history = history
@@ -130,8 +144,27 @@ class HistoryRecordingStream:
         return getattr(self._stream, name)
 
 
+def _combine_output_token_ids(
+    output_token_ids: List[int],
+    multi_modal_inputs: Optional[dict[str, torch.Tensor]] = None,
+):
+    if multi_modal_inputs is None:
+        return None
+    dtype = multi_modal_inputs["mm_token_type_ids"].dtype
+    multi_modal_inputs["mm_token_type_ids"] = torch.concat(
+        [
+            multi_modal_inputs["mm_token_type_ids"],
+            torch.zeros((1, len(output_token_ids)), dtype=dtype),
+        ],
+        dim=1,
+    )
+    return multi_modal_inputs
+
+
 def _convert_completion_output_to_experience(
-    output, routed_experts_layout: Optional[Tuple[int, int]] = None
+    output,
+    multi_modal_inputs: Optional[dict[str, torch.Tensor]] = None,
+    routed_experts_layout: Optional[Tuple[int, int]] = None,
 ) -> List[Experience]:
     return [
         Experience(
@@ -149,6 +182,7 @@ def _convert_completion_output_to_experience(
                 total_tokens=len(output.prompt_token_ids) + len(choice.token_ids),
                 routed_experts_layout=routed_experts_layout,
             ),
+            multi_modal_inputs=_combine_output_token_ids(choice.token_ids, multi_modal_inputs),
         )
         for choice in output.choices
     ]

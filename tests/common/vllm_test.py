@@ -12,7 +12,6 @@ from transformers import AutoConfig, AutoTokenizer
 
 from tests.tools import (
     CHAT_TEMPLATE,
-    CHAT_TEMPLATE_QWEN2_5,
     RayUnittestBaseAsync,
     get_api_model_path,
     get_model_path,
@@ -20,13 +19,8 @@ from tests.tools import (
     get_template_config,
 )
 from trinity.common.config import Config
-from trinity.common.constants import MODEL_PATH_ENV_VAR
 from trinity.common.models.allocator import Allocator
 from trinity.common.models.model import ModelWrapper
-from trinity.common.models.utils import (
-    tokenize_and_mask_messages_default,
-    tokenize_and_mask_messages_hf,
-)
 from trinity.manager.synchronizer import Synchronizer
 
 DEBUG = False
@@ -587,9 +581,25 @@ class TestAPIServer(VLLMTestBase):
             self.model_wrapper_no_history.extract_experience_from_history()
         self.assertEqual(len(self.model_wrapper_no_history.history), 0)
 
-    @unittest.skipIf(
-        "Qwen3.5" not in os.getenv(MODEL_PATH_ENV_VAR, ""), "This test is only for Qwen3.5 series"
-    )
+
+class TestQwen35APIServerReasoning(VLLMTestBase):
+    async def asyncSetUp(self):
+        self.config = get_template_config()
+        self.config.mode = "explore"
+        self.config.model.model_path = get_api_model_path()
+        self.config.explorer.rollout_model.engine_type = "vllm"
+        self.config.explorer.rollout_model.engine_num = 1
+        self.config.explorer.rollout_model.chat_template = CHAT_TEMPLATE
+        self.config.explorer.rollout_model.tensor_parallel_size = 1
+        self.config.explorer.rollout_model.enable_openai_api = True
+        self.config.explorer.rollout_model.enable_auto_tool_choice = True
+        self.config.explorer.rollout_model.tool_call_parser = "qwen3_coder"
+        self.config.explorer.rollout_model.enable_history = True
+
+        self.config.check_and_update()
+        self.engines, self.auxiliary_engines = await create_test_models(self.config)
+        self.model_wrapper = self.engines[0]
+
     async def test_reasoning_content(self):
         openai_client = self.model_wrapper.get_openai_client()
         model_id = openai_client.models.list().data[0].id
@@ -647,6 +657,63 @@ class TestAPIServer(VLLMTestBase):
         self.tokenizer = AutoTokenizer.from_pretrained(self.config.model.model_path)
         text = self.tokenizer.decode(exps[0].tokens.tolist())
         self.assertIn("Use `list_agents` tool to get the list of agents.", text)
+
+
+class TestQwen35APIServerMultiModal(VLLMTestBase):
+    async def asyncSetUp(self):
+        self.config = get_template_config()
+        self.config.mode = "explore"
+        self.config.model.model_path = get_api_model_path()
+        self.config.explorer.rollout_model.engine_type = "vllm"
+        self.config.explorer.rollout_model.engine_num = 1
+        self.config.explorer.rollout_model.chat_template = CHAT_TEMPLATE
+        self.config.explorer.rollout_model.tensor_parallel_size = 1
+        self.config.explorer.rollout_model.enable_openai_api = True
+        self.config.explorer.rollout_model.enable_auto_tool_choice = True
+        self.config.explorer.rollout_model.tool_call_parser = "qwen3_coder"
+        self.config.explorer.rollout_model.enable_history = True
+
+        self.config.check_and_update()
+        self.engines, self.auxiliary_engines = await create_test_models(self.config)
+        self.model_wrapper = self.engines[0]
+
+    async def test_multi_modal_content(self):
+        openai_client = self.model_wrapper.get_openai_client()
+        model_id = openai_client.models.list().data[0].id
+        # test multi-modal content
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": "https://qianwen-res.oss-accelerate.aliyuncs.com/Qwen3.5/demo/CI_Demo/mathv-1327.jpg"
+                        },
+                    },
+                    {
+                        "type": "text",
+                        "text": "The centres of the four illustrated circles are in the corners of the square. The two big circles touch each other and also the two little circles. With which factor do you have to multiply the radii of the little circles to obtain the radius of the big circles?\nChoices:\n(A) $\\frac{2}{9}$\n(B) $\\sqrt{5}$\n(C) $0.8 \\cdot \\pi$\n(D) 2.5\n(E) $1+\\sqrt{2}$",
+                    },
+                ],
+            },
+        ]
+        _ = openai_client.chat.completions.create(
+            model=model_id,
+            messages=messages,
+            n=1,
+            temperature=0.5,
+            logprobs=True,
+            top_logprobs=0,
+        )
+        exps = self.model_wrapper.extract_experience_from_history()
+        self.assertEqual(len(exps), 1)
+        exp = exps[0]
+        self.assertSetEqual(
+            set(exp.multi_modal_inputs.keys()),
+            {"mm_token_type_ids", "pixel_values", "image_grid_thw"},
+        )
+        self.assertEqual(exp.multi_modal_inputs["mm_token_type_ids"].size(1), len(exp.tokens))
 
 
 SYSTEM_PROMPT = """
@@ -1010,113 +1077,6 @@ class TestTinkerAsyncAPIServer(TestAsyncAPIServer):
 
     async def test_api_async(self):
         await super().test_api_async()
-
-
-class TestTokenizer(unittest.TestCase):
-    def test_action_mask(self):
-        messages = [
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": "What's the weather like today?"},
-            {
-                "role": "assistant",
-                "content": "I'm sorry, but as an AI language model, I don't have access to real-time weather information. To get accurate weather information for your location, you can check a weather website or app, or look outside if possible.",
-            },
-            {"role": "user", "content": "OK, thanks!"},
-            {
-                "role": "assistant",
-                "content": "You're welcome! If you have any other questions, feel free to ask.",
-            },
-        ]
-        tokenizer = AutoTokenizer.from_pretrained(get_model_path())
-        token_ids, action_mask, prompt_length = tokenize_and_mask_messages_default(
-            tokenizer=tokenizer,
-            messages=messages,
-            chat_template=CHAT_TEMPLATE_QWEN2_5,
-        )
-        token_ids_hf, action_mask_hf, prompt_length_hf = tokenize_and_mask_messages_hf(
-            tokenizer=tokenizer,
-            messages=messages,
-            chat_template=CHAT_TEMPLATE_QWEN2_5,
-        )
-        self.assertEqual(token_ids.shape, token_ids_hf.shape)
-        self.assertEqual(action_mask.shape, action_mask_hf.shape)
-        self.assertTrue(torch.equal(token_ids, token_ids_hf))
-        self.assertTrue(torch.equal(action_mask, action_mask_hf))
-        self.assertEqual(prompt_length, prompt_length_hf)
-
-    def test_action_mask_with_tools(self):
-        messages = [
-            {
-                "role": "system",
-                "content": "You are a helpful assistant with access to various tools. Use them when needed to help users.",
-            },
-            {"role": "user", "content": "What's the weather like in Beijing today?"},
-            {
-                "role": "assistant",
-                "content": "Let me get the weather for you.",
-                "tool_calls": [
-                    {
-                        "id": "call_abc123",
-                        "type": "function",
-                        "function": {
-                            "name": "get_weather",
-                            "arguments": '{"location": "Beijing", "unit": "celsius"}',
-                        },
-                    }
-                ],
-            },
-            {
-                "role": "tool",
-                "content": '{"temperature": 22, "condition": "sunny", "humidity": 45}',
-                "tool_call_id": "call_abc123",
-            },
-            {
-                "role": "assistant",
-                "content": "The weather in Beijing today is sunny with a temperature of 22°C and humidity at 45%. It's a pleasant day!",
-            },
-        ]
-        tools = [
-            {
-                "type": "function",
-                "function": {
-                    "name": "get_weather",
-                    "description": "Get the current weather in a given location",
-                    "parameters": {
-                        "type": "object",
-                        "properties": {
-                            "location": {
-                                "type": "string",
-                                "description": "The city and state, e.g. San Francisco, CA",
-                            },
-                            "unit": {
-                                "type": "string",
-                                "enum": ["celsius", "fahrenheit"],
-                                "description": "The temperature unit",
-                            },
-                        },
-                        "required": ["location"],
-                    },
-                },
-            }
-        ]
-        tokenizer = AutoTokenizer.from_pretrained(get_model_path())
-        token_ids, action_mask, prompt_length = tokenize_and_mask_messages_default(
-            tokenizer=tokenizer,
-            messages=messages,
-            tools=tools,
-            chat_template=CHAT_TEMPLATE_QWEN2_5,
-        )
-        token_ids_hf, action_mask_hf, prompt_length_hf = tokenize_and_mask_messages_hf(
-            tokenizer=tokenizer,
-            messages=messages,
-            tools=tools,
-            chat_template=CHAT_TEMPLATE_QWEN2_5,
-        )
-        self.assertEqual(token_ids.shape, token_ids_hf.shape)
-        self.assertEqual(action_mask.shape, action_mask_hf.shape)
-        self.assertTrue(torch.equal(token_ids, token_ids_hf))
-        self.assertTrue(torch.equal(action_mask, action_mask_hf))
-        self.assertEqual(prompt_length, prompt_length_hf)
 
 
 @parameterized_class(

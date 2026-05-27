@@ -14,7 +14,7 @@ class HistoryRecorder:
 
     def __init__(self, db_url: str, table_name: str):
         self.logger = get_logger()
-        self.engine, self.table_model_cls = init_engine(
+        self.engine, self.meta_cls, self.blob_cls = init_engine(
             db_url=db_url,
             table_name=table_name,
             schema_type="experience",
@@ -26,8 +26,12 @@ class HistoryRecorder:
         """Save experience to the database."""
 
         def operation(db):
-            exps = [self.table_model_cls.from_experience(exp) for exp in experiences]
-            db.add_all(exps)
+            for exp in experiences:
+                meta_row = self.meta_cls.from_experience(exp)
+                db.add(meta_row)
+                db.flush()
+                blob_row = self.blob_cls(id=meta_row.id, experience_bytes=exp.serialize())
+                db.add(blob_row)
 
         run_with_retry_session(self.session, operation)
 
@@ -53,12 +57,11 @@ class HistoryRecorder:
         """
 
         def operation(db):
-            # Lock and retrieve records that have not been consumed yet.
             records = (
-                db.query(self.table_model_cls)
+                db.query(self.meta_cls)
                 .filter(
-                    self.table_model_cls.msg_id.in_(msg_ids),
-                    self.table_model_cls.consumed == 0,
+                    self.meta_cls.msg_id.in_(msg_ids),
+                    self.meta_cls.consumed == 0,
                 )
                 .with_for_update()
                 .all()
@@ -67,15 +70,21 @@ class HistoryRecorder:
             if not records:
                 return []
 
-            # Update records in memory
             for record in records:
                 record.reward = reward
                 record.run_id = run_id
                 record.task_id = task_id
                 record.consumed += 1
 
-            # The session commit is handled by the `retry_session` context manager.
-            updated_experiences = [record.to_experience() for record in records]
+            ids = [record.id for record in records]
+            blobs = db.query(self.blob_cls).filter(self.blob_cls.id.in_(ids)).all()
+            blob_map = {b.id: b.experience_bytes for b in blobs}
+
+            updated_experiences = []
+            for record in records:
+                blob_bytes = blob_map.get(record.id)
+                if blob_bytes is not None:
+                    updated_experiences.append(record.to_experience(blob_bytes))
             return updated_experiences
 
         return run_with_retry_session(self.session, operation)
