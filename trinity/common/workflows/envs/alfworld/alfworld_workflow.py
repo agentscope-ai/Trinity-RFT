@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from typing import List, Optional
+import hashlib
+from typing import List, Optional, Tuple
 
 from trinity.common.experience import Experience
 from trinity.common.models.model import ModelWrapper
@@ -204,6 +205,7 @@ class StepWiseAlfworldWorkflow(RewardPropagationWorkflow):
         self.done: bool = False
         self.final_reward: float = 0.0
         self.memory: List[dict] = []
+        self._step_meta: List[Tuple[str, float]] = []
 
     def _setup_environment(self):
         """Initializes the Alfworld text-based environment."""
@@ -245,15 +247,24 @@ class StepWiseAlfworldWorkflow(RewardPropagationWorkflow):
 
         self.memory.clear()
         self.memory.append({"role": "system", "content": AlfWORLD_SYSTEM_PROMPT})
+        self._step_meta = []
 
-        return super().run()
+        experiences = super().run()
+        sorted_exps = sorted(experiences, key=lambda exp: exp.eid.step)
+        for exp, (env_state_hash, step_reward) in zip(sorted_exps, self._step_meta):
+            if exp.info is None:
+                exp.info = {}
+            exp.info["env_state_hash"] = env_state_hash
+            exp.info["step_reward"] = step_reward
+        return experiences
 
     def step(self, step_num: int) -> bool:
         if self.done:
             return False
 
-        # Format observation for the model
+        # Format observation for the model (pre-action anchor state for GiGPO grouping)
         format_obs = format_observation(self.observation)  # type: ignore
+        env_state_hash = hashlib.sha256(format_obs.encode()).hexdigest()
         self.memory.append({"role": "user", "content": format_obs})
 
         # Get action from the model
@@ -264,6 +275,7 @@ class StepWiseAlfworldWorkflow(RewardPropagationWorkflow):
 
         # Execute action in the environment
         observation, reward, done, info = self.env.step(action)
+        self._step_meta.append((env_state_hash, float(reward)))
 
         # Update internal state
         self.observation = observation
