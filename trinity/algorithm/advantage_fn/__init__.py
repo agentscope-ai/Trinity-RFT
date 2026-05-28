@@ -8,6 +8,7 @@ ADVANTAGE_FN: Registry = Registry(
         "grpo": "trinity.algorithm.advantage_fn.grpo_advantage.GRPOGroupedAdvantage",
         "grpo_verl": "trinity.algorithm.advantage_fn.grpo_advantage.GRPOAdvantageFn",
         "step_wise_grpo": "trinity.algorithm.advantage_fn.multi_step_grpo_advantage.StepWiseGRPOAdvantageFn",
+        "gigpo": "trinity.algorithm.advantage_fn.gigpo_advantage.GiGPOAdvantageFn",
         "reinforceplusplus": "trinity.algorithm.advantage_fn.reinforce_plus_plus_advantage.REINFORCEPLUSPLUSAdvantageFn",
         "reinforce": "trinity.algorithm.advantage_fn.reinforce_advantage.REINFORCEGroupAdvantage",
         "remax": "trinity.algorithm.advantage_fn.remax_advantage.REMAXAdvantageFn",

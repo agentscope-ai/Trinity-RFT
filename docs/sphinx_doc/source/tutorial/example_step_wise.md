@@ -65,6 +65,8 @@ In general multi-step scenarios, each run may generate various number of experie
 
 - `algorithm.algorithm_type = multi_step_grpo`: This algorithm allows you to have multiple steps in each run and generate multiple experiences for training, and it broadcasts the advantages value of the last step experience to the previous experiences.
 
+- `algorithm.algorithm_type = gigpo`: For multi-turn agents, GiGPO adds anchor-state step-level advantages on top of episode-level GRPO-style credit (see [GiGPO ALFWorld example](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/gigpo_alfworld)). Workflows should set `experience.info["env_state_hash"]` and `experience.info["step_reward"]`.
+
 - `buffer.train_batch_size`: The number of experiences to be sampled from the buffer for training, which can be different from the number of generated experiences in each explore step.
 
 - `buffer.trainer_input.experience_buffer.replay_buffer`: Using `PriorityQueue` allows the model to use the experiences with higher priority, which prefers newly-generated experiences by default.

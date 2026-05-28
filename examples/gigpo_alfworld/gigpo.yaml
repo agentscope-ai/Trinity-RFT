@@ -1,0 +1,78 @@
+project: "ALFWORLD"
+name: "GiGPO_Alfworld"
+checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
+algorithm:
+  algorithm_type: gigpo
+  repeat_times: 8
+  advantage_fn: gigpo
+  advantage_fn_args:
+    omega: 1.0
+    gamma: 1.0
+    fnorm: none
+    epsilon: 1e-6
+  policy_loss_fn_args:
+    clip_range_low: 0.2
+    clip_range_high: 0.2
+    loss_agg_mode: token-mean
+  optimizer:
+    lr: 5e-6
+model:
+  model_path: ${oc.env:TRINITY_MODEL_PATH,Qwen/Qwen2.5-7B-Instruct}
+  max_response_tokens: 16384
+  max_model_len: 20480
+cluster:
+  node_num: 1
+  gpu_per_node: 8
+buffer:
+  total_epochs: 20
+  batch_size: 16
+  train_batch_size: 7680 # 16 * 8 * 60 (approx; tune for your setup)
+  explorer_input:
+    taskset:
+      name: alfworld
+      storage_type: file
+      path: 'examples/grpo_alfworld/alfworld_data' # PATH TO ALFWORLD DATA
+      format:
+        prompt_key: 'game_file'
+      rollout_args:
+        temperature: 1.0
+        logprobs: 0
+      workflow_args:
+        max_env_steps: 30
+      enable_progress_bar: false
+      default_workflow_type: 'step_wise_alfworld_workflow'
+  trainer_input:
+    experience_buffer:
+      name: alfworld_gigpo_buffer
+      storage_type: queue
+      replay_buffer:
+        enable: true
+explorer:
+  max_repeat_times_per_runner: 1
+  runner_per_model: 8
+  max_timeout: 3600
+  rollout_model:
+    enable_history: true
+    engine_num: 2
+    tensor_parallel_size: 2
+    enable_prefix_caching: false
+    enforce_eager: true
+    dtype: bfloat16
+    seed: 42
+    gpu_memory_utilization: 0.7
+    enable_chunked_prefill: true
+  env_vars:
+    TMPDIR: ${oc.env:TMPDIR,/tmp}
+synchronizer:
+  sync_style: explorer_driven
+  sync_method: 'nccl'
+  sync_interval: 2
+  sync_timeout: 3600
+trainer:
+  save_interval: 50
+  grad_clip: 1.0
+  use_dynamic_bsz: true
+  max_token_len_per_gpu: 16384
+  ulysses_sequence_parallel_size: 1
+monitor:
+  monitor_type: 'wandb'
