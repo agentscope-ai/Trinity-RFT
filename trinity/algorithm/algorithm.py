@@ -531,6 +531,14 @@ class GiGPOAlgorithm(AlgorithmType):
 
     @classmethod
     def default_config(cls) -> Dict:
+        """Return default GiGPO algorithm configuration.
+
+        Uses critic-free PPO with token-mean loss, ``gigpo`` advantage fn,
+        and ``repeat_times=8`` trajectories per task (paper-scale grouping).
+
+        Returns:
+            Dict: Default keys for ``algorithm`` section in YAML config.
+        """
         return {
             "repeat_times": 8,
             "advantage_fn": "gigpo",

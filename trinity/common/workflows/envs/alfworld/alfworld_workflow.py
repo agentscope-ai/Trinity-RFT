@@ -176,11 +176,17 @@ class AlfworldWorkflow(MultiTurnWorkflow):
 
 
 class StepWiseAlfworldWorkflow(RewardPropagationWorkflow):
-    """
-    An Alfworld workflow refactored to use the RewardPropagationWorkflow base class.
+    """ALFWorld step-wise workflow with GiGPO-ready experience metadata.
 
-    This workflow manages an Alfworld environment, interacts with it step-by-step
-    using a model, and calculates a final reward based on the episode's outcome.
+    Extends :class:`RewardPropagationWorkflow` to emit one experience per
+    environment step. After each episode, sets ``experience.info`` fields used
+    by :class:`~trinity.algorithm.advantage_fn.gigpo_advantage.GiGPOAdvantageFn`:
+
+    - ``env_state_hash``: SHA-256 of the pre-action formatted observation.
+    - ``step_reward``: Immediate scalar reward from ``env.step``.
+
+    Terminal reward is still propagated to ``experience.reward`` on all steps for
+    compatibility with GRPO and ``multi_step_grpo``.
     """
 
     def __init__(
@@ -240,6 +246,12 @@ class StepWiseAlfworldWorkflow(RewardPropagationWorkflow):
             raise ImportError(error_message)
 
     def run(self) -> List[Experience]:
+        """Run one episode and attach GiGPO anchor metadata to each experience.
+
+        Returns:
+            List[Experience]: Step-wise experiences with ``env_state_hash`` and
+                ``step_reward`` in ``info``.
+        """
         # Reset environment and state for a new episode
         self.observation, info = self.env.reset()
         self.done = False

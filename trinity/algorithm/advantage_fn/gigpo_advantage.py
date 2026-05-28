@@ -1,9 +1,11 @@
 """GiGPO (Group-in-Group Policy Optimization) advantage computation.
 
-Ref: Feng et al., arXiv:2505.10978 — episode-level and anchor-state step-level advantages.
+Reference:
+    Feng et al., "Group-in-Group Policy Optimization for LLM Agent Training",
+    arXiv:2505.10978.
 """
 
-from typing import Dict, List, Literal, Optional, Tuple
+from typing import Dict, List, Literal, Tuple
 
 import torch
 
@@ -14,7 +16,25 @@ from trinity.utils.metrics import aggregate_metrics
 
 
 class GiGPOAdvantageFn(AdvantageFn, ExperienceOperator):
-    """Hierarchical critic-free advantages: A = A^E(τ) + ω · A^S(a|s̃)."""
+    """Compute hierarchical GiGPO advantages for multi-turn agent experiences.
+
+    GiGPO combines episode-level relative advantages (GRPO-style over full
+    trajectories) with step-level relative advantages within anchor-state groups.
+    The combined scalar advantage is ``A = A_E + omega * A_S``, then broadcast
+    to tokens via ``action_mask``.
+
+    Workflows must set ``experience.info[env_state_hash_key]`` for step-level
+    grouping and should set ``experience.info[step_reward_key]`` for per-step
+    immediate rewards. See ``examples/gigpo_alfworld/README.md``.
+
+    Attributes:
+        omega: Weight on step-level advantage A_S.
+        gamma: Discount factor for discounted step returns R_t.
+        fnorm: Normalization mode, ``"std"`` (GRPO) or ``"none"`` (RLOO-style).
+        epsilon: Small constant added to the normalization denominator.
+        step_reward_key: Key in ``experience.info`` for immediate reward r_t.
+        env_state_hash_key: Key in ``experience.info`` for anchor state identity.
+    """
 
     def __init__(
         self,
@@ -26,6 +46,18 @@ class GiGPOAdvantageFn(AdvantageFn, ExperienceOperator):
         env_state_hash_key: str = "env_state_hash",
         **kwargs,
     ) -> None:
+        """Initialize GiGPO advantage computation.
+
+        Args:
+            omega: Weight on step-level advantage A_S in the combined advantage.
+            gamma: Discount factor for R_t = sum_{k>=t} gamma^{k-t} r_k.
+            fnorm: Group normalization. ``"std"`` divides by standard deviation;
+                ``"none"`` uses F_norm = 1 (paper default for agent benchmarks).
+            epsilon: Stabilizer when dividing by std or 1.
+            step_reward_key: ``experience.info`` field for immediate step reward.
+            env_state_hash_key: ``experience.info`` field for anchor-state hash.
+            **kwargs: Ignored; accepted for registry compatibility.
+        """
         self.omega = omega
         self.gamma = gamma
         self.epsilon = epsilon
@@ -37,15 +69,33 @@ class GiGPOAdvantageFn(AdvantageFn, ExperienceOperator):
 
     @staticmethod
     def _sort_run_steps(run_steps: List[Experience]) -> List[Experience]:
+        """Sort experiences within a run by ``eid.step``.
+
+        Args:
+            run_steps: Experiences belonging to one run.
+
+        Returns:
+            List[Experience]: Steps ordered by increasing step index.
+        """
         return sorted(run_steps, key=lambda exp: exp.eid.step)
 
     def _step_rewards(self, run_steps: List[Experience]) -> List[float]:
-        """Immediate per-step rewards r_t."""
+        """Extract immediate per-step rewards r_t for one trajectory.
+
+        Uses ``info[step_reward_key]`` when present. Otherwise applies a sparse
+        fallback: zero on non-terminal steps and ``exp.reward`` on the last
+        step only (for ``RewardPropagationWorkflow`` that copies terminal reward).
+
+        Args:
+            run_steps: Experiences belonging to one run.
+
+        Returns:
+            List[float]: Immediate rewards aligned with sorted steps.
+        """
         sorted_steps = self._sort_run_steps(run_steps)
         has_step_reward = any(self.step_reward_key in (exp.info or {}) for exp in sorted_steps)
         if has_step_reward:
             return [float((exp.info or {}).get(self.step_reward_key, 0.0)) for exp in sorted_steps]
-        # Sparse fallback: terminal reward only on last step (RewardPropagationWorkflow).
         rewards: List[float] = []
         for idx, exp in enumerate(sorted_steps):
             if idx == len(sorted_steps) - 1 and exp.reward is not None:
@@ -56,7 +106,15 @@ class GiGPOAdvantageFn(AdvantageFn, ExperienceOperator):
 
     @staticmethod
     def _discounted_returns(rewards: List[float], gamma: float) -> List[float]:
-        """R_t = sum_{k>=t} gamma^{k-t} r_k."""
+        """Compute discounted returns R_t = sum_{k>=t} gamma^{k-t} r_k.
+
+        Args:
+            rewards: Immediate rewards r_t along a trajectory.
+            gamma: Discount factor.
+
+        Returns:
+            List[float]: Discounted returns, same length as ``rewards``.
+        """
         n = len(rewards)
         if n == 0:
             return []
@@ -67,10 +125,18 @@ class GiGPOAdvantageFn(AdvantageFn, ExperienceOperator):
             returns[t] = running
         return returns
 
-    def _normalize(
-        self, values: List[float]
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Return (normalized_scores, mean, denom) aligned with values length."""
+    def _normalize(self, values: List[float]) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """Normalize a list of scalars within a group (episode or anchor).
+
+        Singleton groups use mean=0 and denom=1, matching GRPO convention.
+
+        Args:
+            values: Scalar values to normalize (e.g. episode returns or R_t).
+
+        Returns:
+            Tuple[torch.Tensor, torch.Tensor, torch.Tensor]: Normalized scores,
+                group mean, and normalization denominator (std or 1).
+        """
         tensor = torch.tensor(values, dtype=torch.float32)
         if len(values) == 1:
             mean = torch.tensor(0.0)
@@ -85,6 +151,12 @@ class GiGPOAdvantageFn(AdvantageFn, ExperienceOperator):
         return scores, mean, denom
 
     def _apply_mask(self, exp: Experience, scalar: float) -> None:
+        """Write scalar advantage and returns onto an experience.
+
+        Args:
+            exp: Experience to update in place.
+            scalar: Combined advantage A_E + omega * A_S.
+        """
         if exp.action_mask is not None:
             exp.advantages = exp.action_mask * scalar
         else:
@@ -92,6 +164,20 @@ class GiGPOAdvantageFn(AdvantageFn, ExperienceOperator):
         exp.returns = exp.advantages.clone()
 
     def process(self, exps: List[Experience]) -> Tuple[List[Experience], Dict]:
+        """Compute GiGPO advantages for a batch of multi-step experiences.
+
+        Episode-level: group by task, compare trajectory returns R(tau) across
+        runs (GRPO-style). Step-level: group by ``env_state_hash`` across the
+        batch, compare discounted returns R_t; singleton anchors get A_S = 0.
+
+        Args:
+            exps: Multi-step experiences with ``eid.task``, ``eid.run``,
+                ``eid.step``, and optional anchor metadata in ``info``.
+
+        Returns:
+            Tuple[List[Experience], Dict]: Experiences with ``advantages`` and
+                ``returns`` set, plus logging metrics prefixed with ``gigpo/``.
+        """
         if len(exps) == 0:
             return [], {}
 
@@ -101,7 +187,6 @@ class GiGPOAdvantageFn(AdvantageFn, ExperienceOperator):
         abs_a_e: List[float] = []
         abs_a_s: List[float] = []
 
-        # --- Episode-level advantages (per task, per run) ---
         run_to_a_e: Dict[str, float] = {}
         exp_to_discounted_return: Dict[int, float] = {}
 
@@ -131,7 +216,6 @@ class GiGPOAdvantageFn(AdvantageFn, ExperienceOperator):
             for run_id, a_e in zip(run_ids, scores.tolist()):
                 run_to_a_e[run_id] = a_e
 
-        # --- Step-level anchor advantages (across full batch) ---
         anchor_buckets: Dict[str, List[Tuple[Experience, float]]] = {}
         for exp in exps:
             info = exp.info or {}
@@ -152,7 +236,6 @@ class GiGPOAdvantageFn(AdvantageFn, ExperienceOperator):
             for (exp, _), a_s in zip(members, scores.tolist()):
                 exp_to_a_s[id(exp)] = a_s
 
-        # --- Combine and assign ---
         result_exps: List[Experience] = []
         for exp in exps:
             a_e = run_to_a_e.get(exp.eid.rid, 0.0)
@@ -167,9 +250,7 @@ class GiGPOAdvantageFn(AdvantageFn, ExperienceOperator):
         metrics["gigpo/anchor_groups_total"] = anchor_groups_total
         metrics["gigpo/anchor_groups_size_gt1"] = anchor_groups_size_gt1
         if anchor_groups_total > 0:
-            metrics["gigpo/anchor_group_hit_ratio"] = (
-                anchor_groups_size_gt1 / anchor_groups_total
-            )
+            metrics["gigpo/anchor_group_hit_ratio"] = anchor_groups_size_gt1 / anchor_groups_total
         else:
             metrics["gigpo/anchor_group_hit_ratio"] = 0.0
         if abs_a_e:
@@ -181,14 +262,25 @@ class GiGPOAdvantageFn(AdvantageFn, ExperienceOperator):
         return result_exps, metrics
 
     def __call__(self, exps, **kwargs):
+        """Callable entry point; delegates to :meth:`process`."""
         return self.process(exps)
 
     @classmethod
     def compute_in_trainer(cls) -> bool:
+        """Whether advantages are computed in the trainer loop.
+
+        Returns:
+            bool: ``False``; GiGPO runs in the experience pipeline.
+        """
         return False
 
     @classmethod
     def default_args(cls) -> Dict:
+        """Return default ``advantage_fn_args`` for GiGPO.
+
+        Returns:
+            Dict: Default hyperparameters for ``GiGPOAdvantageFn``.
+        """
         return {
             "omega": 1.0,
             "gamma": 1.0,

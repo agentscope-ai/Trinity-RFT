@@ -197,6 +197,11 @@ algorithm:
 # some other configs
 ```
 
+For multi-turn LLM agents, {class}`trinity.algorithm.advantage_fn.gigpo_advantage.GiGPOAdvantageFn` implements
+Group-in-Group Policy Optimization (GiGPO, arXiv:2505.10978) via ``algorithm_type: gigpo``.
+Workflows must provide per-step ``experience.info`` fields documented in
+`examples/gigpo_alfworld/README.md`.
+
 If you need to modify certain parameters, you can simply add the corresponding parameters within the `algorithm` section. For example, if you need to modify `repeat_times` and the initialization parameters of `AdvantageFn` and `PolicyLossFn`, the modified `config.yaml` file would be as follows:
 
 ```yaml

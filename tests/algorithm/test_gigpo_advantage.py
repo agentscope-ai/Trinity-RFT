@@ -120,7 +120,9 @@ class TestGiGPOAdvantageFn(unittest.TestCase):
             e.reward = float(e.eid.run)
         p_full, _ = fn_none.process(exps)
         p_ep, _ = fn_zero.process(exps)
-        for a, b in zip(sorted(p_full, key=lambda e: e.eid.run), sorted(p_ep, key=lambda e: e.eid.run)):
+        for a, b in zip(
+            sorted(p_full, key=lambda e: e.eid.run), sorted(p_ep, key=lambda e: e.eid.run)
+        ):
             self.assertTrue(torch.allclose(a.advantages, b.advantages))
 
     def test_omega_zero(self):
