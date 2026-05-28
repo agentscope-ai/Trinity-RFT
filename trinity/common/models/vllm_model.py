@@ -236,11 +236,12 @@ class vLLMRolloutModel(BaseInferenceModel):
         Returns:
             A list of experiences.
         """
-        if isinstance(prompt, str):  # pure text
+        is_mm_prompt = not isinstance(prompt, str)
+        if not is_mm_prompt:  # pure text
             if self.tokenizer is None:
                 await self._initialize_tokenizer()
 
-            returned_seq, is_valid = self._handle_prompt_truncation(prompt, **kwargs)
+            returned_seq, is_valid = self._handle_prompt_truncation(prompt, **kwargs)  # type: ignore
             if not is_valid:
                 return (
                     returned_seq  # is_valid is False: returned_seq is a list of dummy experiences
@@ -249,12 +250,9 @@ class vLLMRolloutModel(BaseInferenceModel):
                 "prompt_token_ids": returned_seq
             }  # is_valid is True: returned_seq is token_ids
             multi_modal_inputs = None
-        else:  # multi modal
-            if self.processor is None:
-                await self._initialize_processor()
 
         output = await self._generate_internal(prompt=prompt, lora_request=lora_request, **kwargs)
-        if not isinstance(prompt, str):
+        if is_mm_prompt:
             if self.mm_render is None:
                 self.mm_render = vLLMMultiModalRender(
                     model_path=self.config.model_path,  # type: ignore
