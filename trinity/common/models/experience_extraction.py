@@ -6,6 +6,7 @@ from torch import Tensor
 from transformers import AutoConfig
 
 from trinity.common.experience import Experience
+from trinity.common.models.mm_utils import combine_output_token_ids
 
 
 def get_routed_experts_layout(
@@ -144,23 +145,6 @@ class HistoryRecordingStream:  # TODO: add multi-modal support
         return getattr(self._stream, name)
 
 
-def _combine_output_token_ids(
-    output_token_ids: List[int],
-    multi_modal_inputs: Optional[dict[str, torch.Tensor]] = None,
-):
-    if multi_modal_inputs is None:
-        return None
-    dtype = multi_modal_inputs["mm_token_type_ids"].dtype
-    multi_modal_inputs["mm_token_type_ids"] = torch.concat(
-        [
-            multi_modal_inputs["mm_token_type_ids"],
-            torch.zeros((1, len(output_token_ids)), dtype=dtype),
-        ],
-        dim=1,
-    )
-    return multi_modal_inputs
-
-
 def _convert_completion_output_to_experience(
     output,
     multi_modal_inputs: Optional[dict[str, torch.Tensor]] = None,
@@ -182,7 +166,7 @@ def _convert_completion_output_to_experience(
                 total_tokens=len(output.prompt_token_ids) + len(choice.token_ids),
                 routed_experts_layout=routed_experts_layout,
             ),
-            multi_modal_inputs=_combine_output_token_ids(choice.token_ids, multi_modal_inputs),
+            multi_modal_inputs=combine_output_token_ids(choice.token_ids, multi_modal_inputs),
         )
         for choice in output.choices
     ]

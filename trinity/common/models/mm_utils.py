@@ -181,6 +181,24 @@ def has_multi_modal_content(messages: List[Dict]) -> bool:
     return False
 
 
+def combine_output_token_ids(
+    output_token_ids: List[int],
+    multi_modal_inputs: Optional[dict[str, torch.Tensor]] = None,
+):
+    if multi_modal_inputs is None:
+        return None
+    dtype = multi_modal_inputs["mm_token_type_ids"].dtype
+    multi_modal_inputs = multi_modal_inputs.copy()
+    multi_modal_inputs["mm_token_type_ids"] = torch.concat(
+        [
+            multi_modal_inputs["mm_token_type_ids"],
+            torch.zeros((1, len(output_token_ids)), dtype=dtype),
+        ],
+        dim=1,
+    )
+    return multi_modal_inputs
+
+
 class MultiModalRender(ABC):
     """
     Client-side processor that mirrors server's multimodal handling.
@@ -338,17 +356,26 @@ class vLLMMultiModalRender(MultiModalRender):
             if multi_modal_data is None:
                 return None
 
+        def _normalize_media_item(item: Any, *, modality: str) -> Any:
+            # vLLM may return wrapper objects with `.media` for images,
+            # and tuples like (video_data, video_meta) for videos.
+            if hasattr(item, "media"):
+                return item.media
+            if modality == "video" and isinstance(item, tuple) and len(item) >= 1:
+                return item[0]
+            return item
+
         multi_modal_inputs = {
             "mm_token_type_ids": torch.tensor(
                 self.mm_processor.create_mm_token_type_ids(input_ids), dtype=torch.int
             )
         }
         if images := multi_modal_data.get("image", None):
-            images = [img.media for img in images]
+            images = [_normalize_media_item(img, modality="image") for img in images]
             image_inputs = self.mm_processor.image_processor(images=images, return_tensors="pt")
             multi_modal_inputs.update(image_inputs)
         if videos := multi_modal_data.get("video", None):
-            videos = [vid.media for vid in videos]
+            videos = [_normalize_media_item(vid, modality="video") for vid in videos]
             video_inputs = self.mm_processor.video_processor(videos=videos, return_tensors="pt")
             multi_modal_inputs.update(video_inputs)
         return multi_modal_inputs

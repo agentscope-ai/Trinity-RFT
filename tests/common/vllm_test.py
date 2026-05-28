@@ -256,6 +256,55 @@ class ModelWrapperTest(VLLMTestBase):
             self.assertTrue(len(history_experiences) == 0)
 
 
+class TestMultiModal(VLLMTestBase):
+    async def asyncSetUp(self):
+        # configure the model
+        self.config = get_template_config()
+        self.config.mode = "explore"
+        self.config.model.model_path = get_api_model_path()
+        self.config.model.custom_chat_template = CHAT_TEMPLATE
+        self.config.algorithm.repeat_times = 4
+        self.config.explorer.rollout_model.chat_template = CHAT_TEMPLATE
+        self.config.check_and_update()
+
+        self.engines, self.auxiliary_engines = await create_test_models(self.config)
+        self.model_wrapper = self.engines[0]
+
+    async def test_generate(self):  # noqa: C901
+        n = self.config.algorithm.repeat_times
+        messages = [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "What's the weather like today?"},
+            {
+                "role": "assistant",
+                "content": "I'm sorry, but as an AI language model, I don't have access to real-time weather information. To get accurate weather information for your location, you can check a weather website or app, or look outside if possible.",
+            },
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": "https://qianwen-res.oss-accelerate.aliyuncs.com/Qwen3.5/demo/CI_Demo/mathv-1327.jpg"
+                        },
+                    },
+                    {
+                        "type": "text",
+                        "text": "The centres of the four illustrated circles are in the corners of the square. The two big circles touch each other and also the two little circles. With which factor do you have to multiply the radii of the little circles to obtain the radius of the big circles?\nChoices:\n(A) $\\frac{2}{9}$\n(B) $\\sqrt{5}$\n(C) $0.8 \\cdot \\pi$\n(D) 2.5\n(E) $1+\\sqrt{2}$",
+                    },
+                ],
+            },
+        ]
+        results = await self.model_wrapper.chat_async(messages, n=n, temperature=1.0)
+        self.assertEqual(len(results), n)
+        for exp in results:  # test multi-modal
+            self.assertSetEqual(
+                set(exp.multi_modal_inputs.keys()),
+                {"mm_token_type_ids", "pixel_values", "image_grid_thw"},
+            )
+            self.assertEqual(len(exp.tokens), exp.multi_modal_inputs["mm_token_type_ids"].size(1))
+
+
 @parameterized_class(
     (
         "max_model_len",
