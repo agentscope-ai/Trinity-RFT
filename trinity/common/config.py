@@ -581,6 +581,9 @@ class InferenceModelConfig:
     node_rank: int = 0
     enable_return_routed_experts: bool = False
 
+    # Buffer size (bytes) for batched NCCL weight sync. Controls peak GPU memory during sync.
+    weight_sync_buffer_size: int = 4 * 1024 * 1024 * 1024  # 4 GB
+
     # ! DO NOT SET
     bundle_indices: str = ""
     engine_id: int = 0
