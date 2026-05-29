@@ -117,6 +117,26 @@ class SGLangClient:
             )
         return success
 
+    async def flush_cache(self, timeout: float = 30) -> bool:
+        """Flush KV and Mamba cache to free GPU memory before weight sync."""
+        import httpx
+
+        url = f"{self.server_url}/flush_cache"
+        try:
+            async with httpx.AsyncClient(
+                headers={"Authorization": f"Bearer {self.api_key}" if self.api_key else ""}
+            ) as client:
+                response = await client.post(url, timeout=timeout)
+                if response.status_code == 200:
+                    return True
+                self.logger.warning(
+                    f"flush_cache returned status {response.status_code}: {response.text}"
+                )
+                return False
+        except Exception as e:
+            self.logger.warning(f"Failed to flush cache: {e}")
+            return False
+
     async def update_weights_from_distributed(
         self,
         state_dict_meta_list: List[Tuple[str, str, Tuple]],
@@ -535,6 +555,9 @@ class SGLangRolloutModel(BaseInferenceModel):
         self.logger.info(f"Synchronizing model to version {model_version} using method {method}...")
         if method == SyncMethod.NCCL:
             assert self.state_dict_meta, "state_dict_meta must be initialized for NCCL sync"
+            # Flush KV + Mamba cache to free GPU memory for receive buffers
+            await self.api_client.flush_cache()
+            self.logger.info("Flushed KV/Mamba cache before NCCL weight sync")
             batches = self._partition_state_dict_meta(self.state_dict_meta)
             self.logger.info(
                 f"NCCL weight sync: {len(self.state_dict_meta)} tensors in {len(batches)} batches "
