@@ -533,7 +533,7 @@ class Workflow(ABC):
         self.logger = get_logger(__name__)  # 用于运行时监控的内置 logger
 ```
 
-该内置的 logger 会将日志输出到控制台和 `<checkpoint_root_dir>/<project>/<name>/log` 目录下的文件中。这样就可以方便地在训练过程中监控工作流的运行状态。由于所有 Workflow 子类均继承该 logger，因此你可以直接在自定义工作流中使用它来记录关键信息。
+该内置的 logger 会将日志输出到控制台和 `<checkpoint_root_dir>/<project>/<group>/<name>/log` 目录下的文件中。这样就可以方便地在训练过程中监控工作流的运行状态。由于所有 Workflow 子类均继承该 logger，因此你可以直接在自定义工作流中使用它来记录关键信息。
 
 ```python
 class ExampleWorkflow(Workflow):
@@ -549,7 +549,7 @@ class ExampleWorkflow(Workflow):
 由于 Trinity-RFT 会自动创建一组 Workflow Runners 来并行执行 Workflow。每个运行器会将其日志输出到一个单独的日志文件中。日志文件的命名规则为 `explorer_runner_<runner_id>.log`，其中 `<runner_id>` 是工作流运行器的唯一标识符。通过这种设计，你可以独立地追踪正在并行执行的每个工作流实例的运行情况。日志文件的具体组织结构如下：
 
 ```
-<checkpoint_root_dir>/<project>/<name>/log/
+<checkpoint_root_dir>/<project>/<group>/<name>/log/
     ├── explorer_runner_0.log
     ├── explorer_runner_1.log
     ├── explorer_runner_2.log

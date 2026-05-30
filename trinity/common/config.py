@@ -262,7 +262,7 @@ class TasksetConfig:
     total_epochs: int = 1  # automatically set
     # ! DO NOT SET, automatically set from buffer.total_steps
     total_steps: Optional[int] = None  # automatically set
-    # ! DO NOT SET, automatically set form ray_namespace
+    # ! DO NOT SET, automatically set from ray_namespace
     ray_namespace: Optional[str] = None
 
     def to_storage_config(self) -> StorageConfig:
@@ -329,7 +329,7 @@ class ExperienceBufferConfig:
     total_epochs: int = 1  # automatically set
     # ! DO NOT SET, automatically set from buffer.total_steps
     total_steps: Optional[int] = None  # automatically set
-    # ! DO NOT SET, automatically set form ray_namespace
+    # ! DO NOT SET, automatically set from ray_namespace
     ray_namespace: Optional[str] = None
 
     def to_storage_config(self) -> StorageConfig:
@@ -863,7 +863,7 @@ class LogConfig:
 
     level: str = "INFO"  # default log level (DEBUG, INFO, WARNING, ERROR)
     group_by_node: bool = False  # whether to group logs by node IP in Ray cluster
-    # ! DO NOT SET, automatically generated as <checkpoint_root_dir>/<project>/<name>/log
+    # ! DO NOT SET, automatically generated as <checkpoint_root_dir>/<project>/<group>/<name>/log
     save_dir: str = ""
 
 
@@ -890,9 +890,9 @@ class Config:
     name: str = "rft"
     # the root dir for checkpoints
     checkpoint_root_dir: str = ""
-    # ! DO NOT SET, automatically generated as `checkpoint_root_dir/project/name`
+    # ! DO NOT SET, automatically generated as `checkpoint_root_dir/project/group/name`
     checkpoint_job_dir: str = ""
-    # If not set, automatically generated as f"{config.project}-{config.name}"
+    # If not set, automatically generated as "{project}/{group}/{name}" (empty segments omitted)
     ray_namespace: str = ""
     # whether to continue training from the last checkpoint in checkpoint_job_dir (if any)
     continue_from_checkpoint: bool = True

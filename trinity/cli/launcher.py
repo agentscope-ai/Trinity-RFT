@@ -358,7 +358,7 @@ def run(
     cfg = load_config(config)
 
     if dlc:
-        cluster_namespace = f"{cfg.project}-{cfg.name}"
+        cluster_namespace = "-".join(p for p in [cfg.project, cfg.group, cfg.name] if p)
         cfg.cluster.ray_address = setup_ray_cluster(namespace=cluster_namespace)
 
     if not is_running():
@@ -369,9 +369,7 @@ def run(
             from trinity.manager.state_manager import StateManager
             from trinity.trainer.verl.utils import get_latest_hf_checkpoint_path
 
-            state_manager = StateManager(
-                path=os.path.join(cfg.checkpoint_root_dir, cfg.project, cfg.name)
-            )
+            state_manager = StateManager(path=cfg.get_checkpoint_job_dir())
             latest_stage = state_manager.load_stage().get("latest_stage", 0)
             prev_stage_checkpoint = None
             for i, stage_config in enumerate(cfg):

@@ -538,7 +538,7 @@ class Workflow(ABC):
         self.logger = get_logger(__name__)  # built-in logger for runtime monitoring
 ```
 
-Different from standard Python loggers, this built-in logger is configured to output logs to both the console and a file under the `<checkpoint_root_dir>/<project>/<name>/log` directory. This allows you to monitor the workflow's runtime status during training conveniently. All workflow subclasses inherit this logger, so you can directly use it in your custom workflow implementations with `self.logger`.
+Different from standard Python loggers, this built-in logger is configured to output logs to both the console and a file under the `<checkpoint_root_dir>/<project>/<group>/<name>/log` directory. This allows you to monitor the workflow's runtime status during training conveniently. All workflow subclasses inherit this logger, so you can directly use it in your custom workflow implementations with `self.logger`.
 
 ```python
 class ExampleWorkflow(Workflow):
@@ -555,7 +555,7 @@ Trinity-RFT will automatically create a group of workflow runners to execute the
 Each runner will log its output to a separate log file. The log file naming convention is `explorer_runner_<runner_id>.log`, where `<runner_id>` is the unique identifier of the workflow runner. Such design allows you to trace the execution of each workflow runner independently. And the log files are organized as follows:
 
 ```
-<checkpoint_root_dir>/<project>/<name>/log/
+<checkpoint_root_dir>/<project>/<group>/<name>/log/
     ├── explorer_runner_0.log
     ├── explorer_runner_1.log
     ├── explorer_runner_2.log

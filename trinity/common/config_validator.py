@@ -96,7 +96,7 @@ class GlobalConfigValidator(ConfigValidator):
         # prepare for the checkpoint directory
         if not os.path.isabs(config.checkpoint_root_dir):
             config.checkpoint_root_dir = os.path.join(os.getcwd(), config.checkpoint_root_dir)
-        # create a job dir at checkpoint_root_dir/project/name
+        # create a job dir at checkpoint_root_dir/project/group/name
         config.checkpoint_job_dir = config.get_checkpoint_job_dir()
         # rename the experiment when necessary
         if not config.continue_from_checkpoint and (
@@ -147,7 +147,9 @@ class RayClusterConfigValidator(ConfigValidator):
         """
         # set namespace
         if config.ray_namespace is None or len(config.ray_namespace) == 0:
-            config.ray_namespace = f"{config.project}/{config.name}"
+            config.ray_namespace = "/".join(
+                p for p in [config.project, config.group, config.name] if p
+            )
 
         if config.model.tinker.enable or config.model.external_model.enable:
             return
@@ -887,7 +889,7 @@ class MonitorConfigValidator(ConfigValidator):
         if monitor_cls is None:
             raise ValueError(f"Invalid monitor type: {config.monitor.monitor_type}")
         set_if_none(config.monitor, "monitor_args", monitor_cls.default_args())
-        # create a job dir in <checkpoint_root_dir>/<project>/<name>/monitor
+        # create a job dir in <checkpoint_root_dir>/<project>/<group>/<name>/monitor
         config.monitor.cache_dir = os.path.join(config.checkpoint_job_dir, "monitor")
         try:
             os.makedirs(config.monitor.cache_dir, exist_ok=True)
@@ -937,7 +939,7 @@ class BufferConfigValidator(ConfigValidator):
                 config.buffer.batch_size * config.algorithm.repeat_times
             )
 
-        # create buffer.cache_dir at <checkpoint_root_dir>/<project>/<name>/buffer
+        # create buffer.cache_dir at <checkpoint_root_dir>/<project>/<group>/<name>/buffer
         config.buffer.cache_dir = os.path.abspath(os.path.join(config.checkpoint_job_dir, "buffer"))
         try:
             os.makedirs(config.buffer.cache_dir, exist_ok=True)
