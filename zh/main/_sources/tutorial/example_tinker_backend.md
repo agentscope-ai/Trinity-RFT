@@ -8,10 +8,10 @@
 
 ### 1. API Key 配置
 
-在启动 Ray 之前，必须将 `TRINITY_API_KEY` 环境变量设置为你的 Tinker API 密钥，以便正确访问 Tinker 的 API：
+在启动 Ray 之前，必须将 `TINKER_API_KEY` 环境变量设置为你的 Tinker API 密钥，以便正确访问 Tinker 的 API：
 
 ```bash
-export TRINITY_API_KEY=your_tinker_api_key
+export TINKER_API_KEY=your_tinker_api_key
 ray start --head
 ```
 
