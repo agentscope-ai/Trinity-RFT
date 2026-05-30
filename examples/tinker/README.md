@@ -6,10 +6,10 @@
 ## Setup Instructions
 
 ### 1. API Key Configuration
-Before starting Ray, you must set the `TRINITY_API_KEY` environment variable to your Tinker API key to enable proper access to Tinker's API:
+Before starting Ray, you must set the `TINKER_API_KEY` environment variable to your Tinker API key to enable proper access to Tinker's API:
 
 ```bash
-export TRINITY_API_KEY=your_tinker_api_key
+export TINKER_API_KEY=your_tinker_api_key
 ```
 
 ### 2. Configuration File
