@@ -152,7 +152,7 @@ explorer:
 | `trainer.logger` | `monitor.monitor_type` | 支持选择的类型和（无需设置）`console` |
 | `trainer.project_name` | `project` | - |
 | `trainer.experiment_name` | `name` | - |
-| `trainer.default_local_dir` | `checkpoint_root_dir` | 检查点保存在 `<checkpoint_root_dir>/<project>/<name>/` |
+| `trainer.default_local_dir` | `checkpoint_root_dir` | 检查点保存在 `<checkpoint_root_dir>/<project>/<group>/<name>/` |
 | `trainer.n_gpus_per_node` | `cluster.gpu_per_node` | - |
 | `trainer.nnodes` | `cluster.node_num` | - |
 | `trainer.save_freq` | `trainer.save_interval` | - |
@@ -166,7 +166,7 @@ explorer:
 
 💡 详细说明：
 
-* 如果您想从检查点恢复训练，可以将 `continue_from_checkpoint` 设置为 `True`，训练将从检查点路径 `<checkpoint_root_dir>/<project>/<name>/` 中的最新检查点开始（如果有的话）。
+* 如果您想从检查点恢复训练，可以将 `continue_from_checkpoint` 设置为 `True`，训练将从检查点路径 `<checkpoint_root_dir>/<project>/<group>/<name>/` 中的最新检查点开始（如果有的话）。
 
 
 ## GPU 资源分配

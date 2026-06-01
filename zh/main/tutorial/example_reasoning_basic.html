@@ -778,12 +778,12 @@ huggingface-cli<span class="w"> </span>download<span class="w"> </span>openai/gs
 </section>
 <section id="hugging-face">
 <h2>进阶选项：将检查点转换为 Hugging Face 格式<a class="headerlink" href="#hugging-face" title="Link to this heading">#</a></h2>
-<p>在运行 Trinity-RFT 进行实验后，系统会自动将训练过程中的检查点（checkpoint）保存到以下路径：</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>${checkpoint_root_dir}/${project}/${name}
+<p>在运行 Trinity-RFT 进行实验后，系统会自动将训练过程中的检查点（checkpoint）保存到以下路径（其中 <code class="docutils literal notranslate"><span class="pre">${group}</span></code> 段为可选项，当 <code class="docutils literal notranslate"><span class="pre">group</span></code> 为空时省略，默认即 <code class="docutils literal notranslate"><span class="pre">${project}/${name}</span></code>）：</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>${checkpoint_root_dir}/${project}/${group}/${name}
 </pre></div>
 </div>
 <p>该目录的结构如下：</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>${checkpoint_root_dir}/${project}/${name}
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>${checkpoint_root_dir}/${project}/${group}/${name}
 ├── buffer
 │   ├── experience_buffer.jsonl          # 存储训练过程中生成的经验数据
 │   └── explorer_output.db               # Explorer 模块输出的数据库文件
@@ -830,7 +830,7 @@ huggingface-cli<span class="w"> </span>download<span class="w"> </span>openai/gs
 <section id="id7">
 <h4>✅ 批量转换（推荐）<a class="headerlink" href="#id7" title="Link to this heading">#</a></h4>
 <p>将 <code class="docutils literal notranslate"><span class="pre">--checkpoint-dir</span></code> 指向项目根目录（即包含多个 <code class="docutils literal notranslate"><span class="pre">global_step_*</span></code> 子目录的路径），工具会<strong>自动递归查找所有 <code class="docutils literal notranslate"><span class="pre">global_step_*</span></code> 目录</strong>，并对每个检查点执行转换。</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>trinity<span class="w"> </span>convert<span class="w"> </span>--checkpoint-dir<span class="w"> </span><span class="si">${</span><span class="nv">checkpoint_root_dir</span><span class="si">}</span>/<span class="si">${</span><span class="nv">project</span><span class="si">}</span>/<span class="si">${</span><span class="nv">name</span><span class="si">}</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>trinity<span class="w"> </span>convert<span class="w"> </span>--checkpoint-dir<span class="w"> </span><span class="si">${</span><span class="nv">checkpoint_root_dir</span><span class="si">}</span>/<span class="si">${</span><span class="nv">project</span><span class="si">}</span>/<span class="si">${</span><span class="nv">group</span><span class="si">}</span>/<span class="si">${</span><span class="nv">name</span><span class="si">}</span>
 </pre></div>
 </div>
 <p>该命令会：</p>
@@ -843,7 +843,7 @@ huggingface-cli<span class="w"> </span>download<span class="w"> </span>openai/gs
 <section id="id8">
 <h4>✅ 单步转换<a class="headerlink" href="#id8" title="Link to this heading">#</a></h4>
 <p>如果只想转换某一个特定训练步的模型，可直接将 <code class="docutils literal notranslate"><span class="pre">--checkpoint-dir</span></code> 指向对应的 <code class="docutils literal notranslate"><span class="pre">global_step_XXX</span></code> 文件夹：</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>trinity<span class="w"> </span>convert<span class="w"> </span>--checkpoint-dir<span class="w"> </span><span class="si">${</span><span class="nv">checkpoint_root_dir</span><span class="si">}</span>/<span class="si">${</span><span class="nv">project</span><span class="si">}</span>/<span class="si">${</span><span class="nv">name</span><span class="si">}</span>/global_step_120
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>trinity<span class="w"> </span>convert<span class="w"> </span>--checkpoint-dir<span class="w"> </span><span class="si">${</span><span class="nv">checkpoint_root_dir</span><span class="si">}</span>/<span class="si">${</span><span class="nv">project</span><span class="si">}</span>/<span class="si">${</span><span class="nv">group</span><span class="si">}</span>/<span class="si">${</span><span class="nv">name</span><span class="si">}</span>/global_step_120
 </pre></div>
 </div>
 </section>
@@ -856,7 +856,7 @@ huggingface-cli<span class="w"> </span>download<span class="w"> </span>openai/gs
 <h3>特殊情况：缺少基础模型配置<a class="headerlink" href="#id10" title="Link to this heading">#</a></h3>
 <p>如果某个 <code class="docutils literal notranslate"><span class="pre">global_step_*/actor/huggingface/</span></code> 目录中 <strong>缺少 <code class="docutils literal notranslate"><span class="pre">config.json</span></code></strong>（通常是因为训练时未完整保存配置），转换过程需要原始基础模型的配置文件。此时，请通过 <code class="docutils literal notranslate"><span class="pre">--base-model-dir</span></code> 指定基础模型路径：</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>trinity<span class="w"> </span>convert<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--checkpoint-dir<span class="w"> </span><span class="si">${</span><span class="nv">checkpoint_root_dir</span><span class="si">}</span>/<span class="si">${</span><span class="nv">project</span><span class="si">}</span>/<span class="si">${</span><span class="nv">name</span><span class="si">}</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--checkpoint-dir<span class="w"> </span><span class="si">${</span><span class="nv">checkpoint_root_dir</span><span class="si">}</span>/<span class="si">${</span><span class="nv">project</span><span class="si">}</span>/<span class="si">${</span><span class="nv">group</span><span class="si">}</span>/<span class="si">${</span><span class="nv">name</span><span class="si">}</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--base-model-dir<span class="w"> </span>/path/to/your/base/model
 </pre></div>
 </div>

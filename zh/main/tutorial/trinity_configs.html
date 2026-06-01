@@ -746,6 +746,7 @@
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">project</span></code>: 项目名称。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">name</span></code>: 当前实验的名称。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">group</span></code>: 可选的实验分组，插入到检查点路径中 <code class="docutils literal notranslate"><span class="pre">&lt;project&gt;</span></code> 与 <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;</span></code> 之间，即 <code class="docutils literal notranslate"><span class="pre">&lt;checkpoint_root_dir&gt;/&lt;project&gt;/&lt;group&gt;/&lt;name&gt;/</span></code>。默认为空，此时从路径中省略。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">mode</span></code>: Trinity-RFT 的运行模式。选项包括：</p>
 <ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">both</span></code>: 同时启动 trainer 和 explorer（默认）。</p></li>
@@ -755,9 +756,9 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">colocate</span></code>: 仅适用于单 GPU 场景，在同一 GPU 上启动 trainer 和 explorer。</p></li>
 </ul>
 </li>
-<li><p><code class="docutils literal notranslate"><span class="pre">checkpoint_root_dir</span></code>: 所有检查点和日志的根目录。该实验的检查点将存储在 <code class="docutils literal notranslate"><span class="pre">&lt;checkpoint_root_dir&gt;/&lt;project&gt;/&lt;name&gt;/</span></code> 路径下。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">checkpoint_root_dir</span></code>: 所有检查点和日志的根目录。该实验的检查点将存储在 <code class="docutils literal notranslate"><span class="pre">&lt;checkpoint_root_dir&gt;/&lt;project&gt;/&lt;group&gt;/&lt;name&gt;/</span></code> 路径下。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">continue_from_checkpoint</span></code>: 若设置为 <code class="docutils literal notranslate"><span class="pre">true</span></code>，实验将从检查点路径中的最新检查点继续；否则，会将当前实验重命名为 <code class="docutils literal notranslate"><span class="pre">&lt;name&gt;_&lt;timestamp&gt;</span></code> 并启动新实验。由于我们的分离式设计，从检查点恢复的时候，我们只能保证Trainer的模型参数以及其使用的可选缓冲区（<code class="docutils literal notranslate"><span class="pre">auxiliary_buffers</span></code>）可以恢复到最新检查点的状态，而Explorer和Experience Buffer不能保证恢复到同一时点。</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">ray_namespace</span></code>: 当前实验中启动模块的命名空间。若未指定，则默认为 <code class="docutils literal notranslate"><span class="pre">&lt;project&gt;/&lt;name&gt;</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">ray_namespace</span></code>: 当前实验中启动模块的命名空间。若未指定，则默认为 <code class="docutils literal notranslate"><span class="pre">&lt;project&gt;/&lt;group&gt;/&lt;name&gt;</span></code>。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">ignore_validator_suggestions</span></code>：如果设置为<code class="docutils literal notranslate"><span class="pre">false</span></code>，配置验证器将检查GPU内存使用情况，并提出配置更改建议。如果设置为<code class="docutils literal notranslate"><span class="pre">true</span></code>，验证器将不检查GPU内存使用情况。默认值为<code class="docutils literal notranslate"><span class="pre">false</span></code>。</p></li>
 </ul>
 </section>
@@ -812,8 +813,8 @@
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">monitor_type</span></code>: 监控系统类型。选项：</p>
 <ul>
-<li><p><code class="docutils literal notranslate"><span class="pre">wandb</span></code>: 记录到 <a class="reference external" href="https://docs.wandb.ai/quickstart/">Weights &amp; Biases</a>。需要登录并设置 <code class="docutils literal notranslate"><span class="pre">WANDB_API_KEY</span></code>。项目和运行名称与全局配置中的 <code class="docutils literal notranslate"><span class="pre">project</span></code> 和 <code class="docutils literal notranslate"><span class="pre">name</span></code> 字段一致。</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">tensorboard</span></code>: 记录到 <a class="reference external" href="https://www.tensorflow.org/tensorboard">TensorBoard</a>。文件保存在 <code class="docutils literal notranslate"><span class="pre">&lt;checkpoint_root_dir&gt;/&lt;project&gt;/&lt;name&gt;/monitor/tensorboard</span></code> 下。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">wandb</span></code>: 记录到 <a class="reference external" href="https://docs.wandb.ai/quickstart/">Weights &amp; Biases</a>。需要登录并设置 <code class="docutils literal notranslate"><span class="pre">WANDB_API_KEY</span></code>。项目和运行名称与全局配置中的 <code class="docutils literal notranslate"><span class="pre">project</span></code> 和 <code class="docutils literal notranslate"><span class="pre">name</span></code> 字段一致；运行按 <code class="docutils literal notranslate"><span class="pre">group</span></code> 字段分组（为空时默认使用 <code class="docutils literal notranslate"><span class="pre">name</span></code>）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tensorboard</span></code>: 记录到 <a class="reference external" href="https://www.tensorflow.org/tensorboard">TensorBoard</a>。文件保存在 <code class="docutils literal notranslate"><span class="pre">&lt;checkpoint_root_dir&gt;/&lt;project&gt;/&lt;group&gt;/&lt;name&gt;/monitor/tensorboard</span></code> 下。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">mlflow</span></code>: 记录到 <a class="reference external" href="https://mlflow.org/">MLFlow</a>。如果设置了 <a class="reference external" href="https://mlflow.org/docs/latest/ml/auth/">MLFlow 认证</a>，请在运行前将 <code class="docutils literal notranslate"><span class="pre">MLFLOW_TRACKING_USERNAME</span></code> 和 <code class="docutils literal notranslate"><span class="pre">MLFLOW_TRACKING_PASSWORD</span></code> 设置为环境变量。</p></li>
 </ul>
 </li>
@@ -834,7 +835,7 @@
 </li>
 </ul>
 </li>
-<li><p><code class="docutils literal notranslate"><span class="pre">enable_ray_timeline</span></code>: 若为 <code class="docutils literal notranslate"><span class="pre">True</span></code>，将导出一个 <code class="docutils literal notranslate"><span class="pre">timeline.json</span></code> 文件到 <code class="docutils literal notranslate"><span class="pre">&lt;checkpoint_root_dir&gt;/&lt;project&gt;/&lt;name&gt;/monitor</span></code>。可在 Chrome 浏览器中访问 <a class="reference internal" href="#chrome://tracing"><span class="xref myst">chrome://tracing</span></a> 查看。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">enable_ray_timeline</span></code>: 若为 <code class="docutils literal notranslate"><span class="pre">True</span></code>，将导出一个 <code class="docutils literal notranslate"><span class="pre">timeline.json</span></code> 文件到 <code class="docutils literal notranslate"><span class="pre">&lt;checkpoint_root_dir&gt;/&lt;project&gt;/&lt;group&gt;/&lt;name&gt;/monitor</span></code>。可在 Chrome 浏览器中访问 <a class="reference internal" href="#chrome://tracing"><span class="xref myst">chrome://tracing</span></a> 查看。</p></li>
 </ul>
 </section>
 <hr class="docutils" />
@@ -1335,7 +1336,7 @@
 </div>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">level</span></code>: 日志级别（支持 <code class="docutils literal notranslate"><span class="pre">DEBUG</span></code>、<code class="docutils literal notranslate"><span class="pre">INFO</span></code>、<code class="docutils literal notranslate"><span class="pre">WARNING</span></code>、<code class="docutils literal notranslate"><span class="pre">ERROR</span></code>）。</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">group_by_node</span></code>: 是否按节点 IP 分组日志。若设为 <code class="docutils literal notranslate"><span class="pre">True</span></code>，actor 的日志将保存到 <code class="docutils literal notranslate"><span class="pre">&lt;checkpoint_root_dir&gt;/&lt;project&gt;/&lt;name&gt;/log/&lt;node_ip&gt;/&lt;actor_name&gt;.log</span></code>，否则保存到 <code class="docutils literal notranslate"><span class="pre">&lt;checkpoint_root_dir&gt;/&lt;project&gt;/&lt;name&gt;/log/&lt;actor_name&gt;.log</span></code>。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">group_by_node</span></code>: 是否按节点 IP 分组日志。若设为 <code class="docutils literal notranslate"><span class="pre">True</span></code>，actor 的日志将保存到 <code class="docutils literal notranslate"><span class="pre">&lt;checkpoint_root_dir&gt;/&lt;project&gt;/&lt;group&gt;/&lt;name&gt;/log/&lt;node_ip&gt;/&lt;actor_name&gt;.log</span></code>，否则保存到 <code class="docutils literal notranslate"><span class="pre">&lt;checkpoint_root_dir&gt;/&lt;project&gt;/&lt;group&gt;/&lt;name&gt;/log/&lt;actor_name&gt;.log</span></code>。</p></li>
 </ul>
 </section>
 <hr class="docutils" />

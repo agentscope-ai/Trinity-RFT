@@ -152,7 +152,7 @@ Please refer to the [configuration](https://github.com/agentscope-ai/Trinity-RFT
 | `trainer.logger` | `monitor.monitor_type` | Support a chosen type and (no need to set) `console` |
 | `trainer.project_name` | `project` | - |
 | `trainer.experiment_name` | `name` | - |
-| `trainer.default_local_dir` | `checkpoint_root_dir` | Checkpoint is saved in `<checkpoint_root_dir>/<project>/<name>/` |
+| `trainer.default_local_dir` | `checkpoint_root_dir` | Checkpoint is saved in `<checkpoint_root_dir>/<project>/<group>/<name>/` |
 | `trainer.n_gpus_per_node` | `cluster.gpu_per_node` | - |
 | `trainer.nnodes` | `cluster.node_num` | - |
 | `trainer.save_freq` | `trainer.save_interval` | - |
@@ -166,7 +166,7 @@ Please refer to the [configuration](https://github.com/agentscope-ai/Trinity-RFT
 
 💡 Detailed explanation:
 
-* If you want to resume training from a checkpoint, you can set `continue_from_checkpoint` to `True` and the training will start from the latest checkpoint in the checkpoint path `<checkpoint_root_dir>/<project>/<name>/` (if any).
+* If you want to resume training from a checkpoint, you can set `continue_from_checkpoint` to `True` and the training will start from the latest checkpoint in the checkpoint path `<checkpoint_root_dir>/<project>/<group>/<name>/` (if any).
 
 
 ## GPU Resource Allocation

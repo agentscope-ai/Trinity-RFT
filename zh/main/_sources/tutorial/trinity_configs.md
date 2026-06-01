@@ -77,15 +77,16 @@ ignore_validator_suggestions: false
 
 - `project`: 项目名称。
 - `name`: 当前实验的名称。
+- `group`: 可选的实验分组，插入到检查点路径中 `<project>` 与 `<name>` 之间，即 `<checkpoint_root_dir>/<project>/<group>/<name>/`。默认为空，此时从路径中省略。
 - `mode`: Trinity-RFT 的运行模式。选项包括：
   - `both`: 同时启动 trainer 和 explorer（默认）。
   - `train`: 仅启动 trainer。
   - `explore`: 仅启动 explorer。
   - `bench`: 用于 benchmark 测试。
   - `colocate`: 仅适用于单 GPU 场景，在同一 GPU 上启动 trainer 和 explorer。
-- `checkpoint_root_dir`: 所有检查点和日志的根目录。该实验的检查点将存储在 `<checkpoint_root_dir>/<project>/<name>/` 路径下。
+- `checkpoint_root_dir`: 所有检查点和日志的根目录。该实验的检查点将存储在 `<checkpoint_root_dir>/<project>/<group>/<name>/` 路径下。
 - `continue_from_checkpoint`: 若设置为 `true`，实验将从检查点路径中的最新检查点继续；否则，会将当前实验重命名为 `<name>_<timestamp>` 并启动新实验。由于我们的分离式设计，从检查点恢复的时候，我们只能保证Trainer的模型参数以及其使用的可选缓冲区（`auxiliary_buffers`）可以恢复到最新检查点的状态，而Explorer和Experience Buffer不能保证恢复到同一时点。
-- `ray_namespace`: 当前实验中启动模块的命名空间。若未指定，则默认为 `<project>/<name>`。
+- `ray_namespace`: 当前实验中启动模块的命名空间。若未指定，则默认为 `<project>/<group>/<name>`。
 - `ignore_validator_suggestions`：如果设置为`false`，配置验证器将检查GPU内存使用情况，并提出配置更改建议。如果设置为`true`，验证器将不检查GPU内存使用情况。默认值为`false`。
 
 ---
@@ -138,8 +139,8 @@ monitor:
 ```
 
 - `monitor_type`: 监控系统类型。选项：
-  - `wandb`: 记录到 [Weights & Biases](https://docs.wandb.ai/quickstart/)。需要登录并设置 `WANDB_API_KEY`。项目和运行名称与全局配置中的 `project` 和 `name` 字段一致。
-  - `tensorboard`: 记录到 [TensorBoard](https://www.tensorflow.org/tensorboard)。文件保存在 `<checkpoint_root_dir>/<project>/<name>/monitor/tensorboard` 下。
+  - `wandb`: 记录到 [Weights & Biases](https://docs.wandb.ai/quickstart/)。需要登录并设置 `WANDB_API_KEY`。项目和运行名称与全局配置中的 `project` 和 `name` 字段一致；运行按 `group` 字段分组（为空时默认使用 `name`）。
+  - `tensorboard`: 记录到 [TensorBoard](https://www.tensorflow.org/tensorboard)。文件保存在 `<checkpoint_root_dir>/<project>/<group>/<name>/monitor/tensorboard` 下。
   - `mlflow`: 记录到 [MLFlow](https://mlflow.org/)。如果设置了 [MLFlow 认证](https://mlflow.org/docs/latest/ml/auth/)，请在运行前将 `MLFLOW_TRACKING_USERNAME` 和 `MLFLOW_TRACKING_PASSWORD` 设置为环境变量。
 - `monitor_args`: 初始化监控器的参数字典。
   - 对于 `wandb`：
@@ -149,7 +150,7 @@ monitor:
     - `uri`: MLFlow 实例的 URI。强烈建议设置；默认为 `http://localhost:5000`。
     - `username`: 若设置，将覆盖 `MLFLOW_TRACKING_USERNAME`。
     - `password`: 若设置，将覆盖 `MLFLOW_TRACKING_PASSWORD`。
-- `enable_ray_timeline`: 若为 `True`，将导出一个 `timeline.json` 文件到 `<checkpoint_root_dir>/<project>/<name>/monitor`。可在 Chrome 浏览器中访问 [chrome://tracing](chrome://tracing) 查看。
+- `enable_ray_timeline`: 若为 `True`，将导出一个 `timeline.json` 文件到 `<checkpoint_root_dir>/<project>/<group>/<name>/monitor`。可在 Chrome 浏览器中访问 [chrome://tracing](chrome://tracing) 查看。
 
 ---
 
@@ -597,7 +598,7 @@ log:
 ```
 
 - `level`: 日志级别（支持 `DEBUG`、`INFO`、`WARNING`、`ERROR`）。
-- `group_by_node`: 是否按节点 IP 分组日志。若设为 `True`，actor 的日志将保存到 `<checkpoint_root_dir>/<project>/<name>/log/<node_ip>/<actor_name>.log`，否则保存到 `<checkpoint_root_dir>/<project>/<name>/log/<actor_name>.log`。
+- `group_by_node`: 是否按节点 IP 分组日志。若设为 `True`，actor 的日志将保存到 `<checkpoint_root_dir>/<project>/<group>/<name>/log/<node_ip>/<actor_name>.log`，否则保存到 `<checkpoint_root_dir>/<project>/<group>/<name>/log/<actor_name>.log`。
 
 ---
 

@@ -119,16 +119,16 @@ trinity run --config examples/grpo_gsm8k/gsm8k.yaml
 
 ## Optional: Convert Checkpoints to Hugging Face Format
 
-After running Trinity-RFT experiments, the system automatically saves training checkpoints to the following path:
+After running Trinity-RFT experiments, the system automatically saves training checkpoints to the following path (the `${group}` segment is optional and omitted when `group` is empty, i.e. `${project}/${name}` by default):
 
 ```
-${checkpoint_root_dir}/${project}/${name}
+${checkpoint_root_dir}/${project}/${group}/${name}
 ```
 
 The directory structure is as follows:
 
 ```
-${checkpoint_root_dir}/${project}/${name}
+${checkpoint_root_dir}/${project}/${group}/${name}
 ├── buffer
 │   ├── experience_buffer.jsonl          # Stores experience data generated during training
 │   └── explorer_output.db               # Database file output by the Explorer module
@@ -177,7 +177,7 @@ The `trinity convert` command provides flexible model conversion capabilities an
 Point `--checkpoint-dir` to your project root directory (i.e., the path containing multiple `global_step_*` subdirectories). The tool will **automatically recursively scan for all `global_step_*` directories** and convert each checkpoint accordingly.
 
 ```bash
-trinity convert --checkpoint-dir ${checkpoint_root_dir}/${project}/${name}
+trinity convert --checkpoint-dir ${checkpoint_root_dir}/${project}/${group}/${name}
 ```
 
 This command will:
@@ -189,7 +189,7 @@ This command will:
 If you only want to convert a model from a specific training step, directly point `--checkpoint-dir` to the corresponding `global_step_XXX` folder:
 
 ```bash
-trinity convert --checkpoint-dir ${checkpoint_root_dir}/${project}/${name}/global_step_120
+trinity convert --checkpoint-dir ${checkpoint_root_dir}/${project}/${group}/${name}/global_step_120
 ```
 
 #### ✅ Path Tolerance
@@ -201,7 +201,7 @@ If a `config.json` file is **missing** from any `global_step_*/actor/huggingface
 
 ```bash
 trinity convert \
-  --checkpoint-dir ${checkpoint_root_dir}/${project}/${name} \
+  --checkpoint-dir ${checkpoint_root_dir}/${project}/${group}/${name} \
   --base-model-dir /path/to/your/base/model
 ```
 

@@ -77,15 +77,16 @@ ignore_validator_suggestions: false
 
 - `project`: The name of the project.
 - `name`: The name of the current experiment.
+- `group`: Optional experiment group inserted between `<project>` and `<name>` in the checkpoint path, i.e. `<checkpoint_root_dir>/<project>/<group>/<name>/`. Empty by default, in which case it is omitted from the path.
 - `mode`: Running mode of Trinity-RFT. Options include:
   - `both`: Launches both the trainer and explorer (default).
   - `train`: Only launches the trainer.
   - `explore`: Only launches the explorer.
   - `bench`: Used for benchmarking.
   - `colocate`: Only for single GPU scenarios, launches both trainer and explorer on the same GPU.
-- `checkpoint_root_dir`: Root directory where all checkpoints and logs will be saved. Checkpoints for this experiment will be stored in `<checkpoint_root_dir>/<project>/<name>/`.
+- `checkpoint_root_dir`: Root directory where all checkpoints and logs will be saved. Checkpoints for this experiment will be stored in `<checkpoint_root_dir>/<project>/<group>/<name>/`.
 - `continue_from_checkpoint`: If set to `true`, the experiment will continue from the latest checkpoint in the checkpoint path (if any); otherwise, it will rename the current experiment to `<name>_<timestamp>` and start a new experiment. Due to our decoupled design, during recovery from a checkpoint, we can only guarantee that the Trainer's model parameters and its optional auxiliary buffers (`auxiliary_buffers`) are restored to their latest checkpointed states, while the Explorer and Experience Buffer cannot be guaranteed to be restored to the same point in time.
-- `ray_namespace`: Namespace for the modules launched in the current experiment. If not specified, it will be set to `<project>/<name>`.
+- `ray_namespace`: Namespace for the modules launched in the current experiment. If not specified, it will be set to `<project>/<group>/<name>`.
 - `ignore_validator_suggestions`: When set to `false` (the default), the config validator checks GPU memory usage and suggests configuration changes if needed. When set to `true`, the validator skips GPU memory usage check.
 
 ---
@@ -138,8 +139,8 @@ monitor:
 ```
 
 - `monitor_type`: Type of monitoring system. Options:
-  - `wandb`: Logs to [Weights & Biases](https://docs.wandb.ai/quickstart/). Requires logging in and setting `WANDB_API_KEY`. Project and run names match the `project` and `name` fields in global configs.
-  - `tensorboard`: Logs to [TensorBoard](https://www.tensorflow.org/tensorboard). Files are saved under `<checkpoint_root_dir>/<project>/<name>/monitor/tensorboard`.
+  - `wandb`: Logs to [Weights & Biases](https://docs.wandb.ai/quickstart/). Requires logging in and setting `WANDB_API_KEY`. Project and run names match the `project` and `name` fields in global configs; runs are grouped by the `group` field (defaulting to `name` when empty).
+  - `tensorboard`: Logs to [TensorBoard](https://www.tensorflow.org/tensorboard). Files are saved under `<checkpoint_root_dir>/<project>/<group>/<name>/monitor/tensorboard`.
   - `mlflow`: Logs to [MLFlow](https://mlflow.org/). If [MLFlow authentication](https://mlflow.org/docs/latest/ml/auth/) is setup, set `MLFLOW_TRACKING_USERNAME` and `MLFLOW_TRACKING_PASSWORD` as environment variables before running.
 - `monitor_args`: Dictionary of arguments for monitor initialization.
   - For `wandb`:
@@ -149,7 +150,7 @@ monitor:
     - `uri`: The URI of your MLFlow instance. Strongly recommended to set; defaults to `http://localhost:5000`.
     - `username`: Overrides `MLFLOW_TRACKING_USERNAME` if set.
     - `password`: Overrides `MLFLOW_TRACKING_PASSWORD` if set.
-- `enable_ray_timeline`: If `True`, exports a `timeline.json` file to `<checkpoint_root_dir>/<project>/<name>/monitor`. Viewable in Chrome at [chrome://tracing](chrome://tracing).
+- `enable_ray_timeline`: If `True`, exports a `timeline.json` file to `<checkpoint_root_dir>/<project>/<group>/<name>/monitor`. Viewable in Chrome at [chrome://tracing](chrome://tracing).
 
 ---
 
@@ -600,7 +601,7 @@ log:
 ```
 
 - `level`: The logging level (supports `DEBUG`, `INFO`, `WARNING`, `ERROR`).
-- `group_by_node`: Whether to group logs by node IP. If set to `True`, an actor's logs will be save to `<checkpoint_root_dir>/<project>/<name>/log/<node_ip>/<actor_name>.log`, otherwise it will be saved to `<checkpoint_root_dir>/<project>/<name>/log/<actor_name>.log`.
+- `group_by_node`: Whether to group logs by node IP. If set to `True`, an actor's logs will be save to `<checkpoint_root_dir>/<project>/<group>/<name>/log/<node_ip>/<actor_name>.log`, otherwise it will be saved to `<checkpoint_root_dir>/<project>/<group>/<name>/log/<actor_name>.log`.
 
 ---
 

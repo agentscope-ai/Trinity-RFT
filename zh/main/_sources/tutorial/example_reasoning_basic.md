@@ -120,16 +120,16 @@ trinity run --config examples/grpo_gsm8k/gsm8k.yaml
 
 ## 进阶选项：将检查点转换为 Hugging Face 格式
 
-在运行 Trinity-RFT 进行实验后，系统会自动将训练过程中的检查点（checkpoint）保存到以下路径：
+在运行 Trinity-RFT 进行实验后，系统会自动将训练过程中的检查点（checkpoint）保存到以下路径（其中 `${group}` 段为可选项，当 `group` 为空时省略，默认即 `${project}/${name}`）：
 
 ```
-${checkpoint_root_dir}/${project}/${name}
+${checkpoint_root_dir}/${project}/${group}/${name}
 ```
 
 该目录的结构如下：
 
 ```
-${checkpoint_root_dir}/${project}/${name}
+${checkpoint_root_dir}/${project}/${group}/${name}
 ├── buffer
 │   ├── experience_buffer.jsonl          # 存储训练过程中生成的经验数据
 │   └── explorer_output.db               # Explorer 模块输出的数据库文件
@@ -178,7 +178,7 @@ ${checkpoint_root_dir}/${project}/${name}
 将 `--checkpoint-dir` 指向项目根目录（即包含多个 `global_step_*` 子目录的路径），工具会**自动递归查找所有 `global_step_*` 目录**，并对每个检查点执行转换。
 
 ```bash
-trinity convert --checkpoint-dir ${checkpoint_root_dir}/${project}/${name}
+trinity convert --checkpoint-dir ${checkpoint_root_dir}/${project}/${group}/${name}
 ```
 
 该命令会：
@@ -190,7 +190,7 @@ trinity convert --checkpoint-dir ${checkpoint_root_dir}/${project}/${name}
 如果只想转换某一个特定训练步的模型，可直接将 `--checkpoint-dir` 指向对应的 `global_step_XXX` 文件夹：
 
 ```bash
-trinity convert --checkpoint-dir ${checkpoint_root_dir}/${project}/${name}/global_step_120
+trinity convert --checkpoint-dir ${checkpoint_root_dir}/${project}/${group}/${name}/global_step_120
 ```
 
 #### ✅ 路径容错
@@ -202,7 +202,7 @@ trinity convert --checkpoint-dir ${checkpoint_root_dir}/${project}/${name}/globa
 
 ```bash
 trinity convert \
-  --checkpoint-dir ${checkpoint_root_dir}/${project}/${name} \
+  --checkpoint-dir ${checkpoint_root_dir}/${project}/${group}/${name} \
   --base-model-dir /path/to/your/base/model
 ```
 

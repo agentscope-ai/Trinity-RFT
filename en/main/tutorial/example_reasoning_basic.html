@@ -772,12 +772,12 @@ The dataset downloaded from ModelScope may lack the <code class="docutils litera
 </section>
 <section id="optional-convert-checkpoints-to-hugging-face-format">
 <h2>Optional: Convert Checkpoints to Hugging Face Format<a class="headerlink" href="#optional-convert-checkpoints-to-hugging-face-format" title="Link to this heading">#</a></h2>
-<p>After running Trinity-RFT experiments, the system automatically saves training checkpoints to the following path:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>${checkpoint_root_dir}/${project}/${name}
+<p>After running Trinity-RFT experiments, the system automatically saves training checkpoints to the following path (the <code class="docutils literal notranslate"><span class="pre">${group}</span></code> segment is optional and omitted when <code class="docutils literal notranslate"><span class="pre">group</span></code> is empty, i.e. <code class="docutils literal notranslate"><span class="pre">${project}/${name}</span></code> by default):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>${checkpoint_root_dir}/${project}/${group}/${name}
 </pre></div>
 </div>
 <p>The directory structure is as follows:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>${checkpoint_root_dir}/${project}/${name}
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>${checkpoint_root_dir}/${project}/${group}/${name}
 ├── buffer
 │   ├── experience_buffer.jsonl          # Stores experience data generated during training
 │   └── explorer_output.db               # Database file output by the Explorer module
@@ -824,7 +824,7 @@ The dataset downloaded from ModelScope may lack the <code class="docutils litera
 <section id="batch-conversion-recommended">
 <h4>✅ Batch Conversion (Recommended)<a class="headerlink" href="#batch-conversion-recommended" title="Link to this heading">#</a></h4>
 <p>Point <code class="docutils literal notranslate"><span class="pre">--checkpoint-dir</span></code> to your project root directory (i.e., the path containing multiple <code class="docutils literal notranslate"><span class="pre">global_step_*</span></code> subdirectories). The tool will <strong>automatically recursively scan for all <code class="docutils literal notranslate"><span class="pre">global_step_*</span></code> directories</strong> and convert each checkpoint accordingly.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>trinity<span class="w"> </span>convert<span class="w"> </span>--checkpoint-dir<span class="w"> </span><span class="si">${</span><span class="nv">checkpoint_root_dir</span><span class="si">}</span>/<span class="si">${</span><span class="nv">project</span><span class="si">}</span>/<span class="si">${</span><span class="nv">name</span><span class="si">}</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>trinity<span class="w"> </span>convert<span class="w"> </span>--checkpoint-dir<span class="w"> </span><span class="si">${</span><span class="nv">checkpoint_root_dir</span><span class="si">}</span>/<span class="si">${</span><span class="nv">project</span><span class="si">}</span>/<span class="si">${</span><span class="nv">group</span><span class="si">}</span>/<span class="si">${</span><span class="nv">name</span><span class="si">}</span>
 </pre></div>
 </div>
 <p>This command will:</p>
@@ -837,7 +837,7 @@ The dataset downloaded from ModelScope may lack the <code class="docutils litera
 <section id="single-step-conversion">
 <h4>✅ Single-step Conversion<a class="headerlink" href="#single-step-conversion" title="Link to this heading">#</a></h4>
 <p>If you only want to convert a model from a specific training step, directly point <code class="docutils literal notranslate"><span class="pre">--checkpoint-dir</span></code> to the corresponding <code class="docutils literal notranslate"><span class="pre">global_step_XXX</span></code> folder:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>trinity<span class="w"> </span>convert<span class="w"> </span>--checkpoint-dir<span class="w"> </span><span class="si">${</span><span class="nv">checkpoint_root_dir</span><span class="si">}</span>/<span class="si">${</span><span class="nv">project</span><span class="si">}</span>/<span class="si">${</span><span class="nv">name</span><span class="si">}</span>/global_step_120
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>trinity<span class="w"> </span>convert<span class="w"> </span>--checkpoint-dir<span class="w"> </span><span class="si">${</span><span class="nv">checkpoint_root_dir</span><span class="si">}</span>/<span class="si">${</span><span class="nv">project</span><span class="si">}</span>/<span class="si">${</span><span class="nv">group</span><span class="si">}</span>/<span class="si">${</span><span class="nv">name</span><span class="si">}</span>/global_step_120
 </pre></div>
 </div>
 </section>
@@ -850,7 +850,7 @@ The dataset downloaded from ModelScope may lack the <code class="docutils litera
 <h3>Special Case: Missing Base Model Configuration<a class="headerlink" href="#special-case-missing-base-model-configuration" title="Link to this heading">#</a></h3>
 <p>If a <code class="docutils literal notranslate"><span class="pre">config.json</span></code> file is <strong>missing</strong> from any <code class="docutils literal notranslate"><span class="pre">global_step_*/actor/huggingface/</span></code> directory (typically because the configuration wasn’t fully saved during training), the conversion process requires the original base model’s configuration. In this case, use <code class="docutils literal notranslate"><span class="pre">--base-model-dir</span></code> to specify the path to your base model:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>trinity<span class="w"> </span>convert<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--checkpoint-dir<span class="w"> </span><span class="si">${</span><span class="nv">checkpoint_root_dir</span><span class="si">}</span>/<span class="si">${</span><span class="nv">project</span><span class="si">}</span>/<span class="si">${</span><span class="nv">name</span><span class="si">}</span><span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--checkpoint-dir<span class="w"> </span><span class="si">${</span><span class="nv">checkpoint_root_dir</span><span class="si">}</span>/<span class="si">${</span><span class="nv">project</span><span class="si">}</span>/<span class="si">${</span><span class="nv">group</span><span class="si">}</span>/<span class="si">${</span><span class="nv">name</span><span class="si">}</span><span class="w"> </span><span class="se">\</span>
 <span class="w">  </span>--base-model-dir<span class="w"> </span>/path/to/your/base/model
 </pre></div>
 </div>
