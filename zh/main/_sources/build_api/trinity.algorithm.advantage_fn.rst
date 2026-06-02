@@ -11,6 +11,7 @@ Submodules
    trinity.algorithm.advantage_fn.asymre_advantage
    trinity.algorithm.advantage_fn.clipb_advantage
    trinity.algorithm.advantage_fn.clipv_advantage
+   trinity.algorithm.advantage_fn.gigpo_advantage
    trinity.algorithm.advantage_fn.grpo_advantage
    trinity.algorithm.advantage_fn.jsd_advantage
    trinity.algorithm.advantage_fn.multi_step_grpo_advantage

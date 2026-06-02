@@ -301,6 +301,7 @@
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.asymre_advantage.html">trinity.algorithm.advantage_fn.asymre_advantage module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.clipb_advantage.html">trinity.algorithm.advantage_fn.clipb_advantage module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.clipv_advantage.html">trinity.algorithm.advantage_fn.clipv_advantage module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.gigpo_advantage.html">trinity.algorithm.advantage_fn.gigpo_advantage module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.grpo_advantage.html">trinity.algorithm.advantage_fn.grpo_advantage module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.jsd_advantage.html">trinity.algorithm.advantage_fn.jsd_advantage module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../build_api/trinity.algorithm.advantage_fn.multi_step_grpo_advantage.html">trinity.algorithm.advantage_fn.multi_step_grpo_advantage module</a></li>
@@ -718,6 +719,7 @@
 <p>在通用多步场景中，每次运行可能会生成不同数量的 experience。为了适应这种情况，我们提供了一些灵活的设计。</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">algorithm.algorithm_type</span> <span class="pre">=</span> <span class="pre">multi_step_grpo</span></code>：该算法允许每次运行包含多个步骤并生成多条 experience 数据用于训练，并将最后一步 experience 的 advantages 值广播到之前的 experience 中。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">algorithm.algorithm_type</span> <span class="pre">=</span> <span class="pre">gigpo</span></code>：面向多轮 Agent，在 episode 级 GRPO 优势之上增加锚点状态（anchor state）的 step 级相对优势（参见 <a class="reference external" href="https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/gigpo_alfworld">GiGPO ALFWorld 示例</a>）。工作流需设置 <code class="docutils literal notranslate"><span class="pre">experience.info[&quot;env_state_hash&quot;]</span></code> 与 <code class="docutils literal notranslate"><span class="pre">experience.info[&quot;step_reward&quot;]</span></code>。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">buffer.train_batch_size</span></code>：从 buffer 中采样用于训练的 experience 数量，可以与每次探索生成的 experience 数量不同。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">buffer.trainer_input.experience_buffer.replay_buffer</span></code>：使用 <code class="docutils literal notranslate"><span class="pre">PriorityQueue</span></code> 可使模型优先使用高优先级的 experience （默认为使用更新产生的 experience）。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">synchronizer.sync_style</span> <span class="pre">=</span> <span class="pre">explorer_driven</span></code>：由 explorer 决定何时与 trainer 同步模型权重。</p></li>
