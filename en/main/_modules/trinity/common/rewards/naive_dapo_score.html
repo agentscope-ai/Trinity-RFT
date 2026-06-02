@@ -1031,6 +1031,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">resource</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">sympy</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pylatexenc</span><span class="w"> </span><span class="kn">import</span> <span class="n">latex2text</span>
@@ -1515,7 +1516,7 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="compute_score">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.naive_dapo_score.html#trinity.common.rewards.naive_dapo_score.compute_score">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">compute_score</span><span class="p">(</span><span class="n">solution_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ground_truth</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_score</span><span class="p">(</span><span class="n">solution_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ground_truth</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the reward score for a solution. This draws heavily from the LLM-as-judge and PRIME reward functions</span>
 
 <span class="sd">    Args:</span>
@@ -1524,7 +1525,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        extra_info: dict with additional info for the score computation</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Reward score (1.0 for correct, 0.0 for incorrect)</span>
+<span class="sd">        Tuple[float, str]: (reward score 1.0 or 0.0, extracted_model_output)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.reward_score.prime_math.grader</span><span class="w"> </span><span class="kn">import</span> <span class="n">math_equal</span>
 
@@ -1534,6 +1535,10 @@ window.runMermaid = runMermaid;</script>
 
     <span class="c1"># Extract answer from generated output</span>
     <span class="n">is_matched</span><span class="p">,</span> <span class="n">extracted_model_output</span> <span class="o">=</span> <span class="n">match_answer</span><span class="p">(</span><span class="n">model_output</span><span class="p">)</span>
+
+    <span class="c1"># If not matched, truncate the output for debugging</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">is_matched</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">extracted_model_output</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">20</span><span class="p">:</span>
+        <span class="n">extracted_model_output</span> <span class="o">=</span> <span class="n">extracted_model_output</span><span class="p">[:</span><span class="mi">20</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;(... output is truncated.)&quot;</span>
 
     <span class="c1"># TWK NOTE: WE REMOVED THE RESPONSE TRUNCATION FROM math_dapo.compute_score</span>
 
@@ -1554,7 +1559,7 @@ window.runMermaid = runMermaid;</script>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="n">correct</span> <span class="o">=</span> <span class="kc">False</span>
 
-    <span class="k">return</span> <span class="mf">1.0</span> <span class="k">if</span> <span class="n">correct</span> <span class="k">else</span> <span class="mf">0.0</span></div>
+    <span class="k">return</span> <span class="mf">1.0</span> <span class="k">if</span> <span class="n">correct</span> <span class="k">else</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">extracted_model_output</span></div>
 
 </pre></div>
 

@@ -1063,14 +1063,19 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Returns:</span>
 <span class="sd">            dict[str, float]: Reward components containing accuracy and format_score.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">correct</span> <span class="o">=</span> <span class="n">compute_score</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">truth</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mf">0.5</span>
+        <span class="n">score</span><span class="p">,</span> <span class="n">extracted_answer</span> <span class="o">=</span> <span class="n">compute_score</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">truth</span><span class="p">)</span>
         <span class="c1"># DAPO paper (Sec. 2.4): +1 / -1 rule-based outcome reward</span>
-        <span class="n">accuracy_score</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="k">if</span> <span class="n">correct</span> <span class="k">else</span> <span class="o">-</span><span class="mf">1.0</span>
+        <span class="n">accuracy_score</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;=</span> <span class="mf">0.5</span> <span class="k">else</span> <span class="o">-</span><span class="mf">1.0</span>
 
         <span class="n">format_score</span> <span class="o">=</span> <span class="mf">0.0</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_overlong_penalty</span><span class="p">:</span>
             <span class="n">format_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_overlong_penalty</span><span class="p">(</span><span class="n">response_token</span><span class="p">)</span>
+
+        <span class="n">info</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;info&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">info</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">info</span><span class="p">[</span><span class="s2">&quot;ground_truth&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">truth</span>
+            <span class="n">info</span><span class="p">[</span><span class="s2">&quot;extracted_answer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">extracted_answer</span>
 
         <span class="k">return</span> <span class="p">{</span>
             <span class="s2">&quot;accuracy&quot;</span><span class="p">:</span> <span class="n">accuracy_score</span><span class="p">,</span>

@@ -1062,12 +1062,15 @@ window.runMermaid = runMermaid;</script>
             <span class="n">responses</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">generate</span><span class="p">([</span><span class="n">prompt_text</span><span class="p">],</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">rollout_args</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">response</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">responses</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">info</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="n">reward_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reward_fn</span><span class="p">(</span>  <span class="c1"># type: ignore [misc]</span>
                 <span class="n">response</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">response_text</span><span class="p">,</span>  <span class="c1"># type: ignore [arg-type]</span>
                 <span class="n">truth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">truth</span><span class="p">,</span>
                 <span class="n">with_think</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">with_think</span><span class="p">,</span>
                 <span class="n">format_score_coef</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">format_score_coef</span><span class="p">,</span>
                 <span class="n">response_token</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">tokens</span><span class="p">[</span><span class="n">response</span><span class="o">.</span><span class="n">prompt_length</span> <span class="p">:],</span>
+                <span class="n">info</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">info</span><span class="p">,</span>
             <span class="p">)</span>
 
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">metrics</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1115,12 +1118,15 @@ window.runMermaid = runMermaid;</script>
             <span class="n">responses</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">generate_async</span><span class="p">([</span><span class="n">prompt_text</span><span class="p">],</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">rollout_args</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">response</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">responses</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">response</span><span class="o">.</span><span class="n">info</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="n">reward_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reward_fn</span><span class="p">(</span>  <span class="c1"># type: ignore [misc]</span>
                 <span class="n">response</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">response_text</span><span class="p">,</span>  <span class="c1"># type: ignore [arg-type]</span>
                 <span class="n">truth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">truth</span><span class="p">,</span>
                 <span class="n">with_think</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">with_think</span><span class="p">,</span>
                 <span class="n">format_score_coef</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">format_score_coef</span><span class="p">,</span>
                 <span class="n">response_token</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">tokens</span><span class="p">[</span><span class="n">response</span><span class="o">.</span><span class="n">prompt_length</span> <span class="p">:],</span>
+                <span class="n">info</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">info</span><span class="p">,</span>
             <span class="p">)</span>
 
             <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">metrics</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
