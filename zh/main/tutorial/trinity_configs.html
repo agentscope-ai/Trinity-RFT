@@ -1117,6 +1117,8 @@
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">explorer</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">explorer</span>
 <span class="w">  </span><span class="nt">runner_per_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
+<span class="w">  </span><span class="nt">runner_prepare_concurrency</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
+<span class="w">  </span><span class="nt">runner_prepare_max_retries</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
 <span class="w">  </span><span class="nt">concurrent_mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sequential</span>
 <span class="w">  </span><span class="nt">max_repeat_times_per_runner</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
 <span class="w">  </span><span class="nt">max_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">900</span>
@@ -1148,6 +1150,8 @@
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">name</span></code>: explorer 的名称。该名称将用作 Ray actor 的名称，因此必须唯一。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">runner_per_model</span></code>: 每个推理引擎实例所服务的 WorkflowRunner 数量。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">runner_prepare_concurrency</span></code>: 启动时并发创建 runner 的最大数量。一次性创建所有 runner 会让大量 worker 同时调用 <code class="docutils literal notranslate"><span class="pre">getenv()</span></code>，可能与库的 <code class="docutils literal notranslate"><span class="pre">setenv()</span></code> 竞争导致 glibc 段错误；该参数限制并发数（runner 总数不变）。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">runner_prepare_max_retries</span></code>: 单个 runner 的 prepare 在偶发启动崩溃（例如 glibc getenv 竞争）时的重试次数。重试在同一并发槽内进行并带退避，因此不会超过 <code class="docutils literal notranslate"><span class="pre">runner_prepare_concurrency</span></code>。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">concurrent_mode</span></code>: 执行一组任务（例如 GRPO 算法中对一个任务的多次重复执行）的并发模式。支持如下选项：</p>
 <ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">sequential</span></code>: 顺序执行（默认）。每次执行一个任务，等待其完成后再执行下一个任务。对 workflow 的实现要求最低，但吞吐量也最差。</p></li>

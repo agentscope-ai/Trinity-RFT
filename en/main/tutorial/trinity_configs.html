@@ -1114,6 +1114,8 @@ Users can use these features to simplify configuration.</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">explorer</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">explorer</span>
 <span class="w">  </span><span class="nt">runner_per_model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
+<span class="w">  </span><span class="nt">runner_prepare_concurrency</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
+<span class="w">  </span><span class="nt">runner_prepare_max_retries</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
 <span class="w">  </span><span class="nt">concurrent_mode</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sequential</span>
 <span class="w">  </span><span class="nt">max_repeat_times_per_runner</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
 <span class="w">  </span><span class="nt">max_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">900</span>
@@ -1145,6 +1147,8 @@ Users can use these features to simplify configuration.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">name</span></code>: Name of the explorer. This name will be used as the Ray actor’s name, so it must be unique.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">runner_per_model</span></code>: Number of parallel workflow runners per each rollout model.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">runner_prepare_concurrency</span></code>: Max number of runners prepared concurrently at startup. Creating all runners at once makes many workers call <code class="docutils literal notranslate"><span class="pre">getenv()</span></code> simultaneously, which can race with library <code class="docutils literal notranslate"><span class="pre">setenv()</span></code> and segfault in glibc; this caps the concurrency (total runner count is unchanged).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">runner_prepare_max_retries</span></code>: How many times to retry a runner’s prepare on a transient startup crash (e.g. the glibc getenv race). Retries happen within the same concurrency slot with backoff, so they never exceed <code class="docutils literal notranslate"><span class="pre">runner_prepare_concurrency</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">concurrent_mode</span></code>: Concurrency mode for executing a set of tasks (e.g., multiple repeats of a task in GRPO algorithm). Supported options:</p>
 <ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">sequential</span></code>: Executes tasks sequentially (default). One task is executed at a time, waiting for its completion before executing the next. This requires the least from the workflow implementation but has the worst throughput.</p></li>
