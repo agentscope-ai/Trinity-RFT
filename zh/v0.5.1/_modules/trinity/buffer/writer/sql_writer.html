@@ -1018,10 +1018,8 @@ window.runMermaid = runMermaid;</script>
   <h1>trinity.buffer.writer.sql_writer 源代码</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Writer of the SQL buffer.&quot;&quot;&quot;</span>
 
-<span class="kn">import</span><span class="w"> </span><span class="nn">ray</span>
-
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.buffer_writer</span><span class="w"> </span><span class="kn">import</span> <span class="n">BufferWriter</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.storage.sql</span><span class="w"> </span><span class="kn">import</span> <span class="n">SQLStorage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.storage.sql</span><span class="w"> </span><span class="kn">import</span> <span class="n">SQLExperienceStorage</span><span class="p">,</span> <span class="n">SQLStorage</span><span class="p">,</span> <span class="n">SQLTaskStorage</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">StorageConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">StorageType</span>
 
@@ -1035,46 +1033,55 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.writer.sql_writer.html#trinity.buffer.writer.sql_writer.SQLWriter.__init__">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">StorageConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">assert</span> <span class="n">config</span><span class="o">.</span><span class="n">storage_type</span> <span class="o">==</span> <span class="n">StorageType</span><span class="o">.</span><span class="n">SQL</span><span class="o">.</span><span class="n">value</span>
-        <span class="c1"># we only support write RFT algorithm buffer for now</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">wrap_in_ray</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">wrap_in_ray</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">db_wrapper</span> <span class="o">=</span> <span class="n">SQLStorage</span><span class="o">.</span><span class="n">get_wrapper</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_storage</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_async_storage</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_config</span> <span class="o">=</span> <span class="n">config</span></div>
 
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">storage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_storage</span> <span class="o">=</span> <span class="n">SQLStorage</span><span class="o">.</span><span class="n">get_wrapper</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_storage</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_get_async_storage</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_async_storage</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">schema_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_async_storage</span> <span class="o">=</span> <span class="n">SQLTaskStorage</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_async_storage</span> <span class="o">=</span> <span class="n">SQLExperienceStorage</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">)</span>
+            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_async_storage</span><span class="o">.</span><span class="n">prepare</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_async_storage</span>
 
 <div class="viewcode-block" id="SQLWriter.write">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.writer.sql_writer.html#trinity.buffer.writer.sql_writer.SQLWriter.write">[文档]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wrap_in_ray</span><span class="p">:</span>
-            <span class="n">ray</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_wrapper</span><span class="o">.</span><span class="n">write</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">data</span><span class="p">))</span>
+            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">write</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">db_wrapper</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="SQLWriter.write_async">
-<a class="viewcode-back" href="../../../../build_api/trinity.buffer.writer.sql_writer.html#trinity.buffer.writer.sql_writer.SQLWriter.write_async">[文档]</a>
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">write_async</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wrap_in_ray</span><span class="p">:</span>
-            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_wrapper</span><span class="o">.</span><span class="n">write</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">db_wrapper</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
+            <span class="n">storage</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_async_storage</span><span class="p">()</span>
+            <span class="k">await</span> <span class="n">storage</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SQLWriter.acquire">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.writer.sql_writer.html#trinity.buffer.writer.sql_writer.SQLWriter.acquire">[文档]</a>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wrap_in_ray</span><span class="p">:</span>
-            <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_wrapper</span><span class="o">.</span><span class="n">acquire</span><span class="o">.</span><span class="n">remote</span><span class="p">()</span>
+            <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">acquire</span><span class="o">.</span><span class="n">remote</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="mi">0</span></div>
+            <span class="n">storage</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_async_storage</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">storage</span><span class="o">.</span><span class="n">acquire</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="SQLWriter.release">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.writer.sql_writer.html#trinity.buffer.writer.sql_writer.SQLWriter.release">[文档]</a>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">release</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">wrap_in_ray</span><span class="p">:</span>
-            <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">db_wrapper</span><span class="o">.</span><span class="n">release</span><span class="o">.</span><span class="n">remote</span><span class="p">()</span>
+            <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">release</span><span class="o">.</span><span class="n">remote</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">db_wrapper</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
-            <span class="k">return</span> <span class="mi">0</span></div>
+            <span class="n">storage</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_async_storage</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">storage</span><span class="o">.</span><span class="n">release</span><span class="p">()</span></div>
 </div>
 
 </pre></div>

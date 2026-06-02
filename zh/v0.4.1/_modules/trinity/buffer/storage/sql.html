@@ -1007,21 +1007,28 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>trinity.buffer.storage.sql 源代码</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;SQL database storage&quot;&quot;&quot;</span>
+<span></span><span class="sd">&quot;&quot;&quot;SQL database storage for experience and task buffers.</span>
 
+<span class="sd">Primary classes (async, used by Ray actors and production hot paths):</span>
+<span class="sd">    SQLExperienceStorage, SQLTaskStorage</span>
+
+<span class="sd">Factory:</span>
+<span class="sd">    SQLStorage.get_wrapper(config) — returns Ray actor handle.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">abstractmethod</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">ray</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dataset</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">asc</span><span class="p">,</span> <span class="n">desc</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.orm</span><span class="w"> </span><span class="kn">import</span> <span class="n">sessionmaker</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">and_</span><span class="p">,</span> <span class="n">asc</span><span class="p">,</span> <span class="n">desc</span><span class="p">,</span> <span class="n">func</span><span class="p">,</span> <span class="n">select</span><span class="p">,</span> <span class="n">update</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy.ext.asyncio</span><span class="w"> </span><span class="kn">import</span> <span class="n">AsyncSession</span><span class="p">,</span> <span class="n">async_sessionmaker</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">FORMATTER</span><span class="p">,</span> <span class="n">init_engine</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.schema.formatter</span><span class="w"> </span><span class="kn">import</span> <span class="n">TaskFormatter</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_with_retry_session</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">FORMATTER</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.schema.sql_schema</span><span class="w"> </span><span class="kn">import</span> <span class="n">init_async_engine</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">async_run_with_retry_session</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">StorageConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">MAX_EXP_BYTES_ENV_VAR</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.experience</span><span class="w"> </span><span class="kn">import</span> <span class="n">Experience</span>
@@ -1029,132 +1036,59 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.workflows</span><span class="w"> </span><span class="kn">import</span> <span class="n">WORKFLOWS</span><span class="p">,</span> <span class="n">Task</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
 
-
-<div class="viewcode-block" id="SQLStorage">
-<a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLStorage">[文档]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">SQLStorage</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    An Storage based on SQL Database.</span>
-
-<span class="sd">    If `wrap_in_ray` in `StorageConfig` is `True`, this class will be run as a Ray Actor,</span>
-<span class="sd">    and provide a remote interface to the local database.</span>
-
-<span class="sd">    For databases that do not support multi-processing read/write (e.g. sqlite, duckdb), please</span>
-<span class="sd">    set `wrap_in_ray` to `True`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<div class="viewcode-block" id="SQLStorage.__init__">
-<a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLStorage.__init__">[文档]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">StorageConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sql_</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">in_ray_actor</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`path` is required for SQL storage type.&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Init engine </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2"> with table </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> with schema </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">schema_type</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_init_tables</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Init SQL storage at </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_times</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">max_retry_times</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_interval</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">max_retry_interval</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ref_count</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stopped</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">index</span></div>
-
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">_init_tables</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">StorageConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize engine and table classes. Subclasses may override.&quot;&quot;&quot;</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">init_engine</span><span class="p">(</span>
-            <span class="n">db_url</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">path</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
-            <span class="n">table_name</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-            <span class="n">schema_type</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">schema_type</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">schema_type</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">config</span><span class="o">.</span><span class="n">schema_type</span> <span class="o">==</span> <span class="s2">&quot;task&quot;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span> <span class="o">=</span> <span class="n">result</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">blob_model_cls</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">blob_model_cls</span> <span class="o">=</span> <span class="n">result</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">sessionmaker</span><span class="p">(</span><span class="n">bind</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">)</span>
-
-<div class="viewcode-block" id="SQLStorage.get_wrapper">
-<a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLStorage.get_wrapper">[文档]</a>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">get_wrapper</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">StorageConfig</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">schema_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">storage_cls</span> <span class="o">=</span> <span class="n">SQLTaskStorage</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">storage_cls</span> <span class="o">=</span> <span class="n">SQLExperienceStorage</span>
-        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">wrap_in_ray</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">(</span>
-                <span class="n">ray</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">storage_cls</span><span class="p">)</span>
-                <span class="o">.</span><span class="n">options</span><span class="p">(</span>
-                    <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;sql-</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-                    <span class="n">namespace</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">ray_namespace</span> <span class="ow">or</span> <span class="n">ray</span><span class="o">.</span><span class="n">get_runtime_context</span><span class="p">()</span><span class="o">.</span><span class="n">namespace</span><span class="p">,</span>
-                    <span class="n">get_if_exists</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                    <span class="n">max_concurrency</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
-                <span class="p">)</span>
-                <span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
-            <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">storage_cls</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="SQLStorage.write">
-<a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLStorage.write">[文档]</a>
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">List</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write a batch of data.&quot;&quot;&quot;</span></div>
-
-
-<div class="viewcode-block" id="SQLStorage.read">
-<a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLStorage.read">[文档]</a>
-    <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a batch of data.&quot;&quot;&quot;</span></div>
-
-
-<div class="viewcode-block" id="SQLStorage.acquire">
-<a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLStorage.acquire">[文档]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ref_count</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ref_count</span></div>
-
-
-<div class="viewcode-block" id="SQLStorage.release">
-<a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLStorage.release">[文档]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">release</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ref_count</span> <span class="o">-=</span> <span class="mi">1</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ref_count</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">stopped</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ref_count</span></div>
-</div>
-
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Async primary implementations</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
 
 
 <div class="viewcode-block" id="SQLExperienceStorage">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLExperienceStorage">[文档]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">SQLExperienceStorage</span><span class="p">(</span><span class="n">SQLStorage</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Used as trainer input.&quot;&quot;&quot;</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SQLExperienceStorage</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Primary async SQL storage for experiences. Used directly as Ray actor.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="SQLExperienceStorage.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLExperienceStorage.__init__">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">StorageConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sql_</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_timeout</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">max_read_timeout</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">batch_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">enable_replay</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">replay_buffer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">replay_buffer</span><span class="o">.</span><span class="n">enable</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max_experience_bytes</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">MAX_EXP_BYTES_ENV_VAR</span><span class="p">,</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">32</span><span class="p">)</span>  <span class="c1"># default 32MB</span>
-        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_experience_bytes</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getenv</span><span class="p">(</span><span class="n">MAX_EXP_BYTES_ENV_VAR</span><span class="p">,</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">32</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_times</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">max_retry_times</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_interval</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">max_retry_interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ref_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stopped</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialized</span> <span class="o">=</span> <span class="kc">False</span>
+
         <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">schema_type</span> <span class="o">==</span> <span class="s2">&quot;experience&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_read_method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_priority</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_read_method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_fifo</span></div>
 
 
+<div class="viewcode-block" id="SQLExperienceStorage.prepare">
+<a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLExperienceStorage.prepare">[文档]</a>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize async engine and create tables.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialized</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">init_async_engine</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">schema_type</span>  <span class="c1"># type: ignore</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">blob_model_cls</span> <span class="o">=</span> <span class="n">result</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">async_sessionmaker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span> <span class="n">expire_on_commit</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialized</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SQL storage initialized at </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
 <div class="viewcode-block" id="SQLExperienceStorage.write">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLExperienceStorage.write">[文档]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">def</span><span class="w"> </span><span class="nf">operation</span><span class="p">(</span><span class="n">session</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">()</span>
+
+        <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">operation</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
                 <span class="n">exp_bytes</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">serialize</span><span class="p">()</span>
                 <span class="k">if</span> <span class="p">(</span>
@@ -1163,32 +1097,29 @@ window.runMermaid = runMermaid;</script>
                     <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp_bytes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_experience_bytes</span>
                 <span class="p">):</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Experience size </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exp_bytes</span><span class="p">)</span><span class="si">}</span><span class="s2"> bytes exceeds the &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;max_experience_bytes </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_experience_bytes</span><span class="si">}</span><span class="s2"> bytes, skipping.&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;Experience size </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exp_bytes</span><span class="p">)</span><span class="si">}</span><span class="s2"> bytes exceeds &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;max_experience_bytes </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_experience_bytes</span><span class="si">}</span><span class="s2">, skipping.&quot;</span>
                     <span class="p">)</span>
                     <span class="k">continue</span>
                 <span class="n">meta_row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">from_experience</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span>
                 <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">meta_row</span><span class="p">)</span>
-                <span class="n">session</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+                <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
                 <span class="n">blob_row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">blob_model_cls</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="n">meta_row</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">experience_bytes</span><span class="o">=</span><span class="n">exp_bytes</span><span class="p">)</span>
                 <span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">blob_row</span><span class="p">)</span>
 
-        <span class="n">run_with_retry_session</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span>
-            <span class="n">operation</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_times</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_interval</span><span class="p">,</span>
+        <span class="k">await</span> <span class="n">async_run_with_retry_session</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_times</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_interval</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Write </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2"> experiences to SQL storage.&quot;</span><span class="p">)</span></div>
 
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_fetch_blobs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session</span><span class="p">,</span> <span class="n">ids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Batch fetch blob bytes by meta ids.&quot;&quot;&quot;</span>
-        <span class="n">blobs</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blob_model_cls</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blob_model_cls</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">in_</span><span class="p">(</span><span class="n">ids</span><span class="p">))</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_fetch_blobs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">,</span> <span class="n">ids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
+        <span class="n">stmt</span> <span class="o">=</span> <span class="n">select</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blob_model_cls</span><span class="p">)</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blob_model_cls</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">in_</span><span class="p">(</span><span class="n">ids</span><span class="p">))</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">stmt</span><span class="p">)</span>
+        <span class="n">blobs</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">scalars</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
         <span class="k">return</span> <span class="p">{</span><span class="n">b</span><span class="o">.</span><span class="n">id</span><span class="p">:</span> <span class="n">b</span><span class="o">.</span><span class="n">experience_bytes</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">blobs</span><span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_assemble_experiences</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">meta_rows</span><span class="p">,</span> <span class="n">blob_map</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Combine meta rows with blob bytes into Experience objects.&quot;&quot;&quot;</span>
         <span class="n">experiences</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">meta_rows</span><span class="p">:</span>
             <span class="n">blob_bytes</span> <span class="o">=</span> <span class="n">blob_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
@@ -1198,41 +1129,42 @@ window.runMermaid = runMermaid;</script>
             <span class="n">experiences</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">to_experience</span><span class="p">(</span><span class="n">blob_bytes</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">experiences</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_read_fifo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read experiences in FIFO order.&quot;&quot;&quot;</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_read_fifo</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
         <span class="n">exp_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp_list</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">batch_size</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stopped</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">StopIteration</span><span class="p">()</span>
+                <span class="k">raise</span> <span class="ne">StopAsyncIteration</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_timeout</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Max read timeout reached (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_timeout</span><span class="si">}</span><span class="s2"> s), only get </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exp_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> experiences, stopping...&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Max read timeout reached (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_timeout</span><span class="si">}</span><span class="s2"> s), &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;only got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exp_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> experiences, stopping...&quot;</span>
                 <span class="p">)</span>
-                <span class="k">raise</span> <span class="ne">StopIteration</span><span class="p">()</span>
+                <span class="k">raise</span> <span class="ne">StopAsyncIteration</span><span class="p">()</span>
 
-            <span class="k">def</span><span class="w"> </span><span class="nf">operation</span><span class="p">(</span><span class="n">session</span><span class="p">):</span>
-                <span class="n">meta_rows</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="p">)</span>
-                    <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">id</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">)</span>
+            <span class="n">current_offset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span>
+            <span class="n">remaining</span> <span class="o">=</span> <span class="n">batch_size</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp_list</span><span class="p">)</span>
+
+            <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">operation</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">):</span>
+                <span class="n">stmt</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">select</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="p">)</span>
+                    <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">id</span> <span class="o">&gt;</span> <span class="n">current_offset</span><span class="p">)</span>
                     <span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">asc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
-                    <span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="n">batch_size</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp_list</span><span class="p">))</span>
-                    <span class="o">.</span><span class="n">all</span><span class="p">()</span>
+                    <span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="n">remaining</span><span class="p">)</span>
                 <span class="p">)</span>
+                <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">stmt</span><span class="p">)</span>
+                <span class="n">meta_rows</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">scalars</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">meta_rows</span><span class="p">:</span>
                     <span class="k">return</span> <span class="p">[],</span> <span class="kc">None</span>
                 <span class="n">ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">meta_rows</span><span class="p">]</span>
-                <span class="n">blob_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fetch_blobs</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">ids</span><span class="p">)</span>
+                <span class="n">blob_map</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fetch_blobs</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">ids</span><span class="p">)</span>
                 <span class="k">return</span> <span class="p">(</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_assemble_experiences</span><span class="p">(</span><span class="n">meta_rows</span><span class="p">,</span> <span class="n">blob_map</span><span class="p">),</span>
                     <span class="n">meta_rows</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
                 <span class="p">)</span>
 
-            <span class="n">experiences</span><span class="p">,</span> <span class="n">next_offset</span> <span class="o">=</span> <span class="n">run_with_retry_session</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span>
-                <span class="n">operation</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_times</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_interval</span><span class="p">,</span>
+            <span class="n">experiences</span><span class="p">,</span> <span class="n">next_offset</span> <span class="o">=</span> <span class="k">await</span> <span class="n">async_run_with_retry_session</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_times</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_interval</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="n">next_offset</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">next_offset</span>
@@ -1240,56 +1172,61 @@ window.runMermaid = runMermaid;</script>
             <span class="n">exp_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">experiences</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp_list</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">batch_size</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Waiting for </span><span class="si">{</span><span class="n">batch_size</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">exp_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> more experiences...&quot;</span><span class="p">)</span>
-                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">exp_list</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_read_priority</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">min_model_version</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_read_priority</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">min_model_version</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
         <span class="n">exp_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="n">latest_size</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="k">while</span> <span class="n">latest_size</span> <span class="o">&lt;</span> <span class="n">batch_size</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stopped</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">StopIteration</span><span class="p">()</span>
+                <span class="k">raise</span> <span class="ne">StopAsyncIteration</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_timeout</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Max read timeout reached (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_timeout</span><span class="si">}</span><span class="s2"> s), only get </span><span class="si">{</span><span class="n">latest_size</span><span class="si">}</span><span class="s2"> experiences, stopping...&quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Max read timeout reached (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_timeout</span><span class="si">}</span><span class="s2"> s), &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;only got </span><span class="si">{</span><span class="n">latest_size</span><span class="si">}</span><span class="s2"> experiences, stopping...&quot;</span>
                 <span class="p">)</span>
-                <span class="k">raise</span> <span class="ne">StopIteration</span><span class="p">()</span>
+                <span class="k">raise</span> <span class="ne">StopAsyncIteration</span><span class="p">()</span>
 
-            <span class="k">def</span><span class="w"> </span><span class="nf">operation</span><span class="p">(</span><span class="n">session</span><span class="p">):</span>
-                <span class="n">query</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="p">)</span>
+            <span class="n">enable_replay</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_replay</span>
+            <span class="n">table_cls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span>
+            <span class="n">is_sqlite</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">dialect</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;sqlite&quot;</span>
+
+            <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">operation</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">):</span>
+                <span class="n">stmt</span> <span class="o">=</span> <span class="n">select</span><span class="p">(</span><span class="n">table_cls</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">min_model_version</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">model_version</span> <span class="o">&gt;=</span> <span class="n">min_model_version</span><span class="p">)</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_replay</span><span class="p">:</span>
-                    <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">consumed</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
-                <span class="n">meta_rows</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="n">query</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span>
-                        <span class="n">asc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">consumed</span><span class="p">),</span> <span class="n">desc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
-                    <span class="p">)</span>
-                    <span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>
-                    <span class="o">.</span><span class="n">with_for_update</span><span class="p">()</span>
-                    <span class="o">.</span><span class="n">all</span><span class="p">()</span>
-                <span class="p">)</span>
+                    <span class="n">stmt</span> <span class="o">=</span> <span class="n">stmt</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">table_cls</span><span class="o">.</span><span class="n">model_version</span> <span class="o">&gt;=</span> <span class="n">min_model_version</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">enable_replay</span><span class="p">:</span>
+                    <span class="n">stmt</span> <span class="o">=</span> <span class="n">stmt</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">table_cls</span><span class="o">.</span><span class="n">consumed</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="n">stmt</span> <span class="o">=</span> <span class="n">stmt</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">asc</span><span class="p">(</span><span class="n">table_cls</span><span class="o">.</span><span class="n">consumed</span><span class="p">),</span> <span class="n">desc</span><span class="p">(</span><span class="n">table_cls</span><span class="o">.</span><span class="n">id</span><span class="p">))</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">is_sqlite</span><span class="p">:</span>
+                    <span class="n">stmt</span> <span class="o">=</span> <span class="n">stmt</span><span class="o">.</span><span class="n">with_for_update</span><span class="p">()</span>
+
+                <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">stmt</span><span class="p">)</span>
+                <span class="n">meta_rows</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">scalars</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">meta_rows</span><span class="p">)</span> <span class="o">!=</span> <span class="n">batch_size</span><span class="p">:</span>
                     <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">meta_rows</span><span class="p">),</span> <span class="kc">False</span><span class="p">,</span> <span class="p">[]</span>
 
                 <span class="n">ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">meta_rows</span><span class="p">]</span>
-                <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">in_</span><span class="p">(</span><span class="n">ids</span><span class="p">))</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
-                    <span class="p">{</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">consumed</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">consumed</span> <span class="o">+</span> <span class="mi">1</span><span class="p">},</span>
-                    <span class="n">synchronize_session</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">update_stmt</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">update</span><span class="p">(</span><span class="n">table_cls</span><span class="p">)</span>
+                    <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">table_cls</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">in_</span><span class="p">(</span><span class="n">ids</span><span class="p">))</span>
+                    <span class="o">.</span><span class="n">values</span><span class="p">(</span><span class="n">consumed</span><span class="o">=</span><span class="n">table_cls</span><span class="o">.</span><span class="n">consumed</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
                 <span class="p">)</span>
-                <span class="n">blob_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fetch_blobs</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">ids</span><span class="p">)</span>
+                <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">update_stmt</span><span class="p">)</span>
+
+                <span class="n">blob_map</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fetch_blobs</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">ids</span><span class="p">)</span>
                 <span class="k">return</span> <span class="p">(</span>
                     <span class="nb">len</span><span class="p">(</span><span class="n">meta_rows</span><span class="p">),</span>
                     <span class="kc">True</span><span class="p">,</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_assemble_experiences</span><span class="p">(</span><span class="n">meta_rows</span><span class="p">,</span> <span class="n">blob_map</span><span class="p">),</span>
                 <span class="p">)</span>
 
-            <span class="n">latest_batch_size</span><span class="p">,</span> <span class="n">has_full_batch</span><span class="p">,</span> <span class="n">experiences</span> <span class="o">=</span> <span class="n">run_with_retry_session</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span>
-                <span class="n">operation</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_times</span><span class="p">,</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_interval</span><span class="p">,</span>
+            <span class="n">latest_batch_size</span><span class="p">,</span> <span class="n">has_full_batch</span><span class="p">,</span> <span class="n">experiences</span> <span class="o">=</span> <span class="k">await</span> <span class="n">async_run_with_retry_session</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_times</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_interval</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">has_full_batch</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">latest_size</span> <span class="o">!=</span> <span class="n">latest_batch_size</span><span class="p">:</span>
@@ -1300,11 +1237,20 @@ window.runMermaid = runMermaid;</script>
                 <span class="k">break</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Waiting for </span><span class="si">{</span><span class="n">batch_size</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">exp_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> more experiences...&quot;</span><span class="p">)</span>
-            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">exp_list</span>
 
+<div class="viewcode-block" id="SQLExperienceStorage.read">
+<a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLExperienceStorage.read">[文档]</a>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stopped</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">StopAsyncIteration</span><span class="p">()</span>
+        <span class="n">batch_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="k">if</span> <span class="n">batch_size</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">batch_size</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_method</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+
     <span class="k">def</span><span class="w"> </span><span class="nf">_build_filter_conditions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build SQLAlchemy filter conditions from a filter dict.&quot;&quot;&quot;</span>
         <span class="n">conditions</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">filters</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">conditions</span>
@@ -1322,62 +1268,56 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="SQLExperienceStorage.count">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLExperienceStorage.count">[文档]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Count experiences matching the given filters.&quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">and_</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">()</span>
 
-        <span class="k">def</span><span class="w"> </span><span class="nf">operation</span><span class="p">(</span><span class="n">session</span><span class="p">):</span>
-            <span class="n">query</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="p">)</span>
+        <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">operation</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">):</span>
+            <span class="n">stmt</span> <span class="o">=</span> <span class="n">select</span><span class="p">(</span><span class="n">func</span><span class="o">.</span><span class="n">count</span><span class="p">())</span><span class="o">.</span><span class="n">select_from</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="p">)</span>
             <span class="n">conditions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_filter_conditions</span><span class="p">(</span><span class="n">filters</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">conditions</span><span class="p">:</span>
-                <span class="n">query</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">and_</span><span class="p">(</span><span class="o">*</span><span class="n">conditions</span><span class="p">))</span>
-            <span class="k">return</span> <span class="n">query</span><span class="o">.</span><span class="n">count</span><span class="p">()</span>
+                <span class="n">stmt</span> <span class="o">=</span> <span class="n">stmt</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">and_</span><span class="p">(</span><span class="o">*</span><span class="n">conditions</span><span class="p">))</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">stmt</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">scalar</span><span class="p">()</span>
 
-        <span class="k">return</span> <span class="n">run_with_retry_session</span><span class="p">(</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="n">async_run_with_retry_session</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_times</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_interval</span>
         <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SQLExperienceStorage.query">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLExperienceStorage.query">[文档]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">query</span><span class="p">(</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">query</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">offset</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span> <span class="n">filters</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Query experiences with pagination and filters.&quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">sqlalchemy</span><span class="w"> </span><span class="kn">import</span> <span class="n">and_</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">()</span>
 
-        <span class="k">def</span><span class="w"> </span><span class="nf">operation</span><span class="p">(</span><span class="n">session</span><span class="p">):</span>
-            <span class="n">q</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="p">)</span>
+        <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">operation</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">):</span>
+            <span class="n">stmt</span> <span class="o">=</span> <span class="n">select</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="p">)</span>
             <span class="n">conditions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_filter_conditions</span><span class="p">(</span><span class="n">filters</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">conditions</span><span class="p">:</span>
-                <span class="n">q</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">and_</span><span class="p">(</span><span class="o">*</span><span class="n">conditions</span><span class="p">))</span>
-            <span class="n">meta_rows</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="n">limit</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+                <span class="n">stmt</span> <span class="o">=</span> <span class="n">stmt</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">and_</span><span class="p">(</span><span class="o">*</span><span class="n">conditions</span><span class="p">))</span>
+            <span class="n">stmt</span> <span class="o">=</span> <span class="n">stmt</span><span class="o">.</span><span class="n">offset</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="n">limit</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">stmt</span><span class="p">)</span>
+            <span class="n">meta_rows</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">scalars</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">meta_rows</span><span class="p">:</span>
                 <span class="k">return</span> <span class="p">[]</span>
             <span class="n">ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">row</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">meta_rows</span><span class="p">]</span>
-            <span class="n">blob_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fetch_blobs</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">ids</span><span class="p">)</span>
+            <span class="n">blob_map</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fetch_blobs</span><span class="p">(</span><span class="n">session</span><span class="p">,</span> <span class="n">ids</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_assemble_experiences</span><span class="p">(</span><span class="n">meta_rows</span><span class="p">,</span> <span class="n">blob_map</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">run_with_retry_session</span><span class="p">(</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="n">async_run_with_retry_session</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_times</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_interval</span>
         <span class="p">)</span></div>
-
-
-<div class="viewcode-block" id="SQLExperienceStorage.read">
-<a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLExperienceStorage.read">[文档]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stopped</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">StopIteration</span><span class="p">()</span>
-
-        <span class="n">batch_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="k">if</span> <span class="n">batch_size</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">batch_size</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_method</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SQLExperienceStorage.load_from_dataset">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLExperienceStorage.load_from_dataset">[文档]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">load_from_dataset</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">Dataset</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">StorageConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;SQLExperienceStorage&quot;</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">load_from_dataset</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">Dataset</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">StorageConfig</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;SQLExperienceStorage&quot;</span><span class="p">:</span>
         <span class="n">storage</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="k">await</span> <span class="n">storage</span><span class="o">.</span><span class="n">prepare</span><span class="p">()</span>
         <span class="n">formatter</span> <span class="o">=</span> <span class="n">FORMATTER</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">schema_type</span><span class="p">)(</span>
             <span class="n">tokenizer_path</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">tokenizer_path</span><span class="p">,</span> <span class="n">format_config</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">format</span>
         <span class="p">)</span>
@@ -1386,83 +1326,119 @@ window.runMermaid = runMermaid;</script>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">:</span>
             <span class="n">batch</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">formatter</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">batch_size</span><span class="p">:</span>
-                <span class="n">storage</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+                <span class="k">await</span> <span class="n">storage</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
                 <span class="n">batch</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">batch</span><span class="p">:</span>
-            <span class="n">storage</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+            <span class="k">await</span> <span class="n">storage</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">storage</span></div>
+
+
+<div class="viewcode-block" id="SQLExperienceStorage.acquire">
+<a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLExperienceStorage.acquire">[文档]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ref_count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ref_count</span></div>
+
+
+<div class="viewcode-block" id="SQLExperienceStorage.release">
+<a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLExperienceStorage.release">[文档]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">release</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ref_count</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ref_count</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stopped</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ref_count</span></div>
 </div>
 
 
 
 <div class="viewcode-block" id="SQLTaskStorage">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLTaskStorage">[文档]</a>
-<span class="k">class</span><span class="w"> </span><span class="nc">SQLTaskStorage</span><span class="p">(</span><span class="n">SQLStorage</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Used as explorer input.&quot;&quot;&quot;</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SQLTaskStorage</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Primary async SQL storage for tasks. Used directly as Ray actor.&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="SQLTaskStorage.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLTaskStorage.__init__">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">StorageConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sql_</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">batch_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_eval</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">is_eval</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">default_workflow_cls</span> <span class="o">=</span> <span class="n">WORKFLOWS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">default_workflow_type</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">default_reward_fn_cls</span> <span class="o">=</span> <span class="n">REWARD_FUNCTIONS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">default_reward_fn_type</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">formatter</span> <span class="o">=</span> <span class="n">TaskFormatter</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_times</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">max_retry_times</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_interval</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">max_retry_interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ref_count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stopped</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialized</span> <span class="o">=</span> <span class="kc">False</span>
+
         <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">total_steps</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">total_samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">*</span> <span class="n">config</span><span class="o">.</span><span class="n">total_steps</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">total_epochs</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;SQL Storage do not support total_epochs, the value </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">total_epochs</span><span class="si">}</span><span class="s2"> will be ignored&quot;</span>
-                <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">total_samples</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SQLTaskStorage.prepare">
+<a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLTaskStorage.prepare">[文档]</a>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize async engine and create tables.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialized</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.schema.formatter</span><span class="w"> </span><span class="kn">import</span> <span class="n">TaskFormatter</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">init_async_engine</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">schema_type</span>  <span class="c1"># type: ignore</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span> <span class="o">=</span> <span class="n">result</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">async_sessionmaker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span> <span class="n">expire_on_commit</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">default_workflow_cls</span> <span class="o">=</span> <span class="n">WORKFLOWS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">default_workflow_type</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">default_reward_fn_cls</span> <span class="o">=</span> <span class="n">REWARD_FUNCTIONS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">default_reward_fn_type</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">formatter</span> <span class="o">=</span> <span class="n">TaskFormatter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_initialized</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SQL task storage initialized at </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SQLTaskStorage.write">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLTaskStorage.write">[文档]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">def</span><span class="w"> </span><span class="nf">operation</span><span class="p">(</span><span class="n">session</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">()</span>
+
+        <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">operation</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">):</span>
             <span class="n">tasks</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]</span>
             <span class="n">session</span><span class="o">.</span><span class="n">add_all</span><span class="p">(</span><span class="n">tasks</span><span class="p">)</span>
 
-        <span class="n">run_with_retry_session</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span>
-            <span class="n">operation</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_times</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_interval</span><span class="p">,</span>
+        <span class="k">await</span> <span class="n">async_run_with_retry_session</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_times</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_interval</span>
         <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SQLTaskStorage.read">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLTaskStorage.read">[文档]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Task</span><span class="p">]:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Task</span><span class="p">]:</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">prepare</span><span class="p">()</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">stopped</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">StopIteration</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="ne">StopAsyncIteration</span><span class="p">()</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_samples</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">StopIteration</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="ne">StopAsyncIteration</span><span class="p">()</span>
         <span class="n">batch_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="k">if</span> <span class="n">batch_size</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">batch_size</span>
 
-        <span class="k">def</span><span class="w"> </span><span class="nf">operation</span><span class="p">(</span><span class="n">session</span><span class="p">):</span>
-            <span class="n">query</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="p">)</span>
-                <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">id</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">)</span>
-                <span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">asc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+        <span class="n">table_cls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span>
+
+        <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">operation</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">):</span>
+            <span class="n">stmt</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">select</span><span class="p">(</span><span class="n">table_cls</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">table_cls</span><span class="o">.</span><span class="n">id</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="n">asc</span><span class="p">(</span><span class="n">table_cls</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
                 <span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="n">batch_size</span><span class="p">)</span>
             <span class="p">)</span>
-            <span class="n">results</span> <span class="o">=</span> <span class="n">query</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">session</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">stmt</span><span class="p">)</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">scalars</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">StopIteration</span><span class="p">()</span>
+                <span class="k">raise</span> <span class="ne">StopAsyncIteration</span><span class="p">()</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_eval</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">results</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">batch_size</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">StopIteration</span><span class="p">()</span>
+                <span class="k">raise</span> <span class="ne">StopAsyncIteration</span><span class="p">()</span>
             <span class="k">return</span> <span class="n">results</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">formatter</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">raw_task</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">results</span><span class="p">]</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span> <span class="n">tasks</span> <span class="o">=</span> <span class="n">run_with_retry_session</span><span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span>
-            <span class="n">operation</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_times</span><span class="p">,</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_interval</span><span class="p">,</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">offset</span><span class="p">,</span> <span class="n">tasks</span> <span class="o">=</span> <span class="k">await</span> <span class="n">async_run_with_retry_session</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_times</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_interval</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">tasks</span></div>
 
@@ -1470,18 +1446,67 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="SQLTaskStorage.load_from_dataset">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLTaskStorage.load_from_dataset">[文档]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">load_from_dataset</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">Dataset</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">StorageConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;SQLTaskStorage&quot;</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">load_from_dataset</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">Dataset</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">StorageConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;SQLTaskStorage&quot;</span><span class="p">:</span>
         <span class="n">storage</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="k">await</span> <span class="n">storage</span><span class="o">.</span><span class="n">prepare</span><span class="p">()</span>
         <span class="n">batch_size</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">batch_size</span>
         <span class="n">batch</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">:</span>
             <span class="n">batch</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">batch_size</span><span class="p">:</span>
-                <span class="n">storage</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+                <span class="k">await</span> <span class="n">storage</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
                 <span class="n">batch</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">batch</span><span class="p">:</span>
-            <span class="n">storage</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+            <span class="k">await</span> <span class="n">storage</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">storage</span></div>
+
+
+<div class="viewcode-block" id="SQLTaskStorage.acquire">
+<a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLTaskStorage.acquire">[文档]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ref_count</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ref_count</span></div>
+
+
+<div class="viewcode-block" id="SQLTaskStorage.release">
+<a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLTaskStorage.release">[文档]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">release</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ref_count</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ref_count</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stopped</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">ref_count</span></div>
+</div>
+
+
+
+<span class="c1"># ---------------------------------------------------------------------------</span>
+<span class="c1"># Factory</span>
+<span class="c1"># ---------------------------------------------------------------------------</span>
+
+
+<div class="viewcode-block" id="SQLStorage">
+<a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLStorage">[文档]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SQLStorage</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Factory for creating SQL storage Ray actors.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SQLStorage.get_wrapper">
+<a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLStorage.get_wrapper">[文档]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_wrapper</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">StorageConfig</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">schema_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">async_cls</span> <span class="o">=</span> <span class="n">SQLTaskStorage</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">async_cls</span> <span class="o">=</span> <span class="n">SQLExperienceStorage</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">ray</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">async_cls</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">options</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;sql-</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">namespace</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">ray_namespace</span> <span class="ow">or</span> <span class="n">ray</span><span class="o">.</span><span class="n">get_runtime_context</span><span class="p">()</span><span class="o">.</span><span class="n">namespace</span><span class="p">,</span>
+                <span class="n">get_if_exists</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">max_concurrency</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="p">)</span></div>
 </div>
 
 </pre></div>

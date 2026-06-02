@@ -1362,6 +1362,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_SER_VERSION</span><span class="p">,</span> <span class="s2">&quot;num_items&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">experiences</span><span class="p">),</span> <span class="s2">&quot;items&quot;</span><span class="p">:</span> <span class="p">[]}</span>
         <span class="n">tensor_data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">seen_storages</span><span class="p">:</span> <span class="nb">set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
 
         <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">exp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">experiences</span><span class="p">):</span>
             <span class="n">item_meta</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1378,7 +1379,12 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="k">continue</span>
-                <span class="n">tensor_data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+                <span class="n">t</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+                <span class="n">storage_ptr</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">untyped_storage</span><span class="p">()</span><span class="o">.</span><span class="n">data_ptr</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">storage_ptr</span> <span class="ow">in</span> <span class="n">seen_storages</span><span class="p">:</span>
+                    <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+                <span class="n">seen_storages</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">storage_ptr</span><span class="p">)</span>
+                <span class="n">tensor_data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
 
             <span class="k">if</span> <span class="n">exp</span><span class="o">.</span><span class="n">multi_modal_inputs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">item_meta</span><span class="p">[</span><span class="s2">&quot;multi_modal_input_keys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1387,12 +1393,12 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">item_meta</span><span class="p">[</span><span class="s2">&quot;multi_modal_input_keys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mm_keys</span>
                 <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">mm_keys</span><span class="p">:</span>
                     <span class="n">value</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">multi_modal_inputs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-                    <span class="n">tensor_data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">:multi_modal_inputs:</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-                        <span class="n">value</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
-                        <span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
-                        <span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
-                        <span class="o">.</span><span class="n">clone</span><span class="p">()</span>  <span class="c1"># clone to avoid shared memory issues</span>
-                    <span class="p">)</span>
+                    <span class="n">t</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+                    <span class="n">storage_ptr</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">untyped_storage</span><span class="p">()</span><span class="o">.</span><span class="n">data_ptr</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">storage_ptr</span> <span class="ow">in</span> <span class="n">seen_storages</span><span class="p">:</span>
+                        <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+                    <span class="n">seen_storages</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">storage_ptr</span><span class="p">)</span>
+                    <span class="n">tensor_data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">:multi_modal_inputs:</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
 
             <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;items&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item_meta</span><span class="p">)</span>
 

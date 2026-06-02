@@ -1036,10 +1036,10 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">explorer_state</span> <span class="o">=</span> <span class="n">explorer_state</span></div>
 
 
-<div class="viewcode-block" id="TasksetSchedulerBase.read_async">
-<a class="viewcode-back" href="../../../build_api/trinity.buffer.task_scheduler.html#trinity.buffer.task_scheduler.TasksetSchedulerBase.read_async">[文档]</a>
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read_async</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Asynchronously reads a batch of tasks according to the current schedule.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="TasksetSchedulerBase.read">
+<a class="viewcode-back" href="../../../build_api/trinity.buffer.task_scheduler.html#trinity.buffer.task_scheduler.TasksetSchedulerBase.read">[文档]</a>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a batch of tasks according to the current schedule.&quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
@@ -1089,10 +1089,10 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">reader</span> <span class="o">=</span> <span class="n">get_buffer_reader</span><span class="p">(</span><span class="n">taskset_config</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="SimpleTasksetScheduler.read_async">
-<a class="viewcode-back" href="../../../build_api/trinity.buffer.task_scheduler.html#trinity.buffer.task_scheduler.SimpleTasksetScheduler.read_async">[文档]</a>
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read_async</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
-        <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">read_async</span><span class="p">()</span></div>
+<div class="viewcode-block" id="SimpleTasksetScheduler.read">
+<a class="viewcode-back" href="../../../build_api/trinity.buffer.task_scheduler.html#trinity.buffer.task_scheduler.SimpleTasksetScheduler.read">[文档]</a>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">read</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="SimpleTasksetScheduler.state_dict">
@@ -1124,7 +1124,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">      - Supports adaptive selectors via feedback (e.g., difficulty-based sampling)</span>
 <span class="sd">      - Enables curriculum-like or interleaved multi-task training</span>
 
-<span class="sd">    It assumes that each call to `read_async()` corresponds to one training step,</span>
+<span class="sd">    It assumes that each call to `read()` corresponds to one training step,</span>
 <span class="sd">    and batches are built by aggregating samples from different tasksets based on</span>
 <span class="sd">    a shuffled global schedule.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -1170,7 +1170,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">taskset</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">taskset_state</span><span class="p">)</span>  <span class="c1"># Restore any prior state</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">tasksets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">taskset</span><span class="p">)</span>
 
-        <span class="c1"># Each explorer step calls read_async once → track step globally</span>
+        <span class="c1"># Each explorer step calls read once → track step globally</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">=</span> <span class="n">explorer_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;latest_iteration&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
         <span class="c1"># Build flat list indicating how often each taskset should appear per epoch</span>
@@ -1215,11 +1215,10 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="nf">_should_stop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_steps</span>
 
-<div class="viewcode-block" id="TasksetScheduler.read_async">
-<a class="viewcode-back" href="../../../build_api/trinity.buffer.task_scheduler.html#trinity.buffer.task_scheduler.TasksetScheduler.read_async">[文档]</a>
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read_async</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Asynchronously reads a batch of tasks according to the current schedule.</span>
+<div class="viewcode-block" id="TasksetScheduler.read">
+<a class="viewcode-back" href="../../../build_api/trinity.buffer.task_scheduler.html#trinity.buffer.task_scheduler.TasksetScheduler.read">[文档]</a>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a batch of tasks according to the current schedule.</span>
 
 <span class="sd">        For each step:</span>
 <span class="sd">          - Checks if a new epoch has started; rebuilds order if so</span>
@@ -1254,7 +1253,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">counter</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">taskset_ids</span><span class="p">)</span>
         <span class="n">batch</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">taskset_id</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">counter</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">tasks</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">tasksets</span><span class="p">[</span><span class="n">taskset_id</span><span class="p">]</span><span class="o">.</span><span class="n">read_async</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="n">count</span><span class="p">)</span>
+            <span class="n">tasks</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">tasksets</span><span class="p">[</span><span class="n">taskset_id</span><span class="p">]</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="n">count</span><span class="p">)</span>
             <span class="c1"># Annotate each task with its origin</span>
             <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">tasks</span><span class="p">:</span>
                 <span class="n">task</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="s2">&quot;taskset_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">taskset_id</span>
