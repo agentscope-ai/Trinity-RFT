@@ -183,6 +183,8 @@ class BaseInferenceModel(InferenceModel):
 
     def _build_dummy_routed_experts(self) -> torch.Tensor:
         """Build zero-valued routed_experts tensor for dummy (truncated) experiences."""
+        if self.config.model_path is None:
+            raise ValueError("model_path must be provided to build dummy routed experts.")
         layout = get_routed_experts_layout(
             self.config.model_path,
             trust_remote_code=self.config.trust_remote_code,
