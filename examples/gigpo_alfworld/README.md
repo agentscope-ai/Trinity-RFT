@@ -9,16 +9,16 @@ Config: [`gigpo.yaml`](gigpo.yaml).
 | Paper concept | Trinity wiring in `gigpo.yaml` |
 |---------------|--------------------------------|
 | N trajectories per task | `algorithm.repeat_times: 8` |
-| Episode advantage \(A^E(\tau)\) | `advantage_fn: gigpo` (GRPO-style over \(R(\tau)=\sum_t r_t\)) |
-| Step advantage \(A^S(a\|\tilde s)\) | Anchor groups via `experience.info["env_state_hash"]` (set by `step_wise_alfworld_workflow`) |
-| Combined \(A = A^E + \omega A^S\) | `advantage_fn_args.omega: 1.0` |
+| Episode advantage $A^E(\tau)$ | `advantage_fn: gigpo` (GRPO-style over $R(\tau)=\sum_t r_t$) |
+| Step advantage $A^S(a \mid \tilde s)$ | Anchor groups via `experience.info["env_state_hash"]` (set by `step_wise_alfworld_workflow`) |
+| Combined $A = A^E + \omega A^S$ | `advantage_fn_args.omega: 1.0` |
 | Discounted step return | `advantage_fn_args.gamma: 1.0` |
-| \(F_{\text{norm}}=1\) (agent default) | `advantage_fn_args.fnorm: none` |
+| $F_{\text{norm}}=1$ (agent default) | `advantage_fn_args.fnorm: none` |
 | Clipped token-level policy loss | `policy_loss_fn: ppo` + `loss_agg_mode: token-mean` |
 
 `StepWiseAlfworldWorkflow` emits per-step metadata:
 
-- `info["env_state_hash"]` — SHA256 of the pre-action formatted observation (anchor state \(\tilde s\))
+- `info["env_state_hash"]` — SHA256 of the pre-action formatted observation (anchor state $\tilde s$)
 - `info["step_reward"]` — immediate environment reward at that step
 
 Terminal episode reward is still copied to `experience.reward` on all steps (compatible with GRPO-style workflows).
@@ -29,7 +29,7 @@ For non-ALFWorld environments, each step experience must set:
 
 1. `eid.run` and `eid.step` (see [step-wise tutorial](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/example_step_wise.html))
 2. `info["env_state_hash"]` — deterministic key for equivalent environment states
-3. `info["step_reward"]` — immediate scalar \(r_t\) (recommended; avoids sparse-reward fallback)
+3. `info["step_reward"]` — immediate scalar $r_t$ (recommended; avoids sparse-reward fallback)
 
 ## Run
 
