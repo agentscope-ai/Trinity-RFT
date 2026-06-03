@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 """Test cases for Storage modules."""
+import asyncio
 import io
 import os
 import pickle
 import unittest
+from unittest import mock
 
 import torch
 
@@ -463,6 +465,142 @@ class TestExperienceConversion(unittest.TestCase):
         self.assertEqual(new_experience.reward, reward)
         self.assertTrue(torch.equal(new_experience.logprobs, logprobs))
         self.assertTrue(torch.equal(new_experience.action_mask, experience.action_mask))
+
+
+class TestDummyExperienceWithRoutedExperts(unittest.TestCase):
+    """Routed_experts handling for dummy (prompt-truncated) experiences."""
+
+    NUM_LAYERS = 40
+    TOPK = 8
+    NUM_EXPERTS = 64
+    MAX_PROMPT_TOKENS = 10
+
+    def _create_model(self):
+        from trinity.common.config import InferenceModelConfig
+        from trinity.common.models.sglang_model import SGLangRolloutModel
+
+        config = InferenceModelConfig(
+            model_path="mock_model",
+            engine_type="sglang",
+            enable_prompt_truncation=True,
+            max_prompt_tokens=self.MAX_PROMPT_TOKENS,
+            enable_return_routed_experts=True,
+        )
+
+        model = SGLangRolloutModel.__new__(SGLangRolloutModel)
+        model.config = config
+        model.logger = mock.Mock()
+        model.chat_template = None
+        model.enable_thinking = False
+        model.api_client = mock.Mock()
+        model._prepared = True
+        model._routed_experts_layout = None
+
+        mock_tokenizer = mock.Mock()
+        long_prompt_ids = list(range(self.MAX_PROMPT_TOKENS + 5))  # 15 tokens > 10 max
+        mock_tokenizer.return_value = {"input_ids": [torch.tensor(long_prompt_ids)]}
+        mock_tokenizer.decode = mock.Mock(return_value="truncated prompt")
+        model.tokenizer = mock_tokenizer
+        return model
+
+    def _make_normal_experience(self, seq_len=100, prompt_len=20):
+        tokens = torch.randint(0, 1000, (seq_len,), dtype=torch.int32)
+        routed_experts = torch.randint(
+            0, self.NUM_EXPERTS, (seq_len - 1, self.NUM_LAYERS, self.TOPK), dtype=torch.uint8
+        )
+        logprobs = torch.randn(seq_len - prompt_len, dtype=torch.float32)
+        return Experience(
+            eid=EID(batch=1, task=1, run=1, step=1),
+            tokens=tokens,
+            logprobs=logprobs,
+            prompt_length=prompt_len,
+            routed_experts=routed_experts,
+            reward=1.0,
+        )
+
+    def _assert_valid_dummy_routed_experts(self, routed_experts):
+        """The dummy fill must be valid for router replay (not all-zeros)."""
+        self.assertIsNotNone(routed_experts)
+        self.assertEqual(routed_experts.dtype, torch.uint8)
+        self.assertEqual(
+            tuple(routed_experts.shape), (self.MAX_PROMPT_TOKENS, self.NUM_LAYERS, self.TOPK)
+        )
+        values = routed_experts.to(torch.int64)
+        # All indices must be valid expert ids in [0, num_experts).
+        self.assertGreaterEqual(int(values.min()), 0)
+        self.assertLess(int(values.max()), self.NUM_EXPERTS)
+        # Each token-layer's top-k slots must be distinct experts (real top-k has no
+        # duplicates); all-zeros would fail this.
+        sorted_vals = values.sort(dim=-1).values
+        self.assertTrue(bool((sorted_vals[..., 1:] != sorted_vals[..., :-1]).all()))
+        # Routing must be spread across more than one expert (not collapsed to expert 0).
+        self.assertGreater(int(values.unique().numel()), 1)
+
+    @mock.patch(
+        "trinity.common.models.sglang_model.SGLangRolloutModel._get_routed_experts_layout",
+        return_value=(NUM_LAYERS, TOPK, NUM_EXPERTS),
+    )
+    def test_handle_prompt_truncation_fills_routed_experts(self, mock_layout):
+        """_handle_prompt_truncation produces experiences with valid routed_experts."""
+        model = self._create_model()
+
+        experiences, is_valid = model._handle_prompt_truncation("long prompt", n=8)
+
+        self.assertFalse(is_valid)
+        self.assertEqual(len(experiences), 8)
+        for exp in experiences:
+            self.assertEqual(exp.truncate_status, "prompt_truncated")
+            self._assert_valid_dummy_routed_experts(exp.routed_experts)
+
+    @mock.patch(
+        "trinity.common.models.sglang_model.SGLangRolloutModel._get_routed_experts_layout",
+        return_value=(NUM_LAYERS, TOPK, NUM_EXPERTS),
+    )
+    def test_mixed_batch_succeeds(self, mock_layout):
+        """to_data_proto succeeds when mixing normal + truncated experiences."""
+        from trinity.trainer.verl.utils import to_data_proto
+
+        model = self._create_model()
+
+        truncated_exps, is_valid = model._handle_prompt_truncation("long prompt", n=8)
+
+        self.assertFalse(is_valid)
+        for exp in truncated_exps:
+            self.assertEqual(exp.truncate_status, "prompt_truncated")
+
+        normal_exps = [self._make_normal_experience() for _ in range(4)]
+        batch = normal_exps + truncated_exps
+
+        result = to_data_proto(batch, pad_token_id=0, model=object(), logger=mock.Mock())
+
+        self.assertIn("routed_experts", result.batch)
+        routed_experts = result.batch["routed_experts"]
+        self.assertEqual(routed_experts.dtype, torch.uint8)
+        self.assertEqual(routed_experts.shape[0], 12)
+        self.assertEqual(routed_experts.shape[2], self.NUM_LAYERS)
+        self.assertEqual(routed_experts.shape[3], self.TOPK)
+
+    @mock.patch(
+        "trinity.common.models.sglang_model.SGLangRolloutModel._get_routed_experts_layout",
+        return_value=(NUM_LAYERS, TOPK, NUM_EXPERTS),
+    )
+    def test_end_to_end_through_generate(self, mock_layout):
+        from trinity.trainer.verl.utils import to_data_proto
+
+        model = self._create_model()
+
+        truncated_exps = list(asyncio.run(model.generate("long prompt", n=8)))
+
+        for exp in truncated_exps:
+            self.assertEqual(exp.truncate_status, "prompt_truncated")
+            self._assert_valid_dummy_routed_experts(exp.routed_experts)
+
+        normal_exps = [self._make_normal_experience() for _ in range(4)]
+        batch = normal_exps + truncated_exps
+
+        result = to_data_proto(batch, pad_token_id=0, model=object(), logger=mock.Mock())
+        self.assertIn("routed_experts", result.batch)
+        self.assertEqual(result.batch["routed_experts"].shape[0], 12)
 
 
 if __name__ == "__main__":

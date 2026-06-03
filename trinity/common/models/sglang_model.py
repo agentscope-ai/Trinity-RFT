@@ -15,10 +15,7 @@ from transformers import AutoTokenizer
 from trinity.common.config import InferenceModelConfig
 from trinity.common.constants import ROLLOUT_WEIGHT_SYNC_GROUP_NAME, SyncMethod
 from trinity.common.experience import Experience
-from trinity.common.models.experience_extraction import (
-    decode_sglang_routed_experts,
-    get_routed_experts_layout,
-)
+from trinity.common.models.experience_extraction import decode_sglang_routed_experts
 from trinity.common.models.model import BaseInferenceModel
 from trinity.manager.synchronizer import Synchronizer
 
@@ -262,7 +259,6 @@ class SGLangRolloutModel(BaseInferenceModel):
         self._has_weight_update_group = False
         self.async_lock = asyncio.Lock()
         self.group_name = ROLLOUT_WEIGHT_SYNC_GROUP_NAME
-        self._routed_experts_layout: Optional[Tuple[int, int]] = None
 
     async def init_process_group(
         self,
@@ -341,25 +337,13 @@ class SGLangRolloutModel(BaseInferenceModel):
             normalized_messages.append(normalized_message)
         return normalized_messages
 
-    def _get_routed_experts_layout(self) -> Tuple[int, int]:
-        if self._routed_experts_layout is None:
-            model_path = self.config.model_path
-            assert model_path is not None, "model_path must be set to decode routed_experts."
-            layout = get_routed_experts_layout(
-                model_path,
-                trust_remote_code=self.config.trust_remote_code,
-            )
-            assert (
-                layout is not None
-            ), "Model config must expose num_hidden_layers and num_experts_per_tok."
-            self._routed_experts_layout = layout
-        return self._routed_experts_layout
-
     def _extract_routed_experts(self, routed_experts_str: str, total_tokens: int) -> torch.Tensor:
+        # decode only needs (num_layers, topk); num_experts is used by dummy experiences.
+        num_layers, topk, _ = self._get_routed_experts_layout()
         routed_experts = decode_sglang_routed_experts(
             routed_experts_str,
             total_tokens,
-            layout=self._get_routed_experts_layout(),
+            layout=(num_layers, topk),
         )
         assert routed_experts is not None
         return routed_experts
