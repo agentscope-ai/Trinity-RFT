@@ -1,0 +1,64 @@
+project: "INTERCODE_SQL"
+name: "INTERCODE_SQL_RFT"
+checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
+algorithm:
+  algorithm_type: grpo
+  repeat_times: 8
+  optimizer:
+    lr: 1e-6
+model:
+  model_path: ${oc.env:TRINITY_MODEL_PATH,Qwen/Qwen2.5-7B-Instruct}
+  max_prompt_tokens: 10240
+  max_response_tokens: 4096
+  max_model_len: 16384
+cluster:
+  node_num: 1
+  gpu_per_node: 8
+buffer:
+  total_epochs: 20
+  batch_size: 8
+  explorer_input:
+    taskset:
+      name: intercode_sql
+      storage_type: file
+      path: 'examples/grpo_intercode_sql/intercode_sql_data'
+      split: train
+      format:
+        prompt_key: 'query_idx'
+      rollout_args:
+        temperature: 1.0
+        logprobs: 0
+      workflow_args:
+        data_path: 'examples/grpo_intercode_sql/intercode_sql_data/raw/ic_spider_dev.json'
+        image_name: 'docker-env-sql'
+        max_env_steps: 10
+        auto_submit: true
+        verbose: false
+      default_workflow_type: 'intercode_sql_workflow'
+  trainer_input:
+    experience_buffer:
+      name: intercode_sql_buffer
+      storage_type: queue
+      path: 'sqlite:///intercode_sql.db'
+explorer:
+  runner_per_model: 8
+  max_timeout: 3600
+  rollout_model:
+    engine_num: 2
+    tensor_parallel_size: 2
+    enable_prefix_caching: false
+    enforce_eager: true
+    dtype: bfloat16
+    seed: 42
+    gpu_memory_utilization: 0.7
+    enable_chunked_prefill: true
+synchronizer:
+  sync_method: 'nccl'
+  sync_interval: 8
+  sync_timeout: 1200
+trainer:
+  save_interval: 10
+  grad_clip: 1.0
+  use_dynamic_bsz: true
+  max_token_len_per_gpu: 16384
+  ulysses_sequence_parallel_size: 1
