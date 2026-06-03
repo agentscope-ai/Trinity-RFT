@@ -161,7 +161,7 @@ class ExplorerService:
             experiences.append(exp)
 
         self.total_experience_count += len(experiences)
-        self.recorder.record_history(experiences)
+        await self.recorder.record_history(experiences)
 
     async def submit_experiences(self) -> None:
         async with self.commit_lock:
@@ -175,7 +175,7 @@ class ExplorerService:
             self.explorer.monitor.log(metrics, self.explorer.explore_step_num)
 
     async def record_feedback(self, reward: float, msg_ids: List[str], task_id: str, run_id: int):
-        exps = self.recorder.update_reward(
+        exps = await self.recorder.update_reward(
             reward=reward,
             msg_ids=msg_ids,
             task_id=task_id,

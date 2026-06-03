@@ -14,15 +14,15 @@ from trinity.common.constants import StorageType
 
 
 class TestFileBuffer(unittest.IsolatedAsyncioTestCase):
-    def test_file_reader(self):  # noqa: C901
+    async def test_file_reader(self):  # noqa: C901
         """Test file reader."""
         reader = get_buffer_reader(self.config.buffer.explorer_input.tasksets[0])
 
         tasks = []
         while True:
             try:
-                tasks.extend(reader.read())
-            except StopIteration:
+                tasks.extend(await reader.read())
+            except StopAsyncIteration:
                 break
         self.assertEqual(len(tasks), 16)
 
@@ -35,8 +35,8 @@ class TestFileBuffer(unittest.IsolatedAsyncioTestCase):
         tasks = []
         while True:
             try:
-                tasks.extend(reader.read())
-            except StopIteration:
+                tasks.extend(await reader.read())
+            except StopAsyncIteration:
                 break
         self.assertEqual(len(tasks), 16 * 2 - 4)
 
@@ -47,8 +47,8 @@ class TestFileBuffer(unittest.IsolatedAsyncioTestCase):
         tasks = []
         while True:
             try:
-                tasks.extend(reader.read())
-            except StopIteration:
+                tasks.extend(await reader.read())
+            except StopAsyncIteration:
                 break
         self.assertEqual(len(tasks), 20 - 8)
 
@@ -60,8 +60,8 @@ class TestFileBuffer(unittest.IsolatedAsyncioTestCase):
         tasks = []
         while True:
             try:
-                tasks.extend(reader.read())
-            except StopIteration:
+                tasks.extend(await reader.read())
+            except StopAsyncIteration:
                 break
         self.assertEqual(len(tasks), 16 * 3 - 20)
 
@@ -72,21 +72,21 @@ class TestFileBuffer(unittest.IsolatedAsyncioTestCase):
         tasks = []
         while True:
             try:
-                tasks.extend(reader.read())
-            except StopIteration:
+                tasks.extend(await reader.read())
+            except StopAsyncIteration:
                 break
         self.assertEqual(len(tasks), 40 - 24)
 
     async def test_file_writer(self):
         writer = get_buffer_writer(self.config.buffer.trainer_input.experience_buffer)
         await writer.acquire()
-        writer.write(
+        await writer.write(
             [
                 {"prompt": "hello world"},
                 {"prompt": "hi"},
             ]
         )
-        await writer.write_async(
+        await writer.write(
             [
                 {"prompt": "My name is"},
                 {"prompt": "What is your name?"},

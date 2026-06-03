@@ -99,7 +99,7 @@ def _build_fake_coordinator_explorer():
 
     feedback_calls = []
 
-    async def read_async():
+    async def read():
         return [SimpleNamespace(is_eval=False), SimpleNamespace(is_eval=False)]
 
     def record_feedback(metrics):
@@ -109,7 +109,7 @@ def _build_fake_coordinator_explorer():
     explorer.logger = MagicMock()
     explorer.rollout_coordinator = FakeCoordinator()
     explorer.monitor = FakeMonitor()
-    explorer.taskset = SimpleNamespace(read_async=read_async, feedback=record_feedback)
+    explorer.taskset = SimpleNamespace(read=read, feedback=record_feedback)
     explorer.min_wait_num = None
     explorer.pending_eval_tasks = deque()
     explorer.explore_start_time = None
@@ -527,7 +527,7 @@ class ServeTest(RayUnittestBaseAsync):
         buffer_reader = get_buffer_reader(
             self.config.buffer.trainer_input.experience_buffer,
         )
-        exps = await buffer_reader.read_async(batch_size=10)
+        exps = await buffer_reader.read(batch_size=10)
         for exp in exps:
             self.assertTrue(len(exp.tokens) > 0)
             self.assertTrue(len(exp.logprobs) > 0)

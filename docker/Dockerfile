@@ -41,7 +41,7 @@ RUN pip install uv && uv venv /opt/venv --python=python3.12
 # Install  Trinity-RFT
 RUN . /opt/venv/bin/activate && \
     uv pip install -e .[mm,dev,tinker,data,agent] && \
-    uv pip install vllm==0.21.0
+    uv pip install vllm==0.22.0
 
 # Install flash attention
 RUN . /opt/venv/bin/activate && \

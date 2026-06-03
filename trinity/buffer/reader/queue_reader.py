@@ -3,8 +3,6 @@
 import traceback
 from typing import Dict, List, Optional
 
-import ray
-
 from trinity.buffer.buffer_reader import BufferReader
 from trinity.buffer.storage.queue import QueueStorage
 from trinity.common.config import StorageConfig
@@ -21,27 +19,7 @@ class QueueReader(BufferReader):
         self.read_batch_size = config.batch_size
         self.queue = QueueStorage.get_wrapper(config)
 
-    def read(self, batch_size: Optional[int] = None, **kwargs) -> List[Experience]:
-        try:
-            batch_size = self.read_batch_size if batch_size is None else batch_size
-            exp_bytes = ray.get(
-                self.queue.get_batch.remote(batch_size, timeout=self.timeout, **kwargs)
-            )
-            exps = Experience.deserialize_many(exp_bytes)
-            if len(exps) != batch_size:
-                raise TimeoutError(
-                    f"Read incomplete batch ({len(exps)}/{batch_size}), please check your workflow."
-                )
-        except StopAsyncIteration:
-            raise StopIteration()
-        except Exception as e:
-            if "StopAsyncIteration" in traceback.format_exc():
-                raise StopIteration() from e
-            else:
-                raise
-        return exps
-
-    async def read_async(self, batch_size: Optional[int] = None, **kwargs) -> List[Experience]:
+    async def read(self, batch_size: Optional[int] = None, **kwargs) -> List[Experience]:
         batch_size = self.read_batch_size if batch_size is None else batch_size
         try:
             exp_bytes = await self.queue.get_batch.remote(
@@ -60,9 +38,7 @@ class QueueReader(BufferReader):
         return exps
 
     def state_dict(self) -> Dict:
-        # Queue Not supporting state dict yet
         return {"current_index": 0}
 
     def load_state_dict(self, state_dict):
-        # Queue Not supporting state dict yet
         return None

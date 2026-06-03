@@ -485,7 +485,7 @@ class DebugWorkflowRunner(WorkflowRunner):
 
     async def debug(self) -> None:
         """Run the debug workflow."""
-        tasks = await self.taskset.read_async(batch_size=1)
+        tasks = await self.taskset.read(batch_size=1)
         task = tasks[0]
         self.logger.info(f"Start debugging task:\n{task.raw_task}")
         if not self.enable_profiling:
@@ -505,7 +505,7 @@ class DebugWorkflowRunner(WorkflowRunner):
             self.logger.info(
                 f"Debugging failed, extracting {len(experiences)} experiences from history."
             )
-        await self.sqlite_writer.write_async(experiences)
+        await self.sqlite_writer.write(experiences)
         if status.ok:
             print(f"Task {task.task_id} completed successfully with metrics:\n{status.metrics}")
         else:

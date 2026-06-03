@@ -64,6 +64,8 @@ WORKFLOWS = Registry(
 
 - `algorithm.algorithm_type = multi_step_grpo`：该算法允许每次运行包含多个步骤并生成多条 experience 数据用于训练，并将最后一步 experience 的 advantages 值广播到之前的 experience 中。
 
+- `algorithm.algorithm_type = gigpo`：面向多轮 Agent，在 episode 级 GRPO 优势之上增加锚点状态（anchor state）的 step 级相对优势（参见 [GiGPO ALFWorld 示例](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/gigpo_alfworld)）。工作流需设置 `experience.info["env_state_hash"]` 与 `experience.info["step_reward"]`。
+
 - `buffer.train_batch_size`：从 buffer 中采样用于训练的 experience 数量，可以与每次探索生成的 experience 数量不同。
 
 - `buffer.trainer_input.experience_buffer.replay_buffer`：使用 `PriorityQueue` 可使模型优先使用高优先级的 experience （默认为使用更新产生的 experience）。

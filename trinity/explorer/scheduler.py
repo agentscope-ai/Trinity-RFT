@@ -490,7 +490,25 @@ class Scheduler:
         if self.running:
             return
         self.running = True
-        await asyncio.gather(*[self._create_runner(i) for i in range(self.runner_num)])
+        # bounded-concurrency runner prepare with in-slot retry (avoids glibc getenv races)
+        _sem = asyncio.Semaphore(max(1, self.config.explorer.runner_prepare_concurrency))
+        _retries = max(0, self.config.explorer.runner_prepare_max_retries)
+
+        async def _create_limited(i: int) -> None:
+            async with _sem:
+                for attempt in range(_retries + 1):
+                    try:
+                        await self._create_runner(i)
+                        return
+                    except Exception as e:
+                        if attempt == _retries:
+                            raise
+                        self.logger.warning(
+                            f"Runner {i} prepare failed ({attempt + 1}/{_retries + 1}), retrying: {e}"
+                        )
+                        await asyncio.sleep(2.0 * (attempt + 1))
+
+        await asyncio.gather(*[_create_limited(i) for i in range(self.runner_num)])
         self.scheduler_task = asyncio.create_task(self._scheduler_loop())
         ready_refs = [runner.runner.__ray_ready__.remote() for runner in self.runners.values()]
         await asyncio.gather(*ready_refs)

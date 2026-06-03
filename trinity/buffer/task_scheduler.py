@@ -35,8 +35,8 @@ class TasksetSchedulerBase:
         self.config = config
         self.explorer_state = explorer_state
 
-    async def read_async(self) -> List:
-        """Asynchronously reads a batch of tasks according to the current schedule."""
+    async def read(self) -> List:
+        """Read a batch of tasks according to the current schedule."""
         raise NotImplementedError
 
     def state_dict(self) -> List[Dict]:
@@ -73,8 +73,8 @@ class SimpleTasksetScheduler(TasksetSchedulerBase):
         taskset_config.data_selector = None  # disable selection
         self.reader = get_buffer_reader(taskset_config)
 
-    async def read_async(self) -> List:
-        return await self.reader.read_async()
+    async def read(self) -> List:
+        return await self.reader.read()
 
     def state_dict(self) -> List[Dict]:
         return [self.reader.state_dict()]
@@ -96,7 +96,7 @@ class TasksetScheduler(TasksetSchedulerBase):
       - Supports adaptive selectors via feedback (e.g., difficulty-based sampling)
       - Enables curriculum-like or interleaved multi-task training
 
-    It assumes that each call to `read_async()` corresponds to one training step,
+    It assumes that each call to `read()` corresponds to one training step,
     and batches are built by aggregating samples from different tasksets based on
     a shuffled global schedule.
     """
@@ -140,7 +140,7 @@ class TasksetScheduler(TasksetSchedulerBase):
             taskset.load_state_dict(taskset_state)  # Restore any prior state
             self.tasksets.append(taskset)
 
-        # Each explorer step calls read_async once → track step globally
+        # Each explorer step calls read once → track step globally
         self.step = explorer_state.get("latest_iteration", 0)
 
         # Build flat list indicating how often each taskset should appear per epoch
@@ -181,9 +181,8 @@ class TasksetScheduler(TasksetSchedulerBase):
     def _should_stop(self) -> bool:
         return self.step >= self.max_steps
 
-    async def read_async(self) -> List:
-        """
-        Asynchronously reads a batch of tasks according to the current schedule.
+    async def read(self) -> List:
+        """Read a batch of tasks according to the current schedule.
 
         For each step:
           - Checks if a new epoch has started; rebuilds order if so
@@ -218,7 +217,7 @@ class TasksetScheduler(TasksetSchedulerBase):
         counter = Counter(taskset_ids)
         batch = []
         for taskset_id, count in counter.items():
-            tasks = await self.tasksets[taskset_id].read_async(batch_size=count)
+            tasks = await self.tasksets[taskset_id].read(batch_size=count)
             # Annotate each task with its origin
             for task in tasks:
                 task.index["taskset_id"] = taskset_id

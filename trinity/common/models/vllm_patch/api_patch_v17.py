@@ -66,6 +66,7 @@ def setup_server_in_ray(args, logger):
     return listen_address, sock
 
 
+# already fixed in vLLM 0.22.0 (#42664), remove after we drop support for vLLM < 0.22.0
 def patch_vllm_reasoning_content_alias(logger: logging.Logger) -> None:
     import vllm.entrypoints.chat_utils as chat_utils
 
@@ -126,7 +127,8 @@ async def run_server_worker_in_ray(
         ReasoningParserManager.import_reasoning_parser(args.reasoning_parser_plugin)
 
     # Patch vLLM to support reasoning_content as an alias for reasoning
-    patch_vllm_reasoning_content_alias(logger)
+    if get_vllm_version() < parse_version("0.22.0"):
+        patch_vllm_reasoning_content_alias(logger)
 
     app = build_app(args)
 

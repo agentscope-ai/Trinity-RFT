@@ -8,6 +8,7 @@ import math
 import os
 import re
 import resource
+from typing import Tuple
 
 import sympy
 from pylatexenc import latex2text
@@ -466,7 +467,7 @@ def match_answer(response):
     return is_matched, response
 
 
-def compute_score(solution_str: str, ground_truth: str) -> float:
+def compute_score(solution_str: str, ground_truth: str) -> Tuple[float, str]:
     """Compute the reward score for a solution. This draws heavily from the LLM-as-judge and PRIME reward functions
 
     Args:
@@ -475,7 +476,7 @@ def compute_score(solution_str: str, ground_truth: str) -> float:
         extra_info: dict with additional info for the score computation
 
     Returns:
-        Reward score (1.0 for correct, 0.0 for incorrect)
+        Tuple[float, str]: (reward score 1.0 or 0.0, extracted_model_output)
     """
     from verl.utils.reward_score.prime_math.grader import math_equal
 
@@ -485,6 +486,10 @@ def compute_score(solution_str: str, ground_truth: str) -> float:
 
     # Extract answer from generated output
     is_matched, extracted_model_output = match_answer(model_output)
+
+    # If not matched, truncate the output for debugging
+    if not is_matched and len(extracted_model_output) > 20:
+        extracted_model_output = extracted_model_output[:20] + "(... output is truncated.)"
 
     # TWK NOTE: WE REMOVED THE RESPONSE TRUNCATION FROM math_dapo.compute_score
 
@@ -505,4 +510,4 @@ def compute_score(solution_str: str, ground_truth: str) -> float:
         except Exception:
             correct = False
 
-    return 1.0 if correct else 0.0
+    return 1.0 if correct else 0.0, extracted_model_output

@@ -1,4 +1,4 @@
-from trinity.buffer.schema.sql_schema import init_engine
+from trinity.buffer.schema.sql_schema import init_async_engine
 from trinity.utils.registry import Registry
 
 FORMATTER: Registry = Registry(
@@ -20,4 +20,4 @@ SQL_SCHEMA: Registry = Registry(
     },
 )
 
-__all__ = ["init_engine", "FORMATTER", "SQL_SCHEMA"]
+__all__ = ["init_async_engine", "FORMATTER", "SQL_SCHEMA"]

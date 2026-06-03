@@ -1174,7 +1174,7 @@ class TestServeWithTrainer(RayUnittestBaseAsync):
         reader = get_buffer_reader(self.config.buffer.explorer_input.taskset)
 
         for i in range(3):
-            tasks = reader.read()
+            tasks = await reader.read()
             await asyncio.gather(*(run_math_workflow(server_url, task.raw_task) for task in tasks))
             await proxy_client.commit_async()
             # wait for synchronizer started

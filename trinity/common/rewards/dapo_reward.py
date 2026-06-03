@@ -49,14 +49,19 @@ class MathDAPORewardFn(RewardFn):
         Returns:
             dict[str, float]: Reward components containing accuracy and format_score.
         """
-        correct = compute_score(response, truth) >= 0.5
+        score, extracted_answer = compute_score(response, truth)
         # DAPO paper (Sec. 2.4): +1 / -1 rule-based outcome reward
-        accuracy_score = 1.0 if correct else -1.0
+        accuracy_score = 1.0 if score >= 0.5 else -1.0
 
         format_score = 0.0
 
         if self.enable_overlong_penalty:
             format_score = self.compute_overlong_penalty(response_token)
+
+        info = kwargs.get("info")
+        if info is not None:
+            info["ground_truth"] = truth
+            info["extracted_answer"] = extracted_answer
 
         return {
             "accuracy": accuracy_score,

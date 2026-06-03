@@ -1,3 +1,4 @@
+import asyncio
 import os
 import queue
 import threading
@@ -56,9 +57,9 @@ class TestQueueBuffer(RayUnittestBaseAsync):
         for exp in exps:
             exp.info = {"model_version": 0, "use_count": 0}
         for _ in range(self.total_num // self.put_batch_size):
-            await writer.write_async(exps)
+            await writer.write(exps)
         for _ in range(self.total_num // self.train_batch_size):
-            exps = reader.read()
+            exps = await reader.read()
             self.assertEqual(len(exps), self.train_batch_size)
             print(f"finish read {self.train_batch_size} experience")
         exps = [
@@ -72,15 +73,15 @@ class TestQueueBuffer(RayUnittestBaseAsync):
         ]
         for exp in exps:
             exp.info = {"model_version": 1, "use_count": 0}
-        writer.write(exps)
-        exps = reader.read(batch_size=self.put_batch_size * 2)
+        await writer.write(exps)
+        exps = await reader.read(batch_size=self.put_batch_size * 2)
         self.assertEqual(len(exps), self.put_batch_size * 2)
 
         def thread_read(reader, result_queue):
             try:
-                batch = reader.read()
+                batch = asyncio.run(reader.read())
                 result_queue.put(batch)
-            except StopIteration as e:
+            except StopAsyncIteration as e:
                 result_queue.put(e)
 
         result_queue = queue.Queue()
@@ -89,10 +90,11 @@ class TestQueueBuffer(RayUnittestBaseAsync):
         time.sleep(2)  # make sure the thread is waiting for data
         self.assertEqual(await writer.release(), 0)
         t.join(timeout=1)
-        self.assertIsInstance(result_queue.get(), StopIteration)
+        self.assertIsInstance(result_queue.get(), StopAsyncIteration)
         with open(BUFFER_FILE_PATH, "r") as f:
             self.assertEqual(len(f.readlines()), self.total_num + self.put_batch_size * 2)
-        self.assertRaises(StopIteration, reader.read, batch_size=1)
+        with self.assertRaises(StopAsyncIteration):
+            await reader.read(batch_size=1)
 
     async def test_priority_queue_capacity(self):
         # test priority queue capacity
@@ -117,7 +119,7 @@ class TestQueueBuffer(RayUnittestBaseAsync):
         reader = QueueReader(config)
 
         for i in range(12):
-            writer.write(
+            await writer.write(
                 [
                     Experience(
                         tokens=torch.tensor([1, 2, 3]),
@@ -129,7 +131,7 @@ class TestQueueBuffer(RayUnittestBaseAsync):
 
         self.assertEqual(ray.get(reader.queue.length.remote()), 8)
 
-        exps = reader.read(batch_size=8)
+        exps = await reader.read(batch_size=8)
         self.assertEqual(exps[0].info["model_version"], 11)
         self.assertEqual(exps[0].info["use_count"], 1)
         self.assertEqual(exps[1].info["model_version"], 10)
@@ -137,10 +139,10 @@ class TestQueueBuffer(RayUnittestBaseAsync):
         self.assertEqual(exps[7].info["model_version"], 4)
 
         with self.assertRaises(TimeoutError):
-            reader.read(batch_size=1)
+            await reader.read(batch_size=1)
 
         for i in range(12):
-            writer.write(
+            await writer.write(
                 [
                     Experience(
                         tokens=torch.tensor([1, 2, 3]),
@@ -150,10 +152,10 @@ class TestQueueBuffer(RayUnittestBaseAsync):
                 ]
             )
         await writer.release()
-        exps = reader.read(batch_size=8)
+        exps = await reader.read(batch_size=8)
 
-        with self.assertRaises(StopIteration):
-            reader.read(batch_size=1)
+        with self.assertRaises(StopAsyncIteration):
+            await reader.read(batch_size=1)
 
     async def test_queue_buffer_capacity(self):
         # test queue capacity
@@ -169,7 +171,7 @@ class TestQueueBuffer(RayUnittestBaseAsync):
         config = config.to_storage_config()
         writer = QueueWriter(config)
         reader = QueueReader(config)
-        writer.write(
+        await writer.write(
             [
                 Experience(
                     tokens=torch.tensor([1, 2, 3]),
@@ -178,7 +180,7 @@ class TestQueueBuffer(RayUnittestBaseAsync):
                 )
             ]
         )
-        writer.write(
+        await writer.write(
             [
                 Experience(
                     tokens=torch.tensor([1, 2, 3]),
@@ -187,7 +189,7 @@ class TestQueueBuffer(RayUnittestBaseAsync):
                 )
             ]
         )
-        writer.write(
+        await writer.write(
             [
                 Experience(
                     tokens=torch.tensor([1, 2, 3]),
@@ -196,7 +198,7 @@ class TestQueueBuffer(RayUnittestBaseAsync):
                 )
             ]
         )
-        writer.write(
+        await writer.write(
             [
                 Experience(
                     tokens=torch.tensor([1, 2, 3]),
@@ -208,21 +210,23 @@ class TestQueueBuffer(RayUnittestBaseAsync):
 
         # should be blocked
         def write_blocking_call():
-            writer.write(
-                [
-                    Experience(
-                        tokens=torch.tensor([1, 2, 3]),
-                        prompt_length=2,
-                        info={"model_version": 4, "use_count": 0},
-                    )
-                ]
+            asyncio.run(
+                writer.write(
+                    [
+                        Experience(
+                            tokens=torch.tensor([1, 2, 3]),
+                            prompt_length=2,
+                            info={"model_version": 4, "use_count": 0},
+                        )
+                    ]
+                )
             )
 
         thread = threading.Thread(target=write_blocking_call)
         thread.start()
         thread.join(timeout=2)
         self.assertTrue(thread.is_alive(), "write() did not block as expected")
-        reader.read()
+        await reader.read()
         thread.join(timeout=1)
         self.assertFalse(thread.is_alive())
 
@@ -247,7 +251,7 @@ class TestQueueBuffer(RayUnittestBaseAsync):
         writer = QueueWriter(config)
         reader = QueueReader(config)
         for i in range(4):
-            writer.write(
+            await writer.write(
                 [
                     Experience(
                         tokens=torch.tensor([1, 2, 3]),
@@ -264,19 +268,21 @@ class TestQueueBuffer(RayUnittestBaseAsync):
 
         # should not be blocked
         def replace_call():
-            writer.write(
-                [
-                    Experience(
-                        tokens=torch.tensor([1, 2, 3]),
-                        prompt_length=2,
-                        info={"model_version": 4, "use_count": 0},
-                    ),
-                    Experience(
-                        tokens=torch.tensor([1, 2, 3]),
-                        prompt_length=2,
-                        info={"model_version": 4, "use_count": 0},
-                    ),
-                ]
+            asyncio.run(
+                writer.write(
+                    [
+                        Experience(
+                            tokens=torch.tensor([1, 2, 3]),
+                            prompt_length=2,
+                            info={"model_version": 4, "use_count": 0},
+                        ),
+                        Experience(
+                            tokens=torch.tensor([1, 2, 3]),
+                            prompt_length=2,
+                            info={"model_version": 4, "use_count": 0},
+                        ),
+                    ]
+                )
             )
 
         thread = threading.Thread(target=replace_call)
@@ -284,7 +290,7 @@ class TestQueueBuffer(RayUnittestBaseAsync):
         thread.join(timeout=2)
         self.assertFalse(thread.is_alive())
 
-        exps = reader.read(batch_size=4)
+        exps = await reader.read(batch_size=4)
         self.assertEqual(len(exps), 4)
         self.assertEqual(exps[0].info["model_version"], 4)
         self.assertEqual(exps[0].info["use_count"], 1)
@@ -296,7 +302,7 @@ class TestQueueBuffer(RayUnittestBaseAsync):
         # priority      3.4, 2.4, 2.0, 1.0
 
         time.sleep(1)
-        exps = reader.read(batch_size=4)
+        exps = await reader.read(batch_size=4)
         self.assertEqual(len(exps), 4)
         self.assertEqual(exps[0].info["model_version"], 4)
         self.assertEqual(exps[0].info["use_count"], 2)
@@ -308,7 +314,7 @@ class TestQueueBuffer(RayUnittestBaseAsync):
         # priority      2.8, 1.8, 2.0, 1.0
 
         time.sleep(1)
-        exps = reader.read(batch_size=4)
+        exps = await reader.read(batch_size=4)
         self.assertEqual(len(exps), 4)
         self.assertEqual(exps[0].info["model_version"], 4)
         self.assertEqual(exps[0].info["use_count"], 3)
@@ -320,7 +326,7 @@ class TestQueueBuffer(RayUnittestBaseAsync):
         # priority      2.2, 1.8, 1.4, 1.0
 
         time.sleep(1)
-        exps = reader.read(batch_size=4)
+        exps = await reader.read(batch_size=4)
         self.assertEqual(len(exps), 4)
         self.assertEqual(exps[0].info["model_version"], 4)
         self.assertEqual(exps[0].info["use_count"], 4)
@@ -332,7 +338,7 @@ class TestQueueBuffer(RayUnittestBaseAsync):
         # priority      1.6, 1.2, 1.4, 1.0
 
         time.sleep(1)
-        exps = reader.read(batch_size=4)
+        exps = await reader.read(batch_size=4)
         self.assertEqual(len(exps), 4)
         self.assertEqual(exps[0].info["model_version"], 4)
         self.assertEqual(exps[0].info["use_count"], 5)
@@ -344,7 +350,7 @@ class TestQueueBuffer(RayUnittestBaseAsync):
         # priority      1.0, 1.2, 0.8, 1.0
 
         time.sleep(1)
-        exps = reader.read(batch_size=4)
+        exps = await reader.read(batch_size=4)
         self.assertEqual(len(exps), 4)
         self.assertEqual(exps[0].info["model_version"], 3)
         self.assertEqual(exps[0].info["use_count"], 4)
@@ -376,7 +382,7 @@ class TestQueueBuffer(RayUnittestBaseAsync):
         writer = QueueWriter(config)
         reader = QueueReader(config)
         for i in range(4):
-            writer.write(
+            await writer.write(
                 [
                     Experience(
                         tokens=torch.tensor([1, 2, 3]),
@@ -393,19 +399,21 @@ class TestQueueBuffer(RayUnittestBaseAsync):
 
         # should not be blocked
         def replace_call():
-            writer.write(
-                [
-                    Experience(
-                        tokens=torch.tensor([1, 2, 3]),
-                        prompt_length=2,
-                        info={"model_version": 4, "use_count": 0},
-                    ),
-                    Experience(
-                        tokens=torch.tensor([1, 2, 3]),
-                        prompt_length=2,
-                        info={"model_version": 4, "use_count": 0},
-                    ),
-                ]
+            asyncio.run(
+                writer.write(
+                    [
+                        Experience(
+                            tokens=torch.tensor([1, 2, 3]),
+                            prompt_length=2,
+                            info={"model_version": 4, "use_count": 0},
+                        ),
+                        Experience(
+                            tokens=torch.tensor([1, 2, 3]),
+                            prompt_length=2,
+                            info={"model_version": 4, "use_count": 0},
+                        ),
+                    ]
+                )
             )
 
         thread = threading.Thread(target=replace_call)
@@ -413,7 +421,7 @@ class TestQueueBuffer(RayUnittestBaseAsync):
         thread.join(timeout=2)
         self.assertFalse(thread.is_alive())
 
-        exps = reader.read(batch_size=4)
+        exps = await reader.read(batch_size=4)
         self.assertEqual(len(exps), 4)
         self.assertEqual(exps[0].info["model_version"], 4)
         self.assertEqual(exps[0].info["use_count"], 1)
@@ -427,7 +435,7 @@ class TestQueueBuffer(RayUnittestBaseAsync):
 
         time.sleep(1)
         self.assertEqual(ray.get(reader.queue.length.remote()), 4)
-        exps = reader.read(batch_size=4)
+        exps = await reader.read(batch_size=4)
         self.assertEqual(len(exps), 4)
         self.assertEqual(exps[0].info["model_version"], 4)
         self.assertEqual(exps[0].info["use_count"], 2)
@@ -442,7 +450,7 @@ class TestQueueBuffer(RayUnittestBaseAsync):
 
         time.sleep(1)
         self.assertEqual(ray.get(reader.queue.length.remote()), 3)
-        exps = reader.read(batch_size=4)
+        exps = await reader.read(batch_size=4)
         self.assertEqual(len(exps), 4)
         self.assertEqual(exps[0].info["model_version"], 3)
         self.assertEqual(exps[0].info["use_count"], 2)

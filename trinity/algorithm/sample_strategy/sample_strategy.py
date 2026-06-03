@@ -57,7 +57,7 @@ class DefaultSampleStrategy(SampleStrategy):
     async def sample(self, step: int, **kwargs) -> Tuple[List[Experience], Dict, List]:
         metrics = {}
         with Timer(metrics, "time/read_experience"):
-            exp_list = await self.exp_buffer.read_async()
+            exp_list = await self.exp_buffer.read()
             repr_samples = representative_sample(exp_list)
         self.set_model_version_metric(exp_list, metrics)
         return exp_list, metrics, repr_samples
@@ -83,7 +83,7 @@ class StalenessControlSampleStrategy(DefaultSampleStrategy):
         min_model_version = max(step - self.max_staleness, 0)
         metrics = {}
         with Timer(metrics, "time/read_experience"):
-            exp_list = await self.exp_buffer.read_async(min_model_version=min_model_version)
+            exp_list = await self.exp_buffer.read(min_model_version=min_model_version)
             repr_samples = representative_sample(exp_list)
         self.set_model_version_metric(exp_list, metrics)
         return exp_list, metrics, repr_samples

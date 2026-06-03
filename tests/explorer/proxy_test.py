@@ -26,7 +26,7 @@ def get_dummy_experience(num: int) -> List[Experience]:
 db_path = os.path.join(os.path.dirname(__file__), "test_recorder.db")
 
 
-class RecorderTest(unittest.TestCase):
+class RecorderTest(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         if os.path.exists(db_path):
             os.remove(db_path)
@@ -35,22 +35,20 @@ class RecorderTest(unittest.TestCase):
         if os.path.exists(db_path):
             os.remove(db_path)
 
-    def test_recorder(self):
+    async def test_recorder(self):
         recorder = HistoryRecorder(
-            # in memory sqlite for testing
             db_url="sqlite:///" + db_path,
             table_name="experience",
         )
         self.assertIsInstance(recorder, HistoryRecorder)
-        # test record history
 
         experiences_1 = get_dummy_experience(3)
-        recorder.record_history(experiences_1)
-        # test update reward
+        await recorder.record_history(experiences_1)
+
         msg_ids_1 = [exp.eid.suffix for exp in experiences_1]
         experiences_2 = get_dummy_experience(2)
-        recorder.record_history(experiences_2)
-        updated_experiences = recorder.update_reward(
+        await recorder.record_history(experiences_2)
+        updated_experiences = await recorder.update_reward(
             reward=1.0, msg_ids=msg_ids_1, run_id=1, task_id="test_task"
         )
         self.assertEqual(len(updated_experiences), 3)
@@ -58,15 +56,15 @@ class RecorderTest(unittest.TestCase):
             self.assertEqual(exp.reward, 1.0)
             self.assertEqual(exp.eid.run, 1)
             self.assertEqual(str(exp.eid.task), "test_task")
-        # test update reward with non-existing msg_ids
-        updated_experiences_empty = recorder.update_reward(
+
+        updated_experiences_empty = await recorder.update_reward(
             reward=2.0, msg_ids=["non_existing_id"], run_id=1, task_id="test_task"
         )
         self.assertEqual(len(updated_experiences_empty), 0)
-        # test record history with empty experiences
-        recorder.record_history([])  # should not raise any exception
-        # test update reward multiple times
-        updated_experiences_2 = recorder.update_reward(
+
+        await recorder.record_history([])
+
+        updated_experiences_2 = await recorder.update_reward(
             reward=3.0,
             msg_ids=[exp.eid.suffix for exp in experiences_2],
             run_id=2,
@@ -77,7 +75,8 @@ class RecorderTest(unittest.TestCase):
             self.assertEqual(exp.reward, 3.0)
             self.assertEqual(exp.eid.run, 2)
             self.assertEqual(str(exp.eid.task), "test_task_2")
-        updated_experiences_3 = recorder.update_reward(
+
+        updated_experiences_3 = await recorder.update_reward(
             reward=4.0,
             msg_ids=[exp.eid.suffix for exp in experiences_2],
             run_id=3,

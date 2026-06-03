@@ -132,12 +132,22 @@ class ModelWrapperTest(VLLMTestBase):
         self.config.explorer.rollout_model.tensor_parallel_size = self.tensor_parallel_size
         self.config.algorithm.repeat_times = self.repeat_times
         self.config.explorer.rollout_model.enable_history = self.enable_history
+        self.config.explorer.rollout_model.enable_openai_api = self.enable_return_routed_experts
         self.config.explorer.rollout_model.chat_template = CHAT_TEMPLATE
         self.config.algorithm.enable_router_replay = self.enable_return_routed_experts
         self.config.check_and_update()
 
         self.engines, self.auxiliary_engines = await create_test_models(self.config)
         self.model_wrapper = self.engines[0]
+
+    def _assert_openai_response_routed_experts(self, response, expected_choices: int):
+        self.assertEqual(len(response.choices), expected_choices)
+        if not self.enable_return_routed_experts:
+            return
+        for choice in response.choices:
+            self.assertTrue(hasattr(choice, "routed_experts"))
+            self.assertIsInstance(choice.routed_experts, str)
+            self.assertGreater(len(choice.routed_experts), 0)
 
     async def test_generate(self):  # noqa: C901
         self.assertEqual(self.model_wrapper.model_path, self.config.model.model_path)
@@ -250,7 +260,58 @@ class ModelWrapperTest(VLLMTestBase):
         )
         self.assertTrue(exp.logprobs.shape[0] == exp.tokens.shape[0] - prompt_length)
         self.assertTrue(torch.equal(result_dict["input_ids"][0], exp.tokens))
-        self.assertRaises(ValueError, self.model_wrapper.get_openai_client)
+        if self.enable_return_routed_experts:
+            self.assertIsNotNone(self.model_wrapper.get_openai_client())
+        else:
+            self.assertRaises(ValueError, self.model_wrapper.get_openai_client)
+
+        if self.enable_return_routed_experts:
+            openai_messages = [
+                {"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": "Write one short sentence about Boston."},
+            ]
+            prompt_contents = [message["content"] for message in openai_messages]
+            if self.use_async:
+                openai_client = self.model_wrapper.get_openai_async_client()
+                openai_response = await openai_client.chat.completions.create(
+                    model=self.model_wrapper.model_path,
+                    messages=openai_messages,
+                    n=n,
+                    temperature=0.7,
+                    max_tokens=32,
+                )
+            else:
+                openai_client = self.model_wrapper.get_openai_client()
+                openai_response = openai_client.chat.completions.create(
+                    model=self.model_wrapper.model_path,
+                    messages=openai_messages,
+                    n=n,
+                    temperature=0.7,
+                    max_tokens=32,
+                )
+
+            self._assert_openai_response_routed_experts(openai_response, n)
+
+            history_experiences = self.model_wrapper.extract_experience_from_history()
+            self.assertEqual(len(history_experiences), n)
+            for choice, history_exp in zip(openai_response.choices, history_experiences):
+                self.assertIsNotNone(choice.message.content)
+                self.assertEqual(history_exp.response_text, choice.message.content)
+                self.assertGreater(history_exp.prompt_length, 0)
+                self.assertGreater(len(history_exp.tokens), history_exp.prompt_length)
+                prompt_text = tokenizer.decode(
+                    history_exp.tokens[: history_exp.prompt_length].tolist(),
+                    skip_special_tokens=False,
+                )
+                for prompt_content in prompt_contents:
+                    self.assertIn(prompt_content, prompt_text)
+                _assert_routed_experts_shape(
+                    self,
+                    history_exp,
+                    self.expected_routed_experts_layers,
+                    self.expected_routed_experts_topk,
+                )
+
         if self.config.explorer.rollout_model.enable_history:
             history_experiences = self.model_wrapper.extract_experience_from_history()
             self.assertTrue(len(history_experiences) == 0)

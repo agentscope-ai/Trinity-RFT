@@ -595,7 +595,7 @@ class InferenceModelConfig:
     enable_lora: bool = False
     enable_runtime_lora_updating: bool = False
     lora_modules: Optional[List[Dict]] = None
-    lora_kwargs: Optional[dict] = field(default_factory=dict)
+    lora_kwargs: Dict = field(default_factory=dict)
 
     # ! DO NOT SET, rope config
     rope_scaling: Optional[dict] = None
@@ -716,6 +716,8 @@ class ExplorerConfig:
     # for workflow runner
     # number of workflow runners.
     runner_per_model: int = 8  # number of runners per each rollout model
+    runner_prepare_concurrency: int = 8  # cap concurrent prepares (glibc getenv race)
+    runner_prepare_max_retries: int = 2  # retry prepare on transient crash
     max_timeout: int = 1800  # wait each task for 30 minutes at most
     max_retry_times: int = 2  # retry each task for 2 times if it fails or timeout
     env_vars: dict = field(default_factory=dict)  # environment variables for workflow runner

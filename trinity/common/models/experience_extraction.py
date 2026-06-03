@@ -1,5 +1,7 @@
+import io
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
+import numpy as np
 import pybase64
 import torch
 from torch import Tensor
@@ -45,6 +47,15 @@ def decode_sglang_routed_experts(
             f"got {routed_experts.numel()}"
         )
     return routed_experts.reshape(seq_length, num_layers, topk).to(torch.uint8)
+
+
+def decode_vllm_routed_experts(routed_experts_value: str | None) -> Optional[Tensor]:
+    if routed_experts_value is None:
+        return None
+
+    decoded = pybase64.b64decode_as_bytearray(routed_experts_value)
+    routed_experts = np.load(io.BytesIO(decoded), allow_pickle=False)
+    return torch.as_tensor(routed_experts, dtype=torch.uint8)
 
 
 def convert_api_output_to_experience(
@@ -163,6 +174,7 @@ def _convert_completion_output_to_experience(
             response_text=getattr(choice.message, "content", None),
             routed_experts=_extract_completion_routed_experts(
                 output,
+                choice,
                 total_tokens=len(output.prompt_token_ids) + len(choice.token_ids),
                 routed_experts_layout=routed_experts_layout,
             ),
@@ -235,11 +247,20 @@ def _convert_stream_chunks_to_experience(chunks: Sequence[Any]) -> List[Experien
 
 def _extract_completion_routed_experts(
     output,
+    choice,
     total_tokens: int,
     routed_experts_layout: Optional[Tuple[int, int]] = None,
 ) -> Optional[Tensor]:
+    routed_experts_value = getattr(choice, "routed_experts", None)
+    if routed_experts_value is not None:
+        try:
+            return decode_vllm_routed_experts(routed_experts_value)
+        except (ValueError, OSError):
+            return None
+
     if routed_experts_layout is None:
         return None
+
     if not hasattr(output, "sglext") or "routed_experts" not in output.sglext:
         return None
     routed_experts_value = output.sglext.get("routed_experts", None)

@@ -295,7 +295,7 @@ class Explorer:
         if self.explore_start_time is None:
             self.explore_start_time = time.time()
         try:
-            tasks = await self.taskset.read_async()
+            tasks = await self.taskset.read()
         except StopAsyncIteration:
             self.logger.warning("No more tasks to explore. Stop exploring.")
             await self.finish_current_steps()
@@ -362,7 +362,7 @@ class Explorer:
             eval_tasks = []
             while True:
                 try:
-                    eval_tasks.extend(await eval_taskset.read_async())
+                    eval_tasks.extend(await eval_taskset.read())
                 except StopAsyncIteration:
                     break
             assert (

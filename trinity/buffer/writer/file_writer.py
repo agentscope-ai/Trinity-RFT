@@ -1,7 +1,5 @@
 from typing import List
 
-import ray
-
 from trinity.buffer.buffer_writer import BufferWriter
 from trinity.buffer.storage.file import FileStorage
 from trinity.common.config import StorageConfig
@@ -14,13 +12,7 @@ class JSONWriter(BufferWriter):
         self.writer = FileStorage.get_wrapper(config)
         self.wrap_in_ray = config.wrap_in_ray
 
-    def write(self, data: List) -> None:
-        if self.wrap_in_ray:
-            ray.get(self.writer.write.remote(data))
-        else:
-            self.writer.write(data)
-
-    async def write_async(self, data):
+    async def write(self, data: List) -> None:
         if self.wrap_in_ray:
             await self.writer.write.remote(data)
         else:

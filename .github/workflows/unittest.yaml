@@ -58,17 +58,17 @@ jobs:
       id: test_type
       working-directory: trinity-${{ github.run_id }}
       run: |
-        COMMENT="${{ github.event.comment.body }}"
+        COMMENT=$(printf '%s' "${{ github.event.comment.body }}" | tr -d '\r' | sed -n '1{s/[[:space:]]*$//;p;}')
         if [[ "$COMMENT" == "/unittest-all"* ]]; then
           echo "type=all" >> $GITHUB_OUTPUT
         elif [[ "$COMMENT" == "/unittest-diff"* ]]; then
           echo "type=diff" >> $GITHUB_OUTPUT
         elif [[ "$COMMENT" =~ ^/unittest-module-(.+)$ ]]; then
-          MODULE=$(echo "$COMMENT" | sed -n 's/\/unittest-module-\(.*\)/\1/p')
+          MODULE="${COMMENT#/unittest-module-}"
           echo "type=module" >> $GITHUB_OUTPUT
           echo "module=$MODULE" >> $GITHUB_OUTPUT
         elif [[ "$COMMENT" =~ ^/unittest-pattern-(.+)$ ]]; then
-          PATTERN=$(echo "$COMMENT" | sed -n 's/\/unittest-pattern-\(.*\)/\1/p')
+          PATTERN="${COMMENT#/unittest-pattern-}"
           echo "type=pattern" >> $GITHUB_OUTPUT
           echo "pattern=$PATTERN" >> $GITHUB_OUTPUT
         else
@@ -152,7 +152,6 @@ jobs:
         report-path: trinity-${{ github.run_id }}/report.json
         summary: true
         summary-report: true
-        collapse-large-reports: true
         pull-request: false
         issue: ${{ github.event.issue.number }}
       env:

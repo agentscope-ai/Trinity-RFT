@@ -309,7 +309,7 @@ class TestTaskScheduler(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(batch_tasks_orders) % config.buffer.batch_size, 0)
         for i, start_id in enumerate(range(0, len(batch_tasks_orders), config.buffer.batch_size)):
             batch_tasks_indices = batch_tasks_orders[start_id : start_id + config.buffer.batch_size]
-            batch_tasks = await task_scheduler.read_async()
+            batch_tasks = await task_scheduler.read()
             # for task in batch_tasks:  # used for debug
             #     print(f"{task.index},")
             self._check_batch_tasks(batch_tasks, batch_tasks_indices)
@@ -322,7 +322,7 @@ class TestTaskScheduler(unittest.IsolatedAsyncioTestCase):
                 task_scheduler = TasksetScheduler(state_dict, config)
 
         with self.assertRaises(StopAsyncIteration):
-            batch_tasks = await task_scheduler.read_async()
+            batch_tasks = await task_scheduler.read()
 
     async def test_task_scheduler_simple(self):
         config = get_template_config()
@@ -334,7 +334,7 @@ class TestTaskScheduler(unittest.IsolatedAsyncioTestCase):
 
         task_scheduler = get_taskset_scheduler({}, config)
 
-        batch_tasks = await task_scheduler.read_async()
+        batch_tasks = await task_scheduler.read()
         self.assertEqual(len(batch_tasks), 4)
         task_scheduler_state = task_scheduler.state_dict()
         self.assertEqual(len(task_scheduler_state), 1)
@@ -351,7 +351,7 @@ class TestTaskScheduler(unittest.IsolatedAsyncioTestCase):
             },
             config,
         )
-        batch_tasks = await task_scheduler.read_async()
+        batch_tasks = await task_scheduler.read()
         self.assertEqual(len(batch_tasks), 4)
         task_scheduler_state = task_scheduler.state_dict()
         self.assertEqual(len(task_scheduler_state), 1)

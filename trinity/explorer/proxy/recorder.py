@@ -1,93 +1,105 @@
 from typing import Dict, List, Set
 
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from trinity.buffer.schema import init_engine
-from trinity.buffer.utils import run_with_retry_session
+from trinity.buffer.schema.sql_schema import init_async_engine
+from trinity.buffer.utils import async_run_with_retry_session
 from trinity.common.experience import Experience
 from trinity.utils.log import get_logger
 
 
-# TODO: implement an async version in the future
 class HistoryRecorder:
-    """Record chat history into the database."""
+    """Record chat history into the database using async SQL."""
 
     def __init__(self, db_url: str, table_name: str):
         self.logger = get_logger()
-        self.engine, self.meta_cls, self.blob_cls = init_engine(
-            db_url=db_url,
-            table_name=table_name,
+        self._db_url = db_url
+        self._table_name = table_name
+        self._initialized = False
+
+    async def prepare(self) -> None:
+        if self._initialized:
+            return
+        engine, self.meta_cls, self.blob_cls = await init_async_engine(
+            db_url=self._db_url,
+            table_name=self._table_name,
             schema_type="experience",
         )
-        self.logger.info(f"Init SQL storage at {db_url}")
-        self.session = sessionmaker(bind=self.engine)
+        self.session = async_sessionmaker(engine, expire_on_commit=False)
+        self._initialized = True
+        self.logger.info(f"Init async SQL storage at {self._db_url}")
 
-    def record_history(self, experiences: List[Experience]) -> None:
-        """Save experience to the database."""
+    async def record_history(self, experiences: List[Experience]) -> None:
+        """Save experiences to the database."""
+        await self.prepare()
 
-        def operation(db):
+        async def operation(session: AsyncSession):
             for exp in experiences:
                 meta_row = self.meta_cls.from_experience(exp)
-                db.add(meta_row)
-                db.flush()
+                session.add(meta_row)
+                await session.flush()
                 blob_row = self.blob_cls(id=meta_row.id, experience_bytes=exp.serialize())
-                db.add(blob_row)
+                session.add(blob_row)
 
-        run_with_retry_session(self.session, operation)
+        await async_run_with_retry_session(self.session, operation)
 
-    def update_reward(
+    async def update_reward(
         self, reward: float, msg_ids: list, run_id: int, task_id: str
     ) -> List[Experience]:
         """Update reward for given response IDs and return the updated experiences.
 
-        Args:
-            reward (float): The reward value to be updated.
-            msg_ids (list): List of message IDs to update.
-            run_id (int): The run ID associated with the experiences.
-            task_id (str): The task ID associated with the experiences.
-
-        Returns:
-            List[Experience]: List of updated experiences.
-
-        Note:
-            Only experiences that have not been consumed (consumed == 0) will be returned.
-            For example, if you call this method multiple times with the same msg_ids, only
-            the first call will return the updated experiences; subsequent calls will return
-            an empty list.
+        Only experiences that have not been consumed (consumed == 0) will be returned.
         """
+        await self.prepare()
 
-        def operation(db):
-            records = (
-                db.query(self.meta_cls)
-                .filter(
-                    self.meta_cls.msg_id.in_(msg_ids),
-                    self.meta_cls.consumed == 0,
-                )
+        meta_cls = self.meta_cls
+        blob_cls = self.blob_cls
+
+        async def operation(session: AsyncSession):
+            stmt = (
+                select(meta_cls)
+                .where(meta_cls.msg_id.in_(msg_ids), meta_cls.consumed == 0)
                 .with_for_update()
-                .all()
             )
+            result = await session.execute(stmt)
+            records = result.scalars().all()
 
             if not records:
                 return []
 
-            for record in records:
-                record.reward = reward
-                record.run_id = run_id
-                record.task_id = task_id
-                record.consumed += 1
-
             ids = [record.id for record in records]
-            blobs = db.query(self.blob_cls).filter(self.blob_cls.id.in_(ids)).all()
+
+            update_stmt = (
+                update(meta_cls)
+                .where(meta_cls.id.in_(ids))
+                .values(
+                    reward=reward,
+                    run_id=run_id,
+                    task_id=task_id,
+                    consumed=meta_cls.consumed + 1,
+                )
+            )
+            await session.execute(update_stmt)
+
+            blob_stmt = select(blob_cls).where(blob_cls.id.in_(ids))
+            blob_result = await session.execute(blob_stmt)
+            blobs = blob_result.scalars().all()
             blob_map = {b.id: b.experience_bytes for b in blobs}
 
+            # Re-fetch meta rows to get updated values
+            refresh_stmt = select(meta_cls).where(meta_cls.id.in_(ids))
+            refresh_result = await session.execute(refresh_stmt)
+            updated_records = refresh_result.scalars().all()
+
             updated_experiences = []
-            for record in records:
+            for record in updated_records:
                 blob_bytes = blob_map.get(record.id)
                 if blob_bytes is not None:
                     updated_experiences.append(record.to_experience(blob_bytes))
             return updated_experiences
 
-        return run_with_retry_session(self.session, operation)
+        return await async_run_with_retry_session(self.session, operation)
 
 
 class MemoryHistoryRecorder:
@@ -103,14 +115,14 @@ class MemoryHistoryRecorder:
         # Set of msg_id that are not consumed
         self._unconsumed: Set[str] = set()
 
-    def record_history(self, experiences: List[Experience]) -> None:
+    async def record_history(self, experiences: List[Experience]) -> None:
         """Save experiences in memory."""
         for exp in experiences:
             self._exp_map[exp.eid.suffix] = exp
             if getattr(exp, "consumed", 0) == 0:
                 self._unconsumed.add(exp.eid.suffix)
 
-    def update_reward(
+    async def update_reward(
         self, reward: float, msg_ids: list, run_id: int, task_id: str
     ) -> List[Experience]:
         """Update reward for given response IDs and return the updated experiences."""

@@ -373,7 +373,7 @@ class QueueStorage:
         exp_list = Experience.deserialize_many(exp_bytes)
         await self.queue.put(exp_list)
         if self.writer is not None:
-            self.writer.write(exp_list)
+            await self.writer.write(exp_list)
 
     async def get_batch(self, batch_size: int, timeout: float, min_model_version: int = 0) -> bytes:
         """Get batch of experience."""

@@ -78,10 +78,10 @@ class TestExperiencePipeline(RayUnittestBaseAsync):
 
         # tests
         reader = get_buffer_reader(config.buffer.trainer_input.experience_buffer)
-        exps = await reader.read_async(batch_size=task_num * (repeat_times - 1))
+        exps = await reader.read(batch_size=task_num * (repeat_times - 1))
         self.assertEqual(len(exps), task_num * (repeat_times - 1))
         with self.assertRaises(TimeoutError):
-            await reader.read_async(batch_size=task_num)
+            await reader.read(batch_size=task_num)
 
         with open(config.data_processor.experience_pipeline.input_save_path, "r") as f:
             input_data = f.readlines()

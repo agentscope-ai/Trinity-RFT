@@ -56,14 +56,14 @@ class MixSampleStrategy(SampleStrategy):
     async def sample(self, step: int) -> Tuple[List[Experience], Dict, List]:
         metrics = {}
         with Timer(metrics, "time/read_experience"):
-            usual_exp_list = await self.usual_exp_buffer.read_async()
+            usual_exp_list = await self.usual_exp_buffer.read()
             for exp in usual_exp_list:
                 if exp.info is None:
                     exp.info = {}
                 exp.info["is_expert"] = False
                 exp.info["step"] = step
 
-            expert_exp_list = await self.expert_exp_buffer.read_async()
+            expert_exp_list = await self.expert_exp_buffer.read()
             for exp in expert_exp_list:
                 # we add fake rewards and logprobs to make it compatible
                 exp.reward = 0.0

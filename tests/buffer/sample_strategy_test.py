@@ -84,7 +84,7 @@ class ExperienceStorageTest(RayUnittestBaseAsync):
         # Write experiences to buffer, while sample and validate model versions
         current_task = None
         for step, exps in enumerate(exps_list):
-            await self.buffer_writer.write_async(exps)
+            await self.buffer_writer.write(exps)
             if step in expected_model_versions_map:
                 if current_task:
                     await current_task
@@ -110,7 +110,7 @@ class ExperienceStorageTest(RayUnittestBaseAsync):
         # Write experiences to buffer, while sample and validate model versions
         current_task = None
         for step, exps in enumerate(exps_list):
-            await self.buffer_writer.write_async(exps)
+            await self.buffer_writer.write(exps)
             if step in check_steps:
                 if current_task:
                     await current_task

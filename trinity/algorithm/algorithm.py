@@ -516,6 +516,51 @@ class MultiStepGRPOAlgorithm(AlgorithmType):
         }
 
 
+class GiGPOAlgorithm(AlgorithmType):
+    """GiGPO (Group-in-Group Policy Optimization) for multi-turn LLM agents.
+
+    Critic-free hierarchical advantages: episode-level GRPO-style signal plus
+    anchor-state step-level grouping. Ref: Feng et al., arXiv:2505.10978.
+    """
+
+    use_critic: bool = False
+    use_reference: bool = True
+    compute_advantage_in_trainer: bool = False
+    can_balance_batch: bool = True
+    schema: str = "experience"
+
+    @classmethod
+    def default_config(cls) -> Dict:
+        """Return default GiGPO algorithm configuration.
+
+        Uses critic-free PPO with token-mean loss, ``gigpo`` advantage fn,
+        and ``repeat_times=8`` trajectories per task (paper-scale grouping).
+
+        Returns:
+            Dict: Default keys for ``algorithm`` section in YAML config.
+        """
+        return {
+            "repeat_times": 8,
+            "advantage_fn": "gigpo",
+            "advantage_fn_args": {
+                "omega": 1.0,
+                "gamma": 1.0,
+                "fnorm": "none",
+                "epsilon": 1e-6,
+            },
+            "sample_strategy": "default",
+            "policy_loss_fn": "ppo",
+            "policy_loss_fn_args": {
+                "clip_range_low": 0.2,
+                "clip_range_high": 0.2,
+                "loss_agg_mode": "token-mean",
+            },
+            "kl_penalty_fn": "none",
+            "kl_loss_fn": "k2",
+            "entropy_loss_fn": "default",
+        }
+
+
 class OnPolicyDistillAlgorithm(AlgorithmType):
     """On-Policy Distillation Algorithm.
 

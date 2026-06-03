@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -12,9 +13,35 @@ from trinity.common.experience import Experience
 from trinity.common.experience_visualizer import build_experience_token_view
 
 
+class _SyncViewerStorage:
+    """Thin sync wrapper around async SQLExperienceStorage for Streamlit."""
+
+    def __init__(self, config: StorageConfig) -> None:
+        self._loop = asyncio.new_event_loop()
+        self._async = SQLExperienceStorage(config)
+        self._loop.run_until_complete(self._async.prepare())
+
+    def _run(self, coro):
+        return self._loop.run_until_complete(coro)
+
+    def close(self):
+        if self._loop and not self._loop.is_closed():
+            self._loop.run_until_complete(self._async.engine.dispose())
+            self._loop.close()
+
+    def __del__(self):
+        self.close()
+
+    def query(self, offset: int = 0, limit: int = 10, filters=None) -> List[Experience]:
+        return self._run(self._async.query(offset, limit, filters))
+
+    def count(self, filters=None) -> int:
+        return self._run(self._async.count(filters))
+
+
 class SQLExperienceViewer:
     def __init__(self, config: StorageConfig) -> None:
-        self.storage = SQLExperienceStorage(config)
+        self.storage = _SyncViewerStorage(config)
 
     def get_experiences(
         self, offset: int, limit: int = 10, filters: Optional[Dict] = None

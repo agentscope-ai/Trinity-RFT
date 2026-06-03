@@ -19,10 +19,10 @@ class TestBufferReader(RayUnittestBaseAsync):
         config.storage_type = "custom"
         reader = get_buffer_reader(config)
         self.assertIsInstance(reader, CustomReader)
-        tasks = await reader.read_async()
+        tasks = await reader.read()
         self.assertEqual(len(tasks), 2)
         config.storage_type = "file"
         reader = get_buffer_reader(config)
         self.assertIsInstance(reader, FileReader)
-        tasks = await reader.read_async()
+        tasks = await reader.read()
         self.assertEqual(len(tasks), 2)

@@ -4,7 +4,7 @@ import datasets
 from parameterized import parameterized
 
 from tests.tools import (
-    RayUnittestBase,
+    RayUnittestBaseAsync,
     get_template_config,
     get_unittest_dataset_config,
 )
@@ -15,7 +15,7 @@ from trinity.common.constants import StorageType
 db_path = os.path.join(os.path.dirname(__file__), "test.db")
 
 
-class TaskStorageTest(RayUnittestBase):
+class TaskStorageTest(RayUnittestBaseAsync):
     @parameterized.expand(
         [
             (StorageType.FILE.value, True, 2),
@@ -26,7 +26,7 @@ class TaskStorageTest(RayUnittestBase):
             (StorageType.SQL.value, False, 2),
         ]
     )
-    def test_read_task(self, storage_type, is_eval, offset):
+    async def test_read_task(self, storage_type, is_eval, offset):
         config = get_template_config()
         total_samples = 17
         batch_size = 4
@@ -42,17 +42,17 @@ class TaskStorageTest(RayUnittestBase):
                 config.buffer.explorer_input.taskset.path, split="train"
             )
             config.buffer.explorer_input.taskset.path = f"sqlite:///{db_path}"
-            SQLTaskStorage.load_from_dataset(
+            await SQLTaskStorage.load_from_dataset(
                 dataset, config.buffer.explorer_input.taskset.to_storage_config()
             )
         reader = get_buffer_reader(config.buffer.explorer_input.taskset)
         tasks = []
-        try:
-            while True:
-                cur_tasks = reader.read()
+        while True:
+            try:
+                cur_tasks = await reader.read()
                 tasks.extend(cur_tasks)
-        except StopIteration:
-            pass
+            except StopAsyncIteration:
+                break
         if is_eval:
             self.assertEqual(len(tasks), total_samples - offset)
         else:

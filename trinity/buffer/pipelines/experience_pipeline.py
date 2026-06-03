@@ -158,7 +158,7 @@ class ExperiencePipeline:
     async def _process_experiences(self, exps: list[Experience]) -> Dict:
         st = time.time()
         if self.input_store is not None:
-            await self.input_store.write_async(exps)
+            await self.input_store.write(exps)
 
         if not hasattr(self, "operators"):
             raise RuntimeError(
@@ -178,7 +178,7 @@ class ExperiencePipeline:
 
         # Write processed experiences to output buffer
         with Timer(metrics, "experience_pipeline/time/write"):
-            await self.output.write_async(exps)
+            await self.output.write(exps)
         metrics["experience_pipeline/time/total"] = time.time() - st
 
         # prefix metrics keys with 'pipeline/'

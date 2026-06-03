@@ -94,9 +94,9 @@ class _HFBatchReader:
 
 
 class BaseFileReader(BufferReader):
-    async def read_async(self, batch_size: Optional[int] = None, **kwargs):
+    async def read(self, batch_size: Optional[int] = None, **kwargs):
         try:
-            return self.read(batch_size, **kwargs)
+            return self._read_sync(batch_size, **kwargs)
         except StopIteration as e:
             raise StopAsyncIteration from e
 
@@ -147,7 +147,7 @@ class _DatasetFileReader(BaseFileReader):
     def _convert_batch(self, samples: List, indices: List) -> List:
         raise NotImplementedError
 
-    def read(self, batch_size: Optional[int] = None, **kwargs) -> List:
+    def _read_sync(self, batch_size: Optional[int] = None, **kwargs) -> List:
         batch_size = batch_size or self.read_batch_size
         samples, indices = self._read_samples(batch_size)
         return self._convert_batch(samples, indices)
@@ -162,8 +162,8 @@ class FileReader(BaseFileReader):
         else:
             self.reader = TaskFileReader(config)
 
-    def read(self, batch_size: Optional[int] = None, **kwargs) -> List:
-        return self.reader.read(batch_size, **kwargs)
+    def _read_sync(self, batch_size: Optional[int] = None, **kwargs) -> List:
+        return self.reader._read_sync(batch_size, **kwargs)
 
     def state_dict(self):
         return self.reader.state_dict()

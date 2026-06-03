@@ -7,12 +7,8 @@ class BufferWriter(ABC):
     """Interface of the buffer writer."""
 
     @abstractmethod
-    def write(self, data: List) -> None:
+    async def write(self, data: List) -> None:
         """Write to buffer."""
-
-    @abstractmethod
-    async def write_async(self, data: List) -> None:
-        """Write to buffer asynchronously."""
 
     @abstractmethod
     async def acquire(self) -> int:

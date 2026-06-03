@@ -349,6 +349,7 @@ class Experience:
         """
         metadata = {"version": cls._SER_VERSION, "num_items": len(experiences), "items": []}
         tensor_data = {}
+        seen_storages: set = set()
 
         for index, exp in enumerate(experiences):
             item_meta = {}
@@ -365,7 +366,12 @@ class Experience:
                 value = getattr(exp, field_name)
                 if value is None:
                     continue
-                tensor_data[f"{index}:{field_name}"] = value.detach().cpu().contiguous().clone()
+                t = value.detach().contiguous().cpu()
+                storage_ptr = t.untyped_storage().data_ptr()
+                if storage_ptr in seen_storages:
+                    t = t.clone()
+                seen_storages.add(storage_ptr)
+                tensor_data[f"{index}:{field_name}"] = t
 
             if exp.multi_modal_inputs is None:
                 item_meta["multi_modal_input_keys"] = []
@@ -374,12 +380,12 @@ class Experience:
                 item_meta["multi_modal_input_keys"] = mm_keys
                 for key in mm_keys:
                     value = exp.multi_modal_inputs[key]
-                    tensor_data[f"{index}:multi_modal_inputs:{key}"] = (
-                        value.detach()
-                        .cpu()
-                        .contiguous()
-                        .clone()  # clone to avoid shared memory issues
-                    )
+                    t = value.detach().contiguous().cpu()
+                    storage_ptr = t.untyped_storage().data_ptr()
+                    if storage_ptr in seen_storages:
+                        t = t.clone()
+                    seen_storages.add(storage_ptr)
+                    tensor_data[f"{index}:multi_modal_inputs:{key}"] = t
 
             metadata["items"].append(item_meta)
 

@@ -45,9 +45,9 @@ class vLLMRolloutModel(BaseInferenceModel):
         if config.tensor_parallel_size != 1:
             os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
             os.environ["VLLM_RAY_BUNDLE_INDICES"] = config.bundle_indices
-        if self.vllm_version <= parse_version("0.11.0") and not vllm.envs.is_set("VLLM_USE_V1"):
-            self.logger.info(f"Using vLLM v{int(config.use_v1)} engine")
-            os.environ["VLLM_USE_V1"] = str(int(config.use_v1))
+        if self.vllm_version >= parse_version("0.22.0"):
+            # Force vLLM to use V1 for now
+            os.environ["VLLM_USE_V2_MODEL_RUNNER"] = "0"
         if config.use_v1:
             os.environ["VLLM_USE_RAY_COMPILED_DAG_CHANNEL_TYPE"] = "shm"
             os.environ["VLLM_RAY_PER_WORKER_GPUS"] = str(int(config.use_v1))
