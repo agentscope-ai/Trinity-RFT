@@ -3,20 +3,20 @@ name: "INTERCODE_SQL_RFT"
 checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
 algorithm:
   algorithm_type: grpo
-  repeat_times: 8
+  repeat_times: 4
   optimizer:
     lr: 1e-6
 model:
   model_path: ${oc.env:TRINITY_MODEL_PATH,Qwen/Qwen2.5-7B-Instruct}
-  max_prompt_tokens: 10240
-  max_response_tokens: 4096
-  max_model_len: 16384
+  max_prompt_tokens: 7680
+  max_response_tokens: 2048
+  max_model_len: 9728
 cluster:
   node_num: 1
   gpu_per_node: 8
 buffer:
-  total_epochs: 20
-  batch_size: 8
+  total_epochs: 5
+  batch_size: 4
   explorer_input:
     taskset:
       name: intercode_sql
@@ -29,18 +29,37 @@ buffer:
         temperature: 1.0
         logprobs: 0
       workflow_args:
-        data_path: 'examples/grpo_intercode_sql/intercode_sql_data/raw/ic_spider_dev.json'
+        data_path: 'examples/grpo_intercode_sql/intercode_sql_raw/ic_spider_dev.json'
         image_name: 'docker-env-sql'
         max_env_steps: 10
         auto_submit: true
         verbose: false
-      default_workflow_type: 'intercode_sql_workflow'
+    eval_tasksets:
+      - name: intercode_sql_eval
+        storage_type: file
+        path: 'examples/grpo_intercode_sql/intercode_sql_data'
+        split: test
+        format:
+          prompt_key: 'query_idx'
+        rollout_args:
+          temperature: 0.0
+          logprobs: 0
+        workflow_args:
+          data_path: 'examples/grpo_intercode_sql/intercode_sql_raw/ic_spider_dev.json'
+          image_name: 'docker-env-sql'
+          max_env_steps: 10
+          auto_submit: true
+          verbose: false
+        repeat_times: 1
+    default_workflow_type: 'intercode_sql_workflow'
   trainer_input:
     experience_buffer:
       name: intercode_sql_buffer
       storage_type: queue
       path: 'sqlite:///intercode_sql.db'
 explorer:
+  eval_on_startup: true
+  eval_interval: 20
   runner_per_model: 8
   max_timeout: 3600
   rollout_model:
@@ -57,8 +76,8 @@ synchronizer:
   sync_interval: 8
   sync_timeout: 1200
 trainer:
-  save_interval: 10
+  save_interval: 100
   grad_clip: 1.0
   use_dynamic_bsz: true
-  max_token_len_per_gpu: 16384
+  max_token_len_per_gpu: 9728
   ulysses_sequence_parallel_size: 1

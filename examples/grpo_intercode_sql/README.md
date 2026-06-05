@@ -24,11 +24,27 @@ python examples/grpo_intercode_sql/get_intercode_sql_data.py
 
 This downloads the raw task file and creates:
 
-- `examples/grpo_intercode_sql/intercode_sql_data/raw/ic_spider_dev.json`
+- `examples/grpo_intercode_sql/intercode_sql_raw/ic_spider_dev.json`
 - `examples/grpo_intercode_sql/intercode_sql_data/train.jsonl`
 - `examples/grpo_intercode_sql/intercode_sql_data/test.jsonl`
 
 Build or start the InterCode SQL Docker environment:
+
+Before running the build command, patch the Dockerfile bundled with
+`intercode-bench`. In
+`site-packages/intercode/assets/docker/sql.Dockerfile`, change:
+
+```dockerfile
+ADD ../datasets/spider_dev.sql /docker-entrypoint-initdb.d
+```
+
+to:
+
+```dockerfile
+ADD datasets/spider_dev.sql /docker-entrypoint-initdb.d
+```
+
+Run the build command:
 
 ```bash
 python -c "from intercode.assets import sql_build_docker; sql_build_docker()"
@@ -40,13 +56,6 @@ InterCode.
 The generated Trinity taskset contains 200 test tasks sampled from
 `ic_spider_dev.json` by default. The remaining tasks are used for train.
 
-You can override the test size and the seed:
-
-```bash
-python examples/grpo_intercode_sql/get_intercode_sql_data.py \
-  --test_size 100 \
-  --seed 42
-```
 
 ## Run
 

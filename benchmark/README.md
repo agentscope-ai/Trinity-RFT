@@ -126,6 +126,14 @@ Please follow the instructions in [Alfworld report](./reports/alfworld.md) to ru
 The chart below shows performance based on this [commit](https://github.com/agentscope-ai/Trinity-RFT/tree/3861859cbd9c40de07429db2d9b19fd3d4d31703).
 ![View Results](../docs/sphinx_doc/assets/bench_alfworld_step.png)
 
+### 6. InterCode-SQL
+
+Please follow the instructions in [InterCode-SQL report](./reports/intercode_sql.md) and `examples/grpo_intercode_sql/README.md` to run the benchmark.
+
+#### InterCode-SQL Results
+
+![View Results](../docs/sphinx_doc/assets/bench_intercode_sql_step.png)
+
 
 *More benchmarks will be added soon!*
 

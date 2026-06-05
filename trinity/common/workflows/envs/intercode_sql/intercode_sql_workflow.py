@@ -9,7 +9,6 @@ from trinity.common.experience import Experience
 from trinity.common.models.model import ModelWrapper
 from trinity.common.workflows.workflow import MultiTurnWorkflow, Task
 
-
 INTERCODE_SQL_SYSTEM_PROMPT = """
 You are an agent interacting with the InterCode-SQL environment.
 
@@ -37,8 +36,8 @@ def record_db(record: Dict) -> str:
     return record.get("db") or extra.get("db") or ""
 
 
-def preprocess_sql(record: Dict) -> List:
-    return [f"use {record_db(record)}"]
+def preprocess_sql(record: Dict) -> str:
+    return f"use {record_db(record)}"
 
 
 def parse_action(response: str) -> str:
@@ -48,8 +47,10 @@ def parse_action(response: str) -> str:
     return match.group(1).strip()
 
 
-def format_observation(observation: Any, query: str, db: str) -> str:
-    return f"Question: {query}\nDatabase: {db}\nObservation: {observation}"
+def format_observation(observation: Any, query: str = "", db: str = "") -> str:
+    if query or db:
+        return f"Question: {query}\nDatabase: {db}\nObservation: {observation}"
+    return f"Observation: {observation}"
 
 
 class InterCodeSQLWorkflow(MultiTurnWorkflow):
@@ -88,6 +89,16 @@ class InterCodeSQLWorkflow(MultiTurnWorkflow):
         responses = await self.model.chat_async(messages, n=1)
         return responses[0].response_text
 
+    def _close_env_connection(self, env: Any) -> None:
+        for attr in ("cur", "cnx"):
+            handle = getattr(env, attr, None)
+            if handle is None:
+                continue
+            try:
+                handle.close()
+            except Exception:
+                pass
+
     async def run_async(self) -> List[Experience]:
         try:
             from intercode.envs import SqlEnv
@@ -116,7 +127,11 @@ class InterCodeSQLWorkflow(MultiTurnWorkflow):
             env_info: dict[str, Any] = info or {}
 
             for step in range(self.max_env_steps):
-                memory.append({"role": "user", "content": format_observation(observation, query, db)})
+                if step == 0:
+                    user_content = format_observation(observation, query, db)
+                else:
+                    user_content = format_observation(observation)
+                memory.append({"role": "user", "content": user_content})
                 response_text = await self.get_model_response_text(memory)
                 memory.append({"role": "assistant", "content": response_text})
                 action = parse_action(response_text)
@@ -151,4 +166,4 @@ class InterCodeSQLWorkflow(MultiTurnWorkflow):
             )
             return [experience]
         finally:
-            env.close()
+            self._close_env_connection(env)

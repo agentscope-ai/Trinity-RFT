@@ -12,10 +12,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-DEFAULT_DATA_URL = (
-    "https://raw.githubusercontent.com/princeton-nlp/intercode/master/data/sql/spider/ic_spider_dev.json"
-)
-RAW_DATA_FILENAME = "ic_spider_dev.json"
+DEFAULT_DATA_URL = "https://raw.githubusercontent.com/princeton-nlp/intercode/master/data/sql/spider/ic_spider_dev.json"
 DEFAULT_TEST_SIZE = 200
 DEFAULT_SEED = 42
 
@@ -39,22 +36,10 @@ def load_records(data_path: Path) -> list[dict[str, Any]]:
     return records
 
 
-def build_examples(
-    records: list[dict[str, Any]],
-    raw_data_path: Path,
-) -> list[dict[str, Any]]:
+def build_examples(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     examples = []
-    for idx, record in enumerate(records):
-        examples.append(
-            {
-                "query_idx": idx,
-                "data_path": str(raw_data_path),
-                "db": record.get("db", ""),
-                "query": record.get("query", ""),
-                "difficulty": record.get("difficulty", record.get("hardness", "")),
-                "target": "",
-            }
-        )
+    for idx, _ in enumerate(records):
+        examples.append({"query_idx": idx, "target": ""})
     return examples
 
 
@@ -86,11 +71,11 @@ def create_dataset_files(
     seed: int,
     overwrite: bool,
 ) -> None:
-    raw_data_path = output_dir / "raw" / RAW_DATA_FILENAME
+    raw_data_path = output_dir.parent / "intercode_sql_raw" / "ic_spider_dev.json"
     download_file(data_url, raw_data_path, overwrite=overwrite)
 
     records = load_records(raw_data_path)
-    examples = build_examples(records, raw_data_path)
+    examples = build_examples(records)
     train_data, test_data = split_examples(examples, test_size, seed)
 
     output_dir.mkdir(parents=True, exist_ok=True)
