@@ -32,6 +32,7 @@ Trinity-RFT provides functionalities for users with different backgrounds and ob
 
 ## 🚀 News
 
+* [2026-06] 🎉 Two papers accepted by ICML 2026: [Learn-to-Ask](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/learn_to_ask), and [LLM-RL entropy dynamics](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/entropy).
 * [2026-04] [[Release Notes]](https://github.com/agentscope-ai/Trinity-RFT/releases/tag/v0.5.2) Trinity-RFT v0.5.2 released: support for Qwen3.5 series, bug fixes and optimizations.
 * [2026-03] 🤖 Trinity-RFT empowers the training of CoPaw-Flash, building a small agent model better suited for localized scenarios. Feel free to try CoPaw-Flash on [CoPaw](https://github.com/agentscope-ai/CoPaw); models are also available on [ModelScope](https://www.modelscope.cn/organization/AgentScope) and [HuggingFace](https://huggingface.co/agentscope-ai) ([News](https://mp.weixin.qq.com/s/-BXNU_PMi6QJuwSB5BqTbQ)).
 * [2026-02] [[Release Notes]](https://github.com/agentscope-ai/Trinity-RFT/releases/tag/v0.5.1) Trinity-RFT v0.5.1 released: Enhanced VLM support, logging improvements, bug fixes.
