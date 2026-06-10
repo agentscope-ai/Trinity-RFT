@@ -638,6 +638,8 @@
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.get_model_state_dict"><code class="docutils literal notranslate"><span class="pre">Synchronizer.get_model_state_dict()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.get_state_dict_meta"><code class="docutils literal notranslate"><span class="pre">Synchronizer.get_state_dict_meta()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.setup_weight_sync_group"><code class="docutils literal notranslate"><span class="pre">Synchronizer.setup_weight_sync_group()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.coordinate_weight_sync_setup"><code class="docutils literal notranslate"><span class="pre">Synchronizer.coordinate_weight_sync_setup()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.coordinate_weight_sync_teardown"><code class="docutils literal notranslate"><span class="pre">Synchronizer.coordinate_weight_sync_teardown()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.wait_new_model_state_dict"><code class="docutils literal notranslate"><span class="pre">Synchronizer.wait_new_model_state_dict()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.notify_no_new_model_state_dict"><code class="docutils literal notranslate"><span class="pre">Synchronizer.notify_no_new_model_state_dict()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.get_latest_model_version"><code class="docutils literal notranslate"><span class="pre">Synchronizer.get_latest_model_version()</span></code></a></li>
@@ -818,6 +820,26 @@ the trainer and one or more explorers in a distributed training setup.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="trinity.manager.synchronizer.Synchronizer.coordinate_weight_sync_setup">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">coordinate_weight_sync_setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/manager/synchronizer.html#Synchronizer.coordinate_weight_sync_setup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.manager.synchronizer.Synchronizer.coordinate_weight_sync_setup" title="Link to this definition">#</a></dt>
+<dd><p>Orchestrate NCCL weight sync group setup between Trainer and Explorer.</p>
+<ol class="arabic simple">
+<li><p>Get rendezvous info (addr/port/meta) from Trainer</p></li>
+<li><p>Both Trainer and Explorer join the NCCL group concurrently</p></li>
+<li><p>Set state_dict_meta on Explorer for weight sync</p></li>
+</ol>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.manager.synchronizer.Synchronizer.coordinate_weight_sync_teardown">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">coordinate_weight_sync_teardown</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/manager/synchronizer.html#Synchronizer.coordinate_weight_sync_teardown"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.manager.synchronizer.Synchronizer.coordinate_weight_sync_teardown" title="Link to this definition">#</a></dt>
+<dd><p>Orchestrate NCCL weight sync group teardown.</p>
+<p>Explorer tears down first (so no broadcasts are in-flight),
+then Trainer. Errors from dead actors are caught so that a
+crashed Explorer/Trainer does not block the remaining teardown.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="trinity.manager.synchronizer.Synchronizer.wait_new_model_state_dict">
 <em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">wait_new_model_state_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">current_version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="../_modules/trinity/manager/synchronizer.html#Synchronizer.wait_new_model_state_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.manager.synchronizer.Synchronizer.wait_new_model_state_dict" title="Link to this definition">#</a></dt>
 <dd><p>Wait until a new model state is available.</p>
@@ -967,6 +989,8 @@ Used for <cite>wait_new_model_state_dict</cite>.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.get_model_state_dict"><code class="docutils literal notranslate"><span class="pre">Synchronizer.get_model_state_dict()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.get_state_dict_meta"><code class="docutils literal notranslate"><span class="pre">Synchronizer.get_state_dict_meta()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.setup_weight_sync_group"><code class="docutils literal notranslate"><span class="pre">Synchronizer.setup_weight_sync_group()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.coordinate_weight_sync_setup"><code class="docutils literal notranslate"><span class="pre">Synchronizer.coordinate_weight_sync_setup()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.coordinate_weight_sync_teardown"><code class="docutils literal notranslate"><span class="pre">Synchronizer.coordinate_weight_sync_teardown()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.wait_new_model_state_dict"><code class="docutils literal notranslate"><span class="pre">Synchronizer.wait_new_model_state_dict()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.notify_no_new_model_state_dict"><code class="docutils literal notranslate"><span class="pre">Synchronizer.notify_no_new_model_state_dict()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.get_latest_model_version"><code class="docutils literal notranslate"><span class="pre">Synchronizer.get_latest_model_version()</span></code></a></li>

@@ -1239,6 +1239,21 @@ window.runMermaid = runMermaid;</script>
 
 
 
+<div class="viewcode-block" id="has_huggingface_model_weights">
+<a class="viewcode-back" href="../../../../build_api/trinity.common.models.utils.html#trinity.common.models.utils.has_huggingface_model_weights">[文档]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">has_huggingface_model_weights</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return True when ``checkpoint_path`` contains serialized HF model weights.&quot;&quot;&quot;</span>
+    <span class="n">weight_file_prefixes</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">&quot;model.safetensors&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;pytorch_model&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;adapter_model&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">weight_file_prefixes</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">))</span></div>
+
+
+
 <div class="viewcode-block" id="load_state_dict">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.models.utils.html#trinity.common.models.utils.load_state_dict">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_state_dict</span><span class="p">(</span><span class="n">checkpoint_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">TrainerConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
@@ -1253,10 +1268,21 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            megatron dist checkpointing, return a tuple of (method, checkpoint_dir).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer_type</span> <span class="o">==</span> <span class="s2">&quot;verl&quot;</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.trainer.trainer</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_verl_legacy</span>
+
         <span class="n">strategy</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer_strategy</span>
         <span class="k">if</span> <span class="n">strategy</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;fsdp&quot;</span><span class="p">,</span> <span class="s2">&quot;fsdp2&quot;</span><span class="p">}:</span>
             <span class="k">return</span> <span class="n">load_fsdp_state_dict_from_verl_checkpoint</span><span class="p">(</span><span class="n">checkpoint_dir</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">strategy</span> <span class="o">==</span> <span class="s2">&quot;megatron&quot;</span><span class="p">:</span>
+            <span class="n">huggingface_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">checkpoint_dir</span><span class="p">,</span> <span class="s2">&quot;huggingface&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_verl_legacy</span><span class="p">():</span>
+                <span class="c1"># In verl &gt;= 0.8 Megatron checkpoints, model weights may live</span>
+                <span class="c1"># under ``huggingface/`` while ``dist_ckpt/`` contains only</span>
+                <span class="c1"># optimizer and RNG state. Prefer HF weights when present to</span>
+                <span class="c1"># avoid loading an optimizer-only dist checkpoint.</span>
+                <span class="k">if</span> <span class="n">has_huggingface_model_weights</span><span class="p">(</span><span class="n">huggingface_dir</span><span class="p">):</span>
+                    <span class="k">return</span> <span class="s2">&quot;huggingface&quot;</span><span class="p">,</span> <span class="n">huggingface_dir</span>
+                <span class="k">return</span> <span class="s2">&quot;megatron&quot;</span><span class="p">,</span> <span class="n">checkpoint_dir</span>
             <span class="n">actor_config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer_config</span><span class="o">.</span><span class="n">actor_rollout_ref</span><span class="o">.</span><span class="n">actor</span>
             <span class="k">if</span> <span class="p">(</span>
                 <span class="n">actor_config</span><span class="o">.</span><span class="n">megatron</span><span class="o">.</span><span class="n">use_dist_checkpointing</span>
@@ -1265,7 +1291,7 @@ window.runMermaid = runMermaid;</script>
                 <span class="k">return</span> <span class="s2">&quot;megatron&quot;</span><span class="p">,</span> <span class="n">checkpoint_dir</span>
             <span class="k">else</span><span class="p">:</span>  <span class="c1"># hf checkpointing</span>
                 <span class="k">return</span> <span class="n">load_huggingface_state_dict</span><span class="p">(</span>
-                    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">checkpoint_dir</span><span class="p">,</span> <span class="s2">&quot;huggingface&quot;</span><span class="p">),</span>
+                    <span class="n">huggingface_dir</span><span class="p">,</span>
                     <span class="n">trust_remote_code</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">trust_remote_code</span><span class="p">,</span>
                 <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1315,6 +1341,30 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="c1"># modified from verl/model_merger/fsdp_model_merger.py</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_infer_world_size_from_checkpoint</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Infer FSDP world_size from shard filenames in *checkpoint_path*.</span>
+
+<span class="sd">    The sharded state dicts are named ``model_world_size_{N}_rank_{M}.pt``.</span>
+<span class="sd">    We glob for rank-0 files and extract *N*.  This avoids depending on</span>
+<span class="sd">    ``fsdp_config.json`` which ``save_state_dict`` (weight-sync shortcut)</span>
+<span class="sd">    does not produce.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+
+    <span class="n">pattern</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">,</span> <span class="s2">&quot;model_world_size_*_rank_0.pt&quot;</span><span class="p">)</span>
+    <span class="n">matches</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">pattern</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">matches</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;No FSDP shard files matching </span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2"> found in </span><span class="si">{</span><span class="n">checkpoint_path</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+    <span class="c1"># Extract world_size from the first (and usually only) match.</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;model_world_size_(\d+)_rank_0\.pt$&quot;</span><span class="p">,</span> <span class="n">matches</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot parse world_size from filename: </span><span class="si">{</span><span class="n">matches</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+
+
 <div class="viewcode-block" id="load_fsdp_state_dict_from_verl_checkpoint">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.models.utils.html#trinity.common.models.utils.load_fsdp_state_dict_from_verl_checkpoint">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_fsdp_state_dict_from_verl_checkpoint</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>  <span class="c1"># noqa: C901</span>
@@ -1334,7 +1384,14 @@ window.runMermaid = runMermaid;</script>
     <span class="p">)</span>
     <span class="n">merger</span> <span class="o">=</span> <span class="n">FSDPModelMerger</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
 
-    <span class="n">world_size</span> <span class="o">=</span> <span class="n">merger</span><span class="o">.</span><span class="n">_get_world_size</span><span class="p">()</span>
+    <span class="c1"># Prefer fsdp_config.json (written by full checkpoints), fall back to</span>
+    <span class="c1"># inferring from shard filenames (weight-sync state dicts).</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">world_size</span> <span class="o">=</span> <span class="n">merger</span><span class="o">.</span><span class="n">_get_world_size</span><span class="p">()</span>
+    <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+        <span class="n">world_size</span> <span class="o">=</span> <span class="n">_infer_world_size_from_checkpoint</span><span class="p">(</span><span class="n">checkpoint_path</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Inferred world_size=</span><span class="si">{</span><span class="n">world_size</span><span class="si">}</span><span class="s2"> from shard filenames&quot;</span><span class="p">)</span>
+
     <span class="n">rank_zero_state_dict</span> <span class="o">=</span> <span class="n">merger</span><span class="o">.</span><span class="n">_load_rank_zero_state_dict</span><span class="p">(</span><span class="n">world_size</span><span class="p">)</span>
 
     <span class="n">mesh</span><span class="p">,</span> <span class="n">mesh_dim_names</span> <span class="o">=</span> <span class="n">merger</span><span class="o">.</span><span class="n">_extract_device_mesh_info</span><span class="p">(</span><span class="n">rank_zero_state_dict</span><span class="p">,</span> <span class="n">world_size</span><span class="p">)</span>
@@ -1378,11 +1435,19 @@ window.runMermaid = runMermaid;</script>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.model_merger.base_model_merger</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelMergerConfig</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.model_merger.megatron_model_merger</span><span class="w"> </span><span class="kn">import</span> <span class="n">MegatronModelMerger</span>
 
-    <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.trainer.verl.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">patch_rope_theta_in_hf_config</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.trainer.verl_legacy.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">patch_rope_theta_in_hf_config</span>
 
     <span class="c1"># modified from verl/model_merger/megatron_model_merger.py</span>
     <span class="k">class</span><span class="w"> </span><span class="nc">MegatronStateDictConverter</span><span class="p">(</span><span class="n">MegatronModelMerger</span><span class="p">):</span>
         <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">ModelMergerConfig</span><span class="p">):</span>
+            <span class="c1"># Patch Megatron-Core ModelType enum compatibility:</span>
+            <span class="c1"># newer mcore renamed encoder_and_decoder → encoder_or_decoder,</span>
+            <span class="c1"># but verl&#39;s get_model() still references the old name.</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">megatron.core.enums</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelType</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ModelType</span><span class="p">,</span> <span class="s2">&quot;encoder_and_decoder&quot;</span><span class="p">):</span>
+                <span class="n">ModelType</span><span class="o">.</span><span class="n">encoder_and_decoder</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ModelType</span><span class="p">,</span> <span class="s2">&quot;encoder_or_decoder&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
             <span class="n">original_init_process_group</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">init_process_group</span>
             <span class="n">original_get_rank</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">get_rank</span>
             <span class="n">original_get_world_size</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">get_world_size</span>

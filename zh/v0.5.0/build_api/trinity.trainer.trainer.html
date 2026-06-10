@@ -623,6 +623,9 @@
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.Trainer"><code class="docutils literal notranslate"><span class="pre">Trainer</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.Trainer.__init__"><code class="docutils literal notranslate"><span class="pre">Trainer.__init__()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.Trainer.prepare"><code class="docutils literal notranslate"><span class="pre">Trainer.prepare()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.Trainer.get_weight_sync_info"><code class="docutils literal notranslate"><span class="pre">Trainer.get_weight_sync_info()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.Trainer.setup_weight_sync_group"><code class="docutils literal notranslate"><span class="pre">Trainer.setup_weight_sync_group()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.Trainer.teardown_weight_sync_group"><code class="docutils literal notranslate"><span class="pre">Trainer.teardown_weight_sync_group()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.Trainer.train"><code class="docutils literal notranslate"><span class="pre">Trainer.train()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.Trainer.train_step"><code class="docutils literal notranslate"><span class="pre">Trainer.train_step()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.Trainer.need_sync"><code class="docutils literal notranslate"><span class="pre">Trainer.need_sync()</span></code></a></li>
@@ -640,11 +643,17 @@
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.TrainEngineWrapper.train_step_num"><code class="docutils literal notranslate"><span class="pre">TrainEngineWrapper.train_step_num</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.TrainEngineWrapper.train_step"><code class="docutils literal notranslate"><span class="pre">TrainEngineWrapper.train_step()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.TrainEngineWrapper.save_checkpoint"><code class="docutils literal notranslate"><span class="pre">TrainEngineWrapper.save_checkpoint()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.TrainEngineWrapper.sync_weight"><code class="docutils literal notranslate"><span class="pre">TrainEngineWrapper.sync_weight()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.TrainEngineWrapper.wait_for_save"><code class="docutils literal notranslate"><span class="pre">TrainEngineWrapper.wait_for_save()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.TrainEngineWrapper.sync_weight_nccl"><code class="docutils literal notranslate"><span class="pre">TrainEngineWrapper.sync_weight_nccl()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.TrainEngineWrapper.upload_state_dict"><code class="docutils literal notranslate"><span class="pre">TrainEngineWrapper.upload_state_dict()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.TrainEngineWrapper.save_state_dict"><code class="docutils literal notranslate"><span class="pre">TrainEngineWrapper.save_state_dict()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.TrainEngineWrapper.get_weight_sync_info"><code class="docutils literal notranslate"><span class="pre">TrainEngineWrapper.get_weight_sync_info()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.TrainEngineWrapper.setup_weight_sync_group"><code class="docutils literal notranslate"><span class="pre">TrainEngineWrapper.setup_weight_sync_group()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.TrainEngineWrapper.teardown_weight_sync_group"><code class="docutils literal notranslate"><span class="pre">TrainEngineWrapper.teardown_weight_sync_group()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.is_verl_legacy"><code class="docutils literal notranslate"><span class="pre">is_verl_legacy()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.get_latest_hf_checkpoint_path"><code class="docutils literal notranslate"><span class="pre">get_latest_hf_checkpoint_path()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.get_trainer_wrapper"><code class="docutils literal notranslate"><span class="pre">get_trainer_wrapper()</span></code></a></li>
 </ul>
             </nav>
@@ -674,6 +683,27 @@
 <dt class="sig sig-object py" id="trinity.trainer.trainer.Trainer.prepare">
 <em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">prepare</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/trinity/trainer/trainer.html#Trainer.prepare"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.trainer.trainer.Trainer.prepare" title="Link to this definition">#</a></dt>
 <dd><p>Prepare the trainer.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.trainer.trainer.Trainer.get_weight_sync_info">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_weight_sync_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/trinity/trainer/trainer.html#Trainer.get_weight_sync_info"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.trainer.trainer.Trainer.get_weight_sync_info" title="Link to this definition">#</a></dt>
+<dd><p>Get rendezvous info for NCCL weight sync group setup.</p>
+<p>Returns (master_address, master_port, state_dict_meta) from the
+trainer's GPU worker rank 0. Called by Synchronizer before
+coordinating NCCL group creation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.trainer.trainer.Trainer.setup_weight_sync_group">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setup_weight_sync_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">master_address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">master_port</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">world_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/trinity/trainer/trainer.html#Trainer.setup_weight_sync_group"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.trainer.trainer.Trainer.setup_weight_sync_group" title="Link to this definition">#</a></dt>
+<dd><p>Join the NCCL weight sync group. Called by Synchronizer.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.trainer.trainer.Trainer.teardown_weight_sync_group">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">teardown_weight_sync_group</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/trinity/trainer/trainer.html#Trainer.teardown_weight_sync_group"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.trainer.trainer.Trainer.teardown_weight_sync_group" title="Link to this definition">#</a></dt>
+<dd><p>Destroy the NCCL weight sync group. Called by Synchronizer.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -782,27 +812,66 @@ Dict: Metrics of the training step.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="trinity.trainer.trainer.TrainEngineWrapper.save_checkpoint">
 <em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">save_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">block_until_saved</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_as_hf</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/trinity/trainer/trainer.html#TrainEngineWrapper.save_checkpoint"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.trainer.trainer.TrainEngineWrapper.save_checkpoint" title="Link to this definition">#</a></dt>
-<dd><p>Save the checkpoint.</p>
+<dd><p>Save the whole checkpoint (Including model, optimizer, and other states).</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="trinity.trainer.trainer.TrainEngineWrapper.sync_weight">
-<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sync_weight</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/trinity/trainer/trainer.html#TrainEngineWrapper.sync_weight"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.trainer.trainer.TrainEngineWrapper.sync_weight" title="Link to this definition">#</a></dt>
-<dd><p>Sync the model weight.</p>
+<dt class="sig sig-object py" id="trinity.trainer.trainer.TrainEngineWrapper.wait_for_save">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">wait_for_save</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/trinity/trainer/trainer.html#TrainEngineWrapper.wait_for_save"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.trainer.trainer.TrainEngineWrapper.wait_for_save" title="Link to this definition">#</a></dt>
+<dd><p>Wait for any pending background save operations to complete.</p>
+<p>Default implementation is a no-op. Override in subclasses that use
+background save threads to ensure the checkpoint iteration file is
+written before the trainer exits.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.trainer.trainer.TrainEngineWrapper.sync_weight_nccl">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">sync_weight_nccl</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/trinity/trainer/trainer.html#TrainEngineWrapper.sync_weight_nccl"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.trainer.trainer.TrainEngineWrapper.sync_weight_nccl" title="Link to this definition">#</a></dt>
+<dd><p>Sync the model weight by NCCL. (For <cite>NCCL</cite> sync method)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="trinity.trainer.trainer.TrainEngineWrapper.upload_state_dict">
 <em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">upload_state_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/trinity/trainer/trainer.html#TrainEngineWrapper.upload_state_dict"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.trainer.trainer.TrainEngineWrapper.upload_state_dict" title="Link to this definition">#</a></dt>
-<dd><p>Upload the state dict to Synchronizer.</p>
+<dd><p>Upload the state dict to Synchronizer. (For <cite>MEMORY</cite> sync method)</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="trinity.trainer.trainer.TrainEngineWrapper.save_state_dict">
 <em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">save_state_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/trinity/trainer/trainer.html#TrainEngineWrapper.save_state_dict"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.trainer.trainer.TrainEngineWrapper.save_state_dict" title="Link to this definition">#</a></dt>
-<dd><p>Only save the model state dict for Synchronizer.</p>
+<dd><p>Only save the model state dict for Synchronizer.  (For <cite>CHECKPOINT</cite> sync method)</p>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.trainer.trainer.TrainEngineWrapper.get_weight_sync_info">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_weight_sync_info</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/trinity/trainer/trainer.html#TrainEngineWrapper.get_weight_sync_info"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.trainer.trainer.TrainEngineWrapper.get_weight_sync_info" title="Link to this definition">#</a></dt>
+<dd><p>Get (master_address, master_port, state_dict_meta) for NCCL group setup.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.trainer.trainer.TrainEngineWrapper.setup_weight_sync_group">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">setup_weight_sync_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">master_address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">master_port</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">world_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/trinity/trainer/trainer.html#TrainEngineWrapper.setup_weight_sync_group"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.trainer.trainer.TrainEngineWrapper.setup_weight_sync_group" title="Link to this definition">#</a></dt>
+<dd><p>Join the NCCL weight sync group.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.trainer.trainer.TrainEngineWrapper.teardown_weight_sync_group">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">teardown_weight_sync_group</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/trinity/trainer/trainer.html#TrainEngineWrapper.teardown_weight_sync_group"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.trainer.trainer.TrainEngineWrapper.teardown_weight_sync_group" title="Link to this definition">#</a></dt>
+<dd><p>Tear down the NCCL weight sync group.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="trinity.trainer.trainer.is_verl_legacy">
+<span class="sig-prename descclassname"><span class="pre">trinity.trainer.trainer.</span></span><span class="sig-name descname"><span class="pre">is_verl_legacy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/trinity/trainer/trainer.html#is_verl_legacy"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.trainer.trainer.is_verl_legacy" title="Link to this definition">#</a></dt>
+<dd><p>Return True when the installed verl package is &lt; 0.8 (legacy backend).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="trinity.trainer.trainer.get_latest_hf_checkpoint_path">
+<span class="sig-prename descclassname"><span class="pre">trinity.trainer.trainer.</span></span><span class="sig-name descname"><span class="pre">get_latest_hf_checkpoint_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="trinity.common.config.html#trinity.common.config.Config" title="trinity.common.config.Config"><span class="pre">Config</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/trinity/trainer/trainer.html#get_latest_hf_checkpoint_path"><span class="viewcode-link"><span class="pre">[源代码]</span></span></a><a class="headerlink" href="#trinity.trainer.trainer.get_latest_hf_checkpoint_path" title="Link to this definition">#</a></dt>
+<dd><p>Return the latest HF checkpoint path for a verl trainer config.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -863,6 +932,9 @@ Dict: Metrics of the training step.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.Trainer"><code class="docutils literal notranslate"><span class="pre">Trainer</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.Trainer.__init__"><code class="docutils literal notranslate"><span class="pre">Trainer.__init__()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.Trainer.prepare"><code class="docutils literal notranslate"><span class="pre">Trainer.prepare()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.Trainer.get_weight_sync_info"><code class="docutils literal notranslate"><span class="pre">Trainer.get_weight_sync_info()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.Trainer.setup_weight_sync_group"><code class="docutils literal notranslate"><span class="pre">Trainer.setup_weight_sync_group()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.Trainer.teardown_weight_sync_group"><code class="docutils literal notranslate"><span class="pre">Trainer.teardown_weight_sync_group()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.Trainer.train"><code class="docutils literal notranslate"><span class="pre">Trainer.train()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.Trainer.train_step"><code class="docutils literal notranslate"><span class="pre">Trainer.train_step()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.Trainer.need_sync"><code class="docutils literal notranslate"><span class="pre">Trainer.need_sync()</span></code></a></li>
@@ -880,11 +952,17 @@ Dict: Metrics of the training step.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.TrainEngineWrapper.train_step_num"><code class="docutils literal notranslate"><span class="pre">TrainEngineWrapper.train_step_num</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.TrainEngineWrapper.train_step"><code class="docutils literal notranslate"><span class="pre">TrainEngineWrapper.train_step()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.TrainEngineWrapper.save_checkpoint"><code class="docutils literal notranslate"><span class="pre">TrainEngineWrapper.save_checkpoint()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.TrainEngineWrapper.sync_weight"><code class="docutils literal notranslate"><span class="pre">TrainEngineWrapper.sync_weight()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.TrainEngineWrapper.wait_for_save"><code class="docutils literal notranslate"><span class="pre">TrainEngineWrapper.wait_for_save()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.TrainEngineWrapper.sync_weight_nccl"><code class="docutils literal notranslate"><span class="pre">TrainEngineWrapper.sync_weight_nccl()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.TrainEngineWrapper.upload_state_dict"><code class="docutils literal notranslate"><span class="pre">TrainEngineWrapper.upload_state_dict()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.TrainEngineWrapper.save_state_dict"><code class="docutils literal notranslate"><span class="pre">TrainEngineWrapper.save_state_dict()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.TrainEngineWrapper.get_weight_sync_info"><code class="docutils literal notranslate"><span class="pre">TrainEngineWrapper.get_weight_sync_info()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.TrainEngineWrapper.setup_weight_sync_group"><code class="docutils literal notranslate"><span class="pre">TrainEngineWrapper.setup_weight_sync_group()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.TrainEngineWrapper.teardown_weight_sync_group"><code class="docutils literal notranslate"><span class="pre">TrainEngineWrapper.teardown_weight_sync_group()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.is_verl_legacy"><code class="docutils literal notranslate"><span class="pre">is_verl_legacy()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.get_latest_hf_checkpoint_path"><code class="docutils literal notranslate"><span class="pre">get_latest_hf_checkpoint_path()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.trainer.get_trainer_wrapper"><code class="docutils literal notranslate"><span class="pre">get_trainer_wrapper()</span></code></a></li>
 </ul>
   </nav></div>

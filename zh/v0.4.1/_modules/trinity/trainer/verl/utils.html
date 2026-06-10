@@ -1007,9 +1007,7 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>trinity.trainer.verl.utils 源代码</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Utils for ccompatibility issues with verl.&quot;&quot;&quot;</span>
-
-<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span></span><span class="sd">&quot;&quot;&quot;Utils for compatibility issues with verl.&quot;&quot;&quot;</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">logging</span><span class="w"> </span><span class="kn">import</span> <span class="n">Logger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span>
 
@@ -1018,9 +1016,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">PreTrainedModel</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">verl</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataProto</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">verl.trainer.ppo.metric_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_compute_response_info</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.checkpoint.checkpoint_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_latest_ckpt_path</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.experience</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Experience</span><span class="p">,</span>
     <span class="n">gather_action_masks</span><span class="p">,</span>
@@ -1090,6 +1086,7 @@ window.runMermaid = runMermaid;</script>
         <span class="s2">&quot;unique_ids&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">exp</span><span class="o">.</span><span class="n">eid</span><span class="o">.</span><span class="n">uid</span> <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">experiences</span><span class="p">]),</span>
         <span class="s2">&quot;position_ids&quot;</span><span class="p">:</span> <span class="n">position_ids</span><span class="p">,</span>
         <span class="s2">&quot;input_ids&quot;</span><span class="p">:</span> <span class="n">tokens</span><span class="p">,</span>
+        <span class="s2">&quot;prompts&quot;</span><span class="p">:</span> <span class="n">tokens</span><span class="p">[:,</span> <span class="p">:</span><span class="n">max_prompt_length</span><span class="p">],</span>
         <span class="s2">&quot;responses&quot;</span><span class="p">:</span> <span class="n">tokens</span><span class="p">[:,</span> <span class="n">max_prompt_length</span><span class="p">:],</span>
         <span class="s2">&quot;attention_mask&quot;</span><span class="p">:</span> <span class="n">attention_mask</span><span class="p">,</span>
         <span class="s2">&quot;response_mask&quot;</span><span class="p">:</span> <span class="n">gather_action_masks</span><span class="p">(</span><span class="n">experiences</span><span class="p">,</span> <span class="n">max_response_length</span><span class="p">),</span>
@@ -1306,173 +1303,6 @@ window.runMermaid = runMermaid;</script>
         <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">metrics</span></div>
-
-
-
-<div class="viewcode-block" id="get_latest_hf_checkpoint_path">
-<a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.utils.html#trinity.trainer.verl.utils.get_latest_hf_checkpoint_path">[文档]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_latest_hf_checkpoint_path</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the latest huggingface checkpoint path&quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">trainer_type</span> <span class="o">!=</span> <span class="s2">&quot;verl&quot;</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;This function is only for verl trainer.&quot;</span><span class="p">)</span>
-    <span class="n">checkpoint_dir</span> <span class="o">=</span> <span class="n">find_latest_ckpt_path</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">checkpoint_job_dir</span><span class="p">)</span>
-    <span class="n">hf_checkpoint_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">checkpoint_dir</span><span class="p">,</span> <span class="s2">&quot;actor&quot;</span><span class="p">,</span> <span class="s2">&quot;huggingface&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">hf_checkpoint_dir</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No huggingface checkpoint found in </span><span class="si">{</span><span class="n">hf_checkpoint_dir</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">hf_checkpoint_dir</span></div>
-
-
-
-<span class="c1"># modified from verl/utils/fsdp_utils.py:apply_fsdp2</span>
-<span class="c1"># bug fix for transformers v5</span>
-<div class="viewcode-block" id="apply_fsdp2">
-<a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.utils.html#trinity.trainer.verl.utils.apply_fsdp2">[文档]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">apply_fsdp2</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">fsdp_kwargs</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;model: AutoModelForCausalLM&quot;&quot;&quot;</span>
-    <span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.fsdp_utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-        <span class="n">CPUOffloadPolicy</span><span class="p">,</span>
-        <span class="n">fully_shard</span><span class="p">,</span>
-        <span class="n">maybe_patch_fsdp_module</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="k">assert</span> <span class="p">(</span>
-        <span class="n">CPUOffloadPolicy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-    <span class="p">),</span> <span class="s2">&quot;PyTorch version &gt;= 2.4 is required for using fully_shard API (FSDP2)&quot;</span>
-
-    <span class="n">default_transformer_cls_names_to_wrap</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;_no_split_modules&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-    <span class="n">fsdp_transformer_layer_cls_to_wrap</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;wrap_policy&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-        <span class="s2">&quot;transformer_layer_cls_to_wrap&quot;</span><span class="p">,</span> <span class="n">default_transformer_cls_names_to_wrap</span>
-    <span class="p">)</span>
-
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fsdp_transformer_layer_cls_to_wrap</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="n">fsdp_transformer_layer_cls_to_wrap</span> <span class="o">=</span> <span class="p">[</span><span class="n">fsdp_transformer_layer_cls_to_wrap</span><span class="p">]</span>
-
-    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">fsdp_transformer_layer_cls_to_wrap</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span>
-
-    <span class="n">modules</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">module</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">named_modules</span><span class="p">():</span>
-        <span class="k">if</span> <span class="n">module</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="ow">in</span> <span class="n">fsdp_transformer_layer_cls_to_wrap</span> <span class="ow">or</span> <span class="p">(</span>
-            <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Embedding</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">model</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">tie_word_embeddings</span>
-        <span class="p">):</span>
-            <span class="n">modules</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
-
-    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">module</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">modules</span><span class="p">):</span>
-        <span class="k">with</span> <span class="n">maybe_patch_fsdp_module</span><span class="p">(</span><span class="n">module</span><span class="p">):</span>
-            <span class="n">fully_shard</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="o">**</span><span class="n">fsdp_kwargs</span><span class="p">)</span>
-
-    <span class="k">with</span> <span class="n">maybe_patch_fsdp_module</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
-        <span class="n">fully_shard</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="o">**</span><span class="n">fsdp_kwargs</span><span class="p">)</span>  <span class="c1"># fsdp2 will not reshard_after_forward for root module</span></div>
-
-
-
-<span class="c1"># modified from verl/utils/seqlen_balancing.py:rearrange_micro_batches</span>
-<div class="viewcode-block" id="rearrange_micro_batches">
-<a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.utils.html#trinity.trainer.verl.utils.rearrange_micro_batches">[文档]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">rearrange_micro_batches</span><span class="p">(</span>
-    <span class="n">batch</span><span class="p">,</span>
-    <span class="n">max_token_len</span><span class="p">,</span>
-    <span class="n">dp_group</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">num_batches_divided_by</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">same_micro_num_in_dp</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">min_num_micro_batch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">use_dynamic_bsz_balance</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-<span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Split a batch into micro-batches by total token count, with optional DP sync and padding.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        batch (TensorDict): must include &quot;attention_mask&quot; (B*S); other fields are sliced similarly.</span>
-<span class="sd">        max_token_len (int): max sum of attention_mask per micro-batch.</span>
-<span class="sd">        dp_group (optional): torch.distributed group for data-parallel sync.</span>
-<span class="sd">        num_batches_divided_by (optional): virtual pipeline parallel size, for megatron.</span>
-<span class="sd">        same_micro_num_in_dp (bool): if True and dp_group set, pad all ranks to the same count.</span>
-<span class="sd">        min_num_micro_batch (int, optional): force at least this many splits (pads empty ones).</span>
-<span class="sd">        use_dynamic_bsz_balance (bool, optional): balance the computational workload between micro-batches</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        List[TensorDict]: the micro-batches.</span>
-<span class="sd">        List[List[int]]: index lists mapping each micro-batch back to original positions.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">distributed</span> <span class="k">as</span> <span class="n">dist</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">tensordict_utils</span> <span class="k">as</span> <span class="n">tu</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.device</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_device_name</span>
-    <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.seqlen_balancing</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-        <span class="n">calculate_workload</span><span class="p">,</span>
-        <span class="n">ceildiv</span><span class="p">,</span>
-        <span class="n">get_seqlen_balanced_partitions</span><span class="p">,</span>
-        <span class="n">roundup_divisible</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="c1"># this is per local micro_bsz</span>
-    <span class="n">input_ids</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;input_ids&quot;</span><span class="p">]</span>
-    <span class="k">if</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">is_nested</span><span class="p">:</span>
-        <span class="n">seq_len_effective</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">offsets</span><span class="p">()</span><span class="o">.</span><span class="n">diff</span><span class="p">()</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">seq_len_effective</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;attention_mask&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-    <span class="n">max_seq_len</span> <span class="o">=</span> <span class="n">seq_len_effective</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-
-    <span class="k">assert</span> <span class="p">(</span>
-        <span class="n">max_token_len</span> <span class="o">&gt;=</span> <span class="n">max_seq_len</span>
-    <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;max_token_len must be greater than the sequence length. Got </span><span class="si">{</span><span class="n">max_token_len</span><span class="si">=}</span><span class="s2"> and </span><span class="si">{</span><span class="n">max_seq_len</span><span class="si">=}</span><span class="s2">&quot;</span>
-    <span class="n">total_seqlen</span> <span class="o">=</span> <span class="n">seq_len_effective</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-    <span class="c1"># NOTE: num_microbatches &lt;= batch_size, so take the min of this two.</span>
-    <span class="n">num_micro_batches</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">seq_len_effective</span><span class="p">),</span> <span class="n">ceildiv</span><span class="p">(</span><span class="n">total_seqlen</span><span class="p">,</span> <span class="n">max_token_len</span><span class="p">))</span>
-    <span class="k">if</span> <span class="n">min_num_micro_batch</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="c1"># used to support pp</span>
-        <span class="n">num_micro_batches</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">min_num_micro_batch</span><span class="p">,</span> <span class="n">num_micro_batches</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">dist</span><span class="o">.</span><span class="n">is_initialized</span><span class="p">()</span> <span class="ow">and</span> <span class="n">same_micro_num_in_dp</span><span class="p">:</span>
-        <span class="n">num_micro_batches</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">num_micro_batches</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">get_device_name</span><span class="p">())</span>
-        <span class="n">dist</span><span class="o">.</span><span class="n">all_reduce</span><span class="p">(</span><span class="n">num_micro_batches</span><span class="p">,</span> <span class="n">op</span><span class="o">=</span><span class="n">dist</span><span class="o">.</span><span class="n">ReduceOp</span><span class="o">.</span><span class="n">MAX</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">dp_group</span><span class="p">)</span>
-        <span class="n">num_micro_batches</span> <span class="o">=</span> <span class="n">num_micro_batches</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-    <span class="k">if</span> <span class="n">num_batches_divided_by</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">num_micro_batches</span> <span class="o">=</span> <span class="n">roundup_divisible</span><span class="p">(</span><span class="n">num_micro_batches</span><span class="p">,</span> <span class="n">num_batches_divided_by</span><span class="p">)</span>
-
-    <span class="k">assert</span> <span class="n">num_micro_batches</span> <span class="o">&lt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">seq_len_effective</span><span class="p">)</span>
-
-    <span class="c1"># note that seq_len_effective is a GPU tensor. We need to make it a list to avoid D2H!</span>
-    <span class="n">workloads</span> <span class="o">=</span> <span class="n">calculate_workload</span><span class="p">(</span><span class="n">seq_len_effective</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-    <span class="n">micro_bsz_idx</span> <span class="o">=</span> <span class="n">get_seqlen_balanced_partitions</span><span class="p">(</span><span class="n">workloads</span><span class="p">,</span> <span class="n">num_micro_batches</span><span class="p">,</span> <span class="n">equal_size</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">use_dynamic_bsz_balance</span><span class="p">:</span>
-        <span class="c1"># Use the sum of squared sequence lengths to approximate attention computation workload</span>
-        <span class="n">micro_bsz_idx</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span>
-            <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">partition</span><span class="p">:</span> <span class="p">(</span>
-                <span class="nb">sum</span><span class="p">(</span><span class="n">workloads</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">partition</span><span class="p">),</span>
-                <span class="n">partition</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">partition</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="p">),</span>
-            <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="c1"># Place smaller micro-batches at both ends to reduce the bubbles exposed during the warm-up and cool-down.</span>
-        <span class="n">micro_bsz_idx</span> <span class="o">=</span> <span class="n">micro_bsz_idx</span><span class="p">[::</span><span class="mi">2</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">micro_bsz_idx</span><span class="p">[</span><span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span>
-
-    <span class="n">micro_batches</span> <span class="o">=</span> <span class="p">[]</span>
-
-    <span class="k">for</span> <span class="n">partition</span> <span class="ow">in</span> <span class="n">micro_bsz_idx</span><span class="p">:</span>
-        <span class="n">curr_micro_batch</span> <span class="o">=</span> <span class="n">tu</span><span class="o">.</span><span class="n">index_select_tensor_dict</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">partition</span><span class="p">)</span>
-        <span class="n">micro_batches</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">curr_micro_batch</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">micro_batches</span><span class="p">,</span> <span class="n">micro_bsz_idx</span></div>
-
-
-
-<span class="c1"># add rope_theta to hf config for backward compatibility, can be removed after verl is updated</span>
-<div class="viewcode-block" id="patch_rope_theta_in_hf_config">
-<a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.utils.html#trinity.trainer.verl.utils.patch_rope_theta_in_hf_config">[文档]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">patch_rope_theta_in_hf_config</span><span class="p">(</span><span class="n">hf_config</span><span class="p">):</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hf_config</span><span class="p">,</span> <span class="s2">&quot;rope_theta&quot;</span><span class="p">):</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hf_config</span><span class="p">,</span> <span class="s2">&quot;rope_parameters&quot;</span><span class="p">):</span>
-            <span class="n">rope_parameters</span> <span class="o">=</span> <span class="n">hf_config</span><span class="o">.</span><span class="n">rope_parameters</span>
-        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hf_config</span><span class="p">,</span> <span class="s2">&quot;text_config&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span>
-            <span class="n">hf_config</span><span class="o">.</span><span class="n">text_config</span><span class="p">,</span> <span class="s2">&quot;rope_parameters&quot;</span>
-        <span class="p">):</span>
-            <span class="n">rope_parameters</span> <span class="o">=</span> <span class="n">hf_config</span><span class="o">.</span><span class="n">text_config</span><span class="o">.</span><span class="n">rope_parameters</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">rope_parameters</span> <span class="o">=</span> <span class="p">{}</span>
-
-        <span class="n">rope_theta</span> <span class="o">=</span> <span class="n">rope_parameters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rope_theta&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">rope_theta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="nb">setattr</span><span class="p">(</span><span class="n">hf_config</span><span class="p">,</span> <span class="s2">&quot;rope_theta&quot;</span><span class="p">,</span> <span class="n">rope_theta</span><span class="p">)</span></div>
 
 </pre></div>
 

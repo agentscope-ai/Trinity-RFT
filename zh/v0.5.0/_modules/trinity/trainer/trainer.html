@@ -1017,10 +1017,11 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">traceback</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ray</span>
@@ -1094,6 +1095,41 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Trainer is ready.&quot;</span><span class="p">)</span></div>
 
 
+<div class="viewcode-block" id="Trainer.get_weight_sync_info">
+<a class="viewcode-back" href="../../../build_api/trinity.trainer.trainer.html#trinity.trainer.Trainer.get_weight_sync_info">[文档]</a>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_weight_sync_info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get rendezvous info for NCCL weight sync group setup.</span>
+
+<span class="sd">        Returns (master_address, master_port, state_dict_meta) from the</span>
+<span class="sd">        trainer&#39;s GPU worker rank 0. Called by Synchronizer before</span>
+<span class="sd">        coordinating NCCL group creation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">get_weight_sync_info</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Trainer.setup_weight_sync_group">
+<a class="viewcode-back" href="../../../build_api/trinity.trainer.trainer.html#trinity.trainer.Trainer.setup_weight_sync_group">[文档]</a>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">setup_weight_sync_group</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">master_address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">master_port</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">world_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">group_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">timeout</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Join the NCCL weight sync group. Called by Synchronizer.&quot;&quot;&quot;</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">setup_weight_sync_group</span><span class="p">(</span>
+            <span class="n">master_address</span><span class="p">,</span> <span class="n">master_port</span><span class="p">,</span> <span class="n">world_size</span><span class="p">,</span> <span class="n">group_name</span><span class="p">,</span> <span class="n">timeout</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Trainer.teardown_weight_sync_group">
+<a class="viewcode-back" href="../../../build_api/trinity.trainer.trainer.html#trinity.trainer.Trainer.teardown_weight_sync_group">[文档]</a>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">teardown_weight_sync_group</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Destroy the NCCL weight sync group. Called by Synchronizer.&quot;&quot;&quot;</span>
+        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">teardown_weight_sync_group</span><span class="p">()</span></div>
+
+
 <div class="viewcode-block" id="Trainer.train">
 <a class="viewcode-back" href="../../../build_api/trinity.trainer.trainer.html#trinity.trainer.Trainer.train">[文档]</a>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">train</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -1113,12 +1149,34 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">sample_metrics</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Sample data for step </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">train_step_num</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2"> finished.&quot;</span><span class="p">)</span>
                 <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_step</span><span class="p">(</span><span class="n">exps</span><span class="p">))</span>
-                <span class="k">if</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">need_sync</span><span class="p">():</span>
+                <span class="n">need_sync</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">need_sync</span><span class="p">()</span>
+                <span class="n">need_save</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">need_save</span><span class="p">()</span>
+                <span class="c1"># For CHECKPOINT sync, save_checkpoint is a superset of</span>
+                <span class="c1"># save_state_dict — skip the latter to avoid redundant writes</span>
+                <span class="c1"># to the same directory.</span>
+                <span class="k">if</span> <span class="n">need_sync</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="n">need_save</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">sync_method</span> <span class="o">==</span> <span class="n">SyncMethod</span><span class="o">.</span><span class="n">CHECKPOINT</span><span class="p">):</span>
                     <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">sync_weight</span><span class="p">())</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">need_save</span><span class="p">():</span>
-                    <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
-                        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_checkpoint</span><span class="p">(</span><span class="n">save_as_hf</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">save_hf_checkpoint</span> <span class="o">==</span> <span class="s2">&quot;always&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">need_save</span><span class="p">:</span>
+                    <span class="c1"># Only block for the final step (when total_steps is</span>
+                    <span class="c1"># finite) to avoid stalling the training loop on earlier</span>
+                    <span class="c1"># saves. The HF-model write for save_hf_checkpoint=&quot;last&quot;</span>
+                    <span class="c1"># is handled unconditionally by the post-loop save below.</span>
+                    <span class="n">is_final_step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_step_num</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_steps</span>
+                    <span class="n">save_as_hf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_hf_checkpoint</span> <span class="o">==</span> <span class="s2">&quot;always&quot;</span> <span class="ow">or</span> <span class="p">(</span>
+                        <span class="n">is_final_step</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_hf_checkpoint</span> <span class="o">==</span> <span class="s2">&quot;last&quot;</span>
                     <span class="p">)</span>
+                    <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                        <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_checkpoint</span><span class="p">(</span>
+                            <span class="n">block_until_saved</span><span class="o">=</span><span class="n">is_final_step</span><span class="p">,</span>
+                            <span class="n">save_as_hf</span><span class="o">=</span><span class="n">save_as_hf</span><span class="p">,</span>
+                        <span class="p">)</span>
+                    <span class="p">)</span>
+                    <span class="k">if</span> <span class="n">need_sync</span><span class="p">:</span>
+                        <span class="c1"># Update sync bookkeeping even though sync_weight was</span>
+                        <span class="c1"># skipped — save_checkpoint already wrote the weights</span>
+                        <span class="c1"># and updated latest_state_dict_iteration.txt.</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">last_sync_step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_step_num</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">last_sync_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">enable_preview</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">_log_experiences</span><span class="p">(</span><span class="n">repr_samples</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">monitor</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_step_num</span><span class="p">)</span>
@@ -1129,6 +1187,18 @@ window.runMermaid = runMermaid;</script>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error in Trainer:</span><span class="se">\n</span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="k">break</span>
 
+        <span class="c1"># Always perform a final save to guarantee:</span>
+        <span class="c1"># 1. A checkpoint exists even when the loop never triggered</span>
+        <span class="c1">#    need_save() at the final step.</span>
+        <span class="c1"># 2. The HF model is saved for save_hf_checkpoint=&quot;last&quot; even</span>
+        <span class="c1">#    when config.trainer.total_steps is None (total_steps becomes</span>
+        <span class="c1">#    float(&quot;inf&quot;), so is_final_step is never True inside the loop</span>
+        <span class="c1">#    and save_as_hf stays False there). The loop may exit via</span>
+        <span class="c1">#    StopAsyncIteration after the last step has already been saved</span>
+        <span class="c1">#    *without* the HF model; this call fills that gap.</span>
+        <span class="c1"># Checkpoint managers deduplicate saves by tracking the latest</span>
+        <span class="c1"># saved global_step per component, so re-saving an already-written</span>
+        <span class="c1"># component is a safe no-op.</span>
         <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">save_checkpoint</span><span class="p">(</span>
             <span class="n">block_until_saved</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">save_as_hf</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">save_hf_checkpoint</span> <span class="o">!=</span> <span class="s2">&quot;never&quot;</span>
         <span class="p">)</span>
@@ -1207,7 +1277,7 @@ window.runMermaid = runMermaid;</script>
                 <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Trainer sync_weights failed.&quot;</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">sync_weight</span><span class="p">()</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">sync_weight_nccl</span><span class="p">()</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">sync_method</span> <span class="o">==</span> <span class="n">SyncMethod</span><span class="o">.</span><span class="n">CHECKPOINT</span><span class="p">:</span>
                 <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">save_state_dict</span><span class="p">()</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">sync_method</span> <span class="o">==</span> <span class="n">SyncMethod</span><span class="o">.</span><span class="n">MEMORY</span><span class="p">:</span>
@@ -1313,29 +1383,105 @@ window.runMermaid = runMermaid;</script>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">save_checkpoint</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">block_until_saved</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">save_as_hf</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the checkpoint.&quot;&quot;&quot;</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save the whole checkpoint (Including model, optimizer, and other states).&quot;&quot;&quot;</span></div>
 
 
-<div class="viewcode-block" id="TrainEngineWrapper.sync_weight">
-<a class="viewcode-back" href="../../../build_api/trinity.trainer.trainer.html#trinity.trainer.TrainEngineWrapper.sync_weight">[文档]</a>
+<div class="viewcode-block" id="TrainEngineWrapper.wait_for_save">
+<a class="viewcode-back" href="../../../build_api/trinity.trainer.trainer.html#trinity.trainer.TrainEngineWrapper.wait_for_save">[文档]</a>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">wait_for_save</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Wait for any pending background save operations to complete.</span>
+
+<span class="sd">        Default implementation is a no-op. Override in subclasses that use</span>
+<span class="sd">        background save threads to ensure the checkpoint iteration file is</span>
+<span class="sd">        written before the trainer exits.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="TrainEngineWrapper.sync_weight_nccl">
+<a class="viewcode-back" href="../../../build_api/trinity.trainer.trainer.html#trinity.trainer.TrainEngineWrapper.sync_weight_nccl">[文档]</a>
     <span class="nd">@abstractmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">sync_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sync the model weight.&quot;&quot;&quot;</span></div>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sync_weight_nccl</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sync the model weight by NCCL. (For `NCCL` sync method)&quot;&quot;&quot;</span></div>
 
 
 <div class="viewcode-block" id="TrainEngineWrapper.upload_state_dict">
 <a class="viewcode-back" href="../../../build_api/trinity.trainer.trainer.html#trinity.trainer.TrainEngineWrapper.upload_state_dict">[文档]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">upload_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Upload the state dict to Synchronizer.&quot;&quot;&quot;</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Upload the state dict to Synchronizer. (For `MEMORY` sync method)&quot;&quot;&quot;</span></div>
 
 
 <div class="viewcode-block" id="TrainEngineWrapper.save_state_dict">
 <a class="viewcode-back" href="../../../build_api/trinity.trainer.trainer.html#trinity.trainer.TrainEngineWrapper.save_state_dict">[文档]</a>
     <span class="nd">@abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">save_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Only save the model state dict for Synchronizer.&quot;&quot;&quot;</span></div>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Only save the model state dict for Synchronizer.  (For `CHECKPOINT` sync method)&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="TrainEngineWrapper.get_weight_sync_info">
+<a class="viewcode-back" href="../../../build_api/trinity.trainer.trainer.html#trinity.trainer.TrainEngineWrapper.get_weight_sync_info">[文档]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">get_weight_sync_info</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="n">List</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get (master_address, master_port, state_dict_meta) for NCCL group setup.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="TrainEngineWrapper.setup_weight_sync_group">
+<a class="viewcode-back" href="../../../build_api/trinity.trainer.trainer.html#trinity.trainer.TrainEngineWrapper.setup_weight_sync_group">[文档]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">setup_weight_sync_group</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">master_address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">master_port</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">world_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">group_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">timeout</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Join the NCCL weight sync group.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="TrainEngineWrapper.teardown_weight_sync_group">
+<a class="viewcode-back" href="../../../build_api/trinity.trainer.trainer.html#trinity.trainer.TrainEngineWrapper.teardown_weight_sync_group">[文档]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">teardown_weight_sync_group</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Tear down the NCCL weight sync group.&quot;&quot;&quot;</span></div>
 </div>
+
+
+
+<div class="viewcode-block" id="is_verl_legacy">
+<a class="viewcode-back" href="../../../build_api/trinity.trainer.trainer.html#trinity.trainer.is_verl_legacy">[文档]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">is_verl_legacy</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return True when the installed verl package is &lt; 0.8 (legacy backend).&quot;&quot;&quot;</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">packaging.version</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse</span> <span class="k">as</span> <span class="n">parse_version</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">verl</span>
+
+        <span class="n">ver</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">verl</span><span class="p">,</span> <span class="s2">&quot;__version__&quot;</span><span class="p">,</span> <span class="s2">&quot;0.0.0&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="n">parse_version</span><span class="p">(</span><span class="n">ver</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">parse_version</span><span class="p">(</span><span class="s2">&quot;0.8.0&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_latest_hf_checkpoint_path">
+<a class="viewcode-back" href="../../../build_api/trinity.trainer.trainer.html#trinity.trainer.get_latest_hf_checkpoint_path">[文档]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_latest_hf_checkpoint_path</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the latest HF checkpoint path for a verl trainer config.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">trainer_type</span> <span class="o">!=</span> <span class="s2">&quot;verl&quot;</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;This function is only for verl trainer.&quot;</span><span class="p">)</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.checkpoint.checkpoint_manager</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_latest_ckpt_path</span>
+
+    <span class="n">checkpoint_dir</span> <span class="o">=</span> <span class="n">find_latest_ckpt_path</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">checkpoint_job_dir</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">checkpoint_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">hf_checkpoint_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">checkpoint_dir</span><span class="p">,</span> <span class="s2">&quot;actor&quot;</span><span class="p">,</span> <span class="s2">&quot;huggingface&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">hf_checkpoint_dir</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">hf_checkpoint_dir</span></div>
 
 
 
@@ -1344,9 +1490,14 @@ window.runMermaid = runMermaid;</script>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_trainer_wrapper</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TrainEngineWrapper</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get a trainer wrapper.&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">trainer_type</span> <span class="o">==</span> <span class="s2">&quot;verl&quot;</span><span class="p">:</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.trainer.verl.verl_trainer</span><span class="w"> </span><span class="kn">import</span> <span class="n">VerlPPOTrainerWrapper</span>
+        <span class="k">if</span> <span class="n">is_verl_legacy</span><span class="p">():</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.trainer.verl_legacy.verl_trainer</span><span class="w"> </span><span class="kn">import</span> <span class="n">VerlPPOTrainerWrapper</span>
 
-        <span class="k">return</span> <span class="n">VerlPPOTrainerWrapper</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">VerlPPOTrainerWrapper</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.trainer.verl.trainer</span><span class="w"> </span><span class="kn">import</span> <span class="n">VERLTrainer</span>
+
+            <span class="k">return</span> <span class="n">VERLTrainer</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">trainer_type</span> <span class="o">==</span> <span class="s2">&quot;tinker&quot;</span><span class="p">:</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.trainer.tinker.tinker_trainer</span><span class="w"> </span><span class="kn">import</span> <span class="n">TinkerTrainerWrapper</span>
 

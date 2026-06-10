@@ -1025,6 +1025,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">LOG_LEVEL_ENV_VAR</span><span class="p">,</span>
     <span class="n">LOG_NODE_IP_ENV_VAR</span><span class="p">,</span>
     <span class="n">PLUGIN_DIRS_ENV_VAR</span><span class="p">,</span>
+    <span class="n">ROLLOUT_WEIGHT_SYNC_GROUP_NAME</span><span class="p">,</span>
     <span class="n">TRAINER_NAME</span><span class="p">,</span>
     <span class="n">PromptType</span><span class="p">,</span>
     <span class="n">SaveStrategy</span><span class="p">,</span>
@@ -1717,7 +1718,12 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># If not set, use &#39;token-mean&#39;</span>
     <span class="n">loss_agg_mode</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="c1"># rollout router replay, only for MoE models</span>
-    <span class="n">enable_router_replay</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span></div>
+    <span class="n">enable_router_replay</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># bypass old logprobs computation by using rollout logprobs directly</span>
+    <span class="n">bypass_old_logprobs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="c1"># rollout correction config for off-policy correction (IS weights, rejection sampling)</span>
+    <span class="c1"># If set, should be a dict with keys like: bypass_mode, rollout_is, rollout_rs, etc.</span>
+    <span class="n">rollout_correction</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 
@@ -1860,6 +1866,22 @@ window.runMermaid = runMermaid;</script>
 
 
 
+<div class="viewcode-block" id="MegatronParallelConfig">
+<a class="viewcode-back" href="../../../build_api/trinity.common.config.html#trinity.common.config.MegatronParallelConfig">[文档]</a>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MegatronParallelConfig</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Megatron-Core parallelism settings for the trainer.&quot;&quot;&quot;</span>
+
+    <span class="n">tensor_model_parallel_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">pipeline_model_parallel_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">virtual_pipeline_model_parallel_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">expert_model_parallel_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">expert_tensor_parallel_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">context_parallel_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">sequence_parallel</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span></div>
+
+
+
 <div class="viewcode-block" id="TrainerConfig">
 <a class="viewcode-back" href="../../../build_api/trinity.common.config.html#trinity.common.config.TrainerConfig">[文档]</a>
 <span class="nd">@dataclass</span>
@@ -1882,14 +1904,26 @@ window.runMermaid = runMermaid;</script>
     <span class="n">grad_clip</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
     <span class="n">use_dynamic_bsz</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">use_remove_padding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">balance_batch</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="c1"># number of warmup steps for critic model, if &gt; 0, only update critic model for the first `critic_warmup` steps</span>
+    <span class="n">critic_warmup</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="c1"># if None, automatically set to ceil(2 * model.max_model_len / ulysses_sequence_parallel_size)</span>
     <span class="n">max_token_len_per_gpu</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">ulysses_sequence_parallel_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># sp size</span>
     <span class="n">fix_actor_microbatch_loss_scale</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># EXPERIMENTAL</span>
-    <span class="c1"># TODO: extract more train-related params from underlying trainer engine</span>
+
+    <span class="c1"># offloading</span>
+    <span class="n">param_offload</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">optimizer_offload</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">grad_offload</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">offload_policy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># FSDP2-specific</span>
 
     <span class="n">save_strategy</span><span class="p">:</span> <span class="n">SaveStrategy</span> <span class="o">=</span> <span class="n">SaveStrategy</span><span class="o">.</span><span class="n">UNRESTRICTED</span>
-    <span class="n">max_checkpoints_to_keep</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">max_checkpoints_to_keep</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># 0 means keep all checkpoints</span>
+
+    <span class="n">megatron</span><span class="p">:</span> <span class="n">MegatronParallelConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">MegatronParallelConfig</span><span class="p">)</span>
+    <span class="c1"># TODO: add fsdp config in the future</span>
+
     <span class="c1"># ! DO NOT SET</span>
     <span class="n">trust_remote_code</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">trainer_config</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
@@ -1925,10 +1959,14 @@ window.runMermaid = runMermaid;</script>
     <span class="n">sync_style</span><span class="p">:</span> <span class="n">SyncStyle</span> <span class="o">=</span> <span class="n">SyncStyle</span><span class="o">.</span><span class="n">FIXED</span>
     <span class="c1"># sync weights every `sync_interval` steps</span>
     <span class="n">sync_interval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">explorer_sync_interval</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># if not set, use `sync_interval`</span>
+    <span class="n">trainer_sync_interval</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># if not set, use `sync_interval`</span>
     <span class="c1"># allow explorer to run `sync_offset` steps before sync</span>
     <span class="n">sync_offset</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="c1"># waiting for `sync_timeout` seconds before timeout in `nccl` method</span>
     <span class="n">sync_timeout</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3600</span>
+    <span class="c1"># NCCL process group name for weight sync</span>
+    <span class="n">group_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">ROLLOUT_WEIGHT_SYNC_GROUP_NAME</span>
     <span class="c1"># wait for the lastest checkpoint to be ready  # TODO: to be used</span>
     <span class="n">wait_for_checkpoint</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
 
