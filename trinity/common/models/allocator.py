@@ -53,7 +53,7 @@ class Allocator:
         bundle_actor_map: Dict[int, str] = {}
         bundle_id = 0
         for role, config in model_configs:
-            gpus_per_bundle = config.tensor_parallel_size // config.nnodes
+            gpus_per_bundle = config.gpu_num // config.nnodes  # type: ignore
             for engine_id in range(config.engine_num):
                 for node_id in range(config.nnodes):
                     bundles.append({"GPU": float(gpus_per_bundle), "CPU": 1})
@@ -98,6 +98,10 @@ class Allocator:
             from trinity.common.models.tinker_model import TinkerModel
 
             config.tensor_parallel_size = 0
+            config.data_parallel_size = 0
+            config.pipeline_parallel_size = 0
+            config.enable_expert_parallel = False
+            config.gpu_num = 0
             config.nnodes = 1
             config.node_rank = 0
             model_cls = TinkerModel
@@ -188,7 +192,7 @@ async def get_model_wrapper(
             ray.remote(actor_cls)
             .options(
                 name=actor_name,
-                num_gpus=engine_config.tensor_parallel_size / engine_config.nnodes,
+                num_gpus=engine_config.gpu_num / engine_config.nnodes,  # type: ignore
                 namespace=engine_config.ray_namespace,
                 scheduling_strategy=PlacementGroupSchedulingStrategy(
                     placement_group=pg,

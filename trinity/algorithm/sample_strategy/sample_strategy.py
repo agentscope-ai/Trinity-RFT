@@ -80,7 +80,7 @@ class StalenessControlSampleStrategy(DefaultSampleStrategy):
         self.max_staleness = kwargs.get("max_staleness", float("inf"))
 
     async def sample(self, step: int, **kwargs) -> Tuple[List[Experience], Dict, List]:
-        min_model_version = max(step - self.max_staleness, 0)
+        min_model_version = max(step - self.max_staleness - 1, 0)
         metrics = {}
         with Timer(metrics, "time/read_experience"):
             exp_list = await self.exp_buffer.read(min_model_version=min_model_version)

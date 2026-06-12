@@ -520,6 +520,14 @@ class InferenceModelConfig:
     engine_type: str = "vllm"
     engine_num: int = 1
     tensor_parallel_size: int = 1
+    data_parallel_size: int = 1
+    pipeline_parallel_size: int = 1
+    enable_expert_parallel: bool = False
+    # Total GPU count consumed by a single engine.
+    # If unset, it will be inferred as tensor_parallel_size * data_parallel_size * pipeline_parallel_size.
+    gpu_num: Optional[int] = None
+    # Extra engine-specific initialization args for inference backends.
+    extra_engine_args: Dict[str, Any] = field(default_factory=dict)
     use_v1: bool = True
     enforce_eager: bool = False
     enable_prefix_caching: bool = True

@@ -42,7 +42,7 @@ class vLLMRolloutModel(BaseInferenceModel):
 
         self.vllm_version = get_vllm_version()
         self.use_v1 = config.use_v1
-        if config.tensor_parallel_size != 1:
+        if config.gpu_num != 1:
             os.environ["VLLM_WORKER_MULTIPROC_METHOD"] = "spawn"
             os.environ["VLLM_RAY_BUNDLE_INDICES"] = config.bundle_indices
         if self.vllm_version >= parse_version("0.22.0"):
@@ -128,6 +128,9 @@ class vLLMRolloutModel(BaseInferenceModel):
                 enforce_eager=self.config.enforce_eager,
                 worker_extension_cls="trinity.common.models.vllm_worker.WorkerExtension",
                 tensor_parallel_size=self.config.tensor_parallel_size,
+                pipeline_parallel_size=self.config.pipeline_parallel_size,
+                data_parallel_size=self.config.data_parallel_size,
+                enable_expert_parallel=self.config.enable_expert_parallel,
                 seed=self.config.seed,
                 distributed_executor_backend="mp",
                 max_model_len=self.config.max_model_len,
@@ -154,6 +157,7 @@ class vLLMRolloutModel(BaseInferenceModel):
                 async_scheduling=False,
                 **rope_kwargs,
                 **self.config.lora_kwargs,
+                **self.config.extra_engine_args,
             )
             if self.master_addr is not None and self.master_port is not None:
                 engine_args.master_addr = self.master_addr
@@ -552,12 +556,13 @@ class vLLMRolloutModel(BaseInferenceModel):
             await self.async_llm.add_lora(self.get_lora_request(self.default_lora_path))
             self.model_version = model_version
             return model_version
-        await self.async_llm.reset_prefix_cache(reset_running_requests=True)
+        await self.async_llm.pause_generation(clear_cache=True)
         await self._collective_rpc("update_weight", timeout=timeout)
         self.logger.info(
             f"Synchronized model to version {model_version} using method {sync_method}."
         )
         self.model_version = model_version
+        await self.async_llm.resume_generation()
         return model_version
 
     async def init_process_group(
