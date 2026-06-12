@@ -461,6 +461,8 @@ class VERLTrainer(TrainEngineWrapper):
         world_size: int,
         group_name: str,
         timeout: int,
+        bucket_size_mb: int = 500,
+        per_tensor: bool = False,
     ):
         self.actor_rollout_wg.setup_weight_sync_group(
             master_address=master_address,
@@ -468,6 +470,8 @@ class VERLTrainer(TrainEngineWrapper):
             world_size=world_size,
             group_name=group_name,
             timeout=timeout,
+            bucket_size_mb=bucket_size_mb,
+            per_tensor=per_tensor,
         )
 
     async def teardown_weight_sync_group(self):
@@ -633,7 +637,7 @@ class VERLTrainer(TrainEngineWrapper):
                 self.logger.info(f"Removing old checkpoint: {old_path}")
                 shutil.rmtree(old_path, ignore_errors=True)
 
-    def sync_weight_nccl(self) -> None:
+    async def sync_weight_nccl(self) -> None:
         self.actor_rollout_wg.sync_weight_nccl()
 
     async def upload_state_dict(self):

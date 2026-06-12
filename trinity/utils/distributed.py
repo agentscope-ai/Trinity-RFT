@@ -46,6 +46,12 @@ def is_port_available(port: int, host="127.0.0.1") -> bool:
             return False
 
 
+def get_address_and_port() -> tuple[str, int]:
+    import ray
+
+    return ray.util.get_node_ip_address(), get_available_port()
+
+
 def init_process_group(
     host: str,
     port: int,

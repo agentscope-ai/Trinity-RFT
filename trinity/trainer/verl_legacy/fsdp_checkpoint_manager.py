@@ -382,34 +382,62 @@ class FSDPCheckpointManager(OldFSDPCheckpointManager):
 
         return self.rank == 0
 
-    def save_state_dict(
-        self,
-        local_path: str,
-        global_step: int = 0,
-    ):
+    def finalize_safetensors_async(self, tmp_path, final_path, global_step):
+        """Fsync + rename a pre-written safetensors temp file in a background thread.
+
+        The caller (worker) has already streamed the tensor data into
+        *tmp_path* via :func:`save_safetensors_streaming`.  This method
+        handles the heavy ``fsync`` and atomic ``rename`` in a background
+        thread, coordinated with :class:`CheckpointMonitor` so that
+        ``latest_state_dict_iteration.txt`` is only updated after the
+        file is safely on disk.
+
+        Args:
+            tmp_path: Path to the ``.tmp`` file written by the worker.
+            final_path: Destination path (e.g. ``…/model.safetensors``).
+            global_step: Training step for CheckpointMonitor versioning.
+        """
         if self.latest_model_save_step is None:
-            # First sync in trainer.prepare
+            # First sync in trainer.prepare — skip save, just register step.
             self.latest_model_save_step = global_step
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
             self._upload_state_dict(None, global_step)
             return
         elif self.latest_model_save_step == global_step:
-            # No need to save for sync again
-            return
-        if local_path is None:
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
             return
 
-        local_path = local_mkdir_safe(local_path)
-        torch.distributed.barrier()
+        thread = self._model_state_dict_thread
+        if thread is not None:
+            thread.join()
 
-        state_dict_cfg = ShardedStateDictConfig(offload_to_cpu=True if is_cuda_available else False)
-        optim_cfg = ShardedOptimStateDictConfig(offload_to_cpu=True if is_cuda_available else False)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            with get_fsdp_state_ctx(
-                self.model, StateDictType.SHARDED_STATE_DICT, state_dict_cfg, optim_cfg
-            ):
-                self._save_model(local_path, global_step)
-        self._save_tokenizer(local_path, global_step)
+        def _finalize():
+            runtime_context = ray.get_runtime_context()
+            ray.get(
+                self.checkpoint_monitor.notify_started.remote(
+                    node_id=runtime_context.get_node_id(),
+                    job_id=runtime_context.get_job_id(),
+                )
+            )
+            fd = os.open(tmp_path, os.O_RDONLY)
+            try:
+                os.fsync(fd)
+            finally:
+                os.close(fd)
+            os.replace(tmp_path, final_path)
+            log_with_rank(
+                f"Finalized safetensors state dict to {os.path.abspath(final_path)}",
+                rank=self.rank,
+                logger=self.logger,
+            )
+            ray.get(self.checkpoint_monitor.notify_finished.remote(global_step, True))
+
+        thread = threading.Thread(target=_finalize)
+        thread.start()
+        self._model_state_dict_thread = thread
+        self.latest_model_save_step = global_step
         ray.get(
             self.checkpoint_monitor.register_thread_count.remote(
                 global_step, state_dict_thread_count=1

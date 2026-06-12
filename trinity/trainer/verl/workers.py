@@ -12,6 +12,7 @@ Key additions over the base class:
 - get_weight_sync_info / setup_weight_sync_group / teardown_weight_sync_group:
   NCCL weight sync group lifecycle for Explorer↔Trainer
 """
+import os
 from contextlib import contextmanager
 from typing import Optional
 
@@ -22,6 +23,7 @@ from verl.utils.memory_utils import aggressive_empty_cache
 from verl.workers.engine_workers import ActorRolloutRefWorker
 
 from trinity.common.config import AlgorithmConfig
+from trinity.common.weight_transfer import NCCLSender
 from trinity.manager.synchronizer import Synchronizer
 from trinity.trainer.verl.checkpoint import CheckpointCoordinator
 from trinity.trainer.verl.losses import build_trinity_loss
@@ -48,8 +50,9 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
         self._algo_config: Optional[AlgorithmConfig] = None
         self._ray_namespace: Optional[str] = None
         self._model_update_group = None
-        self._state_dict_meta_list = None
         self._coordinator: Optional[CheckpointCoordinator] = None
+        self._weight_sender: Optional[NCCLSender] = None
+        self._state_dict_meta: list | None = None
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
     def init_model(self):
@@ -63,6 +66,7 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
         - Fused kernels VLM SP bugfix (patch_fused_kernels)
         - Flops counter registration for qwen3_5
         """
+        from trinity.trainer.verl.monkey_patch import patch_verl_engine
         from trinity.trainer.verl_legacy.monkey_patch import apply_monkey_patch
 
         # Patch veRL engine for LoRA + FSDP2 dtype alignment.
@@ -82,6 +86,7 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
 
         # Apply Trinity-specific patches on top of what veRL already did
         if self.actor is not None and hasattr(self.actor, "engine"):
+            patch_verl_engine(self.actor.engine)
             model = getattr(self.actor.engine, "model", None)
             if model is not None:
                 ulysses_sp_size = self.config.actor.get("ulysses_sequence_parallel_size", 1)
@@ -101,7 +106,28 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
                     fused_kernels_backend=fused_kernels_backend,
                 )
 
+        # Pre-collect state dict metadata for exact safetensors header sizing.
+        # This iterates get_per_tensor_param() once at init time so that all
+        # subsequent save_state_dict calls can reserve header space exactly.
         self._cache_state_dict_meta()
+
+    def _cache_state_dict_meta(self):
+        """Collect and cache state-dict metadata for exact safetensors header sizing.
+
+        This is a one-time cost paid during ``init_model``; all subsequent
+        checkpoint saves reuse the cached metadata.
+        """
+        from trinity.common.models.streaming_safetensors import collect_state_dict_meta
+
+        if self.actor is None or not hasattr(self.actor, "engine"):
+            return
+
+        per_tensor_param, _ = self.actor.engine.get_per_tensor_param()
+        self._state_dict_meta = collect_state_dict_meta(per_tensor_param)
+        self.logger.info(
+            f"Cached state_dict_meta: {len(self._state_dict_meta)} tensors, "
+            f"exact header sizing enabled for streaming writes"
+        )
 
     def _maybe_patch_lora_fsdp2(self):
         """Monkey-patch veRL engine to align LoRA param dtypes for FSDP2.
@@ -255,23 +281,6 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
         finally:
             checkpoint_manager.checkpoint_save_contents = original_contents
 
-    def _cache_state_dict_meta(self):
-        """Cache state_dict meta (names, dtypes, shapes) from get_per_tensor_param.
-
-        Uses the same parameter source as sync_weight_nccl to ensure dtype
-        and shape are consistent with what is actually broadcast.
-        """
-        if self.actor is None:
-            return
-        per_tensor_param, _ = self.actor.engine.get_per_tensor_param()
-        self._state_dict_meta_list = [
-            (name, str(param.dtype).split(".")[-1], tuple(param.shape))
-            for name, param in per_tensor_param
-        ]
-        self.logger.info(
-            f"Cached state_dict meta: {len(self._state_dict_meta_list or [])} parameters"
-        )
-
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
     def set_trinity_config(self, algo_config: AlgorithmConfig, ray_namespace: str):
         """Set Trinity-specific runtime config on the worker.
@@ -288,16 +297,33 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
     def get_weight_sync_info(self):
-        """Return (addr, port, state_dict_meta) from rank 0 for NCCL group setup.
+        """Return weight sync rendezvous info from rank 0.
 
-        Uses cached meta from init_model() — no parameter materialization.
+        Creates a lightweight :class:`NCCLSender` (ZMQ bind only,
+        no GPU allocation) and returns a 4-tuple
+        ``(addr, port, zmq_ip, zmq_port)``.
+
+        The sender's GPU buffers are allocated later in
+        :meth:`setup_weight_sync_group` when ``bucket_size_mb`` is known.
         Other ranks return None.
         """
         if torch.distributed.get_rank() == 0:
             aggressive_empty_cache(force_sync=True)
             addr, port = self.get_available_master_addr_port()
-            self.logger.info(f"Weight sync info: {addr}:{port}")
-            return addr, int(port), self._state_dict_meta_list
+
+            # Lightweight sender creation (ZMQ bind only, no GPU buffers).
+            self._weight_sender = NCCLSender()
+            zmq = self._weight_sender.zmq_info
+
+            self.logger.info(
+                f"Weight sync info: {addr}:{port}, " f"ZMQ: {zmq['zmq_ip']}:{zmq['zmq_port']}"
+            )
+            return (
+                addr,
+                int(port),
+                zmq["zmq_ip"],
+                zmq["zmq_port"],
+            )
         return None
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
@@ -308,11 +334,20 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
         world_size: int,
         group_name: str,
         timeout: int,
+        bucket_size_mb: int = 500,
+        per_tensor: bool = False,
     ):
         """Join the NCCL process group for weight sync.
 
         Called concurrently with Explorer's setup_weight_sync_group.
-        Only rank 0 creates the process group.
+        Only rank 0 creates the process group and completes the sender
+        setup (GPU buffer allocation).
+
+        Args:
+            bucket_size_mb: Bucket size in MB for double-buffered transfer.
+                Set to 0 to fall back to per-tensor broadcast.
+            per_tensor: When True, use per-tensor NCCL broadcasts with
+                ZMQ metadata batching instead of GPU double buffers.
         """
         if torch.distributed.get_rank() == 0:
             self.logger.info(
@@ -327,27 +362,57 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
                 world_size=world_size,
                 rank=0,
             )
+            # Complete sender setup: allocate GPU buffers and wire NCCL pg.
+            if self._weight_sender is not None and bucket_size_mb > 0:
+                bucket_size = bucket_size_mb * 1024 * 1024
+                self._weight_sender.prepare(
+                    self._model_update_group, bucket_size, per_tensor=per_tensor
+                )
+                mode_str = "per-tensor" if per_tensor else "bucketed"
+                self.logger.info(f"NCCLSender ready ({mode_str}, bucket_size={bucket_size_mb}MB)")
+            else:
+                # bucket_size_mb=0 → per-tensor broadcast fallback.
+                if self._weight_sender is not None:
+                    self._weight_sender.finalize()
+                    self._weight_sender = None
+                self.logger.info("Per-tensor broadcast mode (bucket_size_mb=0)")
             self.logger.info("Trainer init_process_group done.")
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
     def teardown_weight_sync_group(self):
-        """Destroy the NCCL process group for weight sync."""
-        if torch.distributed.get_rank() == 0 and self._model_update_group is not None:
-            self.logger.info("Tearing down weight sync group.")
-            torch.distributed.destroy_process_group(self._model_update_group)
-            self._model_update_group = None
+        """Destroy the NCCL process group and finalize the sender."""
+        if torch.distributed.get_rank() == 0:
+            if self._weight_sender is not None:
+                self._weight_sender.finalize()
+                self._weight_sender = None
+            if self._model_update_group is not None:
+                self.logger.info("Tearing down weight sync group.")
+                torch.distributed.destroy_process_group(self._model_update_group)
+                self._model_update_group = None
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
-    def sync_weight_nccl(self):
+    async def sync_weight_nccl(self):
         """Sync model weights across workers using NCCL.
 
-        Broadcasts full model parameters from rank 0 (trainer) to all
-        Explorer ranks via the NCCL process group.
+        Uses double-buffered bucket broadcast via NCCLSender on
+        rank 0 when the sender is available.  Falls back to per-tensor
+        broadcast when the sender was not created (``bucket_size_mb=0``).
+
+        Non-rank-0 trainer workers still consume the generator to
+        participate in FSDP all-gather (for DTensor .full_tensor()).
         """
         per_tensor_param, _ = self.actor.engine.get_per_tensor_param()
-        for _, param in per_tensor_param:
-            if torch.distributed.get_rank() == 0:
-                torch.distributed.broadcast(param, src=0, group=self._model_update_group)
+        if torch.distributed.get_rank() == 0:
+            if self._weight_sender is not None:
+                self._weight_sender.send(per_tensor_param)
+            else:
+                # Per-tensor broadcast fallback (e.g. SGLang, bucket_size_mb=0).
+                for _, param in per_tensor_param:
+                    torch.distributed.broadcast(param, src=0, group=self._model_update_group)
+        else:
+            # Consume the generator to participate in FSDP all-gather.
+            for _ in per_tensor_param:
+                pass
 
     def _get_coordinator(self) -> CheckpointCoordinator:
         if self._coordinator is None:
@@ -363,26 +428,59 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
     def save_state_dict(self, local_path, global_step=0):
         """Save model state dict for checkpoint-based weight sync.
 
-        On rank 0, saving is offloaded to a background thread via the
-        CheckpointCoordinator, which also notifies CheckpointMonitor so the
-        iteration file is only updated after the save completes.
+        Uses ``get_per_tensor_param()`` to gather full tensors from all
+        ranks (FSDP all-gather / DTensor full_tensor), then **streams**
+        them to a safetensors file one tensor at a time on rank 0.
+        Non-rank-0 workers consume the generator to participate in
+        collective operations but do not save.
+
+        The streaming write goes through the OS page cache (fast memcpy).
+        After the main-thread write completes, ``fsync`` + atomic rename
+        are offloaded to a background thread via
+        :class:`CheckpointCoordinator` so that the training loop is not
+        blocked by disk I/O.
         """
         coordinator = self._get_coordinator()
-        strategy = self.config.actor.strategy
-        if strategy.startswith("fsdp"):
-            from trinity.trainer.verl.fsdp_engine import fsdp_save_state_dict
+        rank = torch.distributed.get_rank()
 
-            fsdp_save_state_dict(
-                self.actor.engine, local_path, global_step, coordinator, logger=self.logger
+        per_tensor_param, _ = self.actor.engine.get_per_tensor_param()
+
+        if rank == 0:
+            from trinity.common.models.streaming_safetensors import (
+                save_safetensors_streaming,
             )
-        elif strategy.startswith("megatron"):
-            from trinity.trainer.verl.megatron_engine import megatron_save_state_dict
 
-            megatron_save_state_dict(
-                self.actor.engine, local_path, global_step, coordinator, logger=self.logger
+            os.makedirs(local_path, exist_ok=True)
+            filepath = os.path.join(local_path, "model.safetensors")
+
+            def _rank0_iter():
+                for name, weight in per_tensor_param:
+                    yield name, weight.cpu().detach()
+
+            tmp_path = save_safetensors_streaming(
+                _rank0_iter(),
+                filepath,
+                state_dict_meta=self._state_dict_meta,
+                rename=False,
+            )
+
+            def _finalize():
+                fd = os.open(tmp_path, os.O_RDONLY)
+                try:
+                    os.fsync(fd)
+                finally:
+                    os.close(fd)
+                os.replace(tmp_path, filepath)
+
+            coordinator.save_async("model_state_dict", _finalize, global_step, is_state_dict=True)
+            self.logger.info(
+                f"Actor state_dict save initiated: path={local_path}, step={global_step}"
             )
         else:
-            raise ValueError(f"Unsupported strategy for save_state_dict: {strategy}")
+            # Consume generator to participate in FSDP all-gather.
+            for _ in per_tensor_param:
+                pass
+
         self._save_lora(local_path)
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)

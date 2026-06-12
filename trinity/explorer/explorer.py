@@ -110,6 +110,9 @@ class Explorer:
         world_size: int = None,
         group_name: str = None,
         timeout: int = None,
+        zmq_ip: str = None,
+        zmq_port: int = None,
+        bucket_size_mb: int = 500,
     ):
         await self._wait_for_models_ready()
         base_offset = 1 if self.use_nccl_sync else 0
@@ -138,19 +141,34 @@ class Explorer:
                 group_name=group_name,
                 explorer_name=self.config.explorer.name,
                 timeout=timeout,
+                zmq_ip=zmq_ip,
+                zmq_port=zmq_port,
+                bucket_size_mb=bucket_size_mb,
             )
             for i, model in enumerate(self.models)
         ]
         await asyncio.gather(*refs)
 
-    async def set_state_dict_meta(self, state_dict_meta: List):
-        """Set the state_dict meta on all model workers for NCCL weight sync.
+    async def _setup_intra_weight_transfer(self):
+        """Set up intra-explorer bucketed weight transfer (Phase 2).
 
-        Must be called after setup_weight_sync_group and before the first
-        sync_model_weights call.
+        After the intra-explorer NCCL group is created, worker 0 has a
+        :class:`NCCLSender`.  This method retrieves its ZMQ info
+        and creates :class:`NCCLReceiver` on all other workers.
+
+        Skipped when worker 0 did not create a Sender (e.g. single-worker
+        explorer or ``bucket_size_mb=0``).
         """
-        refs = [model.set_state_dict_meta(state_dict_meta) for model in self.models]
+        zmq_info = await self.models[0].get_weight_sender_zmq_info()
+        if zmq_info is None:
+            return
+        bucket_size_mb = self.config.synchronizer.weight_transfer_bucket_size_mb
+        refs = [
+            model.setup_weight_receiver(zmq_info["zmq_ip"], zmq_info["zmq_port"], bucket_size_mb)
+            for model in self.models
+        ]
         await asyncio.gather(*refs)
+        self.logger.info("Intra-explorer bucketed weight transfer setup complete.")
 
     async def teardown_weight_sync_group(self):
         """Destroy the NCCL process group on all model workers."""
@@ -261,6 +279,11 @@ class Explorer:
                         random_port=True
                     )
                     await self.setup_weight_sync_group(master_address, master_port)
+                    # Phase 2: set up intra-explorer bucketed weight transfer.
+                    # Worker 0 created a Sender in Phase 1 (init_process_group).
+                    # Now share its ZMQ info with all other workers to create
+                    # Receivers.
+                    await self._setup_intra_weight_transfer()
 
             self.rollout_coordinator = RolloutCoordinator.get_actor(self.config)
             await self.rollout_coordinator.prepare.remote()

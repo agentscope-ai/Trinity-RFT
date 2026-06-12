@@ -80,6 +80,9 @@ class InferenceModel(ABC):
         explorer_name: str,
         backend: str = "nccl",
         timeout: int = 1200,
+        zmq_ip: str = None,
+        zmq_port: int = None,
+        bucket_size_mb: int = 500,
     ):
         """Initialize the process group for model weight synchronization."""
         pass
@@ -88,8 +91,12 @@ class InferenceModel(ABC):
         """Destroy the process group for model weight synchronization."""
         pass
 
-    async def set_state_dict_meta(self, state_dict_meta: List):
-        """Set the state_dict meta for NCCL weight sync."""
+    async def get_weight_sender_zmq_info(self):
+        """Return Sender ZMQ info for intra-explorer weight transfer setup."""
+        return None
+
+    async def setup_weight_receiver(self, zmq_ip, zmq_port, bucket_size_mb):
+        """Set up intra-explorer weight receiver (non-rank-0 workers)."""
         pass
 
     @abstractmethod
@@ -818,6 +825,9 @@ class ModelWrapper:
         group_name: str,
         explorer_name: str,
         timeout: int = 1200,
+        zmq_ip: str = None,
+        zmq_port: int = None,
+        bucket_size_mb: int = 500,
     ):
         """Initialize the process group for model weight synchronization."""
 
@@ -830,15 +840,22 @@ class ModelWrapper:
             explorer_name=explorer_name,
             backend="nccl",
             timeout=timeout,
+            zmq_ip=zmq_ip,
+            zmq_port=zmq_port,
+            bucket_size_mb=bucket_size_mb,
         )
 
     async def teardown_process_group(self):
         """Destroy the process group for model weight synchronization."""
         await self.model.teardown_process_group.remote()
 
-    async def set_state_dict_meta(self, state_dict_meta: List):
-        """Set the state_dict meta for NCCL weight sync."""
-        await self.model.set_state_dict_meta.remote(state_dict_meta)
+    async def get_weight_sender_zmq_info(self):
+        """Return Sender ZMQ info from the driver worker."""
+        return await self.model.get_weight_sender_zmq_info.remote()
+
+    async def setup_weight_receiver(self, zmq_ip, zmq_port, bucket_size_mb):
+        """Set up intra-explorer weight receiver on all workers."""
+        await self.model.setup_weight_receiver.remote(zmq_ip, zmq_port, bucket_size_mb)
 
     async def sync_model_weights(
         self, model_version: int, method: SyncMethod, timeout: int = 1200

@@ -75,12 +75,16 @@ class Trainer:
         await self.synchronizer.set_trainer_status.remote(RunningStatus.RUNNING)
         self.logger.info("Trainer is ready.")
 
-    async def get_weight_sync_info(self) -> Optional[Tuple[str, int, List]]:
+    async def get_weight_sync_info(self) -> Optional[Tuple[str, int, str, int]]:
         """Get rendezvous info for NCCL weight sync group setup.
 
-        Returns (master_address, master_port, state_dict_meta) from the
-        trainer's GPU worker rank 0. Called by Synchronizer before
+        Returns ``(master_address, master_port, zmq_ip, zmq_port)`` from
+        the trainer's GPU worker rank 0.  Called by Synchronizer before
         coordinating NCCL group creation.
+
+        The returned zmq_ip/zmq_port come from a lightweight
+        :class:`NCCLSender` (ZMQ bind only, no GPU allocation).
+        GPU buffers are allocated later in :meth:`setup_weight_sync_group`.
         """
         return await self.engine.get_weight_sync_info()
 
@@ -91,10 +95,25 @@ class Trainer:
         world_size: int,
         group_name: str,
         timeout: int,
+        bucket_size_mb: int = 500,
+        per_tensor: bool = False,
     ) -> None:
-        """Join the NCCL weight sync group. Called by Synchronizer."""
+        """Join the NCCL weight sync group. Called by Synchronizer.
+
+        Args:
+            bucket_size_mb: Bucket size in MB for double-buffered transfer.
+                Set to 0 to fall back to per-tensor broadcast.
+            per_tensor: When True, use per-tensor NCCL broadcasts with
+                ZMQ metadata batching instead of GPU double buffers.
+        """
         await self.engine.setup_weight_sync_group(
-            master_address, master_port, world_size, group_name, timeout
+            master_address,
+            master_port,
+            world_size,
+            group_name,
+            timeout,
+            bucket_size_mb=bucket_size_mb,
+            per_tensor=per_tensor,
         )
 
     async def teardown_weight_sync_group(self) -> None:
@@ -234,7 +253,7 @@ class Trainer:
                 if result is None:
                     self.logger.error("Trainer sync_weights failed.")
                 else:
-                    self.engine.sync_weight_nccl()
+                    await self.engine.sync_weight_nccl()
             elif self.sync_method == SyncMethod.CHECKPOINT:
                 await self.engine.save_state_dict()
             elif self.sync_method == SyncMethod.MEMORY:
@@ -328,7 +347,7 @@ class TrainEngineWrapper(ABC):
         pass
 
     @abstractmethod
-    def sync_weight_nccl(self) -> None:
+    async def sync_weight_nccl(self) -> None:
         """Sync the model weight by NCCL. (For `NCCL` sync method)"""
 
     @abstractmethod
@@ -340,8 +359,8 @@ class TrainEngineWrapper(ABC):
         """Only save the model state dict for Synchronizer.  (For `CHECKPOINT` sync method)"""
 
     @abstractmethod
-    async def get_weight_sync_info(self) -> Optional[Tuple[str, int, List]]:
-        """Get (master_address, master_port, state_dict_meta) for NCCL group setup."""
+    async def get_weight_sync_info(self) -> Optional[Tuple[str, int, str, int]]:
+        """Get rendezvous info for NCCL group setup."""
 
     @abstractmethod
     async def setup_weight_sync_group(
@@ -351,6 +370,8 @@ class TrainEngineWrapper(ABC):
         world_size: int,
         group_name: str,
         timeout: int,
+        bucket_size_mb: int = 500,
+        per_tensor: bool = False,
     ) -> None:
         """Join the NCCL weight sync group."""
 

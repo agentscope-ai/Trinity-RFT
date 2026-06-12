@@ -283,11 +283,7 @@ class TestTrainerGSM8K(BaseTrainerCase):
         self.config.trainer.max_checkpoints_to_keep = 2
         self.config.algorithm.optimizer.lr = 1e-5
         if self.offloading:
-            if self.strategy == "fsdp":
-                self.config.trainer.param_offload = True
-                self.config.trainer.optimizer_offload = True
-            else:
-                self.config.trainer.offload_policy = True
+            self.config.trainer.offload_policy = True
         self.config.check_and_update()
         both(self.config)
         parser = TensorBoardParser(os.path.join(self.config.monitor.cache_dir, "tensorboard"))
@@ -308,6 +304,15 @@ class TestTrainerGSM8K(BaseTrainerCase):
         time_metrics = parser.metric_list("time")
         self.assertGreater(len(time_metrics), 0)
         self.assertEqual(parser.metric_max_step(time_metrics[0]), 4)
+        # check checkpoint exists
+        checkpoint_step_4, step_num = get_checkpoint_dir_with_step_num(
+            checkpoint_root_path=self.config.checkpoint_job_dir,
+            trainer_type=self.config.trainer.trainer_type,
+        )
+        self.assertEqual(step_num, 4)
+        self.assertIsNotNone(checkpoint_step_4)
+        hf_files = os.listdir(os.path.join(checkpoint_step_4, "actor", "huggingface"))
+        self.assertGreater(len(hf_files), 0)
         # TODO: used for real testing
         # rewards = parser.metric_values("critic/rewards/mean")
         # self.assertTrue(0.4 < rewards[0] < 0.55)
@@ -835,13 +840,6 @@ class TestTrainerCheckpointSave(unittest.TestCase):
             ".metadata",
             "metadata.json",
         }
-        # Model-only state dict saves (used for weight sync) don't include
-        # optimizer shards, so no .distcp files are produced.
-        megatron_state_dict_items = {
-            "common.pt",
-            ".metadata",
-            "metadata.json",
-        }
         prev_state_dict_iteration = 0
         prev_checkpoint_iteration = 0
         start_time = time.time()
@@ -863,11 +861,8 @@ class TestTrainerCheckpointSave(unittest.TestCase):
 
             # Only check state-dict-only contents when the iteration advances
             # AND a full checkpoint is not being (or about to be) saved to
-            # the same directory.  When training stops early the post-loop
-            # save_checkpoint writes a full checkpoint to the same
-            # global_step_N/actor path, temporarily deleting the .distcp
-            # files.  The full checkpoint is verified separately via the
-            # checkpoint_iteration branch below.
+            # the same directory.  The full checkpoint is verified separately
+            # via the checkpoint_iteration branch below.
             if state_dict_iteration > prev_state_dict_iteration:
                 prev_state_dict_iteration = state_dict_iteration
                 full_ckpt_flag = os.path.join(
@@ -879,20 +874,10 @@ class TestTrainerCheckpointSave(unittest.TestCase):
                     iteration_dir = os.path.join(
                         default_local_dir, f"global_step_{state_dict_iteration}", "actor"
                     )
-                    if self.strategy == "fsdp":
-                        items = os.listdir(iteration_dir)
-                        self.assertIn("model_world_size_2_rank_0.pt", items)
-                        self.assertIn("model_world_size_2_rank_1.pt", items)
-                    else:  # megatron
-                        dist_ckpt_dir = os.path.join(iteration_dir, "dist_ckpt")
-                        self.assertEqual(
-                            set(os.listdir(dist_ckpt_dir)),
-                            megatron_state_dict_items,
-                        )
-                        huggingface_dir = os.path.join(iteration_dir, "huggingface")
-                        items = os.listdir(huggingface_dir)
-                        self.assertIn("config.json", items)
-                        self.assertIn("generation_config.json", items)
+                    # Unified save_state_dict produces a single safetensors
+                    # file regardless of strategy (fsdp or megatron).
+                    items = os.listdir(iteration_dir)
+                    self.assertIn("model.safetensors", items)
 
             if checkpoint_iteration > prev_checkpoint_iteration:
                 prev_checkpoint_iteration = checkpoint_iteration

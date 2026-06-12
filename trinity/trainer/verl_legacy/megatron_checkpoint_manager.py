@@ -75,6 +75,7 @@ class MegatronCheckpointManager(OldMegatronCheckpointManager):
         self.latest_extra_state_save_step = None
         self.latest_hf_model_save_step = None
         self._async_calls = AsyncCallsQueue()
+        self._model_state_dict_thread = None
 
     def _is_latest_registered_checkpoint(self, path: str) -> bool:
         if not self.previous_saved_paths:
@@ -459,40 +460,62 @@ class MegatronCheckpointManager(OldMegatronCheckpointManager):
         self.latest_hf_model_save_step = global_step
         return self.rank == 0
 
-    def save_state_dict(  # noqa: C901
-        self,
-        local_path: str,
-        global_step: int = 0,
-    ):
+    def finalize_safetensors_async(self, tmp_path, final_path, global_step):
+        """Fsync + rename a pre-written safetensors temp file in a background thread.
+
+        The caller (worker) has already streamed the tensor data into
+        *tmp_path* via :func:`save_safetensors_streaming`.  This method
+        handles the heavy ``fsync`` and atomic ``rename`` in a background
+        thread, coordinated with :class:`CheckpointMonitor` so that
+        ``latest_state_dict_iteration.txt`` is only updated after the
+        file is safely on disk.
+
+        Args:
+            tmp_path: Path to the ``.tmp`` file written by the worker.
+            final_path: Destination path (e.g. ``…/model.safetensors``).
+            global_step: Training step for CheckpointMonitor versioning.
+        """
         if self.latest_model_save_step is None:
-            # First sync in trainer.prepare
+            # First sync in trainer.prepare — skip save, just register step.
             self.latest_model_save_step = global_step
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
             return
         elif self.latest_model_save_step == global_step:
-            # No need to save for sync again
+            if os.path.exists(tmp_path):
+                os.unlink(tmp_path)
             return
 
-        local_path = local_mkdir_safe(local_path)
+        if self._model_state_dict_thread is not None:
+            self._model_state_dict_thread.join()
 
-        # Temporarily restrict checkpoint contents to model-only so that
-        # optimizer and extra (rng / scheduler) states are skipped — this
-        # path is used only for weight-sync to the rollout side, not for
-        # training resume.
-        original_save_contents = None
-        if hasattr(self, "checkpoint_save_contents"):
-            original_save_contents = list(self.checkpoint_save_contents)
-            new_contents = ["model"]
-            if "hf_model" in original_save_contents:
-                new_contents.append("hf_model")
-            self.checkpoint_save_contents = new_contents
+        def _finalize():
+            runtime_context = ray.get_runtime_context()
+            ray.get(
+                self.checkpoint_monitor.notify_started.remote(
+                    node_id=runtime_context.get_node_id(),
+                    job_id=runtime_context.get_job_id(),
+                )
+            )
+            fd = os.open(tmp_path, os.O_RDONLY)
+            try:
+                os.fsync(fd)
+            finally:
+                os.close(fd)
+            os.replace(tmp_path, final_path)
+            log_with_rank(
+                f"Finalized safetensors state dict to {os.path.abspath(final_path)}",
+                rank=self.rank,
+                logger=self.logger,
+            )
+            ray.get(self.checkpoint_monitor.notify_finished.remote(global_step, True))
 
-        try:
-            self._save_state_dict(local_path, global_step)
-        finally:
-            if original_save_contents is not None:
-                self.checkpoint_save_contents = original_save_contents
+        import threading
 
-        self._save_tokenizer(local_path, global_step)
+        thread = threading.Thread(target=_finalize)
+        thread.start()
+        self._model_state_dict_thread = thread
+        self.latest_model_save_step = global_step
         ray.get(
             self.checkpoint_monitor.register_thread_count.remote(
                 global_step, state_dict_thread_count=1
@@ -544,3 +567,6 @@ class MegatronCheckpointManager(OldMegatronCheckpointManager):
 
     def wait_on_save_thread(self) -> None:
         self.finalize_async_calls(blocking=True)
+        if self._model_state_dict_thread is not None:
+            self._model_state_dict_thread.join()
+            self._model_state_dict_thread = None

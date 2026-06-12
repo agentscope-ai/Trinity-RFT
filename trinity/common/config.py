@@ -582,9 +582,6 @@ class InferenceModelConfig:
     node_rank: int = 0
     enable_return_routed_experts: bool = False
 
-    # Buffer size (bytes) for batched NCCL weight sync. Controls peak GPU memory during sync.
-    weight_sync_buffer_size: int = 4 * 1024 * 1024 * 1024  # 4 GB
-
     # ! DO NOT SET
     bundle_indices: str = ""
     engine_id: int = 0
@@ -865,6 +862,11 @@ class SynchronizerConfig:
     group_name: str = ROLLOUT_WEIGHT_SYNC_GROUP_NAME
     # wait for the lastest checkpoint to be ready  # TODO: to be used
     wait_for_checkpoint: bool = False
+
+    # Bucket size (in MB) for double-buffered NCCL weight transfer.
+    # Each side allocates 2 × bucket_size GPU memory.  Set to 0 to
+    # disable bucketed transfer and fall back to per-tensor broadcast.
+    weight_transfer_bucket_size_mb: int = 500
 
     # ! DO NOT SET, automatically calculated
     explorer_world_size: Optional[int] = None

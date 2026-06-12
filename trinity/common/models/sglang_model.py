@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-import operator
 import os
 import traceback
-from functools import reduce
 from logging import Logger
 from typing import Any, List, Literal, Optional, Sequence, Tuple
 
@@ -253,7 +251,7 @@ class SGLangRolloutModel(BaseInferenceModel):
         self.api_server: Optional[asyncio.Task[None]] = None
         self.api_client: Optional[SGLangClient] = None
         self.synchronizer = None
-        self.state_dict_meta: List[Tuple[str, str, Tuple]] = []
+        self._metadata_receiver = None
         self.model_version = 0
         self._prepared = False
         self._has_weight_update_group = False
@@ -270,6 +268,9 @@ class SGLangRolloutModel(BaseInferenceModel):
         explorer_name: str,
         backend: str = "nccl",
         timeout: int = 1200,
+        zmq_ip: str = None,
+        zmq_port: int = None,
+        bucket_size_mb: int = 500,
     ):
         if self.config.node_rank != 0:
             self.logger.warning(
@@ -299,11 +300,15 @@ class SGLangRolloutModel(BaseInferenceModel):
         )
         self.logger.info("SGLang init_process_group finished.")
         self._has_weight_update_group = resp
-        return resp
 
-    async def set_state_dict_meta(self, state_dict_meta: List[Tuple[str, str, Tuple]]):
-        """Set the state_dict meta for NCCL weight sync."""
-        self.state_dict_meta = state_dict_meta or []
+        # Set up metadata receiver for inline ZMQ-based weight sync.
+        if zmq_ip is not None and zmq_port is not None:
+            from trinity.common.weight_transfer import SGLangNCCLReceiver
+
+            self._metadata_receiver = SGLangNCCLReceiver(zmq_ip, zmq_port)
+            self.logger.info(f"SGLangNCCLReceiver ready (ZMQ: {zmq_ip}:{zmq_port})")
+
+        return resp
 
     async def teardown_process_group(self):
         """Destroy the weight update group via the SGLang API.
@@ -318,7 +323,9 @@ class SGLangRolloutModel(BaseInferenceModel):
         ):
             await self.api_client.destroy_weights_update_group(group_name=self.group_name)
         self._has_weight_update_group = False
-        self.state_dict_meta = []
+        if self._metadata_receiver is not None:
+            self._metadata_receiver.finalize()
+            self._metadata_receiver = None
 
     async def _initialize_tokenizer(self) -> None:
         if self.tokenizer is not None:
@@ -555,17 +562,18 @@ class SGLangRolloutModel(BaseInferenceModel):
         ), "Synchronizer must be initialized before calling sync_model_weights"
         self.logger.info(f"Synchronizing model to version {model_version} using method {method}...")
         if method == SyncMethod.NCCL:
-            assert self.state_dict_meta, "state_dict_meta must be initialized for NCCL sync"
+            assert (
+                self._metadata_receiver is not None
+            ), "ModelWeightMetadataReceiver must be set up for NCCL sync"
             # Flush KV + Mamba cache to free GPU memory for receive buffers
             await self.api_client.flush_cache()
             self.logger.info("Flushed KV/Mamba cache before NCCL weight sync")
-            batches = self._partition_state_dict_meta(self.state_dict_meta)
-            self.logger.info(
-                f"NCCL weight sync: {len(self.state_dict_meta)} tensors in {len(batches)} batches "
-                f"(buffer_size={self.config.weight_sync_buffer_size / 1024**3:.1f} GB)"
-            )
-            for i, batch in enumerate(batches):
-                is_last = i == len(batches) - 1
+
+            batch_count = 0
+            tensor_count = 0
+            for batch, is_last in self._metadata_receiver.receive():
+                batch_count += 1
+                tensor_count += len(batch)
                 await self.api_client.update_weights_from_distributed(
                     state_dict_meta_list=batch,
                     group_name=self.group_name,
@@ -573,6 +581,7 @@ class SGLangRolloutModel(BaseInferenceModel):
                     flush_cache=is_last,
                     timeout=timeout,
                 )
+            self.logger.info(f"NCCL weight sync: {tensor_count} tensors in {batch_count} batches")
             self.model_version = model_version
         elif method == SyncMethod.CHECKPOINT:
             model_path = await self.synchronizer.get_latest_model_path.remote(use_huggingface=True)
@@ -587,39 +596,6 @@ class SGLangRolloutModel(BaseInferenceModel):
             raise ValueError(f"Unsupported sync method for SGLang: {method}")
         self.logger.info("Synchronization finished.")
         return model_version
-
-    def _partition_state_dict_meta(
-        self, meta_list: "List[Tuple[str, str, Tuple]]"
-    ) -> "List[List[Tuple[str, str, Tuple]]]":
-        """Partition state_dict_meta into batches that fit within weight_sync_buffer_size.
-
-        This prevents OOM during NCCL weight sync by ensuring SGLang only allocates
-        receive buffers for one batch at a time, rather than all tensors simultaneously.
-        """
-        buffer_size = self.config.weight_sync_buffer_size
-
-        batches: list = []
-        current_batch: list = []
-        current_size = 0
-
-        for item in meta_list:
-            name, dtype_str, shape = item
-            dtype = getattr(torch, dtype_str, torch.bfloat16)
-            elem_size = torch.tensor([], dtype=dtype).element_size()
-            tensor_bytes = reduce(operator.mul, shape, 1) * elem_size
-
-            if current_size + tensor_bytes > buffer_size and current_batch:
-                batches.append(current_batch)
-                current_batch = []
-                current_size = 0
-
-            current_batch.append(item)
-            current_size += tensor_bytes
-
-        if current_batch:
-            batches.append(current_batch)
-
-        return batches
 
     def get_model_version(self) -> int:
         return self.model_version

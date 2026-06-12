@@ -303,7 +303,9 @@ class DummyModel(InferenceModel):
         explorer_name: str,
         backend: str = "nccl",
         timeout: int = 1200,
-        state_dict_meta: Optional[List] = None,
+        zmq_ip: str = None,
+        zmq_port: int = None,
+        bucket_size_mb: int = 500,
     ) -> None:
         pass
 
@@ -349,7 +351,9 @@ class DummyAuxiliaryModel(InferenceModel):
         explorer_name: str,
         backend: str = "nccl",
         timeout: int = 1200,
-        state_dict_meta: Optional[List] = None,
+        zmq_ip: str = None,
+        zmq_port: int = None,
+        bucket_size_mb: int = 500,
     ) -> None:
         pass
 

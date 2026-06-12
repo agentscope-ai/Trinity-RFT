@@ -92,6 +92,7 @@ from verl.workers.sharding_manager.fsdp_ulysses import FSDPUlyssesShardingManage
 
 from trinity.common.config import AlgorithmConfig
 from trinity.common.patch import kimi_vl_monkey_patch_decorator
+from trinity.common.weight_transfer import NCCLSender
 from trinity.trainer.verl_legacy.fsdp_checkpoint_manager import FSDPCheckpointManager
 from trinity.trainer.verl_legacy.monkey_patch import apply_monkey_patch
 from trinity.trainer.verl_legacy.utils import apply_fsdp2
@@ -793,49 +794,41 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
 
         get_torch_device().empty_cache()
 
-        self._cache_state_dict_meta()
+        self._weight_sender = None
 
-    def _cache_state_dict_meta(self):
-        """Cache state_dict meta at init time for lightweight get_weight_sync_info."""
-        if not self._is_actor:
-            return
-        model = self.actor_module_fsdp
-        self.named_modules = []
-        self.state_dict_meta = []
-        with self._fsdp_offload_context():
-            if self.config.actor.strategy == "fsdp":
-                for name, module in model.named_modules():
-                    if isinstance(module, FSDP):
-                        self.named_modules.append((name, module))
-                for name_prefix, module in self.named_modules:
-                    with FSDP.summon_full_params(module, recurse=False):
-                        for name, param in module.named_parameters():
-                            if isinstance(param, FlatParameter):
-                                continue
-                            realname = (
-                                name_prefix[len(FSDP_PREFIX) :] + "." + name
-                                if name_prefix
-                                else name
-                            )
-                            self.state_dict_meta.append(
-                                (realname, str(param.dtype).split(".")[-1], tuple(param.shape))
-                            )
-                        param = None
-                    get_torch_device().empty_cache()
-            else:  # fsdp2
-                for name, param in model.named_parameters():
-                    self.state_dict_meta.append(
-                        (name, str(param.dtype).split(".")[-1], tuple(param.shape))
-                    )
-        self.logger.info(f"Cached state_dict meta: {len(self.state_dict_meta)} parameters")
+        # Pre-collect state dict metadata for exact safetensors header sizing.
+        if self._is_actor:
+            self._cache_state_dict_meta()
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
     def get_weight_sync_info(self):
-        """Return (addr, port, state_dict_meta) from rank 0. Other ranks return None."""
+        """Return weight sync rendezvous info from rank 0.
+
+        Creates a lightweight :class:`NCCLSender` (ZMQ bind only,
+        no GPU allocation) and returns a 4-tuple
+        ``(addr, port, zmq_ip, zmq_port)``.
+
+        The sender's GPU buffers are allocated later in
+        :meth:`setup_weight_sync_group` when ``bucket_size_mb`` is known.
+        Other ranks return None.
+        """
         if torch.distributed.get_rank() == 0:
             master_address, master_port = self.get_available_master_addr_port()
-            self.logger.info(f"Weight sync info: {master_address}:{master_port}")
-            return master_address, int(master_port), self.state_dict_meta
+
+            # Lightweight sender creation (ZMQ bind only, no GPU buffers).
+            self._weight_sender = NCCLSender()
+            zmq = self._weight_sender.zmq_info
+
+            self.logger.info(
+                f"Weight sync info: {master_address}:{master_port}, "
+                f"ZMQ: {zmq['zmq_ip']}:{zmq['zmq_port']}"
+            )
+            return (
+                master_address,
+                int(master_port),
+                zmq["zmq_ip"],
+                zmq["zmq_port"],
+            )
         return None
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
@@ -846,10 +839,20 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
         world_size: int,
         group_name: str,
         timeout: int,
+        bucket_size_mb: int = 500,
+        per_tensor: bool = False,
     ):
         """Join the NCCL process group for weight sync.
 
         Called concurrently with Explorer's setup_weight_sync_group.
+        Only rank 0 creates the process group and completes the sender
+        setup (GPU buffer allocation).
+
+        Args:
+            bucket_size_mb: Bucket size in MB for double-buffered transfer.
+                Set to 0 to fall back to per-tensor broadcast.
+            per_tensor: When True, use per-tensor NCCL broadcasts with
+                ZMQ metadata batching instead of GPU double buffers.
         """
         if torch.distributed.get_rank() == 0:
             self.logger.info(
@@ -864,35 +867,103 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                 world_size=world_size,
                 rank=0,
             )
+            # Complete sender setup: allocate GPU buffers and wire NCCL pg.
+            if self._weight_sender is not None and bucket_size_mb > 0:
+                bucket_size = bucket_size_mb * 1024 * 1024
+                self._weight_sender.prepare(
+                    self._model_update_group, bucket_size, per_tensor=per_tensor
+                )
+                mode_str = "per-tensor" if per_tensor else "bucketed"
+                self.logger.info(f"NCCLSender ready ({mode_str}, bucket_size={bucket_size_mb}MB)")
+            else:
+                # bucket_size_mb=0 → per-tensor broadcast fallback.
+                if self._weight_sender is not None:
+                    self._weight_sender.finalize()
+                    self._weight_sender = None
+                self.logger.info("Per-tensor broadcast mode (bucket_size_mb=0)")
             self.logger.info("Trainer init_process_group done.")
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
     def teardown_weight_sync_group(self):
-        """Destroy the NCCL process group for weight sync."""
-        if torch.distributed.get_rank() == 0 and self._model_update_group is not None:
-            self.logger.info("Tearing down weight sync group.")
-            torch.distributed.destroy_process_group(self._model_update_group)
-            self._model_update_group = None
+        """Destroy the NCCL process group and finalize the sender."""
+        if torch.distributed.get_rank() == 0:
+            if self._weight_sender is not None:
+                self._weight_sender.finalize()
+                self._weight_sender = None
+            if self._model_update_group is not None:
+                self.logger.info("Tearing down weight sync group.")
+                torch.distributed.destroy_process_group(self._model_update_group)
+                self._model_update_group = None
+
+    def _cache_state_dict_meta(self):
+        """Collect and cache state-dict metadata for exact safetensors header sizing.
+
+        This is a one-time cost paid during ``init_model``; all subsequent
+        checkpoint saves reuse the cached metadata.
+        """
+        from trinity.common.models.streaming_safetensors import collect_state_dict_meta
+
+        with self._fsdp_offload_context():
+            if self.config.actor.strategy == "fsdp":
+                gen = self._per_tensor_params_fsdp1()
+            else:  # fsdp2
+                gen = self._per_tensor_params_fsdp2()
+            self._state_dict_meta = collect_state_dict_meta(gen)
+        self.logger.info(
+            f"Cached state_dict_meta: {len(self._state_dict_meta)} tensors, "
+            f"exact header sizing enabled for streaming writes"
+        )
+
+    def _per_tensor_params_fsdp1(self):
+        """Yield ``(name, param)`` for FSDP1 with ``summon_full_params``.
+
+        Each module's ``summon_full_params.__enter__`` is a FSDP collective
+        (all-gather), so all trainer ranks must iterate in lock-step.
+        """
+        for name_prefix, module in self.named_modules:
+            with FSDP.summon_full_params(module, recurse=False):
+                for name, param in module.named_parameters():
+                    if isinstance(param, FlatParameter):
+                        continue
+                    realname = name_prefix[len(FSDP_PREFIX) :] + "." + name if name_prefix else name
+                    yield realname, param
+                param = None
+
+    def _per_tensor_params_fsdp2(self):
+        """Yield ``(name, param)`` for FSDP2 via ``full_tensor()``."""
+        for name, param in self.actor_module_fsdp.named_parameters():
+            full_param = param.full_tensor().detach().to(device=get_device_id())
+            yield name, full_param
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
     def sync_weight(self):
+        """Sync model weights to Explorer via NCCL.
+
+        Uses :class:`NCCLSender` for bucketed double-buffered
+        transfer when available.  Falls back to per-tensor broadcast
+        when the sender was not created (``bucket_size_mb=0``).
+
+        Non-rank-0 trainer workers consume the generator to participate
+        in FSDP all-gather (for FSDP1 ``summon_full_params``).
+        """
         with self._fsdp_offload_context():
             if self.config.actor.strategy == "fsdp":
-                for name_prefix, module in self.named_modules:
-                    with FSDP.summon_full_params(module, recurse=False):
-                        if torch.distributed.get_rank() == 0:
-                            for name, param in module.named_parameters():
-                                if isinstance(param, FlatParameter):
-                                    continue
-                                torch.distributed.broadcast(
-                                    param, 0, group=self._model_update_group
-                                )
-                        param = None
+                gen = self._per_tensor_params_fsdp1()
             else:  # fsdp2
-                for _, param in self.actor_module_fsdp.named_parameters():
-                    full_param = param.full_tensor().detach().to(device=get_device_id())
-                    if torch.distributed.get_rank() == 0:
-                        torch.distributed.broadcast(full_param, 0, group=self._model_update_group)
+                gen = self._per_tensor_params_fsdp2()
+
+            if torch.distributed.get_rank() == 0:
+                if self._weight_sender is not None:
+                    self._weight_sender.send(gen)
+                else:
+                    # Per-tensor broadcast fallback (bucket_size_mb=0).
+                    for _, param in gen:
+                        torch.distributed.broadcast(param, 0, group=self._model_update_group)
+            else:
+                # Consume generator to participate in FSDP all-gather.
+                for _ in gen:
+                    pass
+
             if torch.distributed.get_rank() == 0:
                 torch.cuda.synchronize()
 
@@ -1132,10 +1203,35 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
         assert self._is_actor
 
         with self._fsdp_offload_context():
-            self.checkpoint_manager.save_state_dict(
-                local_path=local_path,
-                global_step=global_step,
-            )
+            rank = dist.get_rank()
+            if self.config.actor.strategy == "fsdp":
+                gen = self._per_tensor_params_fsdp1()
+            else:  # fsdp2
+                gen = self._per_tensor_params_fsdp2()
+
+            if rank == 0:
+                from trinity.common.models.streaming_safetensors import (
+                    save_safetensors_streaming,
+                )
+
+                os.makedirs(local_path, exist_ok=True)
+                filepath = os.path.join(local_path, "model.safetensors")
+
+                def _rank0_iter():
+                    for name, weight in gen:
+                        yield name, weight.cpu().detach()
+
+                tmp_path = save_safetensors_streaming(
+                    _rank0_iter(),
+                    filepath,
+                    state_dict_meta=self._state_dict_meta,
+                    rename=False,
+                )
+                self.checkpoint_manager.finalize_safetensors_async(tmp_path, filepath, global_step)
+            else:
+                # Consume generator to participate in FSDP all-gather.
+                for _ in gen:
+                    pass
             dist.barrier()
 
             self._save_lora(local_path)
