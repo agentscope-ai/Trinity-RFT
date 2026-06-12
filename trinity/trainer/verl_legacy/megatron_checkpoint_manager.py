@@ -354,7 +354,6 @@ class MegatronCheckpointManager(OldMegatronCheckpointManager):
 
         if self.rank == 0:
             # Save transformer config
-            print(self.transformer_config)
             bypass_keys = [
                 "finalize_model_grads_func",
                 "grad_scale_func",

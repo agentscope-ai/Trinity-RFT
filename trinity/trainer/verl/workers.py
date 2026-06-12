@@ -63,6 +63,7 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
         - Fused kernels VLM SP bugfix (patch_fused_kernels)
         - Flops counter registration for qwen3_5
         """
+        from trinity.trainer.verl.monkey_patch import patch_verl_engine
         from trinity.trainer.verl_legacy.monkey_patch import apply_monkey_patch
 
         # Patch veRL engine for LoRA + FSDP2 dtype alignment.
@@ -82,6 +83,7 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
 
         # Apply Trinity-specific patches on top of what veRL already did
         if self.actor is not None and hasattr(self.actor, "engine"):
+            patch_verl_engine(self.actor.engine)
             model = getattr(self.actor.engine, "model", None)
             if model is not None:
                 ulysses_sp_size = self.config.actor.get("ulysses_sequence_parallel_size", 1)

@@ -90,4 +90,6 @@ init_docker_compose() {
             return 1
         fi
     done
+
+    export TRINITY_CHECKPOINT_ROOT_DIR="/mnt/checkpoints-${TRINITY_COMPOSE_PROJECT_NAME}"
 }
