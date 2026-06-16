@@ -111,6 +111,7 @@ class VLLMTestBase(RayUnittestBaseAsync):
         (2, 1, 1, 2, 1, 1, True, False, False),
         (1, 1, 2, 2, 1, 1, False, True, False),
         (2, 2, 1, 1, 2, 4, True, True, True),
+        (4, 1, 1, 1, 2, 4, True, True, True),
     ],
 )
 class ModelWrapperTest(VLLMTestBase):

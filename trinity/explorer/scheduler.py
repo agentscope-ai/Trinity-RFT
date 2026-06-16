@@ -274,9 +274,13 @@ class Scheduler:
 
     @staticmethod
     def _get_effective_engine_num(model_config) -> int:
-        """Get effective engine count, accounting for INDEPENDENT mode."""
+        """Get effective engine count, accounting for SINGLE_NODE DP expansion."""
         launch_mode = infer_launch_mode(model_config.nnodes, model_config.data_parallel_size)
-        if launch_mode == LaunchMode.INDEPENDENT:
+        if (
+            launch_mode == LaunchMode.SINGLE_NODE
+            and model_config.nnodes > 1
+            and model_config.data_parallel_size > 1
+        ):
             return model_config.engine_num * model_config.data_parallel_size
         return model_config.engine_num
 

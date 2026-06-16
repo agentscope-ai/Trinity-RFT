@@ -487,18 +487,15 @@ class SGLangRolloutModel(BaseInferenceModel):
         from trinity.common.models.sglang_patch import get_api_server
 
         launch_mode = infer_launch_mode(self.config.nnodes, self.config.data_parallel_size)
-        # SGLang only supports SINGLE_NODE and HEADLESS modes.
-        # INDEPENDENT mode (cross-node DP) is rejected by config_validator.
-        if launch_mode == LaunchMode.INDEPENDENT:
-            raise ValueError(
-                "SGLang does not support INDEPENDENT launch mode (cross-node DP). "
-                "Please set nnodes=1 for SGLang with DP>1."
-            )
 
         if launch_mode == LaunchMode.HEADLESS:
             # Cross-node TP/PP: pass nnodes and node_rank for multi-node coordination
             sglang_nnodes = self.config.nnodes
             sglang_node_rank = self.config.node_rank
+        elif self.config.nnodes > 1 and self.config.data_parallel_size > 1:
+            # SINGLE_NODE with DP expansion: each actor is a self-contained instance
+            sglang_nnodes = 1
+            sglang_node_rank = 0
         else:
             # SINGLE_NODE: single actor handles all DP/TP/PP
             sglang_nnodes = 1

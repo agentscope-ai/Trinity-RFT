@@ -46,10 +46,21 @@ class Allocator:
         """Generate a unique actor name based on the model config, engine ID, and node ID."""
         return f"{self.config.name}_{role}_model_{engine_id}_{node_id}"
 
+    def _should_expand_dp(self, config: InferenceModelConfig) -> bool:
+        """Check if SINGLE_NODE mode should expand DP into multiple independent actors.
+
+        When nnodes>1 and DP>1, the allocator creates engine_num*DP actors,
+        each running as a self-contained engine with dp_size=1 and nnodes=1.
+        """
+        return (
+            infer_launch_mode(config.nnodes, config.data_parallel_size) == LaunchMode.SINGLE_NODE
+            and config.nnodes > 1
+            and config.data_parallel_size > 1
+        )
+
     def _get_effective_engine_num(self, config: InferenceModelConfig) -> int:
-        """Get the effective number of engines, accounting for INDEPENDENT mode."""
-        launch_mode = infer_launch_mode(config.nnodes, config.data_parallel_size)
-        if launch_mode == LaunchMode.INDEPENDENT:
+        """Get the effective number of engines, accounting for SINGLE_NODE DP expansion."""
+        if self._should_expand_dp(config):
             return config.engine_num * config.data_parallel_size
         return config.engine_num
 
@@ -57,9 +68,9 @@ class Allocator:
         """Allocate bundles for the rollout model and auxiliary models based on the configuration.
 
         Bundle allocation varies by launch mode:
-        - SINGLE_NODE: each engine gets 1 bundle with TP*DP*PP GPUs
+        - SINGLE_NODE (nnodes=1 or DP=1): each engine gets 1 bundle with TP*DP*PP GPUs
+        - SINGLE_NODE (nnodes>1 and DP>1): each engine_num*DP gets 1 bundle with TP*PP GPUs
         - HEADLESS: each engine gets nnodes bundles, each with (TP*PP)/nnodes GPUs
-        - INDEPENDENT: each engine_num*DP gets 1 bundle with TP*PP GPUs
         """
         rollout_model = self.config.rollout_model
         auxiliary_models = self.config.auxiliary_models
@@ -71,12 +82,8 @@ class Allocator:
         bundle_actor_map: Dict[int, str] = {}
         bundle_id = 0
         for role, config in model_configs:
-            launch_mode = infer_launch_mode(config.nnodes, config.data_parallel_size)
-
-            if launch_mode == LaunchMode.INDEPENDENT:
-                # Each DP rank is an independent engine on a separate node
-                # effective_engine_num = engine_num * data_parallel_size
-                # Each bundle uses TP * PP GPUs (one node per bundle)
+            if self._should_expand_dp(config):
+                # SINGLE_NODE with DP expansion: each DP rank is a separate actor
                 gpus_per_bundle = config.tensor_parallel_size * config.pipeline_parallel_size
                 effective_engine_num = config.engine_num * config.data_parallel_size
                 for engine_id in range(effective_engine_num):
@@ -86,7 +93,7 @@ class Allocator:
                     bundle_actor_map[bundle_id] = actor_name
                     bundle_id += 1
             else:
-                # SINGLE_NODE or HEADLESS: existing logic
+                # SINGLE_NODE (nnodes=1) or HEADLESS: existing logic
                 gpus_per_bundle = config.gpu_per_engine // config.nnodes  # type: ignore
                 for engine_id in range(config.engine_num):
                     for node_id in range(config.nnodes):
@@ -118,14 +125,14 @@ class Allocator:
         launch_mode = infer_launch_mode(config.nnodes, config.data_parallel_size)
 
         actor_bundle_lists = []
-        if launch_mode == LaunchMode.INDEPENDENT:
-            # Each effective engine has 1 actor (on its own node)
+        if self._should_expand_dp(config):
+            # SINGLE_NODE with DP expansion: each effective engine has 1 actor
             actor_name = self.get_actor_name(role, engine_id, 0)
             actor_bundle_lists.append((actor_name, self.bundle_result.actor_bundle_map[actor_name]))
-            # Set the DP rank for this independent engine
+            # Set the DP rank for this expanded engine
             config.data_parallel_rank = engine_id % config.data_parallel_size
         else:
-            # SINGLE_NODE or HEADLESS: cross nnodes actors per engine
+            # SINGLE_NODE (nnodes=1) or HEADLESS: cross nnodes actors per engine
             for node_id in range(config.nnodes):
                 actor_name = self.get_actor_name(role, engine_id, node_id)
                 actor_bundle_lists.append(
@@ -229,19 +236,24 @@ async def get_model_wrapper(
     """
     handlers = []
     launch_mode = infer_launch_mode(config.nnodes, config.data_parallel_size)
+    expand_dp = (
+        launch_mode == LaunchMode.SINGLE_NODE
+        and config.nnodes > 1
+        and config.data_parallel_size > 1
+    )
 
     for i, (actor_name, bundle_id) in enumerate(actor_bundle_list):
         engine_config = deepcopy(config)
         engine_config.ray_actor_name = actor_name
 
-        if launch_mode == LaunchMode.INDEPENDENT:
-            # Each actor is a self-contained engine on its own node
-            engine_config.node_rank = 0
-            num_gpus = engine_config.tensor_parallel_size * engine_config.pipeline_parallel_size
-        elif launch_mode == LaunchMode.HEADLESS:
+        if launch_mode == LaunchMode.HEADLESS:
             # Cross-node TP/PP: node_rank = i (0 for primary, 1+ for headless)
             engine_config.node_rank = i
             num_gpus = engine_config.gpu_per_engine / engine_config.nnodes  # type: ignore
+        elif expand_dp:
+            # SINGLE_NODE with DP expansion: each actor is self-contained
+            engine_config.node_rank = 0
+            num_gpus = engine_config.tensor_parallel_size * engine_config.pipeline_parallel_size
         else:
             # SINGLE_NODE: single actor, node_rank = 0
             engine_config.node_rank = 0

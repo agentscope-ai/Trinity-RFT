@@ -3,6 +3,7 @@
 import datetime
 import math
 import os
+import re
 import shutil
 import socket
 import unittest
@@ -152,7 +153,8 @@ class TestConfig(unittest.TestCase):
         config.explorer.rollout_model.nnodes = 4
 
         with self.assertRaisesRegex(
-            ValueError, "must equal tensor_parallel_size // cluster.gpu_per_node"
+            ValueError,
+            re.escape("In HEADLESS mode, `nnodes` (4) must equal (TP*PP) // gpu_per_node (2)."),
         ):
             config.check_and_update()
 
@@ -435,23 +437,21 @@ class TestLaunchMode(unittest.TestCase):
         self.assertEqual(infer_launch_mode(2, 1), LaunchMode.HEADLESS)
         self.assertEqual(infer_launch_mode(4, 1), LaunchMode.HEADLESS)
 
-    def test_independent_mode(self):
-        """nnodes>1 with DP>1 should be INDEPENDENT (per-node independent engines)."""
-        self.assertEqual(infer_launch_mode(2, 2), LaunchMode.INDEPENDENT)
-        self.assertEqual(infer_launch_mode(4, 4), LaunchMode.INDEPENDENT)
-        self.assertEqual(infer_launch_mode(2, 3), LaunchMode.INDEPENDENT)
+    def test_dp_with_multinode_is_single_node(self):
+        """nnodes>1 with DP>1 should be SINGLE_NODE (DP expansion handled by allocator)."""
+        self.assertEqual(infer_launch_mode(2, 2), LaunchMode.SINGLE_NODE)
+        self.assertEqual(infer_launch_mode(4, 4), LaunchMode.SINGLE_NODE)
+        self.assertEqual(infer_launch_mode(2, 3), LaunchMode.SINGLE_NODE)
 
     def test_launch_mode_values(self):
         """LaunchMode enum values should be stable strings."""
         self.assertEqual(LaunchMode.SINGLE_NODE.value, "single_node")
         self.assertEqual(LaunchMode.HEADLESS.value, "headless")
-        self.assertEqual(LaunchMode.INDEPENDENT.value, "independent")
 
     def test_launch_mode_string_comparison(self):
         """LaunchMode should support string comparison since it inherits from str."""
         self.assertEqual(LaunchMode.SINGLE_NODE, "single_node")
         self.assertEqual(LaunchMode.HEADLESS, "headless")
-        self.assertEqual(LaunchMode.INDEPENDENT, "independent")
 
     def test_inference_model_config_has_launch_mode_fields(self):
         """InferenceModelConfig should have launch_mode and data_parallel_rank fields."""
@@ -467,6 +467,7 @@ class TestMultinodeValidation(unittest.TestCase):
         self, nnodes=1, dp=1, tp=1, pp=1, engine_type="vllm", gpu_per_node=8, node_num=4
     ):
         config = get_template_config()
+        config.mode = "explore"
         config.cluster.gpu_per_node = gpu_per_node
         config.cluster.node_num = node_num
         config.explorer.rollout_model.engine_type = engine_type
@@ -485,7 +486,7 @@ class TestMultinodeValidation(unittest.TestCase):
 
     def test_headless_mode_valid(self):
         """HEADLESS mode with correct nnodes should pass."""
-        config = self._make_config(nnodes=2, dp=1, tp=8, pp=1, gpu_per_node=8)
+        config = self._make_config(nnodes=2, dp=1, tp=8, pp=2, gpu_per_node=8)
         config.check_and_update()
         self.assertEqual(config.explorer.rollout_model.launch_mode, LaunchMode.HEADLESS.value)
 
@@ -495,20 +496,20 @@ class TestMultinodeValidation(unittest.TestCase):
         with self.assertRaises(ValueError):
             config.check_and_update()
 
-    def test_independent_mode_valid(self):
-        """INDEPENDENT mode with nnodes=dp_size and TP*PP<=gpu_per_node should pass."""
+    def test_dp_expansion_valid(self):
+        """SINGLE_NODE with nnodes=dp_size and TP*PP<=gpu_per_node should pass."""
         config = self._make_config(nnodes=2, dp=2, tp=4, pp=1, gpu_per_node=8)
         config.check_and_update()
-        self.assertEqual(config.explorer.rollout_model.launch_mode, LaunchMode.INDEPENDENT.value)
+        self.assertEqual(config.explorer.rollout_model.launch_mode, LaunchMode.SINGLE_NODE.value)
 
-    def test_independent_mode_wrong_nnodes(self):
-        """INDEPENDENT mode with nnodes != dp_size should fail."""
+    def test_dp_expansion_wrong_nnodes(self):
+        """SINGLE_NODE with nnodes != dp_size should fail."""
         config = self._make_config(nnodes=3, dp=2, tp=2, pp=1, gpu_per_node=8)
         with self.assertRaises(ValueError):
             config.check_and_update()
 
-    def test_independent_mode_tp_too_large(self):
-        """INDEPENDENT mode with TP*PP > gpu_per_node should fail."""
+    def test_dp_expansion_tp_too_large(self):
+        """SINGLE_NODE with TP*PP > gpu_per_node should fail."""
         config = self._make_config(nnodes=2, dp=2, tp=16, pp=1, gpu_per_node=8)
         with self.assertRaises(ValueError):
             config.check_and_update()

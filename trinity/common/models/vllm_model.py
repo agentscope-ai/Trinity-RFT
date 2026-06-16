@@ -111,9 +111,9 @@ class vLLMRolloutModel(BaseInferenceModel):
         """Prepare the model for inference.
 
         Branches by launch mode:
-        - SINGLE_NODE: create full AsyncLLMEngine with all DP/TP/PP via mp backend
-        - HEADLESS: node_rank=0 creates full engine, node_rank>0 runs headless executor
-        - INDEPENDENT: each actor creates a self-contained engine (dp_size=1, external LB)
+        - SINGLE_NODE: create full AsyncLLMEngine with all DP/TP/PP via mp backend.
+          When nnodes>1 and DP>1, each actor is a self-contained engine (dp_size=1).
+        - HEADLESS: node_rank=0 creates full engine, node_rank>0 runs headless executor.
         """
         import vllm
 
@@ -133,16 +133,16 @@ class vLLMRolloutModel(BaseInferenceModel):
             launch_mode = infer_launch_mode(self.config.nnodes, self.config.data_parallel_size)
 
             # Compute engine args based on launch mode
-            if launch_mode == LaunchMode.INDEPENDENT:
-                # Each actor is an independent engine with no internal DP
-                dp_size = 1
-                vllm_nnodes = 1
-                vllm_node_rank = 0
-            elif launch_mode == LaunchMode.HEADLESS:
+            if launch_mode == LaunchMode.HEADLESS:
                 # Cross-node TP/PP: use configured nnodes and node_rank
                 dp_size = self.config.data_parallel_size
                 vllm_nnodes = self.config.nnodes
                 vllm_node_rank = self.config.node_rank
+            elif self.config.nnodes > 1 and self.config.data_parallel_size > 1:
+                # SINGLE_NODE with DP expansion: each actor is a self-contained engine
+                dp_size = 1
+                vllm_nnodes = 1
+                vllm_node_rank = 0
             else:
                 # SINGLE_NODE: all parallelism within one actor
                 dp_size = self.config.data_parallel_size
@@ -186,13 +186,7 @@ class vLLMRolloutModel(BaseInferenceModel):
                 **self.config.extra_engine_args,
             )
 
-            if launch_mode != LaunchMode.HEADLESS:
-                # INDEPENDENT & SINGLE_NODE
-                # Each actor creates a full independent engine
-                self.async_llm = vllm.AsyncLLMEngine.from_engine_args(engine_args)
-                await self._collective_rpc("apply_patches")
-                await self.run_api_server()
-            else:  # HEADLESS
+            if launch_mode == LaunchMode.HEADLESS:
                 # Cross-node TP/PP: primary node vs headless nodes
                 if self.master_addr is not None and self.master_port is not None:
                     engine_args.master_addr = self.master_addr
@@ -208,6 +202,11 @@ class vLLMRolloutModel(BaseInferenceModel):
                     vllm_config = engine_args.create_engine_config(headless=True)
                     self.headless_executor = MultiprocExecutor(vllm_config, monitor_workers=False)
                     self.headless_executor.start_worker_monitor()
+            else:
+                # SINGLE_NODE: each actor creates a full engine
+                self.async_llm = vllm.AsyncLLMEngine.from_engine_args(engine_args)
+                await self._collective_rpc("apply_patches")
+                await self.run_api_server()
             self._prepared = True
 
     async def chat(self, messages: List[Dict], lora_request=None, **kwargs) -> Sequence[Experience]:

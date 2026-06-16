@@ -313,9 +313,9 @@ class RayClusterConfigValidator(ConfigValidator):
 
         Cross-node inference engines are supported for vLLM and SGLang.
         The validation is based on the inferred launch mode:
-        - SINGLE_NODE: no cross-node validation needed
-        - HEADLESS: cross-node TP/PP, nnodes = (TP*PP) / gpu_per_node
-        - INDEPENDENT: cross-node DP with per-node independent engines (vLLM only)
+        - SINGLE_NODE: each actor runs a self-contained engine.
+          When nnodes>1 and DP>1, the allocator expands into engine_num*DP actors.
+        - HEADLESS: cross-node TP/PP, nnodes = (TP*PP) / gpu_per_node (DP=1 only).
         """
 
         model_configs = [config.explorer.rollout_model, *config.explorer.auxiliary_models]
@@ -345,33 +345,7 @@ class RayClusterConfigValidator(ConfigValidator):
             launch_mode = infer_launch_mode(model_config.nnodes, model_config.data_parallel_size)
             model_config.launch_mode = launch_mode.value
 
-            if launch_mode == LaunchMode.INDEPENDENT:
-                # Cross-node DP: each DP rank runs as an independent engine on its own node(s)
-                if model_config.engine_type == "sglang":
-                    raise ValueError(
-                        "SGLang does not support cross-node data parallelism. "
-                        "SGLang's DP is implemented via local subprocesses and cannot span multiple nodes. "
-                        "Please set nnodes=1 for SGLang with DP>1, or use vLLM for cross-node DP."
-                    )
-                # In INDEPENDENT mode, TP*PP must fit within a single node
-                tp_pp = model_config.tensor_parallel_size * model_config.pipeline_parallel_size
-                if tp_pp > config.cluster.gpu_per_node:
-                    raise ValueError(
-                        f"INDEPENDENT mode requires TP*PP ({tp_pp}) <= cluster.gpu_per_node "
-                        f"({config.cluster.gpu_per_node}). For cross-node TP/PP with DP, "
-                        f"this hybrid configuration is not yet supported."
-                    )
-                # nnodes must equal DP size * number of nodes per instance
-                # Since each instance fits in one node, nnodes must equal DP size
-                required_nnodes = model_config.data_parallel_size
-                if model_config.nnodes != required_nnodes:
-                    raise ValueError(
-                        f"In INDEPENDENT mode, `nnodes` ({model_config.nnodes}) must equal "
-                        f"`data_parallel_size` ({required_nnodes}), because each DP rank runs "
-                        f"as an independent engine on a separate node."
-                    )
-
-            elif launch_mode == LaunchMode.HEADLESS:
+            if launch_mode == LaunchMode.HEADLESS:
                 # Cross-node TP/PP: single engine spanning multiple nodes
                 tp_pp = model_config.tensor_parallel_size * model_config.pipeline_parallel_size
                 if tp_pp % config.cluster.gpu_per_node != 0:
@@ -385,6 +359,28 @@ class RayClusterConfigValidator(ConfigValidator):
                     raise ValueError(
                         f"In HEADLESS mode, `nnodes` ({model_config.nnodes}) must equal "
                         f"(TP*PP) // gpu_per_node ({required_nnodes})."
+                    )
+            else:
+                # SINGLE_NODE with nnodes>1: DP expansion (each DP rank = separate actor)
+                if model_config.engine_type == "sglang":
+                    raise ValueError(
+                        "SGLang does not support cross-node data parallelism. "
+                        "SGLang's DP is implemented via local subprocesses and cannot span multiple nodes. "
+                        "Please set nnodes=1 for SGLang with DP>1."
+                    )
+                tp_pp = model_config.tensor_parallel_size * model_config.pipeline_parallel_size
+                if tp_pp > config.cluster.gpu_per_node:
+                    raise ValueError(
+                        f"SINGLE_NODE mode with DP expansion requires TP*PP ({tp_pp}) "
+                        f"<= cluster.gpu_per_node ({config.cluster.gpu_per_node}). "
+                        f"For cross-node TP/PP, set data_parallel_size=1 to use HEADLESS mode."
+                    )
+                required_nnodes = model_config.data_parallel_size
+                if model_config.nnodes != required_nnodes:
+                    raise ValueError(
+                        f"In SINGLE_NODE mode with DP expansion, `nnodes` ({model_config.nnodes}) "
+                        f"must equal `data_parallel_size` ({required_nnodes}), because each DP rank "
+                        f"runs as an independent engine on a separate node."
                     )
 
 
@@ -772,9 +768,17 @@ class ExplorerConfigValidator(ConfigValidator):
             raise ValueError(f"Invalid explorer.concurrent_mode: {config.explorer.concurrent_mode}")
         if config.explorer.concurrent_mode in ["asynchronous", "multi-threading"]:
             batch_size = config.buffer.batch_size
-            # Use effective engine count (accounts for INDEPENDENT mode's DP expansion)
+            # Use effective engine count (accounts for SINGLE_NODE DP expansion)
             effective_engine_num = config.explorer.rollout_model.engine_num
-            if config.explorer.rollout_model.launch_mode == LaunchMode.INDEPENDENT.value:
+            rollout_launch_mode = infer_launch_mode(
+                config.explorer.rollout_model.nnodes,
+                config.explorer.rollout_model.data_parallel_size,
+            )
+            if (
+                rollout_launch_mode == LaunchMode.SINGLE_NODE
+                and config.explorer.rollout_model.nnodes > 1
+                and config.explorer.rollout_model.data_parallel_size > 1
+            ):
                 effective_engine_num = (
                     config.explorer.rollout_model.engine_num
                     * config.explorer.rollout_model.data_parallel_size
