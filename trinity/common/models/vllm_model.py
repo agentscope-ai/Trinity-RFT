@@ -605,7 +605,6 @@ class vLLMRolloutModel(BaseInferenceModel):
         await self.async_llm.finish_weight_update()
         await self.async_llm.resume_generation()
         self.model_version = model_version
-        await self.async_llm.resume_generation()
         return model_version
 
     async def init_process_group(

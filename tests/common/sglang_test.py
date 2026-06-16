@@ -67,10 +67,9 @@ def _assert_routed_experts_shape(test_case, exp, expected_layers: int, expected_
         "enable_return_routed_experts",
     ),
     [
-        (2, 2, 1, 1, 2, True, True),
-        (1, 4, 1, 1, 2, True, True),
-        (2, 1, 2, 1, 2, True, False),
-        (1, 1, 1, 2, 1, False, False),
+        (2, 1, 1, 2, 1, True, True),
+        (2, 1, 2, 1, 2, False, False),
+        (4, 1, 1, 1, 2, True, True),
     ],
 )
 class TestSGLangOpenAIAPI(RayUnittestBaseAsync):

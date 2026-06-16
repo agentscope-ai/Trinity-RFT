@@ -108,7 +108,7 @@ class VLLMTestBase(RayUnittestBaseAsync):
         "enable_return_routed_experts",
     ),
     [
-        (2, 1, 1, 2, 1, 1, True, False, False),
+        (2, 1, 1, 2, 1, 1, True, False, True),
         (1, 2, 1, 2, 1, 1, True, False, False),
         (1, 1, 2, 2, 1, 1, False, True, False),
         (4, 1, 1, 1, 2, 4, True, True, True),
