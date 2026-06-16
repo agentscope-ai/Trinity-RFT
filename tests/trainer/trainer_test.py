@@ -65,7 +65,7 @@ class BaseTrainerCase(RayUnittestBase):
         self.config.buffer.total_epochs = 2
         self.config.buffer.batch_size = 4
         self.config.model.model_path = get_model_path()
-        self.config.explorer.rollout_model.engine_type = "vllm_async"
+        self.config.explorer.rollout_model.engine_type = "vllm"
         self.config.algorithm.repeat_times = 3
         self.config.project = "Trainer-unittest"
         self.config.name = f"trainer-{datetime.now().strftime('%Y%m%d%H%M%S')}"
@@ -801,7 +801,7 @@ class TestTrainerCheckpointSave(unittest.TestCase):
         self.config.buffer.total_steps = 6
         self.config.buffer.batch_size = 4
         self.config.model.model_path = get_model_path()
-        self.config.explorer.rollout_model.engine_type = "vllm_async"
+        self.config.explorer.rollout_model.engine_type = "vllm"
         self.config.algorithm.repeat_times = 3
         self.config.project = "Trainer-unittest"
         self.config.name = f"trainer-{datetime.now().strftime('%Y%m%d%H%M%S')}"
@@ -844,13 +844,6 @@ class TestTrainerCheckpointSave(unittest.TestCase):
             ".metadata",
             "metadata.json",
         }
-        # Model-only state dict saves (used for weight sync) don't include
-        # optimizer shards, so no .distcp files are produced.
-        megatron_state_dict_items = {
-            "common.pt",
-            ".metadata",
-            "metadata.json",
-        }
         prev_state_dict_iteration = 0
         prev_checkpoint_iteration = 0
         start_time = time.time()
@@ -872,11 +865,8 @@ class TestTrainerCheckpointSave(unittest.TestCase):
 
             # Only check state-dict-only contents when the iteration advances
             # AND a full checkpoint is not being (or about to be) saved to
-            # the same directory.  When training stops early the post-loop
-            # save_checkpoint writes a full checkpoint to the same
-            # global_step_N/actor path, temporarily deleting the .distcp
-            # files.  The full checkpoint is verified separately via the
-            # checkpoint_iteration branch below.
+            # the same directory.  The full checkpoint is verified separately
+            # via the checkpoint_iteration branch below.
             if state_dict_iteration > prev_state_dict_iteration:
                 prev_state_dict_iteration = state_dict_iteration
                 full_ckpt_flag = os.path.join(
@@ -888,20 +878,10 @@ class TestTrainerCheckpointSave(unittest.TestCase):
                     iteration_dir = os.path.join(
                         default_local_dir, f"global_step_{state_dict_iteration}", "actor"
                     )
-                    if self.strategy == "fsdp":
-                        items = os.listdir(iteration_dir)
-                        self.assertIn("model_world_size_2_rank_0.pt", items)
-                        self.assertIn("model_world_size_2_rank_1.pt", items)
-                    else:  # megatron
-                        dist_ckpt_dir = os.path.join(iteration_dir, "dist_ckpt")
-                        self.assertEqual(
-                            set(os.listdir(dist_ckpt_dir)),
-                            megatron_state_dict_items,
-                        )
-                        huggingface_dir = os.path.join(iteration_dir, "huggingface")
-                        items = os.listdir(huggingface_dir)
-                        self.assertIn("config.json", items)
-                        self.assertIn("generation_config.json", items)
+                    # Unified save_state_dict produces a single safetensors
+                    # file regardless of strategy (fsdp or megatron).
+                    items = os.listdir(iteration_dir)
+                    self.assertIn("model.safetensors", items)
 
             if checkpoint_iteration > prev_checkpoint_iteration:
                 prev_checkpoint_iteration = checkpoint_iteration

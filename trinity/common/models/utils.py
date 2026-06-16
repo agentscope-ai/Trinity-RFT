@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 import os
 import re
+from collections.abc import Iterator
 from copy import deepcopy
 from typing import Any, Callable, List, Optional, Tuple, Union
 
 import torch
 import transformers
 
-from trinity.common.config import TrainerConfig
 from trinity.utils.log import get_logger
 
 
@@ -252,48 +252,62 @@ def has_huggingface_model_weights(checkpoint_path: str) -> bool:
     return any(name.startswith(weight_file_prefixes) for name in os.listdir(checkpoint_path))
 
 
-def load_state_dict(checkpoint_dir: str, config: TrainerConfig) -> Union[dict, Tuple[str, str]]:
-    """Load state dict from a checkpoint dir.
+def load_state_dict_iterator(checkpoint_dir: str) -> Iterator[Tuple[str, torch.Tensor]]:
+    """Load model state dict from a checkpoint directory as an iterator of (name, tensor) tuples."""
+    state_dict = load_state_dict(checkpoint_dir)
+    if isinstance(state_dict, dict):
+        for name, tensor in state_dict.items():
+            yield name, tensor
+    else:
+        raise ValueError(f"Unsupported state dict format: {type(state_dict)}")
+
+
+def load_state_dict(
+    checkpoint_dir: str, trust_remote_code: bool = False
+) -> Union[dict, Tuple[str, str]]:
+    """Load model state dict from a checkpoint directory.
+
+    Auto-detects the checkpoint format from directory contents:
+
+    1. **safetensors** — ``model.safetensors`` produced by the unified
+       ``save_state_dict`` path.  Loaded directly and returned as a dict.
+    2. **HuggingFace weights** — detected by :func:`has_huggingface_model_weights`
+       in either a ``huggingface/`` subdirectory or the directory itself.
+       Returns ``("huggingface", path)`` for lazy loading by the caller.
+    3. **FSDP shards** — ``model_world_size_N_rank_M.pt`` files.  Merged
+       via :func:`load_fsdp_state_dict_from_verl_checkpoint` and returned
+       as a dict.
+    4. **Megatron dist checkpoint** — fallback.  Returns
+       ``("megatron", checkpoint_dir)`` for lazy loading via converter.
 
     Args:
-        checkpoint_dir (str): The checkpoint directory.
-        trainer_type (str): The trainer type. Only support "verl" for now.
+        checkpoint_dir: Path to the checkpoint directory (typically
+            ``global_step_N/actor/``).
 
     Returns:
-        Union[dict, Tuple[str, str]]: The state dict. If the checkpoint uses
-            megatron dist checkpointing, return a tuple of (method, checkpoint_dir).
+        Either a ``dict`` of model weights, or a ``(method, path)`` tuple
+        indicating the format for lazy loading.
     """
-    if config.trainer_type == "verl":
-        from trinity.trainer.trainer import is_verl_legacy
+    import glob
 
-        strategy = config.trainer_strategy
-        if strategy in {"fsdp", "fsdp2"}:
-            return load_fsdp_state_dict_from_verl_checkpoint(checkpoint_dir)
-        elif strategy == "megatron":
-            huggingface_dir = os.path.join(checkpoint_dir, "huggingface")
-            if not is_verl_legacy():
-                # In verl >= 0.8 Megatron checkpoints, model weights may live
-                # under ``huggingface/`` while ``dist_ckpt/`` contains only
-                # optimizer and RNG state. Prefer HF weights when present to
-                # avoid loading an optimizer-only dist checkpoint.
-                if has_huggingface_model_weights(huggingface_dir):
-                    return "huggingface", huggingface_dir
-                return "megatron", checkpoint_dir
-            actor_config = config.trainer_config.actor_rollout_ref.actor
-            if (
-                actor_config.megatron.use_dist_checkpointing
-                or not actor_config.megatron.use_mbridge
-            ):
-                return "megatron", checkpoint_dir
-            else:  # hf checkpointing
-                return load_huggingface_state_dict(
-                    huggingface_dir,
-                    trust_remote_code=config.trust_remote_code,
-                )
-        else:
-            raise ValueError(f"Unsupported strategy: {strategy}")
-    else:
-        raise NotImplementedError(f"Unsupported trainer type {config.trainer_type}")
+    # 1. safetensors (unified save_state_dict format)
+    safetensors_path = os.path.join(checkpoint_dir, "model.safetensors")
+    if os.path.exists(safetensors_path):
+        from safetensors.torch import load_file
+
+        return load_file(safetensors_path, device="cpu")
+
+    # 2. HuggingFace weights in huggingface/ subdirectory
+    huggingface_dir = os.path.join(checkpoint_dir, "huggingface")
+    if has_huggingface_model_weights(huggingface_dir):
+        return load_huggingface_state_dict(huggingface_dir, trust_remote_code=trust_remote_code)
+
+    # 3. FSDP shards → merge
+    if glob.glob(os.path.join(checkpoint_dir, "model_world_size_*_rank_*.pt")):
+        return load_fsdp_state_dict_from_verl_checkpoint(checkpoint_dir)
+
+    # 4. Megatron dist_ckpt (fallback)
+    return get_megatron_converter(checkpoint_dir).get_state_dict(checkpoint_dir)
 
 
 def get_verl_checkpoint_info(

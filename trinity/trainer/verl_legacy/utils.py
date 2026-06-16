@@ -1,12 +1,17 @@
 """Utils for ccompatibility issues with verl."""
+from collections.abc import Iterable, Iterator
 from logging import Logger
 from typing import List
 
 import numpy as np
 import torch
+from torch.distributed.fsdp import FlatParameter
+from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
+from torch.distributed.fsdp.fully_sharded_data_parallel import FSDP_PREFIX
 from transformers import PreTrainedModel
 from verl import DataProto
 from verl.trainer.ppo.metric_utils import _compute_response_info
+from verl.utils.device import get_device_id, get_torch_device
 
 from trinity.common.experience import (
     Experience,
@@ -16,6 +21,63 @@ from trinity.common.experience import (
     gather_token_ids,
     split_dpo_experience_to_single_turn,
 )
+from trinity.utils.stream_saver import save_safetensors_streaming
+
+
+def rank0_iterator(
+    per_tensor_param: Iterable[tuple[str, torch.Tensor]],
+) -> Iterator[tuple[str, torch.Tensor]]:
+    """Advance a distributed tensor iterator on every rank, yielding only on rank 0."""
+    is_rank0 = torch.distributed.get_rank() == 0
+    for name, param in per_tensor_param:
+        if is_rank0:
+            yield name, param
+
+
+def iter_fsdp_per_tensor_param(
+    *,
+    model: torch.nn.Module,
+    named_modules: Iterable[tuple[str, FSDP]],
+    strategy: str,
+) -> Iterator[tuple[str, torch.Tensor]]:
+    """Yield full FSDP/FSDP2 parameters in the same order used for cached metadata."""
+    if strategy == "fsdp":
+        for name_prefix, module in named_modules:
+            with FSDP.summon_full_params(module, recurse=False):
+                for name, param in module.named_parameters():
+                    if isinstance(param, FlatParameter):
+                        continue
+                    realname = name_prefix[len(FSDP_PREFIX) :] + "." + name if name_prefix else name
+                    yield realname, param
+            get_torch_device().empty_cache()
+    else:
+        for name, param in model.named_parameters():
+            yield name, param.full_tensor().detach().to(device=get_device_id())
+
+
+def save_rank0_safetensors(
+    *,
+    per_tensor_param: Iterable[tuple[str, torch.Tensor]],
+    filepath: str,
+    state_dict_meta,
+) -> None:
+    """Save a distributed per-tensor iterator to safetensors on rank 0."""
+    weight_iterator = rank0_iterator(per_tensor_param)
+    if torch.distributed.get_rank() == 0:
+
+        def _rank0_cpu_iter():
+            for name, weight in weight_iterator:
+                yield name, weight.cpu().detach()
+
+        save_safetensors_streaming(
+            _rank0_cpu_iter(),
+            filepath,
+            state_dict_meta=state_dict_meta,
+            rename=True,
+        )
+    else:
+        for _ in weight_iterator:
+            pass
 
 
 def _gather_routed_experts(

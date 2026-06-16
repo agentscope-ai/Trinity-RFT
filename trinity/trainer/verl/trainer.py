@@ -442,7 +442,9 @@ class VERLTrainer(TrainEngineWrapper):
 
     async def prepare(self):
         self.actor_rollout_wg.set_trinity_config(
-            self.algorithm_config, self.global_config.synchronizer.ray_namespace
+            algo_config=self.algorithm_config,
+            rollout_engine_type=self.global_config.explorer.rollout_model.engine_type,
+            ray_namespace=self.global_config.synchronizer.ray_namespace,
         )
         self.global_steps = 0
         self._load_checkpoint()

@@ -130,7 +130,6 @@ class Explorer:
                 rank_offset=i * gpu_per_engine + base_offset,
                 world_size=world_size,
                 group_name=group_name,
-                explorer_name=self.config.explorer.name,
                 timeout=timeout,
             )
             for i, model in enumerate(self.models)
@@ -170,7 +169,6 @@ class Explorer:
                     rank_offset=0,
                     world_size=world_size,
                     group_name=self.config.synchronizer.group_name,
-                    explorer_name=self.config.explorer.name,
                     timeout=self.config.synchronizer.sync_timeout,
                 )
             )
@@ -178,7 +176,8 @@ class Explorer:
 
     async def _checkpoint_weights_update(self, step_num: Optional[int] = None) -> int:
         self.logger.info(f"Start to update model weights from checkpoint at step {step_num}.")
-        step_num = await self.synchronizer.set_model_state_dict_with_step_num.remote(step_num)
+        if step_num is None:
+            step_num = await self.synchronizer.get_latest_model_version.remote()
         if step_num is None or step_num <= self.model_version:
             self.logger.warning(
                 f"No new checkpoint found for step {step_num}. Current model version: {self.model_version}."

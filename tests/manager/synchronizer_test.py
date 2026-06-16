@@ -29,6 +29,7 @@ from trinity.common.config import Config, ExperienceBufferConfig
 from trinity.common.constants import RunningStatus, StorageType, SyncMethod, SyncStyle
 from trinity.common.experience import Experience
 from trinity.explorer.explorer import Explorer
+from trinity.manager.synchronizer import Synchronizer
 from trinity.trainer.trainer import Trainer
 from trinity.utils.log import get_logger
 
@@ -398,3 +399,29 @@ class TestPullLatestWeights(unittest.IsolatedAsyncioTestCase):
         await Explorer._pull_latest_weights(self.explorer)
 
         self.explorer.logger.warning.assert_called_once()
+
+
+class TestSynchronizerStateDictIterator(unittest.TestCase):
+    def test_get_model_state_dict_iterator_yields_items(self):
+        synchronizer = object.__new__(Synchronizer)
+        first_tensor = torch.tensor([1.0])
+        second_tensor = torch.tensor([2.0])
+        synchronizer.model_state_dict = {
+            "first.weight": first_tensor,
+            "second.weight": second_tensor,
+        }
+
+        items = list(synchronizer.get_model_state_dict_iterator())
+
+        self.assertEqual(len(items), 2)
+        self.assertEqual(items[0][0], "first.weight")
+        self.assertTrue(torch.equal(items[0][1], first_tensor))
+        self.assertEqual(items[1][0], "second.weight")
+        self.assertTrue(torch.equal(items[1][1], second_tensor))
+
+    def test_get_model_state_dict_iterator_rejects_non_materialized_weights(self):
+        synchronizer = object.__new__(Synchronizer)
+        synchronizer.model_state_dict = ("huggingface", "/tmp/mock")
+
+        with self.assertRaisesRegex(ValueError, "Model state dict is not in expected format"):
+            list(synchronizer.get_model_state_dict_iterator())

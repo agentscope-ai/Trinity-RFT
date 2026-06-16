@@ -94,8 +94,13 @@ from trinity.common.config import AlgorithmConfig
 from trinity.common.patch import kimi_vl_monkey_patch_decorator
 from trinity.trainer.verl_legacy.fsdp_checkpoint_manager import FSDPCheckpointManager
 from trinity.trainer.verl_legacy.monkey_patch import apply_monkey_patch
-from trinity.trainer.verl_legacy.utils import apply_fsdp2
-from trinity.utils.distributed import init_process_group
+from trinity.trainer.verl_legacy.utils import (
+    apply_fsdp2,
+    iter_fsdp_per_tensor_param,
+    rank0_iterator,
+    save_rank0_safetensors,
+)
+from trinity.utils.distributed import WeightTransferEngine
 from trinity.utils.log import get_logger
 
 
@@ -184,6 +189,8 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
         self._is_actor = self.role in ["actor", "actor_rollout", "actor_rollout_ref"]
         self._is_ref = self.role in ["ref", "actor_rollout_ref"]
         self.use_orig_params = self.config.actor.fsdp_config.get("use_orig_params", False)
+        self._rollout_engine_type = self.config.get("rollout_engine_type", "vllm")
+        self.weight_transfer_engine = None
 
         # TODO(haibin.lin):
         # As of now the type of config is DictConfig, if we assign config.profiler with ProfilerConfig,
@@ -855,46 +862,42 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
             self.logger.info(
                 f"Trainer init_process_group {master_address}:{master_port} ({world_size})."
             )
-            self._model_update_group = init_process_group(
-                host=master_address,
-                port=int(master_port),
-                group_name=group_name,
-                backend="nccl",
-                timeout=timeout,
+            self.weight_transfer_engine = WeightTransferEngine.create(
+                engine_type=self._rollout_engine_type,
+                master_address=master_address,
+                master_port=master_port,
                 world_size=world_size,
-                rank=0,
+                group_name=group_name,
             )
             self.logger.info("Trainer init_process_group done.")
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
     def teardown_weight_sync_group(self):
         """Destroy the NCCL process group for weight sync."""
-        if torch.distributed.get_rank() == 0 and self._model_update_group is not None:
+        if torch.distributed.get_rank() == 0 and self.weight_transfer_engine is not None:
             self.logger.info("Tearing down weight sync group.")
-            torch.distributed.destroy_process_group(self._model_update_group)
-            self._model_update_group = None
+            self.weight_transfer_engine.teardown()
+            self.weight_transfer_engine = None
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
     def sync_weight(self):
         with self._fsdp_offload_context():
-            if self.config.actor.strategy == "fsdp":
-                for name_prefix, module in self.named_modules:
-                    with FSDP.summon_full_params(module, recurse=False):
-                        if torch.distributed.get_rank() == 0:
-                            for name, param in module.named_parameters():
-                                if isinstance(param, FlatParameter):
-                                    continue
-                                torch.distributed.broadcast(
-                                    param, 0, group=self._model_update_group
-                                )
-                        param = None
-            else:  # fsdp2
-                for _, param in self.actor_module_fsdp.named_parameters():
-                    full_param = param.full_tensor().detach().to(device=get_device_id())
-                    if torch.distributed.get_rank() == 0:
-                        torch.distributed.broadcast(full_param, 0, group=self._model_update_group)
+            per_tensor_param = iter_fsdp_per_tensor_param(
+                model=self.actor_module_fsdp,
+                named_modules=self.named_modules,
+                strategy=self.config.actor.strategy,
+            )
+            weight_iterator = rank0_iterator(per_tensor_param)
             if torch.distributed.get_rank() == 0:
+                if self.weight_transfer_engine is None:
+                    raise RuntimeError("Weight sync group has not been initialized.")
+                self.logger.info("Starting NCCL weight sync broadcast.")
+                self.weight_transfer_engine.sync_weight(iterator=weight_iterator)
                 torch.cuda.synchronize()
+                self.logger.info("Finished NCCL weight sync broadcast.")
+            else:
+                for _ in weight_iterator:
+                    pass
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
     def upload_state_dict(self, trainer_step: int):
@@ -1130,13 +1133,24 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
         global_step=0,
     ):
         assert self._is_actor
+        rank = torch.distributed.get_rank()
 
         with self._fsdp_offload_context():
-            self.checkpoint_manager.save_state_dict(
-                local_path=local_path,
-                global_step=global_step,
+            if rank == 0:
+                os.makedirs(local_path, exist_ok=True)
+            filepath = os.path.join(local_path, "model.safetensors")
+            per_tensor_param = iter_fsdp_per_tensor_param(
+                model=self.actor_module_fsdp,
+                named_modules=self.named_modules,
+                strategy=self.config.actor.strategy,
             )
-            dist.barrier()
+            save_rank0_safetensors(
+                per_tensor_param=per_tensor_param,
+                filepath=filepath,
+                state_dict_meta=self.state_dict_meta,
+            )
+            if rank == 0:
+                self.logger.info(f"[FSDP] state_dict saved: path={local_path}, step={global_step}")
 
             self._save_lora(local_path)
 

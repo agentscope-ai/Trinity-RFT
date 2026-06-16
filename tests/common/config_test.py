@@ -34,7 +34,7 @@ class DummyInferenceModel(InferenceModel):
         raise NotImplementedError
 
     async def sync_model_weights(
-        self, model_version: int, sync_method: SyncMethod, timeout: float = 1200
+        self, model_version: int, method: SyncMethod, timeout: float = 1200
     ) -> int:
         return model_version
 

@@ -2,6 +2,7 @@
 """For distributed training with multiple process groups."""
 import ipaddress
 import socket
+from abc import abstractmethod
 from datetime import timedelta
 from typing import Any, Optional, Union
 
@@ -98,3 +99,95 @@ def init_process_group(
 
     _world.pg_group_ranks[pg] = {i: i for i in range(world_size)}
     return pg
+
+
+class WeightTransferEngine:
+    @abstractmethod
+    def sync_weight(self, iterator):
+        """Perform the weight sync."""
+
+    @abstractmethod
+    def teardown(self):
+        """Tear down the weight sync group."""
+
+    @staticmethod
+    def create(
+        engine_type: str, master_address: str, master_port: int, world_size: int, group_name: str
+    ):
+        """Factory method to create the appropriate weight transfer engine based on the rollout engine type."""
+        if engine_type == "vllm":
+            return VLLMWeightTransferEngine(
+                master_address=master_address,
+                master_port=master_port,
+                world_size=world_size,
+                group_name=group_name,
+            )
+        elif engine_type == "sglang":
+            return SGLangWeightTransferEngine(
+                master_address=master_address,
+                master_port=master_port,
+                world_size=world_size,
+                group_name=group_name,
+            )
+        else:
+            raise ValueError(f"Unsupported engine type: {engine_type}")
+
+
+class VLLMWeightTransferEngine(WeightTransferEngine):
+    """A helper class to manage NCCL weight synchronization using vLLM's API."""
+
+    def __init__(self, master_address: str, master_port: int, world_size: int, group_name: str):
+        """Initialize the NCCL process group for weight sync with vLLM's API."""
+        from vllm.distributed.weight_transfer.nccl_engine import (
+            NCCLWeightTransferEngine,
+        )
+
+        del group_name  # vLLM's NCCL engine does not require a group name
+        self._model_update_group = NCCLWeightTransferEngine.trainer_init(
+            dict(
+                master_address=master_address,
+                master_port=master_port,
+                world_size=world_size,
+            )
+        )
+
+    def sync_weight(self, iterator):
+        """Perform the NCCL weight sync using vLLM's API."""
+        from vllm.distributed.weight_transfer.nccl_engine import (
+            NCCLTrainerSendWeightsArgs,
+            NCCLWeightTransferEngine,
+        )
+
+        NCCLWeightTransferEngine.trainer_send_weights(
+            iterator=iterator,
+            trainer_args=NCCLTrainerSendWeightsArgs(
+                group=self._model_update_group,
+                packed=True,
+            ),
+        )
+
+    def teardown(self):
+        self._model_update_group.destroy()
+
+
+class SGLangWeightTransferEngine(WeightTransferEngine):
+    """A helper class to manage NCCL weight synchronization using SGLang's API."""
+
+    def __init__(self, master_address: str, master_port: int, world_size: int, group_name: str):
+        """Initialize the NCCL process group for weight sync with SGLang's API."""
+        self._model_update_group = init_process_group(
+            host=master_address,
+            port=master_port,
+            group_name=group_name,
+            backend="nccl",
+            world_size=world_size,
+            rank=0,
+        )
+
+    def sync_weight(self, iterator):
+        """Perform the NCCL weight sync using SGLang's API."""
+        for _, param in iterator:
+            torch.distributed.broadcast(param, src=0, group=self._model_update_group)
+
+    def teardown(self):
+        torch.distributed.destroy_process_group(self._model_update_group)

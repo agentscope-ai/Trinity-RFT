@@ -591,14 +591,16 @@ class InferenceModelConfig:
     node_rank: int = 0
     enable_return_routed_experts: bool = False
 
-    # Buffer size (bytes) for batched NCCL weight sync. Controls peak GPU memory during sync.
-    weight_sync_buffer_size: int = 4 * 1024 * 1024 * 1024  # 4 GB
+    # Buffer size (MB) for batched NCCL weight sync. Controls peak GPU memory during sync.
+    weight_sync_buffer_size: int = 1024  # MB
 
     # ! DO NOT SET
     bundle_indices: str = ""
     engine_id: int = 0
     ray_namespace: Optional[str] = None
     ray_actor_name: Optional[str] = None
+    sync_method: Optional[SyncMethod] = None
+    checkpoint_job_dir: Optional[str] = None
     cuda_visible_devices: Optional[str] = None
 
     # ! DO NOT SET, automatically set from model.lora_configs

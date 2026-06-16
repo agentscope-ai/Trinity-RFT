@@ -6,12 +6,15 @@ thin extension that adds Trinity-specific hooks on top of veRL's unified
 engine-based training worker.
 
 Key additions over the base class:
-- set_trinity_config(): injects Trinity's pluggable loss function and Ray namespace
+- set_trinity_config(): injects Trinity's pluggable loss function, rollout engine type
+  and Ray namespace
 - save_state_dict / upload_state_dict / sync_weight_nccl: Trinity-specific
   checkpoint and weight sync methods that delegate to strategy-specific helpers
 - get_weight_sync_info / setup_weight_sync_group / teardown_weight_sync_group:
   NCCL weight sync group lifecycle for Explorer↔Trainer
 """
+import os
+from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Optional
 
@@ -25,15 +28,17 @@ from trinity.common.config import AlgorithmConfig
 from trinity.manager.synchronizer import Synchronizer
 from trinity.trainer.verl.checkpoint import CheckpointCoordinator
 from trinity.trainer.verl.losses import build_trinity_loss
-from trinity.utils.distributed import init_process_group
+from trinity.utils.distributed import WeightTransferEngine
 from trinity.utils.log import get_logger
+from trinity.utils.stream_saver import save_safetensors_streaming
 
 
 class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
     """Extends veRL's ActorRolloutRefWorker with Trinity-specific hooks.
 
     Additions over the base class:
-    - set_trinity_config(): injects Trinity's pluggable loss function and Ray namespace
+    - set_trinity_config(): injects Trinity's pluggable loss function, rollout engine
+      type and Ray namespace
     - save_state_dict / upload_state_dict: checkpoint and memory-based weight sync
     - sync_weight_nccl: NCCL-based weight broadcast for Explorer↔Trainer
     - get_weight_sync_info / setup_weight_sync_group / teardown_weight_sync_group:
@@ -47,7 +52,6 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
         self._is_rollout = False  # Disable rollout in Trainer
         self._algo_config: Optional[AlgorithmConfig] = None
         self._ray_namespace: Optional[str] = None
-        self._model_update_group = None
         self._state_dict_meta_list = None
         self._coordinator: Optional[CheckpointCoordinator] = None
 
@@ -275,7 +279,9 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
         )
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
-    def set_trinity_config(self, algo_config: AlgorithmConfig, ray_namespace: str):
+    def set_trinity_config(
+        self, algo_config: AlgorithmConfig, rollout_engine_type: str, ray_namespace: str
+    ):
         """Set Trinity-specific runtime config on the worker.
 
         This is called by VERLTrainer after worker initialization to inject:
@@ -284,6 +290,7 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
         """
         self._algo_config = algo_config
         self._ray_namespace = ray_namespace
+        self._rollout_engine_type = rollout_engine_type
         if self.actor is not None:
             loss_fn = build_trinity_loss(algo_config)
             self.actor.set_loss_fn(loss_fn)
@@ -320,24 +327,31 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
             self.logger.info(
                 f"Trainer init_process_group {master_address}:{master_port} ({world_size})."
             )
-            self._model_update_group = init_process_group(
-                host=master_address,
-                port=int(master_port),
-                group_name=group_name,
-                backend="nccl",
-                timeout=timeout,
+            self.weight_transfer_engine = WeightTransferEngine.create(
+                engine_type=self._rollout_engine_type,
+                master_address=master_address,
+                master_port=master_port,
                 world_size=world_size,
-                rank=0,
+                group_name=group_name,
             )
             self.logger.info("Trainer init_process_group done.")
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
     def teardown_weight_sync_group(self):
         """Destroy the NCCL process group for weight sync."""
-        if torch.distributed.get_rank() == 0 and self._model_update_group is not None:
+        if torch.distributed.get_rank() == 0 and self.weight_transfer_engine is not None:
             self.logger.info("Tearing down weight sync group.")
-            torch.distributed.destroy_process_group(self._model_update_group)
-            self._model_update_group = None
+            self.weight_transfer_engine.teardown()
+            self.weight_transfer_engine = None
+
+    def _rank0_iterator_wrapper(
+        self, per_tensor_param: Iterator[tuple[str, torch.Tensor]]
+    ) -> Iterator[tuple[str, torch.Tensor]]:
+        """Advance distributed parameter gathering on every rank, yielding only on rank 0."""
+        is_rank0 = torch.distributed.get_rank() == 0
+        for name, param in per_tensor_param:
+            if is_rank0:
+                yield name, param
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
     def sync_weight_nccl(self):
@@ -347,9 +361,17 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
         Explorer ranks via the NCCL process group.
         """
         per_tensor_param, _ = self.actor.engine.get_per_tensor_param()
-        for _, param in per_tensor_param:
-            if torch.distributed.get_rank() == 0:
-                torch.distributed.broadcast(param, src=0, group=self._model_update_group)
+        weight_iterator = self._rank0_iterator_wrapper(per_tensor_param)
+        if torch.distributed.get_rank() == 0:
+            self.logger.info("Starting NCCL weight sync broadcast.")
+            self.weight_transfer_engine.sync_weight(
+                iterator=weight_iterator,
+            )
+            torch.cuda.synchronize()
+            self.logger.info("Finished NCCL weight sync broadcast.")
+        else:
+            for _ in weight_iterator:
+                pass
 
     def _get_coordinator(self) -> CheckpointCoordinator:
         if self._coordinator is None:
@@ -369,22 +391,57 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
         CheckpointCoordinator, which also notifies CheckpointMonitor so the
         iteration file is only updated after the save completes.
         """
+        """Save model state dict for checkpoint-based weight sync.
+
+        Uses ``get_per_tensor_param()`` to gather full tensors from all
+        ranks (FSDP all-gather / DTensor full_tensor), then **streams**
+        them to a safetensors file one tensor at a time on rank 0.
+        Non-rank-0 workers consume the generator to participate in
+        collective operations but do not save.
+
+        The streaming write goes through the OS page cache (fast memcpy).
+        After the main-thread write completes, ``fsync`` + atomic rename
+        are offloaded to a background thread via
+        :class:`CheckpointCoordinator` so that the training loop is not
+        blocked by disk I/O.
+        """
         coordinator = self._get_coordinator()
-        strategy = self.config.actor.strategy
-        if strategy.startswith("fsdp"):
-            from trinity.trainer.verl.fsdp_engine import fsdp_save_state_dict
+        rank = torch.distributed.get_rank()
 
-            fsdp_save_state_dict(
-                self.actor.engine, local_path, global_step, coordinator, logger=self.logger
+        per_tensor_param, _ = self.actor.engine.get_per_tensor_param()
+
+        if rank == 0:
+            os.makedirs(local_path, exist_ok=True)
+            filepath = os.path.join(local_path, "model.safetensors")
+
+            def _rank0_iter():
+                for name, weight in per_tensor_param:
+                    yield name, weight.cpu().detach()
+
+            tmp_path = save_safetensors_streaming(
+                _rank0_iter(),
+                filepath,
+                state_dict_meta=self._state_dict_meta_list,
+                rename=False,
             )
-        elif strategy.startswith("megatron"):
-            from trinity.trainer.verl.megatron_engine import megatron_save_state_dict
 
-            megatron_save_state_dict(
-                self.actor.engine, local_path, global_step, coordinator, logger=self.logger
+            def _finalize():
+                fd = os.open(tmp_path, os.O_RDONLY)
+                try:
+                    os.fsync(fd)
+                finally:
+                    os.close(fd)
+                os.replace(tmp_path, filepath)
+
+            coordinator.save_async("model_state_dict", _finalize, global_step, is_state_dict=True)
+            self.logger.info(
+                f"Actor state_dict save initiated: path={local_path}, step={global_step}"
             )
         else:
-            raise ValueError(f"Unsupported strategy for save_state_dict: {strategy}")
+            # Consume generator to participate in FSDP all-gather.
+            for _ in per_tensor_param:
+                pass
+
         self._save_lora(local_path)
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)

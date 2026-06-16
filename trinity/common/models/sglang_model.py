@@ -267,7 +267,6 @@ class SGLangRolloutModel(BaseInferenceModel):
         rank_offset: int,
         world_size: int,
         group_name: str,
-        explorer_name: str,
         backend: str = "nccl",
         timeout: int = 1200,
     ):
@@ -285,7 +284,8 @@ class SGLangRolloutModel(BaseInferenceModel):
             "SGLang starting init_process_group:\n"
             f"  > address={master_address}:{master_port}\n"
             f"  > rank_offset={rank_offset}\n"
-            f"  > world_size={world_size}"
+            f"  > world_size={world_size}\n"
+            f"  > group_name={group_name}\n"
         )
         self.group_name = group_name
         resp = await self.api_client.init_weights_update_group(
@@ -543,7 +543,10 @@ class SGLangRolloutModel(BaseInferenceModel):
             self._has_weight_update_group = False
 
     async def sync_model_weights(
-        self, model_version: int, method: SyncMethod, timeout: float = 1200
+        self,
+        model_version: int,
+        method: SyncMethod,
+        timeout: float = 1200,
     ) -> int:
         if self.config.node_rank != 0:
             self.logger.warning(
@@ -566,7 +569,7 @@ class SGLangRolloutModel(BaseInferenceModel):
             batches = self._partition_state_dict_meta(self.state_dict_meta)
             self.logger.info(
                 f"NCCL weight sync: {len(self.state_dict_meta)} tensors in {len(batches)} batches "
-                f"(buffer_size={self.config.weight_sync_buffer_size / 1024**3:.1f} GB)"
+                f"(buffer_size={self.config.weight_sync_buffer_size} MB)"
             )
             for i, batch in enumerate(batches):
                 is_last = i == len(batches) - 1
@@ -579,6 +582,7 @@ class SGLangRolloutModel(BaseInferenceModel):
                 )
             self.model_version = model_version
         elif method == SyncMethod.CHECKPOINT:
+            # TODO: this branch is buggy, which only supports hf format checkpoints
             model_path = await self.synchronizer.get_latest_model_path.remote(use_huggingface=True)
             if model_path is not None:
                 await self.api_client.update_weights_from_disk(
@@ -600,7 +604,7 @@ class SGLangRolloutModel(BaseInferenceModel):
         This prevents OOM during NCCL weight sync by ensuring SGLang only allocates
         receive buffers for one batch at a time, rather than all tensors simultaneously.
         """
-        buffer_size = self.config.weight_sync_buffer_size
+        buffer_size = self.config.weight_sync_buffer_size * 1024 * 1024  # convert MB to bytes
 
         batches: list = []
         current_batch: list = []

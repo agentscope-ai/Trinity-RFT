@@ -134,7 +134,7 @@ class BaseExplorerCase(RayUnittestBase):
         self.config.buffer.total_epochs = 2
         self.config.buffer.batch_size = 4
         self.config.model.model_path = get_model_path()
-        self.config.explorer.rollout_model.engine_type = "vllm_async"
+        self.config.explorer.rollout_model.engine_type = "vllm"
         self.config.algorithm.repeat_times = 2
         self.config.monitor.monitor_type = "tensorboard"
         self.config.project = "Trinity-unittest"

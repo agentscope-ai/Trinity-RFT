@@ -77,7 +77,6 @@ class InferenceModel(ABC):
         rank_offset: int,
         world_size: int,
         group_name: str,
-        explorer_name: str,
         backend: str = "nccl",
         timeout: int = 1200,
     ):
@@ -94,7 +93,10 @@ class InferenceModel(ABC):
 
     @abstractmethod
     async def sync_model_weights(
-        self, model_version: int, method: SyncMethod, timeout: float = 1200
+        self,
+        model_version: int,
+        method: SyncMethod,
+        timeout: float = 1200,
     ) -> int:
         """Sync the model with the latest model_version."""
 
@@ -816,7 +818,6 @@ class ModelWrapper:
         rank_offset: int,
         world_size: int,
         group_name: str,
-        explorer_name: str,
         timeout: int = 1200,
     ):
         """Initialize the process group for model weight synchronization."""
@@ -827,7 +828,6 @@ class ModelWrapper:
             rank_offset=rank_offset,
             world_size=world_size,
             group_name=group_name,
-            explorer_name=explorer_name,
             backend="nccl",
             timeout=timeout,
         )
@@ -841,7 +841,10 @@ class ModelWrapper:
         await self.model.set_state_dict_meta.remote(state_dict_meta)
 
     async def sync_model_weights(
-        self, model_version: int, method: SyncMethod, timeout: int = 1200
+        self,
+        model_version: int,
+        method: SyncMethod,
+        timeout: float = 1200,
     ) -> None:
         """Sync the model weights"""
         await self.model.sync_model_weights.remote(model_version, method, timeout=timeout)
