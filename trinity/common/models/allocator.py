@@ -42,13 +42,7 @@ class Allocator:
         return f"{self.config.name}_{role}_model_{engine_id}_{node_id}"
 
     def allocate_bundles(self) -> BundleResult:
-        """Allocate bundles for the rollout model and auxiliary models based on the configuration.
-
-        Bundle allocation varies by launch mode:
-        - SINGLE_NODE (nnodes=1 or DP=1): each engine gets 1 bundle with TP*DP*PP GPUs
-        - SINGLE_NODE (nnodes>1 and DP>1): each engine_num*DP gets 1 bundle with TP*PP GPUs
-        - HEADLESS: each engine gets nnodes bundles, each with (TP*PP)/nnodes GPUs
-        """
+        """Allocate bundles for the rollout model and auxiliary models based on the configuration."""
         rollout_model = self.config.rollout_model
         auxiliary_models = self.config.auxiliary_models
         model_configs = [("rollout", rollout_model)] + [

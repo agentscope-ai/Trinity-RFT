@@ -348,28 +348,6 @@ class RayClusterConfigValidator(ConfigValidator):
                         f"tensor_parallel_size={model_config.tensor_parallel_size} and "
                         f"data_parallel_size={model_config.data_parallel_size}."
                     )
-            else:
-                # SINGLE_NODE with nnodes>1: DP expansion (each DP rank = separate actor)
-                if model_config.engine_type == "sglang":
-                    raise ValueError(
-                        "SGLang does not support cross-node data parallelism. "
-                        "SGLang's DP is implemented via local subprocesses and cannot span multiple nodes. "
-                        "Please set nnodes=1 for SGLang with DP>1."
-                    )
-                tp_pp = model_config.tensor_parallel_size * model_config.pipeline_parallel_size
-                if tp_pp > config.cluster.gpu_per_node:
-                    raise ValueError(
-                        f"SINGLE_NODE mode with DP expansion requires TP*PP ({tp_pp}) "
-                        f"<= cluster.gpu_per_node ({config.cluster.gpu_per_node}). "
-                        f"For cross-node TP/PP, set data_parallel_size=1 to use HEADLESS mode."
-                    )
-                required_nnodes = model_config.data_parallel_size
-                if model_config.nnodes != required_nnodes:
-                    raise ValueError(
-                        f"In SINGLE_NODE mode with DP expansion, `nnodes` ({model_config.nnodes}) "
-                        f"must equal `data_parallel_size` ({required_nnodes}), because each DP rank "
-                        f"runs as an independent engine on a separate node."
-                    )
 
 
 class AlgorithmConfigValidator(ConfigValidator):
