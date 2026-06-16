@@ -143,6 +143,9 @@ class ModelWrapperTest(VLLMTestBase):
         self.config.explorer.rollout_model.enable_openai_api = self.enable_return_routed_experts
         self.config.explorer.rollout_model.chat_template = CHAT_TEMPLATE
         self.config.explorer.rollout_model.extra_engine_args = {"max_num_seqs": 24}
+        if self.enable_return_routed_experts:
+            self.config.explorer.rollout_model.extra_engine_args["moe_backend"] = "triton"
+            self.config.explorer.rollout_model.extra_engine_args["gdn_prefill_backend"] = "triton"
         self.config.algorithm.enable_router_replay = self.enable_return_routed_experts
         self.config.check_and_update()
 
