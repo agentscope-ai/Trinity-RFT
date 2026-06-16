@@ -12,7 +12,7 @@ import httpx
 import torch
 from transformers import AutoTokenizer
 
-from trinity.common.config import InferenceModelConfig, LaunchMode, infer_launch_mode
+from trinity.common.config import InferenceModelConfig
 from trinity.common.constants import ROLLOUT_WEIGHT_SYNC_GROUP_NAME, SyncMethod
 from trinity.common.experience import Experience
 from trinity.common.models.experience_extraction import decode_sglang_routed_experts
@@ -486,21 +486,6 @@ class SGLangRolloutModel(BaseInferenceModel):
     async def run_api_server(self) -> bool:
         from trinity.common.models.sglang_patch import get_api_server
 
-        launch_mode = infer_launch_mode(self.config.nnodes, self.config.data_parallel_size)
-
-        if launch_mode == LaunchMode.HEADLESS:
-            # Cross-node TP/PP: pass nnodes and node_rank for multi-node coordination
-            sglang_nnodes = self.config.nnodes
-            sglang_node_rank = self.config.node_rank
-        elif self.config.nnodes > 1 and self.config.data_parallel_size > 1:
-            # SINGLE_NODE with DP expansion: each actor is a self-contained instance
-            sglang_nnodes = 1
-            sglang_node_rank = 0
-        else:
-            # SINGLE_NODE: single actor handles all DP/TP/PP
-            sglang_nnodes = 1
-            sglang_node_rank = 0
-
         if self.api_server_host is None or self.api_server_port is None:
             self.api_server_host, self.api_server_port = self.get_available_address()
         self.api_server = get_api_server(
@@ -519,8 +504,8 @@ class SGLangRolloutModel(BaseInferenceModel):
             context_length=self.config.max_model_len,
             enable_multimodal=self.config.enable_multimodal,
             api_key=self.config.api_key,
-            nnodes=sglang_nnodes,
-            node_rank=sglang_node_rank,
+            nnodes=self.config.nnodes,
+            node_rank=self.config.node_rank,
             master_addr=self.master_addr,
             master_port=self.master_port,
             enable_return_routed_experts=self.config.enable_return_routed_experts,

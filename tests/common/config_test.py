@@ -3,7 +3,6 @@
 import datetime
 import math
 import os
-import re
 import shutil
 import socket
 import unittest
@@ -12,12 +11,7 @@ from unittest.mock import patch
 import torch
 
 from tests.tools import get_template_config, get_unittest_dataset_config
-from trinity.common.config import (
-    InferenceModelConfig,
-    LaunchMode,
-    infer_launch_mode,
-    load_config,
-)
+from trinity.common.config import InferenceModelConfig, load_config
 from trinity.common.constants import SyncMethod
 from trinity.common.models.model import InferenceModel
 from trinity.trainer.trainer import is_verl_legacy
@@ -123,10 +117,9 @@ class TestConfig(unittest.TestCase):
         config.cluster.gpu_per_node = 4
         config.explorer.rollout_model.engine_type = "vllm"
         config.explorer.rollout_model.engine_num = 1
-        config.explorer.rollout_model.tensor_parallel_size = 8
-        config.explorer.rollout_model.nnodes = 3
+        config.explorer.rollout_model.tensor_parallel_size = 16
 
-        with self.assertRaisesRegex(ValueError, "cannot exceed cluster.node_num"):
+        with self.assertRaisesRegex(ValueError, "is less than"):
             config.check_and_update()
 
     def test_multinode_vllm_requires_full_node_occupancy(self):
@@ -139,36 +132,7 @@ class TestConfig(unittest.TestCase):
         config.explorer.rollout_model.tensor_parallel_size = 6
         config.explorer.rollout_model.nnodes = 2
 
-        with self.assertRaisesRegex(ValueError, "integer multiple of cluster.gpu_per_node"):
-            config.check_and_update()
-
-    def test_multinode_vllm_requires_matching_nnodes_for_full_nodes(self):
-        config = get_template_config()
-        config.mode = "explore"
-        config.cluster.node_num = 4
-        config.cluster.gpu_per_node = 4
-        config.explorer.rollout_model.engine_type = "vllm"
-        config.explorer.rollout_model.engine_num = 1
-        config.explorer.rollout_model.tensor_parallel_size = 8
-        config.explorer.rollout_model.nnodes = 4
-
-        with self.assertRaisesRegex(
-            ValueError,
-            re.escape("In HEADLESS mode, `nnodes` (4) must equal (TP*PP) // gpu_per_node (2)."),
-        ):
-            config.check_and_update()
-
-    def test_multinode_inference_is_rejected_for_non_vllm_sglang_engines(self):
-        config = get_template_config()
-        config.mode = "explore"
-        config.cluster.node_num = 2
-        config.cluster.gpu_per_node = 4
-        config.explorer.rollout_model.engine_type = "tinker"
-        config.explorer.rollout_model.engine_num = 1
-        config.explorer.rollout_model.tensor_parallel_size = 4
-        config.explorer.rollout_model.nnodes = 2
-
-        with self.assertRaisesRegex(ValueError, "only supported for"):
+        with self.assertRaisesRegex(ValueError, "to be a multiple of"):
             config.check_and_update()
 
     def test_load_default_config(self):
@@ -421,102 +385,3 @@ class TestConfig(unittest.TestCase):
     def tearDown(self):
         if os.path.exists(CHECKPOINT_ROOT_DIR):
             shutil.rmtree(CHECKPOINT_ROOT_DIR, ignore_errors=True)
-
-
-class TestLaunchMode(unittest.TestCase):
-    """Test cases for LaunchMode enum and infer_launch_mode function."""
-
-    def test_single_node_default(self):
-        """nnodes=1 should always be SINGLE_NODE regardless of DP size."""
-        self.assertEqual(infer_launch_mode(1, 1), LaunchMode.SINGLE_NODE)
-        self.assertEqual(infer_launch_mode(1, 2), LaunchMode.SINGLE_NODE)
-        self.assertEqual(infer_launch_mode(1, 4), LaunchMode.SINGLE_NODE)
-
-    def test_headless_mode(self):
-        """nnodes>1 with DP=1 should be HEADLESS (cross-node TP/PP)."""
-        self.assertEqual(infer_launch_mode(2, 1), LaunchMode.HEADLESS)
-        self.assertEqual(infer_launch_mode(4, 1), LaunchMode.HEADLESS)
-
-    def test_dp_with_multinode_is_single_node(self):
-        """nnodes>1 with DP>1 should be SINGLE_NODE (DP expansion handled by allocator)."""
-        self.assertEqual(infer_launch_mode(2, 2), LaunchMode.SINGLE_NODE)
-        self.assertEqual(infer_launch_mode(4, 4), LaunchMode.SINGLE_NODE)
-        self.assertEqual(infer_launch_mode(2, 3), LaunchMode.SINGLE_NODE)
-
-    def test_launch_mode_values(self):
-        """LaunchMode enum values should be stable strings."""
-        self.assertEqual(LaunchMode.SINGLE_NODE.value, "single_node")
-        self.assertEqual(LaunchMode.HEADLESS.value, "headless")
-
-    def test_launch_mode_string_comparison(self):
-        """LaunchMode should support string comparison since it inherits from str."""
-        self.assertEqual(LaunchMode.SINGLE_NODE, "single_node")
-        self.assertEqual(LaunchMode.HEADLESS, "headless")
-
-    def test_inference_model_config_has_launch_mode_fields(self):
-        """InferenceModelConfig should have launch_mode and data_parallel_rank fields."""
-        config = InferenceModelConfig()
-        self.assertIsNone(config.launch_mode)
-        self.assertEqual(config.data_parallel_rank, 0)
-
-
-class TestMultinodeValidation(unittest.TestCase):
-    """Test cases for multi-node inference validation with LaunchMode."""
-
-    def _make_config(
-        self, nnodes=1, dp=1, tp=1, pp=1, engine_type="vllm", gpu_per_node=8, node_num=4
-    ):
-        config = get_template_config()
-        config.mode = "explore"
-        config.cluster.gpu_per_node = gpu_per_node
-        config.cluster.node_num = node_num
-        config.explorer.rollout_model.engine_type = engine_type
-        config.explorer.rollout_model.nnodes = nnodes
-        config.explorer.rollout_model.data_parallel_size = dp
-        config.explorer.rollout_model.tensor_parallel_size = tp
-        config.explorer.rollout_model.pipeline_parallel_size = pp
-        config.explorer.rollout_model.engine_num = 1
-        return config
-
-    def test_single_node_no_validation_error(self):
-        """nnodes=1 should pass validation without errors."""
-        config = self._make_config(nnodes=1, dp=2, tp=2, pp=1)
-        config.check_and_update()
-        self.assertEqual(config.explorer.rollout_model.launch_mode, LaunchMode.SINGLE_NODE.value)
-
-    def test_headless_mode_valid(self):
-        """HEADLESS mode with correct nnodes should pass."""
-        config = self._make_config(nnodes=2, dp=1, tp=8, pp=2, gpu_per_node=8)
-        config.check_and_update()
-        self.assertEqual(config.explorer.rollout_model.launch_mode, LaunchMode.HEADLESS.value)
-
-    def test_headless_mode_wrong_nnodes(self):
-        """HEADLESS mode with wrong nnodes should fail."""
-        config = self._make_config(nnodes=3, dp=1, tp=8, pp=1, gpu_per_node=8, node_num=8)
-        with self.assertRaises(ValueError):
-            config.check_and_update()
-
-    def test_dp_expansion_valid(self):
-        """SINGLE_NODE with nnodes=dp_size and TP*PP<=gpu_per_node should pass."""
-        config = self._make_config(nnodes=2, dp=2, tp=4, pp=1, gpu_per_node=8)
-        config.check_and_update()
-        self.assertEqual(config.explorer.rollout_model.launch_mode, LaunchMode.SINGLE_NODE.value)
-
-    def test_dp_expansion_wrong_nnodes(self):
-        """SINGLE_NODE with nnodes != dp_size should fail."""
-        config = self._make_config(nnodes=3, dp=2, tp=2, pp=1, gpu_per_node=8)
-        with self.assertRaises(ValueError):
-            config.check_and_update()
-
-    def test_dp_expansion_tp_too_large(self):
-        """SINGLE_NODE with TP*PP > gpu_per_node should fail."""
-        config = self._make_config(nnodes=2, dp=2, tp=16, pp=1, gpu_per_node=8)
-        with self.assertRaises(ValueError):
-            config.check_and_update()
-
-    def test_sglang_cross_node_dp_rejected(self):
-        """SGLang with nnodes>1 and DP>1 should be rejected."""
-        config = self._make_config(nnodes=2, dp=2, tp=2, pp=1, engine_type="sglang")
-        with self.assertRaises(ValueError) as ctx:
-            config.check_and_update()
-        self.assertIn("SGLang", str(ctx.exception))

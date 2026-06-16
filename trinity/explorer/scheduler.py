@@ -10,7 +10,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import ray
 
-from trinity.common.config import Config, LaunchMode, infer_launch_mode
+from trinity.common.config import Config
 from trinity.common.workflows import Task
 from trinity.explorer.workflow_runner import Status, WorkflowRunner
 from trinity.utils.log import get_logger
@@ -239,8 +239,7 @@ class Scheduler:
         self.running = False
 
         self.runner_num = (
-            self._get_effective_engine_num(config.explorer.rollout_model)
-            * config.explorer.runner_per_model
+            config.explorer.rollout_model.engine_num * config.explorer.runner_per_model
         )
         self.runners: Dict[int, RunnerWrapper] = dict()
         self.idle_runners: set[int] = set()  # runner_id of idle runners
@@ -272,28 +271,15 @@ class Scheduler:
         self.total_completed_sub_tasks = 0
         self.total_completed_tasks = 0
 
-    @staticmethod
-    def _get_effective_engine_num(model_config) -> int:
-        """Get effective engine count, accounting for SINGLE_NODE DP expansion."""
-        launch_mode = infer_launch_mode(model_config.nnodes, model_config.data_parallel_size)
-        if (
-            launch_mode == LaunchMode.SINGLE_NODE
-            and model_config.nnodes > 1
-            and model_config.data_parallel_size > 1
-        ):
-            return model_config.engine_num * model_config.data_parallel_size
-        return model_config.engine_num
-
     async def _create_runner(
         self,
         runner_id: int,
     ):
         runner = RunnerWrapper(
             runner_id=runner_id,
-            rollout_model_id=runner_id
-            % self._get_effective_engine_num(self.config.explorer.rollout_model),
+            rollout_model_id=runner_id % self.config.explorer.rollout_model.engine_num,
             auxiliary_model_ids=[
-                runner_id % self._get_effective_engine_num(self.config.explorer.auxiliary_models[j])
+                runner_id % self.config.explorer.auxiliary_models[j].engine_num
                 for j in range(len(self.config.explorer.auxiliary_models))
             ],
             config=self.config,

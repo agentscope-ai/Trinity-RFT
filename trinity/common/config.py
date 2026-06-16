@@ -30,30 +30,6 @@ from trinity.utils.log import get_logger
 logger = get_logger(__name__)
 
 
-class LaunchMode(str, Enum):
-    """Launch mode for inference engines, automatically inferred from nnodes and data_parallel_size.
-
-    SINGLE_NODE: Each actor runs a self-contained engine. When DP>1 and nnodes>1,
-                 the allocator creates engine_num*DP actors, each with dp_size=1 and nnodes=1.
-    HEADLESS: Cross-node TP/PP with node0 driving and node1+ as headless executors (nnodes>1, DP=1).
-    """
-
-    SINGLE_NODE = "single_node"
-    HEADLESS = "headless"
-
-
-def infer_launch_mode(nnodes: int, data_parallel_size: int) -> LaunchMode:
-    """Infer the launch mode from nnodes and data_parallel_size.
-
-    HEADLESS is only used when nnodes>1 AND DP=1 (cross-node TP/PP).
-    All other cases (including DP>1 with any nnodes) use SINGLE_NODE,
-    where the allocator handles DP expansion by creating multiple independent actors.
-    """
-    if nnodes > 1 and data_parallel_size == 1:
-        return LaunchMode.HEADLESS
-    return LaunchMode.SINGLE_NODE
-
-
 def set_if_none(obj, attr, val):
     if getattr(obj, attr, None) is None:
         setattr(obj, attr, val)
@@ -610,14 +586,9 @@ class InferenceModelConfig:
     # For external API-based engine
     external_model_config: ExternalModelConfig = field(default_factory=ExternalModelConfig)
 
-    # for multi-node setup
+    # ! DO NOT SET, for multi node setup
     nnodes: int = 1
-    # ! DO NOT SET
     node_rank: int = 0
-    # ! DO NOT SET, automatically inferred from nnodes and data_parallel_size
-    launch_mode: Optional[str] = None
-    # ! DO NOT SET, used in SINGLE_NODE mode with DP>1 and nnodes>1 to assign DP rank to each engine
-    data_parallel_rank: int = 0
     enable_return_routed_experts: bool = False
 
     # Buffer size (bytes) for batched NCCL weight sync. Controls peak GPU memory during sync.

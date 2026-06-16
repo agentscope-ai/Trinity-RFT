@@ -313,6 +313,8 @@ def get_api_server(
         pp_size=pipeline_parallel_size,
         ep_size=tensor_parallel_size if enable_expert_parallel else 1,
         dtype=dtype,
+        enable_dp_attention=data_parallel_size > 1,
+        enable_dp_lm_head=data_parallel_size > 1,
         served_model_name=served_model_name,
         mem_fraction_static=mem_fraction_static,
         trust_remote_code=trust_remote_code,
