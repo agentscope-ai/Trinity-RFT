@@ -16,6 +16,7 @@ Submodules
    trinity.utils.monitor
    trinity.utils.plugin_loader
    trinity.utils.registry
+   trinity.utils.stream_saver
    trinity.utils.timer
 
 Module contents

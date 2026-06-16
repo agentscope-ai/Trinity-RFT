@@ -1020,6 +1020,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">&quot;&quot;&quot;For distributed training with multiple process groups.&quot;&quot;&quot;</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ipaddress</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">socket</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">abstractmethod</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">timedelta</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
@@ -1130,6 +1131,134 @@ window.runMermaid = runMermaid;</script>
 
     <span class="n">_world</span><span class="o">.</span><span class="n">pg_group_ranks</span><span class="p">[</span><span class="n">pg</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="p">:</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">world_size</span><span class="p">)}</span>
     <span class="k">return</span> <span class="n">pg</span></div>
+
+
+
+<div class="viewcode-block" id="WeightTransferEngine">
+<a class="viewcode-back" href="../../../build_api/trinity.utils.distributed.html#trinity.utils.distributed.WeightTransferEngine">[文档]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">WeightTransferEngine</span><span class="p">:</span>
+<div class="viewcode-block" id="WeightTransferEngine.sync_weight">
+<a class="viewcode-back" href="../../../build_api/trinity.utils.distributed.html#trinity.utils.distributed.WeightTransferEngine.sync_weight">[文档]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sync_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterator</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform the weight sync.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="WeightTransferEngine.teardown">
+<a class="viewcode-back" href="../../../build_api/trinity.utils.distributed.html#trinity.utils.distributed.WeightTransferEngine.teardown">[文档]</a>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">teardown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Tear down the weight sync group.&quot;&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="WeightTransferEngine.create">
+<a class="viewcode-back" href="../../../build_api/trinity.utils.distributed.html#trinity.utils.distributed.WeightTransferEngine.create">[文档]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span>
+        <span class="n">engine_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">master_address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">master_port</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">group_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Factory method to create the appropriate weight transfer engine based on the rollout engine type.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">engine_type</span> <span class="o">==</span> <span class="s2">&quot;vllm&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">VLLMWeightTransferEngine</span><span class="p">(</span>
+                <span class="n">master_address</span><span class="o">=</span><span class="n">master_address</span><span class="p">,</span>
+                <span class="n">master_port</span><span class="o">=</span><span class="n">master_port</span><span class="p">,</span>
+                <span class="n">world_size</span><span class="o">=</span><span class="n">world_size</span><span class="p">,</span>
+                <span class="n">group_name</span><span class="o">=</span><span class="n">group_name</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">engine_type</span> <span class="o">==</span> <span class="s2">&quot;sglang&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">SGLangWeightTransferEngine</span><span class="p">(</span>
+                <span class="n">master_address</span><span class="o">=</span><span class="n">master_address</span><span class="p">,</span>
+                <span class="n">master_port</span><span class="o">=</span><span class="n">master_port</span><span class="p">,</span>
+                <span class="n">world_size</span><span class="o">=</span><span class="n">world_size</span><span class="p">,</span>
+                <span class="n">group_name</span><span class="o">=</span><span class="n">group_name</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported engine type: </span><span class="si">{</span><span class="n">engine_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="VLLMWeightTransferEngine">
+<a class="viewcode-back" href="../../../build_api/trinity.utils.distributed.html#trinity.utils.distributed.VLLMWeightTransferEngine">[文档]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">VLLMWeightTransferEngine</span><span class="p">(</span><span class="n">WeightTransferEngine</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A helper class to manage NCCL weight synchronization using vLLM&#39;s API.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="VLLMWeightTransferEngine.__init__">
+<a class="viewcode-back" href="../../../build_api/trinity.utils.distributed.html#trinity.utils.distributed.VLLMWeightTransferEngine.__init__">[文档]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master_address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">master_port</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">group_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the NCCL process group for weight sync with vLLM&#39;s API.&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">vllm.distributed.weight_transfer.nccl_engine</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">NCCLWeightTransferEngine</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">del</span> <span class="n">group_name</span>  <span class="c1"># vLLM&#39;s NCCL engine does not require a group name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model_update_group</span> <span class="o">=</span> <span class="n">NCCLWeightTransferEngine</span><span class="o">.</span><span class="n">trainer_init</span><span class="p">(</span>
+            <span class="nb">dict</span><span class="p">(</span>
+                <span class="n">master_address</span><span class="o">=</span><span class="n">master_address</span><span class="p">,</span>
+                <span class="n">master_port</span><span class="o">=</span><span class="n">master_port</span><span class="p">,</span>
+                <span class="n">world_size</span><span class="o">=</span><span class="n">world_size</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="VLLMWeightTransferEngine.sync_weight">
+<a class="viewcode-back" href="../../../build_api/trinity.utils.distributed.html#trinity.utils.distributed.VLLMWeightTransferEngine.sync_weight">[文档]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sync_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterator</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform the NCCL weight sync using vLLM&#39;s API.&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">vllm.distributed.weight_transfer.nccl_engine</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+            <span class="n">NCCLTrainerSendWeightsArgs</span><span class="p">,</span>
+            <span class="n">NCCLWeightTransferEngine</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">NCCLWeightTransferEngine</span><span class="o">.</span><span class="n">trainer_send_weights</span><span class="p">(</span>
+            <span class="n">iterator</span><span class="o">=</span><span class="n">iterator</span><span class="p">,</span>
+            <span class="n">trainer_args</span><span class="o">=</span><span class="n">NCCLTrainerSendWeightsArgs</span><span class="p">(</span>
+                <span class="n">group</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_model_update_group</span><span class="p">,</span>
+                <span class="n">packed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">),</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="VLLMWeightTransferEngine.teardown">
+<a class="viewcode-back" href="../../../build_api/trinity.utils.distributed.html#trinity.utils.distributed.VLLMWeightTransferEngine.teardown">[文档]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">teardown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model_update_group</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="SGLangWeightTransferEngine">
+<a class="viewcode-back" href="../../../build_api/trinity.utils.distributed.html#trinity.utils.distributed.SGLangWeightTransferEngine">[文档]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SGLangWeightTransferEngine</span><span class="p">(</span><span class="n">WeightTransferEngine</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A helper class to manage NCCL weight synchronization using SGLang&#39;s API.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SGLangWeightTransferEngine.__init__">
+<a class="viewcode-back" href="../../../build_api/trinity.utils.distributed.html#trinity.utils.distributed.SGLangWeightTransferEngine.__init__">[文档]</a>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master_address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">master_port</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">group_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the NCCL process group for weight sync with SGLang&#39;s API.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model_update_group</span> <span class="o">=</span> <span class="n">init_process_group</span><span class="p">(</span>
+            <span class="n">host</span><span class="o">=</span><span class="n">master_address</span><span class="p">,</span>
+            <span class="n">port</span><span class="o">=</span><span class="n">master_port</span><span class="p">,</span>
+            <span class="n">group_name</span><span class="o">=</span><span class="n">group_name</span><span class="p">,</span>
+            <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;nccl&quot;</span><span class="p">,</span>
+            <span class="n">world_size</span><span class="o">=</span><span class="n">world_size</span><span class="p">,</span>
+            <span class="n">rank</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SGLangWeightTransferEngine.sync_weight">
+<a class="viewcode-back" href="../../../build_api/trinity.utils.distributed.html#trinity.utils.distributed.SGLangWeightTransferEngine.sync_weight">[文档]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sync_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterator</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform the NCCL weight sync using SGLang&#39;s API.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">iterator</span><span class="p">:</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">broadcast</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">src</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_model_update_group</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SGLangWeightTransferEngine.teardown">
+<a class="viewcode-back" href="../../../build_api/trinity.utils.distributed.html#trinity.utils.distributed.SGLangWeightTransferEngine.teardown">[文档]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">teardown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">destroy_process_group</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_model_update_group</span><span class="p">)</span></div>
+</div>
 
 </pre></div>
 

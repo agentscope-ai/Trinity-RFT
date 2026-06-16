@@ -23,6 +23,7 @@ Submodules
    trinity.common.models.sglang_model
    trinity.common.models.tinker_model
    trinity.common.models.utils
+   trinity.common.models.vllm_extension
    trinity.common.models.vllm_model
    trinity.common.models.vllm_worker
 

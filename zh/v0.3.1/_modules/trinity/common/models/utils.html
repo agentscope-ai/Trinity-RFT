@@ -985,13 +985,13 @@ window.runMermaid = runMermaid;</script>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterator</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">transformers</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">TrainerConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
 
 
@@ -1254,50 +1254,67 @@ window.runMermaid = runMermaid;</script>
 
 
 
+<div class="viewcode-block" id="load_state_dict_iterator">
+<a class="viewcode-back" href="../../../../build_api/trinity.common.models.utils.html#trinity.common.models.utils.load_state_dict_iterator">[文档]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_state_dict_iterator</span><span class="p">(</span><span class="n">checkpoint_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load model state dict from a checkpoint directory as an iterator of (name, tensor) tuples.&quot;&quot;&quot;</span>
+    <span class="n">state_dict</span> <span class="o">=</span> <span class="n">load_state_dict</span><span class="p">(</span><span class="n">checkpoint_dir</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">state_dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">tensor</span> <span class="ow">in</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">yield</span> <span class="n">name</span><span class="p">,</span> <span class="n">tensor</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported state dict format: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
 <div class="viewcode-block" id="load_state_dict">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.models.utils.html#trinity.common.models.utils.load_state_dict">[文档]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">load_state_dict</span><span class="p">(</span><span class="n">checkpoint_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">TrainerConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load state dict from a checkpoint dir.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_state_dict</span><span class="p">(</span>
+    <span class="n">checkpoint_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">trust_remote_code</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load model state dict from a checkpoint directory.</span>
+
+<span class="sd">    Auto-detects the checkpoint format from directory contents:</span>
+
+<span class="sd">    1. **safetensors** — ``model.safetensors`` produced by the unified</span>
+<span class="sd">       ``save_state_dict`` path.  Loaded directly and returned as a dict.</span>
+<span class="sd">    2. **HuggingFace weights** — detected by :func:`has_huggingface_model_weights`</span>
+<span class="sd">       in either a ``huggingface/`` subdirectory or the directory itself.</span>
+<span class="sd">       Returns ``(&quot;huggingface&quot;, path)`` for lazy loading by the caller.</span>
+<span class="sd">    3. **FSDP shards** — ``model_world_size_N_rank_M.pt`` files.  Merged</span>
+<span class="sd">       via :func:`load_fsdp_state_dict_from_verl_checkpoint` and returned</span>
+<span class="sd">       as a dict.</span>
+<span class="sd">    4. **Megatron dist checkpoint** — fallback.  Returns</span>
+<span class="sd">       ``(&quot;megatron&quot;, checkpoint_dir)`` for lazy loading via converter.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        checkpoint_dir (str): The checkpoint directory.</span>
-<span class="sd">        trainer_type (str): The trainer type. Only support &quot;verl&quot; for now.</span>
+<span class="sd">        checkpoint_dir: Path to the checkpoint directory (typically</span>
+<span class="sd">            ``global_step_N/actor/``).</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Union[dict, Tuple[str, str]]: The state dict. If the checkpoint uses</span>
-<span class="sd">            megatron dist checkpointing, return a tuple of (method, checkpoint_dir).</span>
+<span class="sd">        Either a ``dict`` of model weights, or a ``(method, path)`` tuple</span>
+<span class="sd">        indicating the format for lazy loading.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer_type</span> <span class="o">==</span> <span class="s2">&quot;verl&quot;</span><span class="p">:</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.trainer.trainer</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_verl_legacy</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">glob</span>
 
-        <span class="n">strategy</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer_strategy</span>
-        <span class="k">if</span> <span class="n">strategy</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;fsdp&quot;</span><span class="p">,</span> <span class="s2">&quot;fsdp2&quot;</span><span class="p">}:</span>
-            <span class="k">return</span> <span class="n">load_fsdp_state_dict_from_verl_checkpoint</span><span class="p">(</span><span class="n">checkpoint_dir</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">strategy</span> <span class="o">==</span> <span class="s2">&quot;megatron&quot;</span><span class="p">:</span>
-            <span class="n">huggingface_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">checkpoint_dir</span><span class="p">,</span> <span class="s2">&quot;huggingface&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_verl_legacy</span><span class="p">():</span>
-                <span class="c1"># In verl &gt;= 0.8 Megatron checkpoints, model weights may live</span>
-                <span class="c1"># under ``huggingface/`` while ``dist_ckpt/`` contains only</span>
-                <span class="c1"># optimizer and RNG state. Prefer HF weights when present to</span>
-                <span class="c1"># avoid loading an optimizer-only dist checkpoint.</span>
-                <span class="k">if</span> <span class="n">has_huggingface_model_weights</span><span class="p">(</span><span class="n">huggingface_dir</span><span class="p">):</span>
-                    <span class="k">return</span> <span class="s2">&quot;huggingface&quot;</span><span class="p">,</span> <span class="n">huggingface_dir</span>
-                <span class="k">return</span> <span class="s2">&quot;megatron&quot;</span><span class="p">,</span> <span class="n">checkpoint_dir</span>
-            <span class="n">actor_config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer_config</span><span class="o">.</span><span class="n">actor_rollout_ref</span><span class="o">.</span><span class="n">actor</span>
-            <span class="k">if</span> <span class="p">(</span>
-                <span class="n">actor_config</span><span class="o">.</span><span class="n">megatron</span><span class="o">.</span><span class="n">use_dist_checkpointing</span>
-                <span class="ow">or</span> <span class="ow">not</span> <span class="n">actor_config</span><span class="o">.</span><span class="n">megatron</span><span class="o">.</span><span class="n">use_mbridge</span>
-            <span class="p">):</span>
-                <span class="k">return</span> <span class="s2">&quot;megatron&quot;</span><span class="p">,</span> <span class="n">checkpoint_dir</span>
-            <span class="k">else</span><span class="p">:</span>  <span class="c1"># hf checkpointing</span>
-                <span class="k">return</span> <span class="n">load_huggingface_state_dict</span><span class="p">(</span>
-                    <span class="n">huggingface_dir</span><span class="p">,</span>
-                    <span class="n">trust_remote_code</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">trust_remote_code</span><span class="p">,</span>
-                <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported strategy: </span><span class="si">{</span><span class="n">strategy</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported trainer type </span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">trainer_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+    <span class="c1"># 1. safetensors (unified save_state_dict format)</span>
+    <span class="n">safetensors_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">checkpoint_dir</span><span class="p">,</span> <span class="s2">&quot;model.safetensors&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">safetensors_path</span><span class="p">):</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">safetensors.torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_file</span>
+
+        <span class="k">return</span> <span class="n">load_file</span><span class="p">(</span><span class="n">safetensors_path</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+
+    <span class="c1"># 2. HuggingFace weights in huggingface/ subdirectory</span>
+    <span class="n">huggingface_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">checkpoint_dir</span><span class="p">,</span> <span class="s2">&quot;huggingface&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">has_huggingface_model_weights</span><span class="p">(</span><span class="n">huggingface_dir</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">load_huggingface_state_dict</span><span class="p">(</span><span class="n">huggingface_dir</span><span class="p">,</span> <span class="n">trust_remote_code</span><span class="o">=</span><span class="n">trust_remote_code</span><span class="p">)</span>
+
+    <span class="c1"># 3. FSDP shards → merge</span>
+    <span class="k">if</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">checkpoint_dir</span><span class="p">,</span> <span class="s2">&quot;model_world_size_*_rank_*.pt&quot;</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="n">load_fsdp_state_dict_from_verl_checkpoint</span><span class="p">(</span><span class="n">checkpoint_dir</span><span class="p">)</span>
+
+    <span class="c1"># 4. Megatron dist_ckpt (fallback)</span>
+    <span class="k">return</span> <span class="n">get_megatron_converter</span><span class="p">(</span><span class="n">checkpoint_dir</span><span class="p">)</span><span class="o">.</span><span class="n">get_state_dict</span><span class="p">(</span><span class="n">checkpoint_dir</span><span class="p">)</span></div>
 
 
 

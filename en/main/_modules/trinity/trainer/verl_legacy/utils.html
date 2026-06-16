@@ -820,6 +820,7 @@ window.runMermaid = runMermaid;</script>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.sglang_model.html">trinity.common.models.sglang_model module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.tinker_model.html">trinity.common.models.tinker_model module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.utils.html">trinity.common.models.utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.vllm_extension.html">trinity.common.models.vllm_extension module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.vllm_model.html">trinity.common.models.vllm_model module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../../build_api/trinity.common.models.vllm_worker.html">trinity.common.models.vllm_worker module</a></li>
 </ul>
@@ -878,6 +879,7 @@ window.runMermaid = runMermaid;</script>
 <li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.utils.monitor.html">trinity.utils.monitor module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.utils.plugin_loader.html">trinity.utils.plugin_loader module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.utils.registry.html">trinity.utils.registry module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.utils.stream_saver.html">trinity.utils.stream_saver module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../../build_api/trinity.utils.timer.html">trinity.utils.timer module</a></li>
 </ul>
 </details></li>
@@ -1035,14 +1037,19 @@ window.runMermaid = runMermaid;</script>
                   
   <h1>Source code for trinity.trainer.verl_legacy.utils</h1><div class="highlight"><pre>
 <span></span><span class="sd">&quot;&quot;&quot;Utils for ccompatibility issues with verl.&quot;&quot;&quot;</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Iterator</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">logging</span><span class="w"> </span><span class="kn">import</span> <span class="n">Logger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.distributed.fsdp</span><span class="w"> </span><span class="kn">import</span> <span class="n">FlatParameter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.distributed.fsdp</span><span class="w"> </span><span class="kn">import</span> <span class="n">FullyShardedDataParallel</span> <span class="k">as</span> <span class="n">FSDP</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.distributed.fsdp.fully_sharded_data_parallel</span><span class="w"> </span><span class="kn">import</span> <span class="n">FSDP_PREFIX</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">PreTrainedModel</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">verl</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataProto</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">verl.trainer.ppo.metric_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">_compute_response_info</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.device</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_device_id</span><span class="p">,</span> <span class="n">get_torch_device</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.experience</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Experience</span><span class="p">,</span>
@@ -1052,6 +1059,72 @@ window.runMermaid = runMermaid;</script>
     <span class="n">gather_token_ids</span><span class="p">,</span>
     <span class="n">split_dpo_experience_to_single_turn</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.stream_saver</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_safetensors_streaming</span>
+
+
+<div class="viewcode-block" id="rank0_iterator">
+<a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl_legacy.utils.html#trinity.trainer.verl_legacy.utils.rank0_iterator">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">rank0_iterator</span><span class="p">(</span>
+    <span class="n">per_tensor_param</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Advance a distributed tensor iterator on every rank, yielding only on rank 0.&quot;&quot;&quot;</span>
+    <span class="n">is_rank0</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">get_rank</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">per_tensor_param</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_rank0</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span></div>
+
+
+
+<div class="viewcode-block" id="iter_fsdp_per_tensor_param">
+<a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl_legacy.utils.html#trinity.trainer.verl_legacy.utils.iter_fsdp_per_tensor_param">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">iter_fsdp_per_tensor_param</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+    <span class="n">named_modules</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FSDP</span><span class="p">]],</span>
+    <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Yield full FSDP/FSDP2 parameters in the same order used for cached metadata.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">strategy</span> <span class="o">==</span> <span class="s2">&quot;fsdp&quot;</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">name_prefix</span><span class="p">,</span> <span class="n">module</span> <span class="ow">in</span> <span class="n">named_modules</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">FSDP</span><span class="o">.</span><span class="n">summon_full_params</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">recurse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">module</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">FlatParameter</span><span class="p">):</span>
+                        <span class="k">continue</span>
+                    <span class="n">realname</span> <span class="o">=</span> <span class="n">name_prefix</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">FSDP_PREFIX</span><span class="p">)</span> <span class="p">:]</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span> <span class="o">+</span> <span class="n">name</span> <span class="k">if</span> <span class="n">name_prefix</span> <span class="k">else</span> <span class="n">name</span>
+                    <span class="k">yield</span> <span class="n">realname</span><span class="p">,</span> <span class="n">param</span>
+            <span class="n">get_torch_device</span><span class="p">()</span><span class="o">.</span><span class="n">empty_cache</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
+            <span class="k">yield</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span><span class="o">.</span><span class="n">full_tensor</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">get_device_id</span><span class="p">())</span></div>
+
+
+
+<div class="viewcode-block" id="save_rank0_safetensors">
+<a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl_legacy.utils.html#trinity.trainer.verl_legacy.utils.save_rank0_safetensors">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">save_rank0_safetensors</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">per_tensor_param</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]],</span>
+    <span class="n">filepath</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">state_dict_meta</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save a distributed per-tensor iterator to safetensors on rank 0.&quot;&quot;&quot;</span>
+    <span class="n">weight_iterator</span> <span class="o">=</span> <span class="n">rank0_iterator</span><span class="p">(</span><span class="n">per_tensor_param</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">get_rank</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">_rank0_cpu_iter</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">weight</span> <span class="ow">in</span> <span class="n">weight_iterator</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">name</span><span class="p">,</span> <span class="n">weight</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+
+        <span class="n">save_safetensors_streaming</span><span class="p">(</span>
+            <span class="n">_rank0_cpu_iter</span><span class="p">(),</span>
+            <span class="n">filepath</span><span class="p">,</span>
+            <span class="n">state_dict_meta</span><span class="o">=</span><span class="n">state_dict_meta</span><span class="p">,</span>
+            <span class="n">rename</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">weight_iterator</span><span class="p">:</span>
+            <span class="k">pass</span></div>
+
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_gather_routed_experts</span><span class="p">(</span>

@@ -820,6 +820,7 @@ window.runMermaid = runMermaid;</script>
 <li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.models.sglang_model.html">trinity.common.models.sglang_model module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.models.tinker_model.html">trinity.common.models.tinker_model module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.models.utils.html">trinity.common.models.utils module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.models.vllm_extension.html">trinity.common.models.vllm_extension module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.models.vllm_model.html">trinity.common.models.vllm_model module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="../../../build_api/trinity.common.models.vllm_worker.html">trinity.common.models.vllm_worker module</a></li>
 </ul>
@@ -878,6 +879,7 @@ window.runMermaid = runMermaid;</script>
 <li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.utils.monitor.html">trinity.utils.monitor module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.utils.plugin_loader.html">trinity.utils.plugin_loader module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.utils.registry.html">trinity.utils.registry module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.utils.stream_saver.html">trinity.utils.stream_saver module</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../../build_api/trinity.utils.timer.html">trinity.utils.timer module</a></li>
 </ul>
 </details></li>
@@ -1761,6 +1763,8 @@ window.runMermaid = runMermaid;</script>
             <span class="n">config</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">enable_router_replay</span>
         <span class="p">)</span>
         <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">ray_namespace</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">ray_namespace</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">sync_method</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_method</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">checkpoint_job_dir</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">checkpoint_job_dir</span>
         <span class="k">if</span> <span class="p">(</span>
             <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;colocate&quot;</span>
             <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">gpu_memory_utilization</span> <span class="o">&gt;</span> <span class="mf">0.25</span>
@@ -2334,10 +2338,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            ValueError: If trainer type is invalid, deprecated config path is used,</span>
 <span class="sd">                       or save checkpoint strategy is invalid.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="p">(</span>
-            <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="s2">&quot;colocate&quot;</span><span class="p">]</span>
-            <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">trainer_strategy</span> <span class="o">!=</span> <span class="s2">&quot;megatron&quot;</span>
-        <span class="p">):</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="s2">&quot;colocate&quot;</span><span class="p">]:</span>
             <span class="k">return</span>
 
         <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">external_model</span><span class="o">.</span><span class="n">enable</span><span class="p">:</span>

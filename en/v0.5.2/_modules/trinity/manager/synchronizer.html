@@ -1022,7 +1022,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">ray</span>
 
@@ -1117,8 +1117,6 @@ window.runMermaid = runMermaid;</script>
             <span class="p">)</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_find_verl_latest_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_state_dict</span>
-
         <span class="n">default_local_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">checkpoint_job_dir</span>
         <span class="n">local_latest_state_dict_iteration</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
             <span class="n">default_local_dir</span><span class="p">,</span> <span class="s2">&quot;latest_state_dict_iteration.txt&quot;</span>
@@ -1136,20 +1134,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
                         <span class="sa">f</span><span class="s2">&quot;Synchronizer has found a new model state dict at step </span><span class="si">{</span><span class="n">latest_model_version</span><span class="si">}</span><span class="s2">.&quot;</span>
                     <span class="p">)</span>
-                    <span class="n">model_state_dict</span> <span class="o">=</span> <span class="p">(</span>
-                        <span class="n">load_state_dict</span><span class="p">(</span>
-                            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-                                <span class="n">default_local_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;global_step_</span><span class="si">{</span><span class="n">latest_model_version</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;actor&quot;</span>
-                            <span class="p">),</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="p">,</span>
-                        <span class="p">)</span>
-                        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_lora</span>
-                        <span class="k">else</span> <span class="p">{}</span>
-                    <span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Synchronizer has loaded model state dict from checkpoint </span><span class="si">{</span><span class="n">latest_model_version</span><span class="si">}</span><span class="s2">.&quot;</span>
-                    <span class="p">)</span>
-                    <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_model_state_dict</span><span class="p">(</span><span class="n">model_state_dict</span><span class="p">,</span> <span class="n">latest_model_version</span><span class="p">)</span>
+                    <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_model_state_dict</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">latest_model_version</span><span class="p">)</span>
                     <span class="c1"># remove the previous checkpoints to save disk space</span>
                     <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_remove_previous_state_dict</span><span class="p">(</span><span class="n">current_model_version</span><span class="p">)</span>
             <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
@@ -1243,59 +1228,10 @@ window.runMermaid = runMermaid;</script>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">explorer_status_counts</span><span class="p">[</span><span class="n">RunningStatus</span><span class="o">.</span><span class="n">REQUIRE_SYNC</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span></div>
 
 
-<div class="viewcode-block" id="Synchronizer.set_model_state_dict_with_step_num">
-<a class="viewcode-back" href="../../../build_api/trinity.manager.synchronizer.html#trinity.manager.Synchronizer.set_model_state_dict_with_step_num">[docs]</a>
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">set_model_state_dict_with_step_num</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">step_num</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">world_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Load and set the model state dictionary from a checkpoint at a specific step.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            step_num: Training step number corresponding to the checkpoint.</span>
-<span class="sd">            world_size: Number of shards expected for this checkpoint.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            The updated model version (step number).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.models.utils</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-            <span class="n">get_checkpoint_dir_with_step_num</span><span class="p">,</span>
-            <span class="n">load_state_dict</span><span class="p">,</span>
-        <span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">world_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># Used when trainer updates the model</span>
-            <span class="k">assert</span> <span class="n">step_num</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-            <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_shard_counter</span><span class="p">[</span><span class="n">step_num</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">world_size</span><span class="p">,</span> <span class="s2">&quot;World size mismatch!&quot;</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_shard_counter</span><span class="p">[</span><span class="n">step_num</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Synchronizer has received </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_shard_counter</span><span class="p">[</span><span class="n">step_num</span><span class="p">]</span><span class="si">}</span><span class="s2"> out of </span><span class="si">{</span><span class="n">world_size</span><span class="si">}</span><span class="s2"> shards from the checkpoint </span><span class="si">{</span><span class="n">step_num</span><span class="si">}</span><span class="s2">.&quot;</span>
-            <span class="p">)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_shard_counter</span><span class="p">[</span><span class="n">step_num</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">world_size</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">step_num</span>
-
-        <span class="n">checkpoint_dir</span><span class="p">,</span> <span class="n">checkpoint_step_num</span> <span class="o">=</span> <span class="n">get_checkpoint_dir_with_step_num</span><span class="p">(</span>
-            <span class="n">checkpoint_root_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">checkpoint_job_dir</span><span class="p">,</span>
-            <span class="n">trainer_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">trainer_type</span><span class="p">,</span>
-            <span class="n">step_num</span><span class="o">=</span><span class="n">step_num</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="k">if</span> <span class="n">checkpoint_step_num</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_version</span><span class="p">:</span>
-            <span class="n">model_state_dict</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">load_state_dict</span><span class="p">(</span>
-                    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">checkpoint_dir</span><span class="p">,</span> <span class="s2">&quot;actor&quot;</span><span class="p">),</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="p">,</span>
-                <span class="p">)</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_lora</span>
-                <span class="k">else</span> <span class="p">{}</span>
-            <span class="p">)</span>
-            <span class="c1"># lora weights are stored in &#39;lora_adapter&#39; subfolder and cannot be loaded directly</span>
-            <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_model_state_dict</span><span class="p">(</span><span class="n">model_state_dict</span><span class="p">,</span> <span class="n">checkpoint_step_num</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">checkpoint_step_num</span></div>
-
-
 <div class="viewcode-block" id="Synchronizer.set_model_state_dict">
 <a class="viewcode-back" href="../../../build_api/trinity.manager.synchronizer.html#trinity.manager.Synchronizer.set_model_state_dict">[docs]</a>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">set_model_state_dict</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">model_state_dict</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]],</span> <span class="n">trainer_step</span><span class="p">:</span> <span class="nb">int</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">model_state_dict</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">trainer_step</span><span class="p">:</span> <span class="nb">int</span>
     <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Set the new model state and update the version.</span>
@@ -1320,6 +1256,18 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_model_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the current model state and its version.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_state_dict</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_version</span></div>
+
+
+<div class="viewcode-block" id="Synchronizer.get_model_state_dict_iterator">
+<a class="viewcode-back" href="../../../build_api/trinity.manager.synchronizer.html#trinity.manager.Synchronizer.get_model_state_dict_iterator">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_model_state_dict_iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Yield the current in-memory model state for Ray streaming consumers.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_state_dict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_state_dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Model state dict is not in expected format (dict).&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_state_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">yield</span> <span class="n">item</span></div>
 
 
 <div class="viewcode-block" id="Synchronizer.get_state_dict_meta">
