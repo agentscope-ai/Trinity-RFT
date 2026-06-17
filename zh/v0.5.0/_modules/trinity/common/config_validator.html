@@ -1188,7 +1188,7 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">[</span><span class="n">config</span><span class="o">.</span><span class="n">project</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">group</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="k">if</span> <span class="n">p</span>
             <span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">tinker</span><span class="o">.</span><span class="n">enable</span> <span class="ow">or</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">external_model</span><span class="o">.</span><span class="n">enable</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">tinker</span><span class="o">.</span><span class="n">enable</span><span class="p">:</span>
             <span class="k">return</span>
 
         <span class="c1"># check cluster infomation</span>
@@ -1274,11 +1274,11 @@ window.runMermaid = runMermaid;</script>
 
         <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">!=</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
             <span class="n">cluster</span><span class="o">.</span><span class="n">rollout_gpu_num</span> <span class="o">=</span> <span class="p">(</span>
-                <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">tensor_parallel_size</span>
+                <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">gpu_per_engine</span>
                 <span class="o">*</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">engine_num</span>
             <span class="p">)</span>
             <span class="n">cluster</span><span class="o">.</span><span class="n">auxiliary_model_gpu_num</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span>
-                <span class="n">model</span><span class="o">.</span><span class="n">tensor_parallel_size</span> <span class="o">*</span> <span class="n">model</span><span class="o">.</span><span class="n">engine_num</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">gpu_per_engine</span> <span class="o">*</span> <span class="n">model</span><span class="o">.</span><span class="n">engine_num</span>
                 <span class="k">for</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">auxiliary_models</span>
             <span class="p">)</span>
         <span class="n">cluster</span><span class="o">.</span><span class="n">explorer_gpu_num</span> <span class="o">=</span> <span class="n">cluster</span><span class="o">.</span><span class="n">rollout_gpu_num</span> <span class="o">+</span> <span class="n">cluster</span><span class="o">.</span><span class="n">auxiliary_model_gpu_num</span>
@@ -1299,9 +1299,9 @@ window.runMermaid = runMermaid;</script>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                     <span class="s2">&quot;In colocate mode, `explorer.rollout_model.engine_num` must be set to 1.&quot;</span>
                 <span class="p">)</span>
-            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">tensor_parallel_size</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">gpu_per_engine</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;In colocate mode, `explorer.rollout_model.tensor_parallel_size` must be set to 1.&quot;</span>
+                    <span class="s2">&quot;In colocate mode, `explorer.rollout_model.gpu_per_engine` must be set to 1.&quot;</span>
                 <span class="p">)</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;In colocate mode, auxiliary models are not supported.&quot;</span><span class="p">)</span>
@@ -1331,7 +1331,7 @@ window.runMermaid = runMermaid;</script>
                         <span class="s2">&quot;Trainer must use an integer number of nodes, &quot;</span>
                         <span class="sa">f</span><span class="s2">&quot;but got trainer_gpu_num (</span><span class="si">{</span><span class="n">cluster</span><span class="o">.</span><span class="n">trainer_gpu_num</span><span class="si">}</span><span class="s2">) &quot;</span>
                         <span class="sa">f</span><span class="s2">&quot;with gpu_per_node (</span><span class="si">{</span><span class="n">cluster</span><span class="o">.</span><span class="n">gpu_per_node</span><span class="si">}</span><span class="s2">). &quot;</span>
-                        <span class="s2">&quot;Please change `engine_num` or `tensor_parallel_size` in explorer config.&quot;</span>
+                        <span class="s2">&quot;Please change `engine_num` or parallelism settings in explorer config.&quot;</span>
                     <span class="p">)</span>
                 <span class="n">cluster</span><span class="o">.</span><span class="n">trainer_node_num</span> <span class="o">=</span> <span class="n">cluster</span><span class="o">.</span><span class="n">trainer_gpu_num</span> <span class="o">//</span> <span class="n">cluster</span><span class="o">.</span><span class="n">gpu_per_node</span>
                 <span class="n">cluster</span><span class="o">.</span><span class="n">trainer_gpu_num_per_node</span> <span class="o">=</span> <span class="n">cluster</span><span class="o">.</span><span class="n">gpu_per_node</span>
@@ -1339,45 +1339,53 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="nf">_validate_multinode_inference_models</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate per-engine multi-node inference settings.</span>
 
-<span class="sd">        For now, cross-node inference engines are only supported for vLLM-backed</span>
-<span class="sd">        rollout and auxiliary models.</span>
+<span class="sd">        Cross-node inference engines are supported for vLLM and SGLang.</span>
+<span class="sd">        The validation is based on the inferred launch mode:</span>
+<span class="sd">        - SINGLE_NODE: each actor runs a self-contained engine.</span>
+<span class="sd">          When nnodes&gt;1 and DP&gt;1, the allocator expands into engine_num*DP actors.</span>
+<span class="sd">        - HEADLESS: cross-node TP/PP, nnodes = (TP*PP) / gpu_per_node (DP=1 only).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">model_configs</span> <span class="o">=</span> <span class="p">[</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="p">,</span> <span class="o">*</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">model_config</span> <span class="ow">in</span> <span class="n">model_configs</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">model_config</span><span class="o">.</span><span class="n">nnodes</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">model_config</span><span class="o">.</span><span class="n">engine_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;tinker&quot;</span><span class="p">,</span> <span class="s2">&quot;external&quot;</span><span class="p">]:</span>
+                <span class="n">model_config</span><span class="o">.</span><span class="n">gpu_per_engine</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">model_config</span><span class="o">.</span><span class="n">nnodes</span> <span class="o">=</span> <span class="mi">1</span>
                 <span class="k">continue</span>
 
-            <span class="k">if</span> <span class="p">(</span>
-                <span class="ow">not</span> <span class="n">model_config</span><span class="o">.</span><span class="n">engine_type</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;vllm&quot;</span><span class="p">)</span>
-                <span class="ow">and</span> <span class="n">model_config</span><span class="o">.</span><span class="n">engine_type</span> <span class="o">!=</span> <span class="s2">&quot;sglang&quot;</span>
-            <span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;Multi-node inference is only supported for vLLM and SGLang engines.&quot;</span>
-                <span class="p">)</span>
+            <span class="n">model_config</span><span class="o">.</span><span class="n">gpu_per_engine</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">model_config</span><span class="o">.</span><span class="n">data_parallel_size</span>
+                <span class="o">*</span> <span class="n">model_config</span><span class="o">.</span><span class="n">tensor_parallel_size</span>
+                <span class="o">*</span> <span class="n">model_config</span><span class="o">.</span><span class="n">pipeline_parallel_size</span>
+            <span class="p">)</span>
 
-            <span class="k">if</span> <span class="n">model_config</span><span class="o">.</span><span class="n">nnodes</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`nnodes` must be &gt;= 1, but got </span><span class="si">{</span><span class="n">model_config</span><span class="o">.</span><span class="n">nnodes</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">model_config</span><span class="o">.</span><span class="n">gpu_per_engine</span> <span class="o">&gt;</span> <span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">gpu_per_node</span><span class="p">:</span>
+                <span class="c1"># multi node engine</span>
+                <span class="k">if</span> <span class="n">model_config</span><span class="o">.</span><span class="n">gpu_per_engine</span> <span class="o">%</span> <span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">gpu_per_node</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Multi-node inference requires gpu_per_engine to be a multiple of &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;cluster.gpu_per_node (</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">gpu_per_node</span><span class="si">}</span><span class="s2">), but got &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;gpu_per_engine=</span><span class="si">{</span><span class="n">model_config</span><span class="o">.</span><span class="n">gpu_per_engine</span><span class="si">}</span><span class="s2">.&quot;</span>
+                    <span class="p">)</span>
+                <span class="n">model_config</span><span class="o">.</span><span class="n">nnodes</span> <span class="o">=</span> <span class="n">model_config</span><span class="o">.</span><span class="n">gpu_per_engine</span> <span class="o">//</span> <span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">gpu_per_node</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">model_config</span><span class="o">.</span><span class="n">nnodes</span> <span class="o">=</span> <span class="mi">1</span>
 
-            <span class="k">if</span> <span class="n">model_config</span><span class="o">.</span><span class="n">nnodes</span> <span class="o">&gt;</span> <span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">node_num</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;`nnodes` (</span><span class="si">{</span><span class="n">model_config</span><span class="o">.</span><span class="n">nnodes</span><span class="si">}</span><span class="s2">) cannot exceed cluster.node_num &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">node_num</span><span class="si">}</span><span class="s2">).&quot;</span>
-                <span class="p">)</span>
-
-            <span class="k">if</span> <span class="n">model_config</span><span class="o">.</span><span class="n">tensor_parallel_size</span> <span class="o">%</span> <span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">gpu_per_node</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;tensor_parallel_size (</span><span class="si">{</span><span class="n">model_config</span><span class="o">.</span><span class="n">tensor_parallel_size</span><span class="si">}</span><span class="s2">) must be an &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;integer multiple of cluster.gpu_per_node (</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">gpu_per_node</span><span class="si">}</span><span class="s2">) &quot;</span>
-                    <span class="s2">&quot;when `nnodes &gt; 1`, because each cross-node engine must occupy full nodes.&quot;</span>
-                <span class="p">)</span>
-
-            <span class="n">required_nnodes</span> <span class="o">=</span> <span class="n">model_config</span><span class="o">.</span><span class="n">tensor_parallel_size</span> <span class="o">//</span> <span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">gpu_per_node</span>
-            <span class="k">if</span> <span class="n">model_config</span><span class="o">.</span><span class="n">nnodes</span> <span class="o">!=</span> <span class="n">required_nnodes</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;`nnodes` (</span><span class="si">{</span><span class="n">model_config</span><span class="o">.</span><span class="n">nnodes</span><span class="si">}</span><span class="s2">) must equal tensor_parallel_size // &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;cluster.gpu_per_node (</span><span class="si">{</span><span class="n">required_nnodes</span><span class="si">}</span><span class="s2">) when `nnodes &gt; 1`.&quot;</span>
-                <span class="p">)</span></div>
+            <span class="c1"># vllm specific check</span>
+            <span class="k">if</span> <span class="n">model_config</span><span class="o">.</span><span class="n">engine_type</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;vllm&quot;</span><span class="p">):</span>
+                <span class="c1"># vllm only support single node data parallel</span>
+                <span class="k">if</span> <span class="n">model_config</span><span class="o">.</span><span class="n">data_parallel_size</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">model_config</span><span class="o">.</span><span class="n">nnodes</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;vLLM does not support data parallelism in multi-node setups.&quot;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">model_config</span><span class="o">.</span><span class="n">engine_type</span> <span class="o">==</span> <span class="s2">&quot;sglang&quot;</span><span class="p">:</span>
+                <span class="c1"># sglang requires tensor_parallel_size % data_parallel_size == 0</span>
+                <span class="c1"># see sglang/srt/server_args.py for details</span>
+                <span class="k">if</span> <span class="n">model_config</span><span class="o">.</span><span class="n">tensor_parallel_size</span> <span class="o">%</span> <span class="n">model_config</span><span class="o">.</span><span class="n">data_parallel_size</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;SGLang inference requires tensor_parallel_size &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;to be a multiple of data_parallel_size, but got &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;tensor_parallel_size=</span><span class="si">{</span><span class="n">model_config</span><span class="o">.</span><span class="n">tensor_parallel_size</span><span class="si">}</span><span class="s2"> and &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;data_parallel_size=</span><span class="si">{</span><span class="n">model_config</span><span class="o">.</span><span class="n">data_parallel_size</span><span class="si">}</span><span class="s2">.&quot;</span>
+                    <span class="p">)</span></div>
 
 
 
@@ -1752,6 +1760,7 @@ window.runMermaid = runMermaid;</script>
         <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;serve&quot;</span><span class="p">:</span>
             <span class="c1"># in &#39;serve&#39; mode, we always enable openai api for rollout model</span>
             <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="o">.</span><span class="n">enable_openai_api</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validate_inference_parallel_config</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">rollout_model</span><span class="p">,</span> <span class="s2">&quot;rollout_model&quot;</span><span class="p">)</span>
         <span class="c1"># auxiliary models</span>
         <span class="k">for</span> <span class="n">aux_model</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">auxiliary_models</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">aux_model</span><span class="o">.</span><span class="n">model_path</span><span class="p">:</span>
@@ -1761,6 +1770,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">aux_model</span><span class="o">.</span><span class="n">enable_openai_api</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">for</span> <span class="n">args</span> <span class="ow">in</span> <span class="n">model_args</span><span class="p">:</span>
                 <span class="n">set_if_none</span><span class="p">(</span><span class="n">aux_model</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="n">args</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validate_inference_parallel_config</span><span class="p">(</span><span class="n">aux_model</span><span class="p">,</span> <span class="s2">&quot;auxiliary_model&quot;</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="p">(</span>
             <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">over_rollout</span><span class="o">.</span><span class="n">ratio</span> <span class="o">&gt;</span> <span class="mf">0.0</span>
@@ -1791,6 +1801,22 @@ window.runMermaid = runMermaid;</script>
                 <span class="p">)</span>
                 <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">runner_per_model</span> <span class="o">=</span> <span class="n">max_runner_per_model</span></div>
 
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_inference_parallel_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_config</span><span class="p">,</span> <span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">model_config</span><span class="o">.</span><span class="n">engine_type</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;tinker&quot;</span><span class="p">,</span> <span class="s2">&quot;external&quot;</span><span class="p">}:</span>
+            <span class="n">model_config</span><span class="o">.</span><span class="n">tensor_parallel_size</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">model_config</span><span class="o">.</span><span class="n">data_parallel_size</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">model_config</span><span class="o">.</span><span class="n">pipeline_parallel_size</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">model_config</span><span class="o">.</span><span class="n">enable_expert_parallel</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">model_config</span><span class="o">.</span><span class="n">gpu_per_engine</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">model_config</span><span class="o">.</span><span class="n">nnodes</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">model_config</span><span class="o">.</span><span class="n">node_rank</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">return</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;tensor_parallel_size&quot;</span><span class="p">,</span> <span class="s2">&quot;data_parallel_size&quot;</span><span class="p">,</span> <span class="s2">&quot;pipeline_parallel_size&quot;</span><span class="p">]:</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model_config</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">` must be &gt;= 1, but got </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_validate_lora</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Process and validate LoRA configuration settings.</span>
