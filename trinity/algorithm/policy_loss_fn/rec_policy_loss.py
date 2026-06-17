@@ -1,7 +1,7 @@
 """REC-token policy loss function.
 """
 
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 import torch
 
@@ -22,6 +22,7 @@ class RECPolicyLossFn(PolicyLossFn):
         regularizer: str = "none",
         regularizer_coef: float = 0.0,
         temp: float = 1.0,
+        loss_agg_mode: Optional[str] = "token-mean",
     ) -> None:
         super().__init__(backend=backend)
 
@@ -49,6 +50,7 @@ class RECPolicyLossFn(PolicyLossFn):
         assert self.weight in [
             "none",
             "importance_sampling",
+            "truncated_importance_sampling",
             "gspo_importance_sampling",
             "advantage",
         ], f"Invalid weight: {self.weight}"
@@ -63,6 +65,8 @@ class RECPolicyLossFn(PolicyLossFn):
         assert self.regularizer_coef >= 0.0, f"Invalid regularizer_coef: {self.regularizer_coef}"
         self.temp = temp
         assert self.temp > 0.0, f"Invalid temp: {self.temp}"
+
+        self.loss_agg_mode = loss_agg_mode
 
     def __call__(  # type: ignore
         self,
@@ -105,6 +109,8 @@ class RECPolicyLossFn(PolicyLossFn):
 
         if self.weight == "importance_sampling":
             advantages = advantages * ratio  # importance sampling
+        elif self.weight == "truncated_importance_sampling":
+            advantages = advantages * torch.clamp(ratio, 1 - self.epsilon_low_prime, 1 + self.epsilon_high_prime)
         elif self.weight == "gspo_importance_sampling":
             advantages = advantages * normalized_seq_ratio
         elif self.weight == "advantage":
@@ -121,15 +127,14 @@ class RECPolicyLossFn(PolicyLossFn):
             regularizer_losses = self.regularizer_coef * (logprob - old_logprob).square()
             pg_losses = pg_losses + regularizer_losses
 
+        loss_agg_mode = self.loss_agg_mode
         if self.clip_mode == "gspo-one-side":
-            # [EXPERIMENTAL] specialized for gspo-style rec variant for now
-            pg_loss = aggregate_loss(
-                values=pg_losses,
-                mask=action_mask,
-                loss_agg_mode="seq-mean-token-mean",
-            )
-        else:
-            pg_loss = masked_mean(pg_losses, action_mask)
+            loss_agg_mode = "seq-mean-token-mean"
+        pg_loss = aggregate_loss(
+            values=pg_losses,
+            mask=action_mask,
+            loss_agg_mode=loss_agg_mode,
+        )
 
         pg_clipfrac = masked_mean(is_clipped_mask.float(), action_mask)
         metrics = {
@@ -150,4 +155,5 @@ class RECPolicyLossFn(PolicyLossFn):
             "regularizer": "none",
             "regularizer_coef": 0.0,
             "temp": 1.0,
+            "loss_agg_mode": "token-mean",
         }

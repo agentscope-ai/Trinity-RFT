@@ -10,27 +10,22 @@ def split_single_message_list(messages):
 
     Returns:
         list: List of rounds, where each round contains messages and remaining chat
+
+    Note: consecutive same-role messages are preserved as-is (RealMedConv is IM-style).
     """
     rounds = []
     round_number = 1
     i = 0
 
     while i < len(messages):
-        # Collect messages for this round
-        round_messages = []
-
-        # Add messages until we reach a user message
+        # Advance i past one [non-user]* [user]* block (one "turn")
         while i < len(messages) and messages[i].get("role") != "user":
-            round_messages.append(messages[i])
             i += 1
-
-        # Add user message(s) - if there are consecutive user messages,
-        # include all of them in this round
         while i < len(messages) and messages[i].get("role") == "user":
-            round_messages.append(messages[i])
             i += 1
 
-        # The remaining messages (if any) form the remaining_chat
+        # Use full prefix as round messages (paper Sec 3.1: C_{t-1} = (u_0, ..., u_{t-1}))
+        round_messages = messages[:i]
         remaining_messages = messages[i:]
         round_entry = {"round_number": round_number, "messages": round_messages}
 

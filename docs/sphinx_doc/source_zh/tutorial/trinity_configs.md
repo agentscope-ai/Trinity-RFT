@@ -400,6 +400,8 @@ buffer:
 explorer:
   name: explorer
   runner_per_model: 8
+  runner_prepare_concurrency: 8
+  runner_prepare_max_retries: 2
   concurrent_mode: sequential
   max_repeat_times_per_runner: null
   max_timeout: 900
@@ -428,6 +430,8 @@ explorer:
 
 - `name`: explorer 的名称。该名称将用作 Ray actor 的名称，因此必须唯一。
 - `runner_per_model`: 每个推理引擎实例所服务的 WorkflowRunner 数量。
+- `runner_prepare_concurrency`: 启动时并发创建 runner 的最大数量。一次性创建所有 runner 会让大量 worker 同时调用 `getenv()`，可能与库的 `setenv()` 竞争导致 glibc 段错误；该参数限制并发数（runner 总数不变）。
+- `runner_prepare_max_retries`: 单个 runner 的 prepare 在偶发启动崩溃（例如 glibc getenv 竞争）时的重试次数。重试在同一并发槽内进行并带退避，因此不会超过 `runner_prepare_concurrency`。
 - `concurrent_mode`: 执行一组任务（例如 GRPO 算法中对一个任务的多次重复执行）的并发模式。支持如下选项：
   - `sequential`: 顺序执行（默认）。每次执行一个任务，等待其完成后再执行下一个任务。对 workflow 的实现要求最低，但吞吐量也最差。
   - `asynchronous`: 异步执行。使用异步模式一次性提交所有任务，并在任务完成后收集结果。要求 workflow 正确地实现了异步调用接口，并且 workflow 之间没有共享状态，以避免竞态条件。吞吐量优于顺序执行，但具体性能受限于 workflow 的实现。

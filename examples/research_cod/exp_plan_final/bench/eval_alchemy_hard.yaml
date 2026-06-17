@@ -1,0 +1,88 @@
+# OOD eval: Alchemy-Random HARD
+project: "trinity-cod-final"
+group: ${oc.env:EVAL_GROUP,mixed_flobs_alchran}
+name: ${oc.env:EVAL_NAME,qwen3-8b-flobs}
+ray_namespace: "ood-alchemy-hard-4k-${oc.env:EVAL_GROUP,mixed_flobs_alchran}-seed${oc.env:EVAL_SEED,1}"
+mode: bench
+checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
+continue_from_checkpoint: false
+cod:
+  eval_task_pack_size: 8
+  cod_workflow_args:
+    activated_cod_methods: ["iterative_hint_e2e"]
+    hint_example: false
+    reuse_workflow_instance: false
+    max_response_tokens_restraint: 1500
+    hint_penalty_coef: 0.1
+    cod_log_interval: 200
+    log_dir: ${oc.env:TRINITY_LOG_DIR,./logs/research_cod}
+    exp_name: ${project}-${group}-${name}-ood-alchemy-hard-seed${oc.env:EVAL_SEED,1}
+    inject_pack_seed: true
+    pad_tasks_to_full_pack: true
+model:
+  model_path: ${oc.env:TRINITY_MODEL_PATH}
+  max_prompt_tokens: 30000
+  max_response_tokens: 2000
+  max_model_len: 32000
+cluster:
+  node_num: 1
+  gpu_per_node: 8
+buffer:
+  total_epochs: 1
+  batch_size: 32
+  explorer_input:
+    eval_tasksets:
+      - name: alchemy_random
+        storage_type: file
+        path: "examples/research_cod/data/alchemy_random"
+        split: test
+        workflow_args:
+          context_compression_mode: "keep_all"
+          length_penalty_coef: 0.1
+          len_full_penalty: 2000000
+          len_zero_penalty: 1000000
+          max_rounds: 15
+          material_mode: "limited"
+          scope: "per_pack"
+          show_recipes: false
+          show_elements: false
+          show_tiers: true
+          show_structure: false
+          min_num_tiers: 3
+          max_num_tiers: 4
+          min_base_elements: 4
+          max_base_elements: 6
+          tier_shrink_min: 0.4
+          tier_shrink_max: 0.8
+          min_recipes_per_element: 1
+          max_recipes_per_element: 2
+          max_tier_gap: 1
+          min_cross_tier_prob: 0.0
+          max_cross_tier_prob: 0.05
+          min_noise_node_ratio: 0.0
+          max_noise_node_ratio: 0.3
+          noise_chain_depth: 2
+        rollout_args:
+          temperature: 1.0
+        data_selector:
+          selector_type: shuffle
+          seed: ${oc.env:EVAL_SEED,1}
+        default_workflow_type: 'cod_random_alchemy_workflow'
+explorer:
+  eval_on_startup: true
+  bench_on_latest_checkpoint: false   # eval EVERY saved ckpt -> curve over ckpt step
+  runner_per_model: 32
+  max_repeat_times_per_runner: 1
+  max_timeout: 72000
+  rollout_model:
+    enable_thinking: false
+    enable_history: false
+    engine_num: 8
+    tensor_parallel_size: 1
+    enable_prefix_caching: false
+    enforce_eager: false
+    dtype: bfloat16
+    seed: ${oc.env:EVAL_SEED,1}
+    enable_openai_api: true
+monitor:
+  monitor_type: wandb

@@ -244,6 +244,9 @@ class BaseInferenceModel(InferenceModel):
             prompt_length=prompt_length,
             action_mask=action_mask[prompt_length:],  # Exclude the prompt tokens
             messages=messages,
+            # !!! MODIFICATION FOR COD START !!!
+            response_text=self.tokenizer.decode(token_ids[prompt_length:]) if prompt_length < len(token_ids) else None,
+            # !!! MODIFICATION FOR COD END !!!
             truncate_status=truncate_status,
         )
 

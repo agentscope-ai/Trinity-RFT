@@ -1,0 +1,135 @@
+# RL ablation: train on Alchemy-Random, pack=4. Builds on alchemy_abl_no_adaptive_red.yaml (adaptive
+# RED-Weight already removed) and additionally sets policy_loss_fn_args.weight "none" -> "importance_sampling"
+# to verify the rationale of discarding IS.
+# Data prep: python examples/research_cod/get_alchemy_data.py --local_dir examples/research_cod/data/alchemy_random --train_size 50000 --test_size 4000 --seed 42
+project: "trinity-cod-final"
+group: "alchemy_abl_no_adaptive_red_is"
+name: "qwen3-8b-alchemy"
+mode: train
+checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
+continue_from_checkpoint: false
+cod:
+  task_pack_size: 4
+  eval_task_pack_size: 8
+  cod_workflow_args:
+    hint_example: false
+    activated_cod_methods: ["iterative_hint_e2e"]
+    reuse_workflow_instance: false
+    max_response_tokens_restraint: 1000
+    hint_penalty_coef: 0.1
+    cod_log_interval: 200
+    log_dir: ${oc.env:TRINITY_LOG_DIR,./logs/research_cod}
+    exp_name: ${project}-${group}-${name}
+    inject_pack_seed: true
+    pad_tasks_to_full_pack: true
+algorithm:
+  algorithm_type: multi_step_grpo
+  sample_strategy: staleness_control
+  sample_strategy_args:
+    max_staleness: 20
+  repeat_times: 8
+  optimizer:
+    lr: 1e-6
+  advantage_fn: cod
+  advantage_fn_args:
+    std_cal_level: "none"
+    iterative_hint_e2e_causal: true
+  policy_loss_fn: rec
+  policy_loss_fn_args:  # REC-OneSide-IS
+    epsilon_low: 0.2
+    epsilon_high: 0.2
+    clip_mode: "one-side"
+    weight: "importance_sampling"
+  kl_loss_fn: k2
+  kl_loss_fn_args:
+    kl_coef: 0.0
+model:
+  model_path: ${oc.env:TRINITY_MODEL_PATH}
+  max_prompt_tokens: 10000
+  max_response_tokens: 2000
+  max_model_len: 12000
+cluster:
+  node_num: 3
+  gpu_per_node: 8
+buffer:
+  total_epochs: 1
+  batch_size: 32
+  train_batch_size: 1440
+  explorer_input:
+    tasksets:
+      - name: alchemy_random
+        storage_type: file
+        path: "examples/research_cod/data/alchemy_random"
+        split: train
+        workflow_args:
+          context_compression_mode: "keep_all"
+          # length penalty in reward design
+          length_penalty_coef: 0.1
+          len_full_penalty: 2000000
+          len_zero_penalty: 1000000
+          # specific to alchemy-random
+          max_rounds: 8
+          material_mode: "unlimited"
+          scope: "per_pack"
+          show_recipes: false
+          show_elements: false
+          show_tiers: true
+          min_num_tiers: 3
+          max_num_tiers: 4
+          min_base_elements: 3
+          max_base_elements: 4
+          tier_shrink_min: 0.4
+          tier_shrink_max: 0.6
+          min_recipes_per_element: 1
+          max_recipes_per_element: 1
+          max_tier_gap: 1
+          min_cross_tier_prob: 0.0
+          max_cross_tier_prob: 0.1
+          min_noise_node_ratio: 0.0
+          max_noise_node_ratio: 0.0
+          noise_chain_depth: 2
+        rollout_args:
+          temperature: 1.0
+        default_workflow_type: 'cod_random_alchemy_workflow'
+  trainer_input:
+    experience_buffer:
+      name: buffer
+      storage_type: queue
+      max_read_timeout: 72000
+      replay_buffer:
+        enable: true
+        priority_fn: decay_limit_randomization
+        priority_fn_args:
+          sigma: 2.0
+explorer:
+  runner_per_model: 32
+  max_repeat_times_per_runner: 1
+  max_timeout: 72000
+  rollout_model:
+    enable_thinking: false
+    enable_history: false
+    engine_num: 8
+    tensor_parallel_size: 1
+    enable_prefix_caching: false
+    enforce_eager: false
+    dtype: bfloat16
+    seed: 42
+trainer:
+  save_interval: 100
+  grad_clip: 1.0
+  use_dynamic_bsz: true
+  max_token_len_per_gpu: 16384
+  ulysses_sequence_parallel_size: 1
+  trainer_config:
+    actor_rollout_ref:
+      actor:
+        checkpoint:
+          load_contents: ['model', 'extra']
+          save_contents: ['model', 'extra']
+synchronizer:
+  sync_style: dynamic_by_explorer
+  sync_method: 'nccl'
+  sync_interval: 4
+  sync_timeout: 72000
+monitor:
+  monitor_type: wandb

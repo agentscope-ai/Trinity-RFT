@@ -110,6 +110,16 @@ class Workflow:
         self.run_id_base = 0
         self.logger = get_logger(__name__)
 
+        # !!! Additional fields for CoD project !!!
+        #   - hint: injected into system prompt to guide model's reasoning
+        #   - max_response_tokens_restraint: injected into system prompt to guide model's response length
+        #   - icl_examples: in-context learning examples, added only in first turn
+        #   - reply_prefix: prefix for model's reply to guide model's generation
+        self.hint: Optional[str] = None
+        self.max_response_tokens_restraint: Optional[int] = None
+        self.icl_examples: Optional[str] = None
+        self.reply_prefix: Optional[str] = None  # not really used in CoD
+
     @property
     def resettable(self):
         """Deprecated, use cls.can_reset instead."""
@@ -131,6 +141,18 @@ class Workflow:
     def reset(self, task: Task):
         """Reset the workflow."""
         raise NotImplementedError
+
+    def set_hint(self, hint: str):
+        """!!! For CoD: set the hint !!!"""
+        self.hint = hint
+
+    def set_max_response_tokens_restraint(self, value: int):
+        """!!! For CoD: set the max response tokens restraint !!!"""
+        self.max_response_tokens_restraint = value
+
+    def set_icl_examples(self, icl_examples: str):
+        """!!! For CoD: set ICL examples to be prepended to user message !!!"""
+        self.icl_examples = icl_examples
 
     def set_repeat_times(self, repeat_times: int, run_id_base: int) -> None:
         """
@@ -270,6 +292,11 @@ class BaseSimpleWorkflow(Workflow):
         else:
             raise ValueError("`reward_fn` must be a subclass of `RewardFn`")
 
+        # !!! Reset fields for CoD !!!
+        self.hint = None
+        self.max_response_tokens_restraint = None
+        self.icl_examples = None
+
     def set_repeat_times(self, repeat_times, run_id_base):
         self.repeat_times = repeat_times
         self.task.rollout_args.n = repeat_times
@@ -288,6 +315,21 @@ class BaseSimpleWorkflow(Workflow):
         if self.reply_prefix:
             messages.append({"role": "assistant", "content": self.reply_prefix})
         return messages
+
+
+# util for cod
+def log_sys_user_prompts_in_exp(messages, responses) -> None:
+    sys_prompt = "(not found in messages)"
+    user_prompt = "(not found in messages)"
+    for j, msg in enumerate(messages):
+        if j == 0 and msg["role"] == "system":
+            sys_prompt = msg["content"]
+        if msg["role"] == "user":
+            user_prompt = msg["content"]
+            break
+    for response in responses:
+        response.info["sys_prompt"] = sys_prompt
+        response.info["user_prompt"] = user_prompt
 
 
 class SimpleWorkflow(BaseSimpleWorkflow):
@@ -318,6 +360,11 @@ class SimpleWorkflow(BaseSimpleWorkflow):
             self.logger.debug(
                 f"self.task_desc: {self.task_desc}, messages: {messages}, response: {response.response_text}, reward: {reward}"
             )
+
+        # !!! PATCH FOR COD START !!!
+        log_sys_user_prompts_in_exp(messages, responses)
+        # !!! PATCH FOR COD END !!!
+
         return responses
 
 
@@ -346,6 +393,11 @@ class AsyncSimpleWorkflow(BaseSimpleWorkflow):
             self.logger.debug(
                 f"self.task_desc: {self.task_desc}, messages: {messages}, response: {response.response_text}, reward: {reward}"
             )
+
+        # !!! PATCH FOR COD START !!!
+        log_sys_user_prompts_in_exp(messages, responses)
+        # !!! PATCH FOR COD END !!!
+
         return responses
 
 
