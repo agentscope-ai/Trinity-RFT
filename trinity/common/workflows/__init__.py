@@ -51,6 +51,13 @@ WORKFLOWS: Registry = Registry(
         "on_policy_distill_math_workflow": "trinity.common.workflows.on_policy_distill_workflow.OnPolicyDistillMathWorkflow",
         # custom workflows
         "sudoku_workflow": "trinity.common.workflows.envs.sudoku.sudoku_workflow.SudokuWorkflow",
+        # connect-the-dots (cod)
+        "cod_workflow": "trinity.common.workflows.connect_the_dots.cod_workflow.CoDWorkflow",
+        # cod workflows (unified prompt management)
+        "cod_frozenlake_obscure_workflow": "trinity.common.workflows.connect_the_dots.frozen_lake.workflow_obscure.CoDFrozenLakeObscureWorkflow",
+        "cod_random_alchemy_workflow": "trinity.common.workflows.connect_the_dots.alchemy.workflow_random.CoDRandomAlchemyWorkflow",
+        "cod_terminal_workflow": "trinity.common.workflows.connect_the_dots.terminal.workflow.CoDTerminalWorkflow",
+        "cod_learn2ask_workflow": "trinity.common.workflows.connect_the_dots.learn2ask.workflow.CoDLearn2AskWorkflow",
     },
 )
 

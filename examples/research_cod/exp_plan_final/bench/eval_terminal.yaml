@@ -1,0 +1,66 @@
+# OOD eval: Terminal
+project: "trinity-cod-final"
+group: ${oc.env:EVAL_GROUP,frozen_lake_obscure}
+name: ${oc.env:EVAL_NAME,qwen3-8b-flobs}
+ray_namespace: "ood-terminal-4k-${oc.env:EVAL_GROUP,frozen_lake_obscure}-seed${oc.env:EVAL_SEED,1}"
+mode: bench
+checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
+continue_from_checkpoint: false
+cod:
+  eval_task_pack_size: 8
+  cod_workflow_args:
+    activated_cod_methods: ["iterative_hint_e2e"]
+    hint_example: false
+    reuse_workflow_instance: false
+    max_response_tokens_restraint: 1500
+    hint_penalty_coef: 0.1
+    cod_log_interval: 200
+    log_dir: ${oc.env:TRINITY_LOG_DIR,./logs/research_cod}
+    exp_name: ${project}-${group}-${name}-ood-terminal-seed${oc.env:EVAL_SEED,1}
+    inject_pack_seed: true
+    pad_tasks_to_full_pack: true
+model:
+  model_path: ${oc.env:TRINITY_MODEL_PATH}
+  max_prompt_tokens: 30000
+  max_response_tokens: 2000
+  max_model_len: 32000
+cluster:
+  node_num: 1
+  gpu_per_node: 8
+buffer:
+  total_epochs: 1
+  batch_size: 32
+  explorer_input:
+    eval_tasksets:
+      - name: terminal
+        storage_type: file
+        path: "examples/research_cod/data/terminal"
+        split: test
+        workflow_args:
+          agent_max_steps: 12
+          composite_ratio: 0.5
+          context_compression_mode: "keep_all"
+        rollout_args:
+          temperature: 1.0
+        data_selector:
+          selector_type: shuffle
+          seed: ${oc.env:EVAL_SEED,1}
+        default_workflow_type: 'cod_terminal_workflow'
+explorer:
+  eval_on_startup: true
+  bench_on_latest_checkpoint: false   # eval EVERY saved ckpt -> curve over ckpt step
+  runner_per_model: 32
+  max_repeat_times_per_runner: 1
+  max_timeout: 72000
+  rollout_model:
+    enable_thinking: false
+    enable_history: false
+    engine_num: 8
+    tensor_parallel_size: 1
+    enable_prefix_caching: false
+    enforce_eager: false
+    dtype: bfloat16
+    seed: ${oc.env:EVAL_SEED,1}
+    enable_openai_api: true
+monitor:
+  monitor_type: wandb

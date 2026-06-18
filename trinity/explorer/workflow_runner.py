@@ -508,12 +508,27 @@ class DebugWorkflowRunner(WorkflowRunner):
     async def debug(self) -> None:
         """Run the debug workflow."""
         await self.prepare()
-        tasks = await self.taskset.read_async(batch_size=1)
+
+        # !!! ORIGINAL !!!
+        # tasks = await self.taskset.read_async(batch_size=1)
+        # task = tasks[0]
+        # !!! PATCH FOR COD START !!!
+        pack_size = self.config.cod.task_pack_size
+        tasks = await self.taskset.read_async(batch_size=pack_size)
+        print(f"!!! original number of read tasks: {len(tasks)} !!!")
+        from trinity.common.workflows.connect_the_dots.cod_workflow import pack_tasks
+
+        cod_workflow_args = self.config.cod.cod_workflow_args
+        tasks = pack_tasks(tasks, pack_size, cod_workflow_args)
         task = tasks[0]
+        task.batch_id = 1
+        # !!! PATCH FOR COD END !!!
+
         self.logger.info(f"Start debugging task:\n{task.raw_task}")
         if not self.enable_profiling:
+            # !!! PATCH FOR COD: change repeat_times from 1 to 2 !!!
             status, exp_payload = await self.run_task(
-                task=task, batch_id="debug", repeat_times=1, run_id_base=0
+                task=task, batch_id="debug", repeat_times=2, run_id_base=0
             )
         else:
             from viztracer import VizTracer
@@ -528,7 +543,7 @@ class DebugWorkflowRunner(WorkflowRunner):
             self.logger.info(
                 f"Debugging failed, extracting {len(experiences)} experiences from history."
             )
-        await self.sqlite_writer.write_async(experiences)
+        # await self.sqlite_writer.write_async(experiences)  # !!! disable for CoD !!!
         if status.ok:
             print(f"Task {task.task_id} completed successfully with metrics:\n{status.metrics}")
         else:

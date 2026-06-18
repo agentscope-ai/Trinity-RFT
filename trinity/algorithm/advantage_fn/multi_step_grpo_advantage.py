@@ -20,7 +20,7 @@ class StepWiseGRPOAdvantageFn(AdvantageFn, ExperienceOperator):
         self,
         epsilon: float = 1e-6,
         enable_step_norm: bool = False,
-        std_cal_level: str = "group",  # 'group' (task-level) or 'batch'
+        std_cal_level: str = "group",  # 'group' (task-level) or 'batch' or 'none'
         std_threshold: Optional[float] = None,
         **kwargs,
     ) -> None:
@@ -32,6 +32,7 @@ class StepWiseGRPOAdvantageFn(AdvantageFn, ExperienceOperator):
             std_cal_level (str): The scope for calculating reward standard deviation.
                 'group' (default): Std is calculated per task group.
                 'batch': Std is calculated across all last-step rewards in the entire batch.
+                'none': no Std calculation or advantage normalization.
                 The mean is always calculated per task group.
             std_threshold (Optional[float]): If provided, task groups with a reward standard deviation
                 equal or below this threshold will be skipped.
@@ -40,8 +41,8 @@ class StepWiseGRPOAdvantageFn(AdvantageFn, ExperienceOperator):
         self.enable_step_norm = enable_step_norm
         self.std_cal_level = std_cal_level
         self.std_threshold = std_threshold
-        if self.std_cal_level not in ["group", "batch"]:
-            raise ValueError("std_cal_level must be either 'group' or 'batch'")
+        if self.std_cal_level not in ["group", "batch", "none"]:
+            raise ValueError("std_cal_level must be either 'group' or 'batch' or 'none'")
 
     def calculate_last_step_advantage(
         self,
@@ -78,8 +79,12 @@ class StepWiseGRPOAdvantageFn(AdvantageFn, ExperienceOperator):
             for rid, exp in exps.items():
                 if self.std_cal_level == "batch" and precomputed_std is not None:
                     score = (exp.reward - group_reward_mean) / (precomputed_std + self.epsilon)
-                else:
+                elif self.std_cal_level == "group":
                     score = (exp.reward - group_reward_mean) / (group_reward_std + self.epsilon)
+                elif self.std_cal_level == "none":
+                    score = exp.reward - group_reward_mean
+                else:
+                    raise ValueError(f"Invalid std_cal_level '{self.std_cal_level}'.")
                 scores[rid] = score.item()
             metrics = {
                 "reward_mean": group_reward_mean.item(),

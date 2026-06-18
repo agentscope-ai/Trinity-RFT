@@ -707,6 +707,8 @@ class ExplorerConfig:
     # for workflow runner
     # number of workflow runners.
     runner_per_model: int = 8  # number of runners per each rollout model
+    runner_prepare_concurrency: int = 8  # cap concurrent prepares (glibc getenv race)
+    runner_prepare_max_retries: int = 2  # retry prepare on transient crash
     max_timeout: int = 1800  # wait each task for 30 minutes at most
     max_retry_times: int = 2  # retry each task for 2 times if it fails or timeout
     env_vars: dict = field(default_factory=dict)  # environment variables for workflow runner
@@ -873,6 +875,18 @@ class StageConfig:
 
 
 @dataclass
+class CoDConfig:
+    """!!! Config for CoD !!!"""
+
+    # number of original tasks to be packed into one task
+    task_pack_size: int = 4
+    eval_task_pack_size: Optional[int] = None
+
+    # cod workflow args: log_dir, exp_name, etc.
+    cod_workflow_args: dict = field(default_factory=dict)
+
+
+@dataclass
 class Config:
     """Global Configuration"""
 
@@ -902,6 +916,9 @@ class Config:
     synchronizer: SynchronizerConfig = field(default_factory=SynchronizerConfig)
     service: ServiceConfig = field(default_factory=ServiceConfig)
     log: LogConfig = field(default_factory=LogConfig)
+
+    # !!! cod config !!!
+    cod: CoDConfig = field(default_factory=CoDConfig)
 
     # configurations for different training stages
     stages: List[StageConfig] = field(default_factory=list)

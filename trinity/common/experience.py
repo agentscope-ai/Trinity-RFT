@@ -215,9 +215,13 @@ class Experience:
                 ), f"Token ids must be larger than the prompt length. Got len(tokens)={len(tokens)}, prompt_length={prompt_length}."
                 action_mask = torch.ones(len(tokens) - prompt_length, dtype=torch.bool)
             else:
+                # mask out exp if prompt truncated
                 action_mask = torch.zeros(len(logprobs), dtype=torch.bool)
         elif experience_type == "dpo":
             prompt_length = len(tokens)
+        # Note: For multi_turn, action_mask is passed in from outside.
+        # Truncation handling for multi_turn (concatenated) is done in convert_messages_to_experience,
+        # which only masks the incomplete turn, preserving complete turns.
         if eid is None:
             self.eid = EID()
         elif isinstance(eid, dict):

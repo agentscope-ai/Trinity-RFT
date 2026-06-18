@@ -277,6 +277,15 @@ class Explorer:
             self.explore_start_time = time.time()
         try:
             tasks = await self.taskset.read_async()
+            # !!! PATCH FOR COD START !!!
+            from trinity.common.workflows.connect_the_dots.cod_workflow import (
+                pack_tasks,
+            )
+
+            pack_size = self.config.cod.task_pack_size
+            cod_workflow_args = self.config.cod.cod_workflow_args
+            tasks = pack_tasks(tasks, pack_size, cod_workflow_args)
+            # !!! PATCH FOR COD END !!!
         except StopAsyncIteration:
             self.logger.warning("No more tasks to explore. Stop exploring.")
             await self.finish_current_steps()
@@ -343,7 +352,20 @@ class Explorer:
             eval_tasks = []
             while True:
                 try:
-                    eval_tasks.extend(await eval_taskset.read_async())
+                    data = await eval_taskset.read_async()
+                    # !!! PATCH FOR COD START !!!
+                    from trinity.common.workflows.connect_the_dots.cod_workflow import (
+                        pack_tasks,
+                    )
+
+                    if self.config.cod.eval_task_pack_size:
+                        pack_size = self.config.cod.eval_task_pack_size
+                    else:
+                        pack_size = self.config.cod.task_pack_size
+                    cod_workflow_args = self.config.cod.cod_workflow_args
+                    data = pack_tasks(data, pack_size, cod_workflow_args)
+                    # !!! PATCH FOR COD END !!!
+                    eval_tasks.extend(data)
                 except StopAsyncIteration:
                     break
             assert (

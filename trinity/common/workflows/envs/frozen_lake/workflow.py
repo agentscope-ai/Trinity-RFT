@@ -146,6 +146,7 @@ class FrozenLakeWorkflow(MultiTurnWorkflow):
         self.current_observation: Optional[str] = None
         self.done: bool = False
         self.last_observation: Optional[str] = None
+        self.system_prompt = SYSTEM_PROMPT
 
     @property
     def rollout_args(self):
@@ -282,8 +283,7 @@ class FrozenLakeWorkflow(MultiTurnWorkflow):
 
         # Initialize messages
         messages = []
-        system_prompt = SYSTEM_PROMPT
-        messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "system", "content": self.system_prompt})
 
         # Run episode until done or max_steps reached
         for step in range(self.agent_max_steps):

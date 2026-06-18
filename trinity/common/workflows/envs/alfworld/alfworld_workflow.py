@@ -3,7 +3,7 @@ from typing import List, Optional
 
 from trinity.common.experience import Experience
 from trinity.common.models.model import ModelWrapper
-from trinity.common.workflows.step_wise_workflow import RewardPropagationWorkflow
+from trinity.common.workflows.step_wise_workflow import AsyncRewardPropagationWorkflow, RewardPropagationWorkflow
 from trinity.common.workflows.workflow import MultiTurnWorkflow, Task
 
 EXAMPLE_PROMPT = """
@@ -174,13 +174,15 @@ class AlfworldWorkflow(MultiTurnWorkflow):
         return await self.generate_env_inference_samples(env)
 
 
-class StepWiseAlfworldWorkflow(RewardPropagationWorkflow):
+class StepWiseAlfworldWorkflow(AsyncRewardPropagationWorkflow):
     """
-    An Alfworld workflow refactored to use the RewardPropagationWorkflow base class.
+    An Alfworld workflow refactored to use the AsyncRewardPropagationWorkflow base class.
 
     This workflow manages an Alfworld environment, interacts with it step-by-step
     using a model, and calculates a final reward based on the episode's outcome.
     """
+
+    is_async: bool = True
 
     def __init__(
         self,
@@ -204,7 +206,7 @@ class StepWiseAlfworldWorkflow(RewardPropagationWorkflow):
         self.done: bool = False
         self.final_reward: float = 0.0
         self.memory: List[dict] = []
-
+        self.system_prompt = AlfWORLD_SYSTEM_PROMPT
     def _setup_environment(self):
         """Initializes the Alfworld text-based environment."""
         try:
@@ -237,18 +239,18 @@ class StepWiseAlfworldWorkflow(RewardPropagationWorkflow):
             )
             raise ImportError(error_message)
 
-    def run(self) -> List[Experience]:
+    async def run_async(self) -> List[Experience]:
         # Reset environment and state for a new episode
         self.observation, info = self.env.reset()
         self.done = False
         self.final_reward = -0.1
 
         self.memory.clear()
-        self.memory.append({"role": "system", "content": AlfWORLD_SYSTEM_PROMPT})
+        self.memory.append({"role": "system", "content": self.system_prompt})
 
-        return super().run()
+        return await super().run_async()
 
-    def step(self, step_num: int) -> bool:
+    async def step_async(self, step_num: int) -> bool:
         if self.done:
             return False
 
@@ -256,8 +258,8 @@ class StepWiseAlfworldWorkflow(RewardPropagationWorkflow):
         format_obs = format_observation(self.observation)  # type: ignore
         self.memory.append({"role": "user", "content": format_obs})
 
-        # Get action from the model
-        responses = self.model.chat(self.memory)
+        # Get action from the model asynchronously
+        responses = await self.model.chat_async(self.memory)
         response_text = responses[0].response_text
         self.memory.append({"role": "assistant", "content": response_text})
         action = parse_action(response_text)
@@ -274,7 +276,7 @@ class StepWiseAlfworldWorkflow(RewardPropagationWorkflow):
         # Return False to stop the run if the episode is done
         return not self.done
 
-    def reward(self, exps: list[Experience]) -> float:
+    async def reward_async(self, exps: list[Experience]) -> float:
         return self.final_reward
 
     @property

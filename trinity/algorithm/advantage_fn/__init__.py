@@ -21,6 +21,7 @@ ADVANTAGE_FN: Registry = Registry(
         "jsd": "trinity.algorithm.advantage_fn.jsd_advantage.JSDAdvantage",
         "clipb": "trinity.algorithm.advantage_fn.clipb_advantage.ClipBAdvantageFn",
         "clipv": "trinity.algorithm.advantage_fn.clipv_advantage.ClipVAdvantageFn",
+        "cod": "trinity.algorithm.advantage_fn.cod_advantage.CoDAdvantageFn",
     },
 )
 
