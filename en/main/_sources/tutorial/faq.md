@@ -151,6 +151,36 @@ trinity run --config grpo_gsm8k/gsm8k.yaml 2>&1 | tee debug.log
 
 Please refer to {ref}`Workflow Development Guide <Workflows>` section for details.
 
+---
+
+**Q:** How to inspect the experiences generated during training?
+
+**A:** You can use the `trinity view` command to launch a Streamlit-based viewer that lets you browse the experience data produced during exploration, including the prompt, response, reward, metrics, and token-level details (with per-token log-probs).
+
+This requires the experience pipeline to actually write a SQL database. Just enable `save_input` — when `input_save_path` is left unset, the pipeline automatically writes to a SQLite database at `<checkpoint_job_dir>/buffer/explorer_output.db`:
+
+```yaml
+data_processor:
+  experience_pipeline:
+    save_input: true
+    # input_save_path is optional; defaults to
+    # <checkpoint_job_dir>/buffer/explorer_output.db
+```
+
+Then run the viewer, pointing it at the config file (the database URL, table name, and tokenizer are inferred automatically):
+
+```bash
+trinity view --config examples/grpo_gsm8k/gsm8k.yaml --port 8502
+```
+
+You can also point directly at the database file and specify the components manually (the table name produced by the experience pipeline is `pipeline_input`):
+
+```bash
+trinity view --url /path/to/debug_buffer.db --table pipeline_input --tokenizer /path/to/model --port 8502
+```
+
+Note: `--url` accepts either a DB URL (`sqlite:////abs/path.db`) or a plain path to a `.db` file (relative or absolute), which is converted to a sqlite URL automatically. Explicit CLI arguments override values inferred from `--config`.
+
 
 ## Part 4: Other Questions
 **Q:** What's the purpose of `buffer.trainer_input.experience_buffer.path`?

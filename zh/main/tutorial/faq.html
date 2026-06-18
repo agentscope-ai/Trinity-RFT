@@ -787,6 +787,26 @@ trinity<span class="w"> </span>run<span class="w"> </span>--config<span class="w
 </li>
 </ol>
 <p>详细说明见 <a class="reference internal" href="develop_workflow.html#workflows"><span class="std std-ref">工作流开发指南</span></a>。</p>
+<hr class="docutils" />
+<p><strong>Q:</strong> 如何查看训练过程中产生的 Experience 数据？</p>
+<p><strong>A:</strong> 可以使用 <code class="docutils literal notranslate"><span class="pre">trinity</span> <span class="pre">view</span></code> 命令启动一个基于 Streamlit 的可视化界面，浏览探索阶段产生的 experience 数据，包括 prompt、response、reward、metrics 以及 token 级别（每个 token 的 log-prob）的详细信息。</p>
+<p>该功能要求 experience pipeline 实际写入 SQL 数据库。只需开启 <code class="docutils literal notranslate"><span class="pre">save_input</span></code>——当未设置 <code class="docutils literal notranslate"><span class="pre">input_save_path</span></code> 时，pipeline 会自动写入到 <code class="docutils literal notranslate"><span class="pre">&lt;checkpoint_job_dir&gt;/buffer/explorer_output.db</span></code>：</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">data_processor</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">experience_pipeline</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">save_input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="c1"># input_save_path 可选，默认为</span>
+<span class="w">    </span><span class="c1"># &lt;checkpoint_job_dir&gt;/buffer/explorer_output.db</span>
+</pre></div>
+</div>
+<p>然后指向配置文件启动查看器（数据库 URL、表名、tokenizer 会自动推导）：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>trinity<span class="w"> </span>view<span class="w"> </span>--config<span class="w"> </span>examples/grpo_gsm8k/gsm8k.yaml<span class="w"> </span>--port<span class="w"> </span><span class="m">8502</span>
+</pre></div>
+</div>
+<p>也可以直接指向数据库文件并手动指定各组件（experience pipeline 产生的表名为 <code class="docutils literal notranslate"><span class="pre">pipeline_input</span></code>）：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>trinity<span class="w"> </span>view<span class="w"> </span>--url<span class="w"> </span>/path/to/debug_buffer.db<span class="w"> </span>--table<span class="w"> </span>pipeline_input<span class="w"> </span>--tokenizer<span class="w"> </span>/path/to/model<span class="w"> </span>--port<span class="w"> </span><span class="m">8502</span>
+</pre></div>
+</div>
+<p>注意：<code class="docutils literal notranslate"><span class="pre">--url</span></code> 既支持 DB URL（如 <code class="docutils literal notranslate"><span class="pre">sqlite:////abs/path.db</span></code>），也支持直接给出 <code class="docutils literal notranslate"><span class="pre">.db</span></code> 文件路径（相对或绝对均可），会自动转换为 sqlite URL。显式给出的 CLI 参数会覆盖从 <code class="docutils literal notranslate"><span class="pre">--config</span></code> 推导出的值。</p>
 </section>
 <section id="id4">
 <h2>第四部分：其他问题<a class="headerlink" href="#id4" title="Link to this heading">#</a></h2>

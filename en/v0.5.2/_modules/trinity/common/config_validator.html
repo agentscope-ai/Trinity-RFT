@@ -2290,15 +2290,10 @@ window.runMermaid = runMermaid;</script>
             <span class="s2">&quot;serve&quot;</span><span class="p">,</span>
             <span class="s2">&quot;colocate&quot;</span><span class="p">,</span>
         <span class="p">}:</span>
-            <span class="k">if</span> <span class="n">experience_pipeline</span><span class="o">.</span><span class="n">save_input</span> <span class="ow">and</span> <span class="n">experience_pipeline</span><span class="o">.</span><span class="n">input_save_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">experience_pipeline</span><span class="o">.</span><span class="n">input_save_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_default_storage_path</span><span class="p">(</span>
-                    <span class="n">config</span><span class="p">,</span> <span class="n">StorageType</span><span class="o">.</span><span class="n">SQL</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;explorer_output&quot;</span>
-                <span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="s2">&quot;Auto set `data_processor.experience_pipeline.input_save_path` &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;to </span><span class="si">{</span><span class="n">experience_pipeline</span><span class="o">.</span><span class="n">input_save_path</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="p">)</span>
-
+            <span class="c1"># NOTE: the default for `experience_pipeline.input_save_path` is</span>
+            <span class="c1"># resolved by ExperiencePipeline._init_input_storage (the component</span>
+            <span class="c1"># that actually creates the database), so that callers without a</span>
+            <span class="c1"># full validation pass (e.g. `trinity view`) resolve the same path.</span>
             <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">service</span><span class="o">.</span><span class="n">data_juicer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">operator</span> <span class="ow">in</span> <span class="n">experience_pipeline</span><span class="o">.</span><span class="n">operators</span><span class="p">:</span>
                     <span class="k">if</span> <span class="n">operator</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;data_juicer&quot;</span><span class="p">:</span>

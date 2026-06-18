@@ -1023,6 +1023,7 @@ window.runMermaid = runMermaid;</script>
                   
   <h1>trinity.buffer.pipelines.experience_pipeline 源代码</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">traceback</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span>
@@ -1058,6 +1059,26 @@ window.runMermaid = runMermaid;</script>
 
 
 
+<div class="viewcode-block" id="default_input_save_path">
+<a class="viewcode-back" href="../../../../build_api/trinity.buffer.pipelines.experience_pipeline.html#trinity.buffer.pipelines.default_input_save_path">[文档]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">default_input_save_path</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the default ``input_save_path`` for the experience pipeline.</span>
+
+<span class="sd">    This is the single source of truth for where the pipeline writes its input</span>
+<span class="sd">    database when ``save_input`` is enabled but no path is provided: a SQLite</span>
+<span class="sd">    database at ``&lt;checkpoint_job_dir&gt;/buffer/explorer_output.db``.</span>
+
+<span class="sd">    It is derived purely from the config components (no Ray/GPU side effects), so</span>
+<span class="sd">    callers that load a config without a full validation pass — e.g. ``trinity view``</span>
+<span class="sd">    — resolve the exact same path the pipeline writes to at run time. The</span>
+<span class="sd">    ``abspath`` mirrors ``GlobalConfigValidator`` making a relative</span>
+<span class="sd">    ``checkpoint_root_dir`` absolute, keeping the two contexts consistent.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cache_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">get_checkpoint_job_dir</span><span class="p">(),</span> <span class="s2">&quot;buffer&quot;</span><span class="p">))</span>
+    <span class="k">return</span> <span class="s2">&quot;sqlite:///&quot;</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">cache_dir</span><span class="p">,</span> <span class="s2">&quot;explorer_output.db&quot;</span><span class="p">)</span></div>
+
+
+
 <div class="viewcode-block" id="ExperiencePipeline">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.pipelines.experience_pipeline.html#trinity.buffer.pipelines.ExperiencePipeline">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ExperiencePipeline</span><span class="p">:</span>
@@ -1086,8 +1107,15 @@ window.runMermaid = runMermaid;</script>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the input storage if it is not already set.&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">pipeline_config</span><span class="o">.</span><span class="n">save_input</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">pipeline_config</span><span class="o">.</span><span class="n">input_save_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;input_save_path must be set when save_input is True.&quot;</span><span class="p">)</span>
-            <span class="k">elif</span> <span class="n">is_json_file</span><span class="p">(</span><span class="n">pipeline_config</span><span class="o">.</span><span class="n">input_save_path</span><span class="p">):</span>
+                <span class="c1"># The pipeline owns this default — it is the component that actually</span>
+                <span class="c1"># creates the database. Resolved here (rather than in a config</span>
+                <span class="c1"># validator) so it works regardless of whether full validation runs.</span>
+                <span class="n">pipeline_config</span><span class="o">.</span><span class="n">input_save_path</span> <span class="o">=</span> <span class="n">default_input_save_path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                    <span class="s2">&quot;Auto set `data_processor.experience_pipeline.input_save_path` &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;to </span><span class="si">{</span><span class="n">pipeline_config</span><span class="o">.</span><span class="n">input_save_path</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">is_json_file</span><span class="p">(</span><span class="n">pipeline_config</span><span class="o">.</span><span class="n">input_save_path</span><span class="p">):</span>
                 <span class="k">return</span> <span class="n">get_buffer_writer</span><span class="p">(</span>
                     <span class="n">StorageConfig</span><span class="p">(</span>
                         <span class="n">storage_type</span><span class="o">=</span><span class="n">StorageType</span><span class="o">.</span><span class="n">FILE</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>

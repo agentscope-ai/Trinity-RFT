@@ -791,6 +791,26 @@ trinity<span class="w"> </span>run<span class="w"> </span>--config<span class="w
 <li><p>Debug the workflow in another terminal via <code class="docutils literal notranslate"><span class="pre">trinity</span> <span class="pre">debug</span> <span class="pre">--config</span> <span class="pre">&lt;config_file_path&gt;</span> <span class="pre">--module</span> <span class="pre">workflow</span> <span class="pre">--output-file</span> <span class="pre">&lt;output_file_path&gt;</span> <span class="pre">--plugin-dir</span> <span class="pre">&lt;plugin_dir&gt;</span></code></p></li>
 </ol>
 <p>Please refer to <a class="reference internal" href="develop_workflow.html#workflows"><span class="std std-ref">Workflow Development Guide</span></a> section for details.</p>
+<hr class="docutils" />
+<p><strong>Q:</strong> How to inspect the experiences generated during training?</p>
+<p><strong>A:</strong> You can use the <code class="docutils literal notranslate"><span class="pre">trinity</span> <span class="pre">view</span></code> command to launch a Streamlit-based viewer that lets you browse the experience data produced during exploration, including the prompt, response, reward, metrics, and token-level details (with per-token log-probs).</p>
+<p>This requires the experience pipeline to actually write a SQL database. Just enable <code class="docutils literal notranslate"><span class="pre">save_input</span></code> — when <code class="docutils literal notranslate"><span class="pre">input_save_path</span></code> is left unset, the pipeline automatically writes to a SQLite database at <code class="docutils literal notranslate"><span class="pre">&lt;checkpoint_job_dir&gt;/buffer/explorer_output.db</span></code>:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">data_processor</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">experience_pipeline</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">save_input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="c1"># input_save_path is optional; defaults to</span>
+<span class="w">    </span><span class="c1"># &lt;checkpoint_job_dir&gt;/buffer/explorer_output.db</span>
+</pre></div>
+</div>
+<p>Then run the viewer, pointing it at the config file (the database URL, table name, and tokenizer are inferred automatically):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>trinity<span class="w"> </span>view<span class="w"> </span>--config<span class="w"> </span>examples/grpo_gsm8k/gsm8k.yaml<span class="w"> </span>--port<span class="w"> </span><span class="m">8502</span>
+</pre></div>
+</div>
+<p>You can also point directly at the database file and specify the components manually (the table name produced by the experience pipeline is <code class="docutils literal notranslate"><span class="pre">pipeline_input</span></code>):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>trinity<span class="w"> </span>view<span class="w"> </span>--url<span class="w"> </span>/path/to/debug_buffer.db<span class="w"> </span>--table<span class="w"> </span>pipeline_input<span class="w"> </span>--tokenizer<span class="w"> </span>/path/to/model<span class="w"> </span>--port<span class="w"> </span><span class="m">8502</span>
+</pre></div>
+</div>
+<p>Note: <code class="docutils literal notranslate"><span class="pre">--url</span></code> accepts either a DB URL (<code class="docutils literal notranslate"><span class="pre">sqlite:////abs/path.db</span></code>) or a plain path to a <code class="docutils literal notranslate"><span class="pre">.db</span></code> file (relative or absolute), which is converted to a sqlite URL automatically. Explicit CLI arguments override values inferred from <code class="docutils literal notranslate"><span class="pre">--config</span></code>.</p>
 </section>
 <section id="part-4-other-questions">
 <h2>Part 4: Other Questions<a class="headerlink" href="#part-4-other-questions" title="Link to this heading">#</a></h2>
