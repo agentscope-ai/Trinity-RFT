@@ -2,9 +2,11 @@
 
 # Connect the Dots (CoD)
 
-**Training LLMs to "Connect the Dots" in long-lifecycle agentic deployment, with end-to-end RL.** CoD is built on [Trinity-RFT](https://github.com/agentscope-ai/Trinity-RFT): as an LLM agent gets deployed in an environment, it solves a long sequence of tasks while continually exploring the environment, learning from its own experiences, and iteratively self-updating its own context about the environment, so that future tasks, solved conditioned on the updated context, go better and better.
+**Training LLMs to "Connect the Dots" in long-lifecycle agentic deployment, with end-to-end RL.**
 
-CoD groups related tasks into a pack and rolls it out as one long sequence interleaving **solve-task** and **update-context** episodes: after each task, the model updates its context (a short `Hints:` block) from what just happened, and later tasks are solved conditioned on the accumulated context.
+As an LLM-based AI agent gets deployed in an environment, it solves a long sequence of tasks while continuously exploring the environment, learning from its own experiences, and iteratively self-updating its context about the environment, thereby achieving progressively better performance on future tasks conditioned on the updated context.
+
+CoD groups related tasks into a pack and generates a long rollout trajectory interleaving **solve-task** and **update-context** episodes: after each task, the model updates its context (a short `Hints:` block), and later tasks are solved conditioned on the updated context.
 The whole pack is trained end-to-end with RL, with fine-grained credit assignment rewarding context updates that make future tasks easier.
 A trained model's reward rises across pack positions, which is the signature of the elicited CoD meta-capability.
 
@@ -98,9 +100,6 @@ python examples/research_cod/get_frozen_lake_data.py --local_dir examples/resear
 python examples/research_cod/get_alchemy_data.py  --local_dir examples/research_cod/data/alchemy_random --train_size 50000 --test_size 4000 --seed 42
 # Terminal
 python examples/research_cod/get_terminal_data.py --local_dir examples/research_cod/data/terminal --train_size 50000 --test_size 4000 --seed 42 --composite_ratio 0.5
-# Learn2Ask
-python examples/research_cod/exp_plan_learn2ask/data_prepare/1_info_extract_pipeline.py --model_path Qwen/Qwen3.6-27B
-python examples/research_cod/exp_plan_learn2ask/data_prepare/2_build_dataset.py
 ```
 
 **2. Train CoD models.**
@@ -129,7 +128,6 @@ bash examples/research_cod/exp_plan_final/bench/run_eval.sh --train-tasks mixed_
 |---|---|
 | `activated_cod_methods` | CoD methods to enable; the main study uses `["iterative_hint_e2e"]` |
 | `hint_penalty_coef` / `length_penalty_coef` | Length penalty on hints / on a correct solution |
-| `task_reward_decay` | Discount tasks in the pack total |
 | `task_pack_size` / `eval_task_pack_size` | Pack size for training / evaluation |
 
 ---
@@ -151,6 +149,13 @@ After subclassing `AsyncCoDMultiStepWorkflow` (`base_workflow.py`), implement:
 ## Citation
 
 ```bibtex
+@article{chen2026connect,
+  title={Connect the Dots: Training Large Language Models for Long-Lifecycle Agentic Deployment Via Reinforcement Learning},
+  author={Chen, Yanxi and Shi, Weijie and Xie, Yuexiang and Hu, Boyi and Li, Yaliang and Ding, Bolin and Zhou, Jingren},
+  journal={arXiv preprint},
+  year={2026}
+}
+
 @article{pan2025trinity,
   title={Trinity-rft: A general-purpose and unified framework for reinforcement fine-tuning of large language models},
   author={Pan, Xuchen and Chen, Yanxi and Chen, Yushuo and Sun, Yuchang and Chen, Daoyuan and Zhang, Wenhao and Xie, Yuexiang and Huang, Yilun and Zhang, Yilei and Gao, Dawei and others},
