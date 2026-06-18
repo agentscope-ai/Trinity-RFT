@@ -2,7 +2,7 @@
 
 # Connect the Dots (CoD)
 
-**Training LLMs to "Connect the Dots" in long-lifecycle agentic deployment, with end-to-end RL.**
+**Training LLMs for Long-Lifecycle Agents with Cross-Domain Generalization Via Reinforcement Learning**
 
 As an LLM-based AI agent gets deployed in an environment, it solves a long sequence of tasks while continuously exploring the environment, learning from its own experiences, and iteratively self-updating its context about the environment, thereby achieving progressively better performance on future tasks conditioned on the updated context.
 
@@ -12,7 +12,7 @@ A trained model's reward rises across pack positions, which is the signature of 
 
 <p align="center">
   <img src="assets/cod_overview.png" alt="CoD overview" width="760">
-  <br><sub><em>Figure 1: CoD overview. Packs of related tasks roll out as interleaved solve-task and update-context episodes, trained end-to-end (CoD-Train) and applied on a new environment at deployment (CoD-Deploy).</em></sub>
+  <br><sub><em>Figure 1: a visualization of CoD-Deploy and CoD-Train (compared with standard task-by-task RL). Environments A and B are used for training; M is a new environment for deployment or evaluation. Each block is one rollout episode, for solving a task x_i (which may itself be a long-horizon multi-turn task) or for updating the agent's context z_i about the current environment.</em></sub>
 </p>
 
 ---
@@ -87,6 +87,7 @@ git clone <REPO_URL>
 cd <REPO_DIR>
 conda create -n trinity python=3.12 && conda activate trinity
 pip install -e ".[vllm,flash_attn]"
+pip install gymnasium jinja2 pandas
 ```
 
 **1. Generate data.**
@@ -150,7 +151,7 @@ After subclassing `AsyncCoDMultiStepWorkflow` (`base_workflow.py`), implement:
 
 ```bibtex
 @article{chen2026connect,
-  title={Connect the Dots: Training Large Language Models for Long-Lifecycle Agentic Deployment Via Reinforcement Learning},
+  title={Connect the Dots: Training LLMs for Long-Lifecycle Agents with Cross-Domain Generalization Via Reinforcement Learning},
   author={Chen, Yanxi and Shi, Weijie and Xie, Yuexiang and Hu, Boyi and Li, Yaliang and Ding, Bolin and Zhou, Jingren},
   journal={arXiv preprint},
   year={2026}

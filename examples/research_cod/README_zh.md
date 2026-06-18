@@ -2,17 +2,17 @@
 
 # Connect the Dots (CoD)
 
-**用端到端 RL 训练 LLM 在长生命周期 agentic 部署中“连点成线”（Connect the Dots）。**
+**Training LLMs for Long-Lifecycle Agents with Cross-Domain Generalization Via Reinforcement Learning**
 
 当 LLM agent 部署到一个环境中，它会连续解决一长串任务，同时不断探索环境、从自身经验中学习、迭代地自我更新关于环境的 context，后续任务在更新后的 context 条件下越解越好。
 
-CoD 把相关任务打成一个 pack（任务包），作为一条交替进行**解决任务（solve-task）**与**更新 context（update-context）**回合的长序列展开：每解完一个任务，模型就根据刚发生的事更新 context（一段简短的 `Hints:` 块），靠后的任务在累积的 context 条件下求解。
+CoD 把相关任务打成一个 pack（任务包），作为一条交替进行**解决任务**（solve-task）与**更新 context**（update-context）回合的长序列展开：每解完一个任务，模型就根据刚发生的事更新 context（一段简短的 `Hints:` 块），靠后的任务在累积的 context 条件下求解。
 整个 pack 用 RL 端到端训练，细粒度的信用分配让“使后续任务更好解的 context 更新”获得奖励。
 训练好的模型 reward 随 pack 位置递增，这正是 CoD 元能力被激发出来的标志。
 
 <p align="center">
   <img src="assets/cod_overview.png" alt="CoD 方法总览" width="760">
-  <br><sub><em>图 1：CoD 总览。相关任务打成 pack，作为交替的 solve-task 与 update-context 回合展开，端到端训练（CoD-Train），部署到新环境时套用同样的循环（CoD-Deploy）。</em></sub>
+  <br><sub><em>图 1：CoD-Deploy 与 CoD-Train 的示意（与标准的逐任务 RL 对比）。环境 A、B 用于训练，M 是部署或评测的新环境。每个 block 是一个 rollout 回合：求解任务 x_i（其本身可能是长程多轮任务），或更新 agent 对当前环境的 context z_i。</em></sub>
 </p>
 
 ---
@@ -87,6 +87,7 @@ git clone <REPO_URL>
 cd <REPO_DIR>
 conda create -n trinity python=3.12 && conda activate trinity
 pip install -e ".[vllm,flash_attn]"
+pip install gymnasium jinja2 pandas
 ```
 
 **1. 生成数据。**
@@ -150,7 +151,7 @@ bash examples/research_cod/exp_plan_final/bench/run_eval.sh --train-tasks mixed_
 ## 引用
 ```bibtex
 @article{chen2026connect,
-  title={Connect the Dots: Training Large Language Models for Long-Lifecycle Agentic Deployment Via Reinforcement Learning},
+  title={Connect the Dots: Training LLMs for Long-Lifecycle Agents with Cross-Domain Generalization Via Reinforcement Learning},
   author={Chen, Yanxi and Shi, Weijie and Xie, Yuexiang and Hu, Boyi and Li, Yaliang and Ding, Bolin and Zhou, Jingren},
   journal={arXiv preprint},
   year={2026}
