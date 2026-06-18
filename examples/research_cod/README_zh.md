@@ -2,9 +2,11 @@
 
 # Connect the Dots (CoD)
 
-**用端到端 RL 训练 LLM 在长生命周期 agentic 部署中“连点成线”（Connect the Dots）。** CoD 基于 [Trinity-RFT](https://github.com/agentscope-ai/Trinity-RFT) 构建：当 LLM agent 部署到一个环境中，它会连续解决一长串任务，同时不断探索环境、从自身经验中学习、迭代地自我更新关于环境的 context，后续任务在更新后的 context 条件下越解越好。
+**用端到端 RL 训练 LLM 在长生命周期 agentic 部署中“连点成线”（Connect the Dots）。**
 
-CoD 把相关任务打成一个 pack（任务包），作为一条交替进行**解题（solve-task）**与**更新 context（update-context）**回合的长序列展开：每解完一个任务，模型就根据刚发生的事更新 context（一段简短的 `Hints:` 块），靠后的任务在累积的 context 条件下求解。
+当 LLM agent 部署到一个环境中，它会连续解决一长串任务，同时不断探索环境、从自身经验中学习、迭代地自我更新关于环境的 context，后续任务在更新后的 context 条件下越解越好。
+
+CoD 把相关任务打成一个 pack（任务包），作为一条交替进行**解决任务（solve-task）**与**更新 context（update-context）**回合的长序列展开：每解完一个任务，模型就根据刚发生的事更新 context（一段简短的 `Hints:` 块），靠后的任务在累积的 context 条件下求解。
 整个 pack 用 RL 端到端训练，细粒度的信用分配让“使后续任务更好解的 context 更新”获得奖励。
 训练好的模型 reward 随 pack 位置递增，这正是 CoD 元能力被激发出来的标志。
 
@@ -98,9 +100,6 @@ python examples/research_cod/get_frozen_lake_data.py --local_dir examples/resear
 python examples/research_cod/get_alchemy_data.py  --local_dir examples/research_cod/data/alchemy_random --train_size 50000 --test_size 4000 --seed 42
 # Terminal
 python examples/research_cod/get_terminal_data.py --local_dir examples/research_cod/data/terminal --train_size 50000 --test_size 4000 --seed 42 --composite_ratio 0.5
-# Learn2Ask
-python examples/research_cod/exp_plan_learn2ask/data_prepare/1_info_extract_pipeline.py --model_path Qwen/Qwen3.6-27B
-python examples/research_cod/exp_plan_learn2ask/data_prepare/2_build_dataset.py
 ```
 
 **2. CoD 模型训练。**
@@ -130,7 +129,6 @@ bash examples/research_cod/exp_plan_final/bench/run_eval.sh --train-tasks mixed_
 |---|---|
 | `activated_cod_methods` | 启用的 CoD 方法；主实验用 `["iterative_hint_e2e"]` |
 | `hint_penalty_coef` / `length_penalty_coef` | 对 hint / 对正确解答的长度惩罚 |
-| `task_reward_decay` | 对 pack 总奖励中的任务折扣 |
 | `task_pack_size` / `eval_task_pack_size` | 训练 / 评测时的 pack 大小 |
 
 ---
@@ -151,6 +149,13 @@ bash examples/research_cod/exp_plan_final/bench/run_eval.sh --train-tasks mixed_
 
 ## 引用
 ```bibtex
+@article{chen2026connect,
+  title={Connect the Dots: Training Large Language Models for Long-Lifecycle Agentic Deployment Via Reinforcement Learning},
+  author={Chen, Yanxi and Shi, Weijie and Xie, Yuexiang and Hu, Boyi and Li, Yaliang and Ding, Bolin and Zhou, Jingren},
+  journal={arXiv preprint},
+  year={2026}
+}
+
 @article{pan2025trinity,
   title={Trinity-rft: A general-purpose and unified framework for reinforcement fine-tuning of large language models},
   author={Pan, Xuchen and Chen, Yanxi and Chen, Yushuo and Sun, Yuchang and Chen, Daoyuan and Zhang, Wenhao and Xie, Yuexiang and Huang, Yilun and Zhang, Yilei and Gao, Dawei and others},
