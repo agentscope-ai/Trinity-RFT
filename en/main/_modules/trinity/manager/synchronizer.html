@@ -1208,10 +1208,18 @@ window.runMermaid = runMermaid;</script>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_ready_condition</span><span class="o">.</span><span class="n">notify_all</span><span class="p">()</span></div>
 
 
-<div class="viewcode-block" id="Synchronizer.trainer_requires_sync">
-<a class="viewcode-back" href="../../../build_api/trinity.manager.synchronizer.html#trinity.manager.Synchronizer.trainer_requires_sync">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">trainer_requires_sync</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if the trainer is require sync.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Synchronizer.trainer_requires_weight_sync">
+<a class="viewcode-back" href="../../../build_api/trinity.manager.synchronizer.html#trinity.manager.Synchronizer.trainer_requires_weight_sync">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">trainer_requires_weight_sync</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Non-blocking trainer sync-readiness probe.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            True  -- trainer is in REQUIRE_SYNC state (ready for weight transfer).</span>
+<span class="sd">            False -- trainer is RUNNING (not yet requesting a sync).</span>
+<span class="sd">            None  -- trainer has STOPPED; the caller should terminate its watch loop.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer_status</span> <span class="o">==</span> <span class="n">RunningStatus</span><span class="o">.</span><span class="n">STOPPED</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer_status</span> <span class="o">==</span> <span class="n">RunningStatus</span><span class="o">.</span><span class="n">REQUIRE_SYNC</span></div>
 
 
@@ -1238,7 +1246,12 @@ window.runMermaid = runMermaid;</script>
             <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Invalid status count </span><span class="si">{</span><span class="n">old_status</span><span class="si">}</span><span class="s2"> (new status </span><span class="si">{</span><span class="n">status</span><span class="si">}</span><span class="s2">)&quot;</span>
         <span class="k">if</span> <span class="n">status</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">explorer_status_counts</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">explorer_status_counts</span><span class="p">[</span><span class="n">status</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">explorer_status_counts</span><span class="p">[</span><span class="n">status</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">explorer_status_counts</span><span class="p">[</span><span class="n">status</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># Wake any NCCL-sync waiters so they can immediately detect Explorer exit</span>
+        <span class="c1"># without having to wait for the full sync_timeout.</span>
+        <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="n">RunningStatus</span><span class="o">.</span><span class="n">STOPPED</span><span class="p">:</span>
+            <span class="k">async</span> <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ready_condition</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_ready_condition</span><span class="o">.</span><span class="n">notify_all</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="Synchronizer.explorer_requires_sync">

@@ -349,6 +349,12 @@ buffer:
       storage_type: queue
       path: sqlite:///countdown_buffer.db
       max_read_timeout: 1800
+      replay_buffer:
+        enable: false
+        reuse_cooldown_time: 60
+        priority_fn: linear_decay
+        priority_fn_args:
+          decay: 0.1
 
     auxiliary_buffers:
       sft_dataset:
@@ -423,6 +429,7 @@ explorer:
     tensor_parallel_size: 1
   eval_interval: 100
   eval_on_startup: true
+  max_inflight_batches: 2
   over_rollout:
     ratio: 0.0
     wait_after_min: 30.0
@@ -459,6 +466,7 @@ explorer:
 - `auxiliary_models`: Additional models used for custom workflows, which has the same configuration options as `rollout_model`.
 - `eval_interval`: Interval (in steps) for evaluating the model.
 - `eval_on_startup`: Whether to evaluate the model on startup. More precisely, at step 0 with the original model, so it will not be triggered when restarting.
+- `max_inflight_batches`: Maximum number of batches that can be processed concurrently by the explorer in `fully_async` synchronization mode. Default is `2`. For example, when `max_inflight_batches` is set to `2`, the explorer can have up to 2 batches of tasks being executed at the same time.
 - `over_rollout`: [Experimental] Configurations for over-rollout mechanism, which allows the explorer to proceed with fewer tasks than the full batch size. It effectively increases throughput in scenarios where some tasks take significantly longer to complete than others. Only applicable when dynamic synchronization (`synchronizer.sync_style` is not `fixed`) is used.
   - `ratio`: Explorer will only wait for `(1 - ratio) * batch_size` of tasks at each step. Default is `0.0`, meaning waiting for all tasks.
   - `wait_after_min`: After reaching the minimum task threshold, wait for this many seconds before proceeding. Default is `30.0` seconds.
@@ -492,9 +500,9 @@ synchronizer:
 - `sync_timeout`: Timeout duration for synchronization.
 - `sync_style`: Style of synchronization. Options:
   - `fixed`: The explorer and trainer synchronize weights every `sync_interval` steps.
-  - `explorer_driven`: The explorer notifies the trainer to synchronize weights after completing `sync_interval` steps, regardless of how many steps the trainer has completed at this point.
-  - `trainer_driven`: The trainer notifies the explorer to synchronize weights after completing `sync_interval` steps, regardless of how many steps the explorer has completed at this point.
-
+  - `explorer_driven`: The explorer notifies the trainer to synchronize weights after completing `sync_interval` steps, trainer synchronizes weights upon receiving the notification and reaching a synchronization point.
+  - `trainer_driven`: The trainer notifies the explorer to synchronize weights after completing `sync_interval` steps, explorer synchronizes weights upon receiving the notification and reaching a synchronization point.
+  - `fully_async`: The trainer notifies the explorer to synchronize weights each `sync_interval` steps, and the explorer synchronizes weights as soon as it receives the notification, without waiting for the next synchronization point.
 ---
 
 ## Trainer Configuration

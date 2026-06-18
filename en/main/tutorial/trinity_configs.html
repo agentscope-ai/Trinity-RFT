@@ -1056,6 +1056,12 @@ Users can use these features to simplify configuration.</p>
 <span class="w">      </span><span class="nt">storage_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">queue</span>
 <span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sqlite:///countdown_buffer.db</span>
 <span class="w">      </span><span class="nt">max_read_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1800</span>
+<span class="w">      </span><span class="nt">replay_buffer</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">enable</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">        </span><span class="nt">reuse_cooldown_time</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60</span>
+<span class="w">        </span><span class="nt">priority_fn</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">linear_decay</span>
+<span class="w">        </span><span class="nt">priority_fn_args</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">decay</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span>
 
 <span class="w">    </span><span class="nt">auxiliary_buffers</span><span class="p">:</span>
 <span class="w">      </span><span class="nt">sft_dataset</span><span class="p">:</span>
@@ -1148,6 +1154,7 @@ Users can use these features to simplify configuration.</p>
 <span class="w">    </span><span class="nt">tensor_parallel_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
 <span class="w">  </span><span class="nt">eval_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
 <span class="w">  </span><span class="nt">eval_on_startup</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">max_inflight_batches</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
 <span class="w">  </span><span class="nt">over_rollout</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">ratio</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0</span>
 <span class="w">    </span><span class="nt">wait_after_min</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30.0</span>
@@ -1191,6 +1198,7 @@ Users can use these features to simplify configuration.</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">auxiliary_models</span></code>: Additional models used for custom workflows, which has the same configuration options as <code class="docutils literal notranslate"><span class="pre">rollout_model</span></code>.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">eval_interval</span></code>: Interval (in steps) for evaluating the model.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">eval_on_startup</span></code>: Whether to evaluate the model on startup. More precisely, at step 0 with the original model, so it will not be triggered when restarting.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_inflight_batches</span></code>: Maximum number of batches that can be processed concurrently by the explorer in <code class="docutils literal notranslate"><span class="pre">fully_async</span></code> synchronization mode. Default is <code class="docutils literal notranslate"><span class="pre">2</span></code>. For example, when <code class="docutils literal notranslate"><span class="pre">max_inflight_batches</span></code> is set to <code class="docutils literal notranslate"><span class="pre">2</span></code>, the explorer can have up to 2 batches of tasks being executed at the same time.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">over_rollout</span></code>: [Experimental] Configurations for over-rollout mechanism, which allows the explorer to proceed with fewer tasks than the full batch size. It effectively increases throughput in scenarios where some tasks take significantly longer to complete than others. Only applicable when dynamic synchronization (<code class="docutils literal notranslate"><span class="pre">synchronizer.sync_style</span></code> is not <code class="docutils literal notranslate"><span class="pre">fixed</span></code>) is used.</p>
 <ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">ratio</span></code>: Explorer will only wait for <code class="docutils literal notranslate"><span class="pre">(1</span> <span class="pre">-</span> <span class="pre">ratio)</span> <span class="pre">*</span> <span class="pre">batch_size</span></code> of tasks at each step. Default is <code class="docutils literal notranslate"><span class="pre">0.0</span></code>, meaning waiting for all tasks.</p></li>
@@ -1233,8 +1241,9 @@ Users can use these features to simplify configuration.</p>
 <li><p><code class="docutils literal notranslate"><span class="pre">sync_style</span></code>: Style of synchronization. Options:</p>
 <ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">fixed</span></code>: The explorer and trainer synchronize weights every <code class="docutils literal notranslate"><span class="pre">sync_interval</span></code> steps.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">explorer_driven</span></code>: The explorer notifies the trainer to synchronize weights after completing <code class="docutils literal notranslate"><span class="pre">sync_interval</span></code> steps, regardless of how many steps the trainer has completed at this point.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">trainer_driven</span></code>: The trainer notifies the explorer to synchronize weights after completing <code class="docutils literal notranslate"><span class="pre">sync_interval</span></code> steps, regardless of how many steps the explorer has completed at this point.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">explorer_driven</span></code>: The explorer notifies the trainer to synchronize weights after completing <code class="docutils literal notranslate"><span class="pre">sync_interval</span></code> steps, trainer synchronizes weights upon receiving the notification and reaching a synchronization point.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trainer_driven</span></code>: The trainer notifies the explorer to synchronize weights after completing <code class="docutils literal notranslate"><span class="pre">sync_interval</span></code> steps, explorer synchronizes weights upon receiving the notification and reaching a synchronization point.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fully_async</span></code>: The trainer notifies the explorer to synchronize weights each <code class="docutils literal notranslate"><span class="pre">sync_interval</span></code> steps, and the explorer synchronizes weights as soon as it receives the notification, without waiting for the next synchronization point.</p></li>
 </ul>
 </li>
 </ul>

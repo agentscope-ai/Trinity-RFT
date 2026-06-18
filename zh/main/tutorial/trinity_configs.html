@@ -1059,6 +1059,12 @@
 <span class="w">      </span><span class="nt">storage_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">queue</span>
 <span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sqlite:///countdown_buffer.db</span>
 <span class="w">      </span><span class="nt">max_read_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1800</span>
+<span class="w">      </span><span class="nt">replay_buffer</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">enable</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<span class="w">        </span><span class="nt">reuse_cooldown_time</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">60</span>
+<span class="w">        </span><span class="nt">priority_fn</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">linear_decay</span>
+<span class="w">        </span><span class="nt">priority_fn_args</span><span class="p">:</span>
+<span class="w">          </span><span class="nt">decay</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span>
 
 <span class="w">    </span><span class="nt">auxiliary_buffers</span><span class="p">:</span>
 <span class="w">      </span><span class="nt">sft_dataset</span><span class="p">:</span>
@@ -1151,6 +1157,7 @@
 <span class="w">    </span><span class="nt">tensor_parallel_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
 <span class="w">  </span><span class="nt">eval_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span>
 <span class="w">  </span><span class="nt">eval_on_startup</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">max_inflight_batches</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
 <span class="w">  </span><span class="nt">over_rollout</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">ratio</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.0</span>
 <span class="w">    </span><span class="nt">wait_after_min</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30.0</span>
@@ -1193,6 +1200,7 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">auxiliary_models</span></code>: 用于自定义工作流的辅助模型，配置与 <code class="docutils literal notranslate"><span class="pre">rollout_model</span></code> 相同。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">eval_interval</span></code>: 模型评估的间隔（以 step 为单位）。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">eval_on_startup</span></code>: 是否在启动时评估模型。更准确地说，是在第 0 步使用原始模型评估，因此中断训练后重启时不会触发该行为。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">max_inflight_batches</span></code>: 在 fully_async 模式下，允许同时存在的最大未完成批次数。默认为 <code class="docutils literal notranslate"><span class="pre">2</span></code>。例如，在 GRPO 中，如果 <code class="docutils literal notranslate"><span class="pre">batch_size</span></code> 是 <code class="docutils literal notranslate"><span class="pre">32</span></code>，<code class="docutils literal notranslate"><span class="pre">max_inflight_batches</span></code> 是 <code class="docutils literal notranslate"><span class="pre">2</span></code>，则最多允许同时存在 <code class="docutils literal notranslate"><span class="pre">64</span></code> 个未完成的任务（即 2 个批次）。当达到该限制时，explorer 将暂停提交新任务，直到至少有一个批次完成。这可以防止在 fully_async 模式下过多未完成任务积压导致资源过度占用。</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">over_rollout</span></code>: [实验性] 超量 rollout 机制的配置，允许 explorer 在每个步骤中使用少于完整批次大小的任务继续进行。这在某些任务显著耗时较长的场景中能有效地提高吞吐量。仅当使用动态同步（<code class="docutils literal notranslate"><span class="pre">synchronizer.sync_style</span></code> 不是 <code class="docutils literal notranslate"><span class="pre">fixed</span></code>）时适用。</p>
 <ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">ratio</span></code>: explorer 在每个步骤中仅等待 <code class="docutils literal notranslate"><span class="pre">(1</span> <span class="pre">-</span> <span class="pre">ratio)</span> <span class="pre">*</span> <span class="pre">batch_size</span></code> 的任务。默认为 <code class="docutils literal notranslate"><span class="pre">0.0</span></code>，表示等待所有任务。</p></li>
@@ -1235,8 +1243,9 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">sync_style</span></code>: 同步风格。选项：</p>
 <ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">fixed</span></code>: explorer 和 trainer 每隔 <code class="docutils literal notranslate"><span class="pre">sync_interval</span></code> 步同步一次权重。</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">explorer_driven</span></code>: explorer 在完成 <code class="docutils literal notranslate"><span class="pre">sync_interval</span></code> 步后通知 trainer 同步权重，而不管此时 trainer 已完成多少步。</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">trainer_driven</span></code>: trainer 在完成 <code class="docutils literal notranslate"><span class="pre">sync_interval</span></code> 步后通知 explorer 同步权重，而不管此时 explorer 已完成多少步。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">explorer_driven</span></code>: explorer 在完成 <code class="docutils literal notranslate"><span class="pre">sync_interval</span></code> 步后通知 trainer 同步权重，trainer 在收到通知且进入同步点时进行权重同步。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">trainer_driven</span></code>: trainer 在完成 <code class="docutils literal notranslate"><span class="pre">sync_interval</span></code> 步后通知 explorer 同步权重，explorer 在收到通知且进入同步点时进行权重同步。</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fully_async</span></code>: trainer 在完成 <code class="docutils literal notranslate"><span class="pre">sync_interval</span></code> 步后通知 explorer 同步权重，explorer 在收到通知后立即同步权重，而不等待下一个同步点。</p></li>
 </ul>
 </li>
 </ul>

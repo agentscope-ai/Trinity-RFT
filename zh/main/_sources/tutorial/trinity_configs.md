@@ -346,6 +346,12 @@ buffer:
       storage_type: queue
       path: sqlite:///countdown_buffer.db
       max_read_timeout: 1800
+      replay_buffer:
+        enable: false
+        reuse_cooldown_time: 60
+        priority_fn: linear_decay
+        priority_fn_args:
+          decay: 0.1
 
     auxiliary_buffers:
       sft_dataset:
@@ -420,6 +426,7 @@ explorer:
     tensor_parallel_size: 1
   eval_interval: 100
   eval_on_startup: true
+  max_inflight_batches: 2
   over_rollout:
     ratio: 0.0
     wait_after_min: 30.0
@@ -455,6 +462,7 @@ explorer:
 - `auxiliary_models`: 用于自定义工作流的辅助模型，配置与 `rollout_model` 相同。
 - `eval_interval`: 模型评估的间隔（以 step 为单位）。
 - `eval_on_startup`: 是否在启动时评估模型。更准确地说，是在第 0 步使用原始模型评估，因此中断训练后重启时不会触发该行为。
+- `max_inflight_batches`: 在 fully_async 模式下，允许同时存在的最大未完成批次数。默认为 `2`。例如，在 GRPO 中，如果 `batch_size` 是 `32`，`max_inflight_batches` 是 `2`，则最多允许同时存在 `64` 个未完成的任务（即 2 个批次）。当达到该限制时，explorer 将暂停提交新任务，直到至少有一个批次完成。这可以防止在 fully_async 模式下过多未完成任务积压导致资源过度占用。
 - `over_rollout`: [实验性] 超量 rollout 机制的配置，允许 explorer 在每个步骤中使用少于完整批次大小的任务继续进行。这在某些任务显著耗时较长的场景中能有效地提高吞吐量。仅当使用动态同步（`synchronizer.sync_style` 不是 `fixed`）时适用。
   - `ratio`: explorer 在每个步骤中仅等待 `(1 - ratio) * batch_size` 的任务。默认为 `0.0`，表示等待所有任务。
   - `wait_after_min`: 达到最小任务阈值后，等待此秒数后再继续。
@@ -488,8 +496,9 @@ synchronizer:
 - `sync_timeout`: 同步超时时间。
 - `sync_style`: 同步风格。选项：
   - `fixed`: explorer 和 trainer 每隔 `sync_interval` 步同步一次权重。
-  - `explorer_driven`: explorer 在完成 `sync_interval` 步后通知 trainer 同步权重，而不管此时 trainer 已完成多少步。
-  - `trainer_driven`: trainer 在完成 `sync_interval` 步后通知 explorer 同步权重，而不管此时 explorer 已完成多少步。
+  - `explorer_driven`: explorer 在完成 `sync_interval` 步后通知 trainer 同步权重，trainer 在收到通知且进入同步点时进行权重同步。
+  - `trainer_driven`: trainer 在完成 `sync_interval` 步后通知 explorer 同步权重，explorer 在收到通知且进入同步点时进行权重同步。
+  - `fully_async`: trainer 在完成 `sync_interval` 步后通知 explorer 同步权重，explorer 在收到通知后立即同步权重，而不等待下一个同步点。
 
 ---
 

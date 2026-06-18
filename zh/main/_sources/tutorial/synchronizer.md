@@ -47,8 +47,6 @@ async def train(self) -> str:
                 metrics.update(
                     await self.save_checkpoint(save_as_hf=self.save_hf_checkpoint == "always")
                 )
-            if self.config.trainer.enable_preview:
-                self._log_experiences(repr_samples)
             self.monitor.log(metrics, self.train_step_num)
         except StopAsyncIteration:
             self.logger.info("No more samples to train. Stopping training.")

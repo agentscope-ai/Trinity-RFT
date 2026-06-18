@@ -656,7 +656,7 @@
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.__init__"><code class="docutils literal notranslate"><span class="pre">Synchronizer.__init__()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.add_module"><code class="docutils literal notranslate"><span class="pre">Synchronizer.add_module()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.set_trainer_status"><code class="docutils literal notranslate"><span class="pre">Synchronizer.set_trainer_status()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.trainer_requires_sync"><code class="docutils literal notranslate"><span class="pre">Synchronizer.trainer_requires_sync()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.trainer_requires_weight_sync"><code class="docutils literal notranslate"><span class="pre">Synchronizer.trainer_requires_weight_sync()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.set_explorer_status"><code class="docutils literal notranslate"><span class="pre">Synchronizer.set_explorer_status()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.explorer_requires_sync"><code class="docutils literal notranslate"><span class="pre">Synchronizer.explorer_requires_sync()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.set_model_state_dict"><code class="docutils literal notranslate"><span class="pre">Synchronizer.set_model_state_dict()</span></code></a></li>
@@ -753,9 +753,16 @@ the trainer and one or more explorers in a distributed training setup.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="trinity.manager.synchronizer.Synchronizer.trainer_requires_sync">
-<span class="sig-name descname"><span class="pre">trainer_requires_sync</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/trinity/manager/synchronizer.html#Synchronizer.trainer_requires_sync"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.manager.synchronizer.Synchronizer.trainer_requires_sync" title="Link to this definition">#</a></dt>
-<dd><p>Check if the trainer is require sync.</p>
+<dt class="sig sig-object py" id="trinity.manager.synchronizer.Synchronizer.trainer_requires_weight_sync">
+<span class="sig-name descname"><span class="pre">trainer_requires_weight_sync</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/trinity/manager/synchronizer.html#Synchronizer.trainer_requires_weight_sync"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.manager.synchronizer.Synchronizer.trainer_requires_weight_sync" title="Link to this definition">#</a></dt>
+<dd><p>Non-blocking trainer sync-readiness probe.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>True  – trainer is in REQUIRE_SYNC state (ready for weight transfer).
+False – trainer is RUNNING (not yet requesting a sync).
+None  – trainer has STOPPED; the caller should terminate its watch loop.</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -996,7 +1003,7 @@ Used for <cite>wait_new_model_state_dict</cite>.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.__init__"><code class="docutils literal notranslate"><span class="pre">Synchronizer.__init__()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.add_module"><code class="docutils literal notranslate"><span class="pre">Synchronizer.add_module()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.set_trainer_status"><code class="docutils literal notranslate"><span class="pre">Synchronizer.set_trainer_status()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.trainer_requires_sync"><code class="docutils literal notranslate"><span class="pre">Synchronizer.trainer_requires_sync()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.trainer_requires_weight_sync"><code class="docutils literal notranslate"><span class="pre">Synchronizer.trainer_requires_weight_sync()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.set_explorer_status"><code class="docutils literal notranslate"><span class="pre">Synchronizer.set_explorer_status()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.explorer_requires_sync"><code class="docutils literal notranslate"><span class="pre">Synchronizer.explorer_requires_sync()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.manager.synchronizer.Synchronizer.set_model_state_dict"><code class="docutils literal notranslate"><span class="pre">Synchronizer.set_model_state_dict()</span></code></a></li>
