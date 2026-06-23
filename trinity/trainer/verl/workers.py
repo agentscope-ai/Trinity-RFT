@@ -67,8 +67,12 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
         - Fused kernels VLM SP bugfix (patch_fused_kernels)
         - Flops counter registration for qwen3_5
         """
+        import verl.workers.engine.fsdp.transformer_impl as fsdp_impl
+
         from trinity.trainer.verl.monkey_patch import patch_verl_engine
         from trinity.trainer.verl_legacy.monkey_patch import apply_monkey_patch
+
+        fsdp_impl.apply_monkey_patch = apply_monkey_patch
 
         # Patch veRL engine for LoRA + FSDP2 dtype alignment.
         # veRL's _build_lora_module does not align trainable param dtypes
@@ -88,24 +92,6 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
         # Apply Trinity-specific patches on top of what veRL already did
         if self.actor is not None and hasattr(self.actor, "engine"):
             patch_verl_engine(self.actor.engine)
-            model = getattr(self.actor.engine, "model", None)
-            if model is not None:
-                ulysses_sp_size = self.config.actor.get("ulysses_sequence_parallel_size", 1)
-                use_remove_padding = self.config.model.get("use_remove_padding", False)
-                use_fused_kernels = self.config.model.get("use_fused_kernels", False)
-                fused_kernel_options = self.config.model.get("fused_kernel_options", None)
-                fused_kernels_backend = (
-                    fused_kernel_options.get("impl_backend", None)
-                    if fused_kernel_options is not None
-                    else None
-                )
-                apply_monkey_patch(
-                    model=model,
-                    ulysses_sp_size=ulysses_sp_size,
-                    use_remove_padding=use_remove_padding,
-                    use_fused_kernels=use_fused_kernels,
-                    fused_kernels_backend=fused_kernels_backend,
-                )
 
         self._cache_state_dict_meta()
 

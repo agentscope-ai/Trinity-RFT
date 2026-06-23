@@ -269,9 +269,13 @@ class DataParallelPPOActor(DPActor):
                 )  # ((total_nnz / sp) + pad)
 
                 # only pass input_ids and position_ids to enable flash_attn_varlen
+                max_seq_len = cu_seqlens.diff().max()
                 extra_args = {
                     "seq_idx": seq_idx.unsqueeze(0).to(torch.int32),
-                    "cu_seqlens": cu_seqlens,
+                    "cu_seq_lens_q": cu_seqlens,
+                    "cu_seq_lens_k": cu_seqlens,
+                    "max_length_q": max_seq_len,
+                    "max_length_k": max_seq_len,
                 }
                 if self.use_fused_kernels:
                     extra_args["temperature"] = temperature
