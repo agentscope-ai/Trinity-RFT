@@ -5,6 +5,7 @@ import torch
 import verl.utils.torch_functional as verl_F
 from tensordict import TensorDict
 from verl.utils import tensordict_utils as tu
+from verl.utils.attention_utils import index_first_axis, unpad_input
 from verl.utils.dataset.dataset_utils import DatasetPadMode
 from verl.utils.model import extract_multi_modal_inputs
 from verl.utils.ulysses import ulysses_pad, ulysses_pad_and_slice_inputs
@@ -15,6 +16,100 @@ from verl.workers.engine.fsdp.transformer_impl import (
     offload_fsdp_model_to_cpu,
 )
 from verl.workers.utils.padding import build_attention_mask_from_nested
+
+
+# from https://github.com/verl-project/verl/pull/5886
+# Remove this patch once the fix is released in veRL
+def left_right_2_no_padding(data: TensorDict) -> TensorDict:
+    """
+    Convert TensorDict from left-right padding to no-padding format.
+
+    Args:
+        data: TensorDict with "input_ids", "attention_mask", "response_mask", "position_ids"
+
+    Returns:
+        data: TensorDict with
+        - Tensor includes NestedTensors like "input_ids", "loss_mask", "position_ids"
+        - NonTensorData includes "max_seq_len", "max_response_len", "indices"
+
+    Note:
+    1. the return input_ids/position_ids/loss_mask are nested tensor.
+    2. we will remove "attention_mask", "response" in the return data, but "response_mask" is kept.
+    """
+    assert "input_ids" in data, "input_ids is required in left-right padding data"
+    assert "attention_mask" in data, "attention_mask is required in left-right padding data"
+    assert "response_mask" in data, "response_mask is required in left-right padding data"
+    assert "position_ids" in data, "position_ids is required in left-right padding data"
+
+    input_ids = data.pop("input_ids")
+    attention_mask = data["attention_mask"]
+    response_mask = data["response_mask"]
+    position_ids = data["position_ids"]  # (bs, seq_len) or # (bs, 4, seq_len)
+
+    max_seq_len, max_response_len = input_ids.shape[1], response_mask.shape[1]
+    tu.assign_non_tensor_data(data, "max_seq_len", max_seq_len)
+    tu.assign_non_tensor_data(data, "max_response_len", max_response_len)
+
+    input_ids_rmpad, indices, cu_seqlens, *_ = unpad_input(input_ids.unsqueeze(-1), attention_mask)
+    tu.assign_non_tensor_data(data, "indices", indices)
+
+    input_ids_nested = torch.nested.nested_tensor_from_jagged(
+        input_ids_rmpad.squeeze(-1), offsets=cu_seqlens
+    )
+
+    position_ids_list = []
+    num_pos_components = (
+        0  # 0 means 1D position_ids, >0 means multi-component (e.g. 4 for Qwen3.5/Qwen2-VL)
+    )
+    for i in range(attention_mask.shape[0]):
+        curr_mask = attention_mask[i].bool()
+        curr_pos_ids = position_ids[i]
+        if curr_pos_ids.dim() == 1:  # (seq_len,)
+            valid_ids = curr_pos_ids[curr_mask]
+        else:  # (num_components, seq_len) — flatten to 1D for nested tensor compatibility
+            # 3D jagged nested tensors have broken unbind() and to_padded_tensor() in PyTorch
+            # (see pytorch/pytorch#153238), so we flatten to 1D and reshape back in prepare_model_inputs
+            num_pos_components = curr_pos_ids.shape[0]
+            valid_ids = (
+                curr_pos_ids[:, curr_mask].T.contiguous().flatten()
+            )  # (valid_len * num_components,)
+        position_ids_list.append(valid_ids)
+    position_ids_nested = torch.nested.as_nested_tensor(position_ids_list, layout=torch.jagged)
+    if num_pos_components > 0:
+        tu.assign_non_tensor_data(data, "num_pos_components", num_pos_components)
+
+    data["input_ids"] = input_ids_nested
+    data["position_ids"] = position_ids_nested
+    data["loss_mask"] = data["response_mask"]
+
+    routed_experts = data.get("routed_experts", None)
+    if routed_experts is not None and not routed_experts.is_nested:
+        if routed_experts.max() <= 255:
+            routed_experts = routed_experts.to(torch.uint8)
+        routed_experts_rmpad = index_first_axis(routed_experts.unsqueeze(-1).flatten(0, 1), indices)
+        routed_experts_nested = torch.nested.nested_tensor_from_jagged(
+            routed_experts_rmpad.squeeze(-1), offsets=cu_seqlens
+        )
+        data["routed_experts"] = routed_experts_nested
+
+    # (bsz, seqlen, topk)
+    teacher_logprobs = data.get("teacher_logprobs", None)
+    teacher_ids = data.get("teacher_ids", None)
+    if teacher_logprobs is not None and teacher_ids is not None:
+        teacher_logprobs_rmpad = index_first_axis(
+            teacher_logprobs.unsqueeze(-1).flatten(0, 1), indices
+        )
+        teacher_ids_rmpad = index_first_axis(teacher_ids.unsqueeze(-1).flatten(0, 1), indices)
+        teacher_logprobs_nested = torch.nested.nested_tensor_from_jagged(
+            teacher_logprobs_rmpad.squeeze(-1), offsets=cu_seqlens
+        )
+        teacher_ids_nested = torch.nested.nested_tensor_from_jagged(
+            teacher_ids_rmpad.squeeze(-1), offsets=cu_seqlens
+        )
+        data["teacher_logprobs"] = teacher_logprobs_nested
+        data["teacher_ids"] = teacher_ids_nested
+
+    return data
 
 
 # from https://github.com/verl-project/verl/pull/6604
@@ -131,8 +226,16 @@ def prepare_model_inputs(self, micro_batch: TensorDict):
 
         if pad_mode == DatasetPadMode.NO_PADDING:
             input_ids_rmpad = input_ids.values().unsqueeze(0)  # (1, total_nnz)
-            if position_ids.dim() == 3:
-                position_ids_rmpad = position_ids.values().unsqueeze(1)  # (4, 1, total_nnz)
+            # https://github.com/verl-project/verl/pull/5886
+            num_pos_components = tu.get_non_tensor_data(
+                data=micro_batch, key="num_pos_components", default=0
+            )
+            if num_pos_components > 0:
+                # position_ids stored as flattened 1D nested tensor: (total_nnz * num_components,)
+                # reshape to (num_components, 1, total_nnz)
+                flat_pos = position_ids.values()  # (total_nnz * num_components,)
+                total_nnz = flat_pos.shape[0] // num_pos_components
+                position_ids_rmpad = flat_pos.view(total_nnz, num_pos_components).T.unsqueeze(1)
             else:
                 position_ids_rmpad = position_ids.values().unsqueeze(0)  # (1, total_nnz)
         else:
@@ -228,12 +331,22 @@ def prepare_model_inputs(self, micro_batch: TensorDict):
             input_ids = torch.nested.to_padded_tensor(
                 input_ids, padding=pad_token_id, output_size=(batch_size, max_seq_len)
             )
-
-            if position_ids.dim() == 3:
-                # (4, batch_size, max_seq_len)
-                position_ids = torch.nested.to_padded_tensor(
-                    position_ids, padding=0, output_size=(batch_size, 4, max_seq_len)
-                ).transpose(0, 1)
+            # https://github.com/verl-project/verl/pull/5886
+            num_pos_components = tu.get_non_tensor_data(
+                data=micro_batch, key="num_pos_components", default=0
+            )
+            if num_pos_components > 0:
+                # position_ids stored as flattened 1D nested: each sample has (seq_len * num_components,)
+                # pad to (batch, max_seq_len * num_components), then reshape to (num_components, batch, max_seq_len)
+                position_ids = (
+                    torch.nested.to_padded_tensor(
+                        position_ids,
+                        padding=0,
+                        output_size=(batch_size, max_seq_len * num_pos_components),
+                    )
+                    .view(batch_size, max_seq_len, num_pos_components)
+                    .permute(2, 0, 1)
+                )
             else:
                 position_ids = torch.nested.to_padded_tensor(
                     position_ids, padding=0, output_size=(batch_size, max_seq_len)

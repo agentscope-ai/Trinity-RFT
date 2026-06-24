@@ -52,7 +52,7 @@ from verl.utils.seqlen_balancing import (
 from verl.workers.config.model import HFModelConfig
 from verl.workers.engine_workers import TrainingWorker, TrainingWorkerConfig
 from verl.workers.utils.losses import value_loss
-from verl.workers.utils.padding import left_right_2_no_padding, no_padding_2_padding
+from verl.workers.utils.padding import no_padding_2_padding
 
 from trinity.algorithm import ADVANTAGE_FN, ALGORITHM_TYPE, KL_FN
 from trinity.algorithm.utils import prefix_metrics
@@ -62,6 +62,7 @@ from trinity.common.experience import Experience
 from trinity.trainer.trainer import TrainEngineWrapper
 from trinity.trainer.verl.checkpoint import CheckpointCoordinator
 from trinity.trainer.verl.config import build_verl_config
+from trinity.trainer.verl.monkey_patch import left_right_2_no_padding
 from trinity.trainer.verl.utils import compute_data_metrics, to_data_proto
 from trinity.trainer.verl.workers import TrinityActorRolloutRefWorker
 from trinity.utils.log import get_logger

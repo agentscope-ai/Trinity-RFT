@@ -15,7 +15,7 @@ from transformers.models.qwen3_5.modeling_qwen3_5 import (
     Unpack,
     can_return_tuple,
 )
-from verl.utils.ulysses import all_gather_tensor
+from verl.utils.ulysses import all_gather_tensor, slice_input_tensor
 
 
 class Slice(torch.autograd.Function):
@@ -117,14 +117,7 @@ def ulysses_gate_delta_net_decorator(net, ulysses_sp_size):
         # in apply_mask_to_padding_states.
         attention_mask = kwargs.get("attention_mask", None)
         if attention_mask is not None:
-            hidden_states = kwargs.get("hidden_states", None) or args[0]
-            sp_seq_len = hidden_states.shape[1]
-            if attention_mask.dim() == 2:
-                # (batch, seq_len) → slice dim 1
-                kwargs["attention_mask"] = attention_mask[:, :sp_seq_len]
-            elif attention_mask.dim() == 4:
-                # (batch, 1, seq_len, seq_len) → slice dims 2 and 3
-                kwargs["attention_mask"] = attention_mask[:, :, :sp_seq_len, :sp_seq_len]
+            attention_mask = slice_input_tensor(attention_mask, dim=1, padding=True)
 
         output = original_net_forward(*args, **kwargs)
         _in_gate_delta_net_with_sp = False
