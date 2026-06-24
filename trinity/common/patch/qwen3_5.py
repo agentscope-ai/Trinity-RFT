@@ -117,7 +117,7 @@ def ulysses_gate_delta_net_decorator(net, ulysses_sp_size):
         # in apply_mask_to_padding_states.
         attention_mask = kwargs.get("attention_mask", None)
         if attention_mask is not None:
-            attention_mask = slice_input_tensor(attention_mask, dim=1, padding=True)
+            kwargs["attention_mask"] = slice_input_tensor(attention_mask, dim=1, padding=True)
 
         output = original_net_forward(*args, **kwargs)
         _in_gate_delta_net_with_sp = False
