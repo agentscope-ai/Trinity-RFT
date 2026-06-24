@@ -646,7 +646,10 @@
             </div>
             <nav aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.monkey_patch.left_right_2_no_padding"><code class="docutils literal notranslate"><span class="pre">left_right_2_no_padding()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.monkey_patch.save_checkpoint"><code class="docutils literal notranslate"><span class="pre">save_checkpoint()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.monkey_patch.get_seq_idx"><code class="docutils literal notranslate"><span class="pre">get_seq_idx()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.monkey_patch.prepare_model_inputs"><code class="docutils literal notranslate"><span class="pre">prepare_model_inputs()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.monkey_patch.patch_verl_engine"><code class="docutils literal notranslate"><span class="pre">patch_verl_engine()</span></code></a></li>
 </ul>
             </nav>
@@ -662,9 +665,61 @@
   <section id="module-trinity.trainer.verl.monkey_patch">
 <span id="trinity-trainer-verl-monkey-patch-module"></span><h1>trinity.trainer.verl.monkey_patch module<a class="headerlink" href="#module-trinity.trainer.verl.monkey_patch" title="Link to this heading">#</a></h1>
 <dl class="py function">
+<dt class="sig sig-object py" id="trinity.trainer.verl.monkey_patch.left_right_2_no_padding">
+<span class="sig-prename descclassname"><span class="pre">trinity.trainer.verl.monkey_patch.</span></span><span class="sig-name descname"><span class="pre">left_right_2_no_padding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TensorDict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">TensorDict</span></span></span><a class="reference internal" href="../_modules/trinity/trainer/verl/monkey_patch.html#left_right_2_no_padding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.trainer.verl.monkey_patch.left_right_2_no_padding" title="Link to this definition">#</a></dt>
+<dd><p>Convert TensorDict from left-right padding to no-padding format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>data</strong> – TensorDict with “input_ids”, “attention_mask”, “response_mask”, “position_ids”</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>TensorDict with
+- Tensor includes NestedTensors like “input_ids”, “loss_mask”, “position_ids”
+- NonTensorData includes “max_seq_len”, “max_response_len”, “indices”</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>data</p>
+</dd>
+</dl>
+<p>Note:
+1. the return input_ids/position_ids/loss_mask are nested tensor.
+2. we will remove “attention_mask”, “response” in the return data, but “response_mask” is kept.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="trinity.trainer.verl.monkey_patch.save_checkpoint">
 <span class="sig-prename descclassname"><span class="pre">trinity.trainer.verl.monkey_patch.</span></span><span class="sig-name descname"><span class="pre">save_checkpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hdfs_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">global_step</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_ckpt_to_keep</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/trinity/trainer/verl/monkey_patch.html#save_checkpoint"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.trainer.verl.monkey_patch.save_checkpoint" title="Link to this definition">#</a></dt>
 <dd><p>Save FSDP checkpoint, handling parameter offload as needed.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="trinity.trainer.verl.monkey_patch.get_seq_idx">
+<span class="sig-prename descclassname"><span class="pre">trinity.trainer.verl.monkey_patch.</span></span><span class="sig-name descname"><span class="pre">get_seq_idx</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cu_seqlens</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_nnz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tensor</span></span></span><a class="reference internal" href="../_modules/trinity/trainer/verl/monkey_patch.html#get_seq_idx"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.trainer.verl.monkey_patch.get_seq_idx" title="Link to this definition">#</a></dt>
+<dd><p>Build <code class="docutils literal notranslate"><span class="pre">seq_idx</span></code> from <code class="docutils literal notranslate"><span class="pre">cu_seqlens</span></code>, mapping each packed position to its
+original sequence id.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cu_seqlens</strong> – Shape <code class="docutils literal notranslate"><span class="pre">(batch</span> <span class="pre">+</span> <span class="pre">1,)</span></code>. Cumulative sequence lengths.</p></li>
+<li><p><strong>total_nnz</strong> – Total number of packed tokens, i.e. <code class="docutils literal notranslate"><span class="pre">cu_seqlens[-1]</span></code>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Shape <code class="docutils literal notranslate"><span class="pre">(total_nnz,)</span></code>, where each position is the original sequence id
+(0-indexed). For example, cu_seqlens=[0,3,7,10] -&gt; [0,0,0,1,1,1,1,2,2,2].</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="trinity.trainer.verl.monkey_patch.prepare_model_inputs">
+<span class="sig-prename descclassname"><span class="pre">trinity.trainer.verl.monkey_patch.</span></span><span class="sig-name descname"><span class="pre">prepare_model_inputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">micro_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">TensorDict</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/trainer/verl/monkey_patch.html#prepare_model_inputs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.trainer.verl.monkey_patch.prepare_model_inputs" title="Link to this definition">#</a></dt>
+<dd><p>Rewritten <code class="docutils literal notranslate"><span class="pre">FSDPEngineWithLMHead.prepare_model_inputs</span></code> that injects
+<code class="docutils literal notranslate"><span class="pre">seq_idx</span></code> and <code class="docutils literal notranslate"><span class="pre">cu_seqlens</span></code> into model_inputs for packed-sequence
+models (e.g. Qwen3.5 GateDeltaNet).</p>
+<p>This is a full rewrite (not a wrapper) so that the Ulysses SP pad_size
+adjustment on <code class="docutils literal notranslate"><span class="pre">seq_idx</span></code> / <code class="docutils literal notranslate"><span class="pre">cu_seqlens</span></code> is handled inline, right after
+<code class="docutils literal notranslate"><span class="pre">ulysses_pad_and_slice_inputs</span></code> returns <code class="docutils literal notranslate"><span class="pre">pad_size</span></code>.</p>
 </dd></dl>
 
 <dl class="py function">
@@ -721,7 +776,10 @@
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.monkey_patch.left_right_2_no_padding"><code class="docutils literal notranslate"><span class="pre">left_right_2_no_padding()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.monkey_patch.save_checkpoint"><code class="docutils literal notranslate"><span class="pre">save_checkpoint()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.monkey_patch.get_seq_idx"><code class="docutils literal notranslate"><span class="pre">get_seq_idx()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.monkey_patch.prepare_model_inputs"><code class="docutils literal notranslate"><span class="pre">prepare_model_inputs()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.trainer.verl.monkey_patch.patch_verl_engine"><code class="docutils literal notranslate"><span class="pre">patch_verl_engine()</span></code></a></li>
 </ul>
   </nav></div>
