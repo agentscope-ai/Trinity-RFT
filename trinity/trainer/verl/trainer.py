@@ -50,7 +50,7 @@ from verl.utils.seqlen_balancing import (
     log_seqlen_unbalance,
 )
 from verl.workers.config.model import HFModelConfig
-from verl.workers.engine_workers import TrainingWorker, TrainingWorkerConfig
+from verl.workers.engine_workers import TrainingWorkerConfig
 from verl.workers.utils.losses import value_loss
 from verl.workers.utils.padding import no_padding_2_padding
 
@@ -64,7 +64,10 @@ from trinity.trainer.verl.checkpoint import CheckpointCoordinator
 from trinity.trainer.verl.config import build_verl_config
 from trinity.trainer.verl.monkey_patch import left_right_2_no_padding
 from trinity.trainer.verl.utils import compute_data_metrics, to_data_proto
-from trinity.trainer.verl.workers import TrinityActorRolloutRefWorker
+from trinity.trainer.verl.workers import (
+    TrinityActorRolloutRefWorker,
+    TrinityCriticWorker,
+)
 from trinity.utils.log import get_logger
 
 
@@ -259,7 +262,7 @@ class VERLTrainer(TrainEngineWrapper):
 
         # Add Critic
         if self.algorithm.use_critic:
-            self.role_worker_mapping[Role.Critic] = ray.remote(TrainingWorker)  # type: ignore
+            self.role_worker_mapping[Role.Critic] = ray.remote(TrinityCriticWorker)  # type: ignore
             self.mapping[Role.Critic] = self.GLOBAL_POOL_ID
 
         # TODO: use a global resource manager for both explorer and trainer
@@ -328,7 +331,7 @@ class VERLTrainer(TrainEngineWrapper):
         )
         self.resource_pool_to_cls[actor_rollout_resource_pool][str(actor_role)] = actor_rollout_cls
 
-        # Critic (engine-based TrainingWorker)
+        # Critic (engine-based TrinityCriticWorker)
         if self.use_critic:
             resource_pool = self.resource_pool_manager.get_resource_pool(Role.Critic)
 

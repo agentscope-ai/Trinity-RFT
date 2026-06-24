@@ -22,7 +22,11 @@ import torch
 from omegaconf import DictConfig
 from verl.single_controller.base.decorator import Dispatch, register
 from verl.utils.memory_utils import aggressive_empty_cache
-from verl.workers.engine_workers import ActorRolloutRefWorker
+from verl.workers.engine_workers import (
+    ActorRolloutRefWorker,
+    TrainingWorker,
+    TrainingWorkerConfig,
+)
 
 from trinity.common.config import AlgorithmConfig
 from trinity.manager.synchronizer import Synchronizer
@@ -92,6 +96,8 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
         # Apply Trinity-specific patches on top of what veRL already did
         if self.actor is not None and hasattr(self.actor, "engine"):
             patch_verl_engine(self.actor.engine)
+        if self.ref is not None and hasattr(self.ref, "engine"):
+            patch_verl_engine(self.ref.engine)
 
         self._cache_state_dict_meta()
 
@@ -485,3 +491,11 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
             )
         else:
             raise ValueError(f"Unsupported strategy for upload_state_dict: {strategy}")
+
+
+class TrinityCriticWorker(TrainingWorker):
+    def __init__(self, config: TrainingWorkerConfig):
+        super().__init__(config)
+        from trinity.trainer.verl.monkey_patch import patch_verl_engine
+
+        patch_verl_engine(self.engine)

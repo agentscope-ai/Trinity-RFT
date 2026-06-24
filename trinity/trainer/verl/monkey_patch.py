@@ -71,8 +71,8 @@ def left_right_2_no_padding(data: TensorDict) -> TensorDict:
             # (see pytorch/pytorch#153238), so we flatten to 1D and reshape back in prepare_model_inputs
             num_pos_components = curr_pos_ids.shape[0]
             valid_ids = (
-                curr_pos_ids[:, curr_mask].T.contiguous().flatten()
-            )  # (valid_len * num_components,)
+                curr_pos_ids[:, curr_mask].contiguous().flatten()
+            )  # (num_components * valid_len,)
         position_ids_list.append(valid_ids)
     position_ids_nested = torch.nested.as_nested_tensor(position_ids_list, layout=torch.jagged)
     if num_pos_components > 0:
@@ -231,11 +231,10 @@ def prepare_model_inputs(self, micro_batch: TensorDict):
                 data=micro_batch, key="num_pos_components", default=0
             )
             if num_pos_components > 0:
-                # position_ids stored as flattened 1D nested tensor: (total_nnz * num_components,)
+                # position_ids stored as flattened 1D nested tensor: (num_components * total_nnz,)
                 # reshape to (num_components, 1, total_nnz)
-                flat_pos = position_ids.values()  # (total_nnz * num_components,)
-                total_nnz = flat_pos.shape[0] // num_pos_components
-                position_ids_rmpad = flat_pos.view(total_nnz, num_pos_components).T.unsqueeze(1)
+                flat_pos = position_ids.values()  # (num_components * total_nnz,)
+                position_ids_rmpad = flat_pos.view(num_pos_components, -1).unsqueeze(1)
             else:
                 position_ids_rmpad = position_ids.values().unsqueeze(0)  # (1, total_nnz)
         else:
@@ -336,16 +335,16 @@ def prepare_model_inputs(self, micro_batch: TensorDict):
                 data=micro_batch, key="num_pos_components", default=0
             )
             if num_pos_components > 0:
-                # position_ids stored as flattened 1D nested: each sample has (seq_len * num_components,)
-                # pad to (batch, max_seq_len * num_components), then reshape to (num_components, batch, max_seq_len)
+                # position_ids stored as flattened 1D nested: each sample has (num_components * seq_len,)
+                # pad to (batch, num_components * max_seq_len), then reshape to (num_components, batch, max_seq_len)
                 position_ids = (
                     torch.nested.to_padded_tensor(
                         position_ids,
                         padding=0,
-                        output_size=(batch_size, max_seq_len * num_pos_components),
+                        output_size=(batch_size, num_pos_components * max_seq_len),
                     )
-                    .view(batch_size, max_seq_len, num_pos_components)
-                    .permute(2, 0, 1)
+                    .view(batch_size, num_pos_components, max_seq_len)
+                    .permute(1, 0, 2)
                 )
             else:
                 position_ids = torch.nested.to_padded_tensor(
