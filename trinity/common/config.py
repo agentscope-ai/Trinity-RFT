@@ -857,6 +857,11 @@ class MonitorConfig:
     # whether to enable ray timeline profile
     # the output file will be saved to `cache_dir/timeline.json`
     enable_ray_timeline: bool = False
+    # whether to merge explorer & trainer into one shared run (both mode, wandb only;
+    # validator downgrades to False for backends that don't support it)
+    shared_run: bool = False
+    # ! DO NOT SET, the primary run id the launcher injects for actors to join
+    run_id: Optional[str] = None
     # ! DO NOT SET, automatically generated as checkpoint_job_dir/monitor
     cache_dir: str = ""
 
