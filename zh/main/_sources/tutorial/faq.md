@@ -218,7 +218,25 @@ for exp in exp_list:
 
 1. **推荐方式**：使用 `trinity convert` 命令将原始检查点转换为标准的 Hugging Face 格式。
    转换后，你就可以像加载普通 Hugging Face 模型一样直接使用它。
-   详细操作请参考教程：[可选：将检查点转换为 Hugging Face 格式](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/example_reasoning_basic.html#hugging-face)
+
+   转换单个检查点（指向某个 `global_step_*` 目录或其子目录均可）：
+
+   ```bash
+   trinity convert -c /path/to/checkpoint_root/project/name/global_step_100
+   ```
+
+   批量转换指定 step 的检查点（支持逗号分隔多个 step）：
+
+   ```bash
+   trinity convert -c /path/to/checkpoint_root/project/name -s 100,200,300
+   ```
+
+   如果某些 step 的目录不存在或转换失败，命令会跳过并继续处理其余 step，最后输出成功/失败的汇总报告。
+
+   > **特殊情况**：如果 `global_step_*/actor/huggingface/` 目录下缺少 `config.json`（通常是因为训练时未完整保存配置），需要使用 `--base-model-dir` 指定原始基础模型的路径：
+   > ```bash
+   > trinity convert -c /path/to/checkpoint_root/project/name -b /path/to/your/base/model
+   > ```
 
 2. **直接加载（适用于 FSDP 训练的 actor 检查点）**：
    如果你希望不转换格式而直接加载，可以使用以下代码示例：

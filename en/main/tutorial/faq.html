@@ -846,10 +846,25 @@ trinity<span class="w"> </span>run<span class="w"> </span>--config<span class="w
 <hr class="docutils" />
 <p><strong>Q:</strong> How to load the checkpoints outside of the Trinity-RFT framework?</p>
 <p><strong>A:</strong> Currently, two loading methods are supported:</p>
-<ol class="arabic simple">
+<ol class="arabic">
 <li><p><strong>Recommended approach</strong>: Use the <code class="docutils literal notranslate"><span class="pre">trinity</span> <span class="pre">convert</span></code> command to convert the original checkpoint into the standard Hugging Face format.
-After conversion, you can load and use it directly just like any ordinary Hugging Face model.
-For detailed instructions, please refer to the tutorial: <a class="reference external" href="https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/example_reasoning_basic.html#optional-convert-checkpoints-to-hugging-face-format">Optional: Converting Checkpoints to Hugging Face Format</a></p></li>
+After conversion, you can load and use it directly just like any ordinary Hugging Face model.</p>
+<p>Convert a single checkpoint (pointing at a <code class="docutils literal notranslate"><span class="pre">global_step_*</span></code> directory or any of its subdirectories):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>trinity<span class="w"> </span>convert<span class="w"> </span>-c<span class="w"> </span>/path/to/checkpoint_root/project/name/global_step_100
+</pre></div>
+</div>
+<p>Batch-convert specific steps (comma-separated step numbers):</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>trinity<span class="w"> </span>convert<span class="w"> </span>-c<span class="w"> </span>/path/to/checkpoint_root/project/name<span class="w"> </span>-s<span class="w"> </span><span class="m">100</span>,200,300
+</pre></div>
+</div>
+<p>If a step directory does not exist or conversion fails, the command will skip it and continue with the remaining steps, then print a summary report of successes and failures.</p>
+<blockquote>
+<div><p><strong>Special case</strong>: If <code class="docutils literal notranslate"><span class="pre">config.json</span></code> is missing from <code class="docutils literal notranslate"><span class="pre">global_step_*/actor/huggingface/</span></code> (typically because the configuration wasn’t fully saved during training), use <code class="docutils literal notranslate"><span class="pre">--base-model-dir</span></code> to specify the path to your base model:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>trinity<span class="w"> </span>convert<span class="w"> </span>-c<span class="w"> </span>/path/to/checkpoint_root/project/name<span class="w"> </span>-b<span class="w"> </span>/path/to/your/base/model
+</pre></div>
+</div>
+</div></blockquote>
+</li>
 <li><p><strong>Direct loading (for actor checkpoints trained with FSDP)</strong>:
 If you prefer to load the checkpoint directly without converting its format, you can use the following code example:</p></li>
 </ol>

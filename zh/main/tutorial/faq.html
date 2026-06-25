@@ -842,10 +842,25 @@ trinity<span class="w"> </span>run<span class="w"> </span>--config<span class="w
 <hr class="docutils" />
 <p><strong>Q:</strong> 如何在 Trinity-RFT 框架外加载 checkpoints？</p>
 <p><strong>A:</strong> 目前支持两种加载方式：</p>
-<ol class="arabic simple">
+<ol class="arabic">
 <li><p><strong>推荐方式</strong>：使用 <code class="docutils literal notranslate"><span class="pre">trinity</span> <span class="pre">convert</span></code> 命令将原始检查点转换为标准的 Hugging Face 格式。
-转换后，你就可以像加载普通 Hugging Face 模型一样直接使用它。
-详细操作请参考教程：<a class="reference external" href="https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/example_reasoning_basic.html#hugging-face">可选：将检查点转换为 Hugging Face 格式</a></p></li>
+转换后，你就可以像加载普通 Hugging Face 模型一样直接使用它。</p>
+<p>转换单个检查点（指向某个 <code class="docutils literal notranslate"><span class="pre">global_step_*</span></code> 目录或其子目录均可）：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>trinity<span class="w"> </span>convert<span class="w"> </span>-c<span class="w"> </span>/path/to/checkpoint_root/project/name/global_step_100
+</pre></div>
+</div>
+<p>批量转换指定 step 的检查点（支持逗号分隔多个 step）：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>trinity<span class="w"> </span>convert<span class="w"> </span>-c<span class="w"> </span>/path/to/checkpoint_root/project/name<span class="w"> </span>-s<span class="w"> </span><span class="m">100</span>,200,300
+</pre></div>
+</div>
+<p>如果某些 step 的目录不存在或转换失败，命令会跳过并继续处理其余 step，最后输出成功/失败的汇总报告。</p>
+<blockquote>
+<div><p><strong>特殊情况</strong>：如果 <code class="docutils literal notranslate"><span class="pre">global_step_*/actor/huggingface/</span></code> 目录下缺少 <code class="docutils literal notranslate"><span class="pre">config.json</span></code>（通常是因为训练时未完整保存配置），需要使用 <code class="docutils literal notranslate"><span class="pre">--base-model-dir</span></code> 指定原始基础模型的路径：</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>trinity<span class="w"> </span>convert<span class="w"> </span>-c<span class="w"> </span>/path/to/checkpoint_root/project/name<span class="w"> </span>-b<span class="w"> </span>/path/to/your/base/model
+</pre></div>
+</div>
+</div></blockquote>
+</li>
 <li><p><strong>直接加载（适用于 FSDP 训练的 actor 检查点）</strong>：
 如果你希望不转换格式而直接加载，可以使用以下代码示例：</p></li>
 </ol>

@@ -224,7 +224,25 @@ for exp in exp_list:
 
 1. **Recommended approach**: Use the `trinity convert` command to convert the original checkpoint into the standard Hugging Face format.
    After conversion, you can load and use it directly just like any ordinary Hugging Face model.
-   For detailed instructions, please refer to the tutorial: [Optional: Converting Checkpoints to Hugging Face Format](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/example_reasoning_basic.html#optional-convert-checkpoints-to-hugging-face-format)
+
+   Convert a single checkpoint (pointing at a `global_step_*` directory or any of its subdirectories):
+
+   ```bash
+   trinity convert -c /path/to/checkpoint_root/project/name/global_step_100
+   ```
+
+   Batch-convert specific steps (comma-separated step numbers):
+
+   ```bash
+   trinity convert -c /path/to/checkpoint_root/project/name -s 100,200,300
+   ```
+
+   If a step directory does not exist or conversion fails, the command will skip it and continue with the remaining steps, then print a summary report of successes and failures.
+
+   > **Special case**: If `config.json` is missing from `global_step_*/actor/huggingface/` (typically because the configuration wasn't fully saved during training), use `--base-model-dir` to specify the path to your base model:
+   > ```bash
+   > trinity convert -c /path/to/checkpoint_root/project/name -b /path/to/your/base/model
+   > ```
 
 2. **Direct loading (for actor checkpoints trained with FSDP)**:
    If you prefer to load the checkpoint directly without converting its format, you can use the following code example:
