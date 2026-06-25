@@ -21,6 +21,7 @@ Submodules
    trinity.common.config
    trinity.common.config_validator
    trinity.common.constants
+   trinity.common.dataclass_utils
    trinity.common.experience
    trinity.common.experience_visualizer
 

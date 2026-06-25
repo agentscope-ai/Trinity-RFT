@@ -1019,7 +1019,6 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">ray</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">omegaconf</span><span class="w"> </span><span class="kn">import</span> <span class="n">OmegaConf</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.config</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">Config</span><span class="p">,</span>
@@ -1028,6 +1027,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">set_if_none</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">StorageType</span><span class="p">,</span> <span class="n">SyncMethod</span><span class="p">,</span> <span class="n">SyncStyle</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.dataclass_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_dataclass_from_mapping</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.patch</span><span class="w"> </span><span class="kn">import</span> <span class="n">kimi_vl_monkey_patch_decorator</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.lora_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_dummy_lora</span>
@@ -1951,8 +1951,6 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Raises:</span>
 <span class="sd">            AssertionError: If synchronization interval is not positive.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">sync_interval</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;`sync_interval` must be positive.&quot;</span>
-
         <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">!=</span> <span class="s2">&quot;bench&quot;</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">algorithm_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;dpo&quot;</span><span class="p">,</span> <span class="s2">&quot;sft&quot;</span><span class="p">}:</span>  <span class="c1"># TODO</span>
             <span class="c1"># check eval_interval</span>
             <span class="n">explorer_sync_interval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">explorer_sync_interval</span>
@@ -2375,11 +2373,9 @@ window.runMermaid = runMermaid;</script>
                 <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">trainer_config</span><span class="p">:</span>
                     <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.trainer.verl_legacy.verl_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">veRLConfig</span>
 
-                    <span class="n">trainer_config_schema</span> <span class="o">=</span> <span class="n">OmegaConf</span><span class="o">.</span><span class="n">structured</span><span class="p">(</span><span class="n">veRLConfig</span><span class="p">)</span>
-                    <span class="n">trainer_config</span> <span class="o">=</span> <span class="n">OmegaConf</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span>
-                        <span class="n">trainer_config_schema</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">trainer_config</span>
+                    <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">trainer_config</span> <span class="o">=</span> <span class="n">build_dataclass_from_mapping</span><span class="p">(</span>
+                        <span class="n">veRLConfig</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">trainer_config</span>
                     <span class="p">)</span>
-                    <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">trainer_config</span> <span class="o">=</span> <span class="n">OmegaConf</span><span class="o">.</span><span class="n">to_object</span><span class="p">(</span><span class="n">trainer_config</span><span class="p">)</span>
                 <span class="k">elif</span> <span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">trainer_config_path</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
                         <span class="s2">&quot;`trainer_config_path` is deprecated; please use `trainer_config` instead.&quot;</span>
