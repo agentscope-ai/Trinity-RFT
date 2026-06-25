@@ -267,6 +267,19 @@ def get_unittest_dataset_config(dataset_name: str = "countdown", split: str = "t
             default_workflow_type="math_workflow",
             default_reward_fn_type="countdown_reward",
         )
+    elif dataset_name == "cpt_for_countdown":
+        # Countdown dataset for CPT with 17 samples
+        return ExperienceBufferConfig(
+            name=dataset_name,
+            path=os.path.join(os.path.dirname(__file__), "template", "data", "countdown"),
+            split="train",
+            storage_type=StorageType.FILE.value,
+            schema_type="cpt",
+            format=FormatConfig(
+                prompt_type=PromptType.PLAINTEXT,
+                prompt_key="question",
+            ),
+        )
     elif dataset_name in {"eval_short", "eval_long"}:
         # Eval_short dataset with 2 samples, eval_long dataset with 8 samples
         return TasksetConfig(

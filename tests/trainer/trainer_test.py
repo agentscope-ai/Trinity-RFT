@@ -476,6 +476,33 @@ class TestTrainerDPO(BaseTrainerCase):
         shutil.rmtree(self.config.checkpoint_job_dir, ignore_errors=True)
 
 
+class TestTrainerCPT(BaseTrainerCase):
+    def test_trainer(self):
+        """Test CPT."""
+        # test both mode
+        self.config.mode = "train"
+        self.config.algorithm.algorithm_type = "cpt"
+        self.config.algorithm.policy_loss_fn = "sft"
+        self.config.algorithm.policy_loss_fn_args = {}
+        self.config.algorithm.kl_loss_fn = "none"
+        self.config.algorithm.entropy_loss_fn = "none"
+        self.config.buffer.train_batch_size = 8
+        self.config.buffer.total_epochs = 2
+        self.config.buffer.trainer_input.experience_buffer = get_unittest_dataset_config(
+            "cpt_for_countdown"
+        )
+        self.config.check_and_update()
+        train(self.config)
+        parser = TensorBoardParser(os.path.join(self.config.monitor.cache_dir, "tensorboard"))
+        actor_metrics = parser.metric_list("actor")
+        self.assertGreater(len(actor_metrics), 0)
+        self.assertEqual(parser.metric_max_step(actor_metrics[0]), 4)
+
+    def tearDown(self):
+        # remove dir only when the test passed
+        shutil.rmtree(self.config.checkpoint_job_dir, ignore_errors=True)
+
+
 class TestTrainerSFT(BaseTrainerCase):
     def test_trainer(self):
         """Test SFT."""

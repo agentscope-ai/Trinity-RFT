@@ -708,6 +708,7 @@ class veRLConfig:
         self.actor_rollout_ref.model.use_remove_padding = use_remove_padding
         self.actor_rollout_ref.actor.megatron.use_remove_padding = use_remove_padding
         self.actor_rollout_ref.ref.megatron.use_remove_padding = use_remove_padding
+        self.critic.model.use_remove_padding = use_remove_padding
         self.critic.megatron.use_remove_padding = use_remove_padding
 
         # Megatron parallelism — only relevant when strategy is megatron.
