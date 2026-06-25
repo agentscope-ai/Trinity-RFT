@@ -926,6 +926,14 @@ class MonitorConfigValidator(ConfigValidator):
         monitor_cls = MONITOR.get(config.monitor.monitor_type)
         if monitor_cls is None:
             raise ValueError(f"Invalid monitor type: {config.monitor.monitor_type}")
+        # shared_run requires a backend that can merge explorer+trainer into one run;
+        # downgrade to separate runs (instead of erroring) for backends that can't.
+        if config.monitor.shared_run and not monitor_cls.supports_shared_run:
+            self.logger.warning(
+                f"monitor `{config.monitor.monitor_type}` does not support shared_run; "
+                "disabling it (explorer and trainer will use separate runs)."
+            )
+            config.monitor.shared_run = False
         set_if_none(config.monitor, "monitor_args", monitor_cls.default_args())
         # create a job dir in <checkpoint_root_dir>/<project>/<group>/<name>/monitor
         config.monitor.cache_dir = os.path.join(config.checkpoint_job_dir, "monitor")
