@@ -5,6 +5,7 @@ FORMATTER: Registry = Registry(
     "formatter",
     {
         "task": "trinity.buffer.schema.formatter.TaskFormatter",
+        "cpt": "trinity.buffer.schema.formatter.CPTFormatter",
         "sft": "trinity.buffer.schema.formatter.SFTFormatter",
         "dpo": "trinity.buffer.schema.formatter.DPOFormatter",
     },

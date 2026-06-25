@@ -85,6 +85,16 @@ class SFTAlgorithm(AlgorithmType):
         config.synchronizer.sync_interval = config.trainer.save_interval
 
 
+class CPTAlgorithm(SFTAlgorithm):
+    """CPT Algorithm."""
+
+    use_critic: bool = False
+    use_reference: bool = False
+    compute_advantage_in_trainer: bool = False
+    can_balance_batch: bool = True
+    schema: str = "cpt"
+
+
 class PPOAlgorithm(AlgorithmType):
     """PPO Algorithm."""
 

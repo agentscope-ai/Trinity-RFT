@@ -63,6 +63,39 @@ class TaskFormatter:
         )
 
 
+class CPTFormatter(ExperienceFormatter):
+    """Formatter for CPT data, only supporting plaintext formats."""
+
+    def __init__(self, tokenizer_path: str, format_config: FormatConfig):
+        from trinity.common.models.mm_utils import processor_or_tokenizer_cls
+
+        self.logger = get_logger("cpt_dataset_formatter", in_ray_actor=True)
+        self.prompt_type = format_config.prompt_type
+        tokenizer_cls = processor_or_tokenizer_cls(tokenizer_path)
+        self.processor_or_tokenizer = tokenizer_cls.from_pretrained(tokenizer_path)
+        # For messages type
+        if self.prompt_type == PromptType.PLAINTEXT:
+            self.prompt_key = format_config.prompt_key
+        else:
+            raise ValueError(f"Unsupported prompt_type: {self.prompt_type}")
+
+    def format(self, sample: Dict) -> Experience:
+        if self.prompt_type == PromptType.PLAINTEXT:
+            prompt = sample[self.prompt_key]
+            inputs = self.processor_or_tokenizer(
+                text=prompt,
+                return_tensors="pt",
+                return_dict=True,
+            )
+            token_ids = inputs.pop("input_ids")[0]
+            return Experience(
+                tokens=token_ids,
+                prompt_length=1,
+            )
+        else:
+            raise ValueError(f"Unsupported prompt_type: {self.prompt_type}")
+
+
 class SFTFormatter(ExperienceFormatter):
     """Formatter for SFT data, supporting both message list and plaintext formats.
 

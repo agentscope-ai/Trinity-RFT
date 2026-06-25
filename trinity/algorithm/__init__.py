@@ -9,6 +9,7 @@ from trinity.utils.registry import Registry
 ALGORITHM_TYPE: Registry = Registry(
     "algorithm",
     default_mapping={
+        "cpt": "trinity.algorithm.algorithm.CPTAlgorithm",
         "sft": "trinity.algorithm.algorithm.SFTAlgorithm",
         "ppo": "trinity.algorithm.algorithm.PPOAlgorithm",
         "grpo": "trinity.algorithm.algorithm.GRPOAlgorithm",
