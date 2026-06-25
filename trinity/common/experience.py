@@ -5,13 +5,15 @@ from __future__ import annotations
 import pickle
 import struct
 import uuid
-from dataclasses import asdict, dataclass, field, fields
+from dataclasses import asdict, dataclass, field
 from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Union
 
 import torch
 from safetensors.torch import load as st_load
 from safetensors.torch import save as st_save
 from torch import Tensor
+
+from trinity.common.dataclass_utils import build_dataclass_from_mapping
 
 if TYPE_CHECKING:
     from datasets import Dataset
@@ -654,11 +656,6 @@ def from_hf_datasets(dataset: "Dataset") -> List[Experience]:
     Convert a HuggingFace Dataset back to a list of Experience objects.
     """
 
-    def dict_to_dataclass(cls, d):
-        valid_keys = {f.name for f in fields(cls)}
-        filtered = {k: v for k, v in d.items() if k in valid_keys}
-        return cls(**filtered)
-
-    experiences = [dict_to_dataclass(Experience, row) for row in dataset.to_list()]
+    experiences = [build_dataclass_from_mapping(Experience, row) for row in dataset.to_list()]
 
     return experiences

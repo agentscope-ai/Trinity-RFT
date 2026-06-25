@@ -49,6 +49,7 @@ from verl.workers.megatron_workers import MegatronPPOActor as OldMegatronPPOActo
 from verl.workers.megatron_workers import logger
 
 from trinity.algorithm import ENTROPY_LOSS_FN, KL_FN, POLICY_LOSS_FN
+from trinity.algorithm.kl_fn.kl_fn import DummyKLFn
 from trinity.algorithm.utils import prefix_metrics
 from trinity.common.config import AlgorithmConfig
 
@@ -194,6 +195,46 @@ class MegatronPPOActor(OldMegatronPPOActor):
             **algorithm_config.entropy_loss_fn_args
         )
         self.calculate_entropy = algorithm_config.entropy_loss_fn != "none"
+
+    def make_minibatch_iterator(self, data: DataProto) -> Iterable[DataProto]:
+        select_keys = [
+            "input_ids",
+            "position_ids",
+            "attention_mask",
+            "responses",
+            "response_mask",
+        ]
+
+        if getattr(self, "use_prefix_grouper", False) and "prompts" in data.batch.keys():
+            select_keys.append("prompts")
+
+        if self.policy_loss_fn is not None and hasattr(self.policy_loss_fn, "select_keys"):
+            select_keys.extend(self.policy_loss_fn.select_keys)
+
+        if not isinstance(self.kl_loss_fn, DummyKLFn):
+            select_keys.append("ref_log_prob")
+
+        if self.enable_routing_replay:
+            select_keys.append("routed_experts")
+
+        select_keys = list(set(select_keys))
+
+        has_multi_modal_inputs = "multi_modal_inputs" in data.non_tensor_batch.keys()
+        non_tensor_select_keys = ["multi_modal_inputs"] if has_multi_modal_inputs else []
+        if getattr(self, "use_prefix_grouper", False) and "uid" in data.non_tensor_batch.keys():
+            non_tensor_select_keys.append("uid")
+
+        data = data.select(
+            batch_keys=select_keys,
+            non_tensor_batch_keys=non_tensor_select_keys,
+        )
+
+        return data.make_iterator(
+            mini_batch_size=self.config.ppo_mini_batch_size,
+            epochs=self.config.ppo_epochs,
+            seed=self.config.data_loader_seed,
+            dataloader_kwargs={"shuffle": self.config.shuffle},
+        )
 
     def forward_backward_batch(  # noqa: C901
         self,

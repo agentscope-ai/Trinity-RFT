@@ -76,39 +76,13 @@ class Converter:
     def _get_config_and_empty_model(self, model_dir: str):
         import torch
         import transformers
-        from accelerate import init_empty_weights
+        from verl.utils.model import get_hf_auto_model_class
 
         model_config = transformers.AutoConfig.from_pretrained(model_dir)
+        auto_model_cls = get_hf_auto_model_class(model_config)
 
-        if "ForTokenClassification" in model_config.architectures[0]:
-            from transformers import AutoModelForTokenClassification
-
-            auto_model_cls = AutoModelForTokenClassification
-        elif "ForCausalLM" in model_config.architectures[0]:
-            from transformers import AutoModelForCausalLM
-
-            auto_model_cls = AutoModelForCausalLM
-        elif "ForConditionalGeneration" in model_config.architectures[0]:
-            # Handle different transformers versions for Vision2Seq models
-            import transformers
-            from packaging import version
-
-            if version.parse(transformers.__version__) >= version.parse("4.54.0"):
-                # transformers >= 4.54.0 uses AutoModelForImageTextToText
-                from transformers import AutoModelForImageTextToText
-
-                auto_model_cls = AutoModelForImageTextToText
-            else:
-                # transformers < 4.54.0 uses AutoModelForVision2Seq
-                from transformers import AutoModelForVision2Seq
-
-                auto_model_cls = AutoModelForVision2Seq
-        else:
-            raise NotImplementedError(f"Unknown architecture {model_config['architectures']}")
-
-        with init_empty_weights():
+        with torch.device("meta"):
             model = auto_model_cls.from_config(model_config, dtype=torch.bfloat16)
-        model.to_empty(device="cpu")
 
         return model, auto_model_cls
 

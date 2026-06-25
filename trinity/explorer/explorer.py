@@ -80,7 +80,7 @@ class Explorer:
         self.enable_lora = self.config.explorer.rollout_model.enable_lora
         self.model_version = -1
         self.sync_offset = config.synchronizer.sync_offset
-        self.sync_interval = config.synchronizer.sync_interval
+        self.sync_interval = config.synchronizer.explorer_sync_interval
         self.sync_method = config.synchronizer.sync_method
         self.sync_style = config.synchronizer.sync_style
         self.eval_start_time = None

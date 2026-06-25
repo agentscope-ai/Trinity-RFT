@@ -62,7 +62,7 @@ class Trainer:
         self.save_interval = config.trainer.save_interval
         self.last_sync_step = 0
         self.last_sync_time = None
-        self.sync_interval = config.synchronizer.sync_interval
+        self.sync_interval: int = config.synchronizer.trainer_sync_interval
         self.sync_method = config.synchronizer.sync_method
         self.sync_style = config.synchronizer.sync_style
         self.total_steps = config.trainer.total_steps or float("inf")
