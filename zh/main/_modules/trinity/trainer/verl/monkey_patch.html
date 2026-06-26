@@ -1043,7 +1043,8 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>trinity.trainer.verl.monkey_patch 源代码</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">MethodType</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">MethodType</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
@@ -1052,7 +1053,9 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">tensordict_utils</span> <span class="k">as</span> <span class="n">tu</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.attention_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">index_first_axis</span><span class="p">,</span> <span class="n">unpad_input</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.dataset.dataset_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatasetPadMode</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract_multi_modal_inputs</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.import_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_trl_available</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">extract_multi_modal_inputs</span><span class="p">,</span> <span class="n">patch_valuehead_model</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.transformers_compat</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_auto_model_for_vision2seq</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.ulysses</span><span class="w"> </span><span class="kn">import</span> <span class="n">ulysses_pad</span><span class="p">,</span> <span class="n">ulysses_pad_and_slice_inputs</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">verl.workers.engine.fsdp.transformer_impl</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">FSDPEngine</span><span class="p">,</span>
@@ -1061,6 +1064,177 @@ window.runMermaid = runMermaid;</script>
     <span class="n">offload_fsdp_model_to_cpu</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">verl.workers.utils.padding</span><span class="w"> </span><span class="kn">import</span> <span class="n">build_attention_mask_from_nested</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.trainer.verl_legacy.monkey_patch</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_monkey_patch</span>
+
+<span class="n">AutoModelForVision2Seq</span> <span class="o">=</span> <span class="n">get_auto_model_for_vision2seq</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="load_valuehead_model">
+<a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.monkey_patch.html#trinity.trainer.verl.monkey_patch.load_valuehead_model">[文档]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_valuehead_model</span><span class="p">(</span><span class="n">local_path</span><span class="p">,</span> <span class="n">torch_dtype</span><span class="p">,</span> <span class="n">model_config</span><span class="p">,</span> <span class="n">trust_remote_code</span><span class="p">,</span> <span class="n">use_meta</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoModelForCausalLM</span><span class="p">,</span> <span class="n">AutoModelForTokenClassification</span>
+
+    <span class="c1"># When ``use_meta`` is True (non-rank-0 processes under FSDP2), build the model</span>
+    <span class="c1"># on the meta device from the config instead of loading pretrained weights, so</span>
+    <span class="c1"># that FSDP2 can later broadcast rank-0&#39;s materialized weights. ``from_config``</span>
+    <span class="c1"># is used in place of ``from_pretrained`` and (for the trl value-head path) the</span>
+    <span class="c1"># wrapper is instantiated directly to skip checkpoint state-dict loading. Both</span>
+    <span class="c1"># branches mirror rank 0&#39;s structure because ``from_config`` raises the same</span>
+    <span class="c1"># ``ValueError`` as ``from_pretrained`` when the config is not in the auto</span>
+    <span class="c1"># mapping (e.g. VLMs), keeping the try/except fallback consistent across ranks.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">use_meta</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">AutoModelForTokenClassification</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span>
+                <span class="n">config</span><span class="o">=</span><span class="n">model_config</span><span class="p">,</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="n">torch_dtype</span><span class="p">,</span>
+                <span class="n">attn_implementation</span><span class="o">=</span><span class="s2">&quot;flash_attention_2&quot;</span><span class="p">,</span>
+                <span class="n">trust_remote_code</span><span class="o">=</span><span class="n">trust_remote_code</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="n">AutoModelForTokenClassification</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
+                <span class="n">pretrained_model_name_or_path</span><span class="o">=</span><span class="n">local_path</span><span class="p">,</span>
+                <span class="n">torch_dtype</span><span class="o">=</span><span class="n">torch_dtype</span><span class="p">,</span>
+                <span class="n">config</span><span class="o">=</span><span class="n">model_config</span><span class="p">,</span>
+                <span class="n">attn_implementation</span><span class="o">=</span><span class="s2">&quot;flash_attention_2&quot;</span><span class="p">,</span>
+                <span class="n">trust_remote_code</span><span class="o">=</span><span class="n">trust_remote_code</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">model</span>
+    <span class="k">except</span> <span class="ne">BaseException</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_trl_available</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;model(</span><span class="si">{</span><span class="n">local_path</span><span class="si">}</span><span class="s2">) is not a value head model, please install trl to make it valid&quot;</span>
+            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">e</span>
+
+    <span class="k">assert</span> <span class="n">is_trl_available</span><span class="p">()</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">trl</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoModelForCausalLMWithValueHead</span>
+
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">model_config</span><span class="p">)</span> <span class="ow">in</span> <span class="n">AutoModelForVision2Seq</span><span class="o">.</span><span class="n">_model_mapping</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">module_class</span> <span class="o">=</span> <span class="n">AutoModelForVision2Seq</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">module_class</span> <span class="o">=</span> <span class="n">AutoModelForCausalLM</span>
+    <span class="k">if</span> <span class="n">use_meta</span><span class="p">:</span>
+        <span class="n">ori_model</span> <span class="o">=</span> <span class="n">module_class</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span>
+            <span class="n">config</span><span class="o">=</span><span class="n">model_config</span><span class="p">,</span>
+            <span class="n">dtype</span><span class="o">=</span><span class="n">torch_dtype</span><span class="p">,</span>
+            <span class="n">attn_implementation</span><span class="o">=</span><span class="s2">&quot;flash_attention_2&quot;</span><span class="p">,</span>
+            <span class="n">trust_remote_code</span><span class="o">=</span><span class="n">trust_remote_code</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ori_model</span> <span class="o">=</span> <span class="n">module_class</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
+            <span class="n">pretrained_model_name_or_path</span><span class="o">=</span><span class="n">local_path</span><span class="p">,</span>
+            <span class="n">torch_dtype</span><span class="o">=</span><span class="n">torch_dtype</span><span class="p">,</span>
+            <span class="n">config</span><span class="o">=</span><span class="n">model_config</span><span class="p">,</span>
+            <span class="n">attn_implementation</span><span class="o">=</span><span class="s2">&quot;flash_attention_2&quot;</span><span class="p">,</span>
+            <span class="n">trust_remote_code</span><span class="o">=</span><span class="n">trust_remote_code</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="c1"># vlm models</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">model_config</span><span class="p">,</span> <span class="s2">&quot;text_config&quot;</span><span class="p">):</span>
+        <span class="n">ori_model</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">hidden_size</span> <span class="o">=</span> <span class="n">model_config</span><span class="o">.</span><span class="n">text_config</span><span class="o">.</span><span class="n">hidden_size</span>
+    <span class="k">if</span> <span class="n">use_meta</span><span class="p">:</span>
+        <span class="c1"># Instantiate the wrapper directly on the meta device; skip</span>
+        <span class="c1"># ``from_pretrained`` so no checkpoint state-dict is loaded — FSDP2 will</span>
+        <span class="c1"># broadcast the materialized weights from rank 0. ``_init_weights`` is a</span>
+        <span class="c1"># no-op for the default (``None``) ``v_head_init_strategy``.</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">AutoModelForCausalLMWithValueHead</span><span class="p">(</span><span class="n">ori_model</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">AutoModelForCausalLMWithValueHead</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">ori_model</span><span class="p">)</span>
+    <span class="n">patch_valuehead_model</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_build_module</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_hf_auto_model_class</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.torch_dtypes</span><span class="w"> </span><span class="kn">import</span> <span class="n">PrecisionType</span>
+
+    <span class="n">torch_dtype</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_config</span><span class="o">.</span><span class="n">model_dtype</span>
+
+    <span class="k">if</span> <span class="n">torch_dtype</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># if it is training, we force torch_dtype to fp32</span>
+        <span class="n">torch_dtype</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">float32</span> <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_config</span><span class="o">.</span><span class="n">forward_only</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">bfloat16</span>
+
+    <span class="n">torch_dtype</span> <span class="o">=</span> <span class="n">PrecisionType</span><span class="o">.</span><span class="n">to_dtype</span><span class="p">(</span><span class="n">torch_dtype</span><span class="p">)</span>
+
+    <span class="n">major_capability</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">get_device_capability</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">use_meta</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rank</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">device_mesh</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">device_mesh</span><span class="o">.</span><span class="n">get_coordinate</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine_config</span><span class="o">.</span><span class="n">strategy</span> <span class="o">==</span> <span class="s2">&quot;fsdp2&quot;</span> <span class="ow">and</span> <span class="n">major_capability</span> <span class="o">&gt;=</span> <span class="mi">9</span>
+        <span class="k">else</span> <span class="kc">False</span>
+    <span class="p">)</span>
+
+    <span class="n">init_context</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;meta&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">use_meta</span> <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">init_context</span><span class="p">,</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">model_type</span> <span class="o">==</span> <span class="s2">&quot;language_model&quot;</span><span class="p">:</span>
+            <span class="n">auto_class</span> <span class="o">=</span> <span class="n">get_hf_auto_model_class</span><span class="p">(</span><span class="n">hf_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">hf_config</span><span class="p">)</span>
+
+            <span class="n">loading_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="n">dtype</span><span class="o">=</span><span class="n">torch_dtype</span><span class="p">,</span>
+                <span class="n">config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">hf_config</span><span class="p">,</span>
+                <span class="n">trust_remote_code</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">trust_remote_code</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">use_meta</span><span class="p">:</span>
+                <span class="n">module</span> <span class="o">=</span> <span class="n">auto_class</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="o">**</span><span class="n">loading_kwargs</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">module</span> <span class="o">=</span> <span class="n">auto_class</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
+                    <span class="n">pretrained_model_name_or_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">local_path</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">loading_kwargs</span><span class="p">,</span>
+                <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">model_type</span> <span class="o">==</span> <span class="s2">&quot;value_model&quot;</span>
+            <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Unsupported model type: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">model_type</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">hf_config</span><span class="o">.</span><span class="n">num_labels</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">hf_config</span><span class="o">.</span><span class="n">classifier_dropout</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">hf_config</span><span class="o">.</span><span class="n">hidden_dropout</span> <span class="o">=</span> <span class="s2">&quot;0&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">hf_config</span><span class="o">.</span><span class="n">summary_dropout_prob</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="n">module</span> <span class="o">=</span> <span class="n">load_valuehead_model</span><span class="p">(</span>
+                <span class="n">local_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">local_path</span><span class="p">,</span>
+                <span class="n">torch_dtype</span><span class="o">=</span><span class="n">torch_dtype</span><span class="p">,</span>
+                <span class="n">model_config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">hf_config</span><span class="p">,</span>
+                <span class="n">trust_remote_code</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">trust_remote_code</span><span class="p">,</span>
+                <span class="n">use_meta</span><span class="o">=</span><span class="n">use_meta</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">use_liger</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">use_liger</span>
+        <span class="c1"># Apply Liger kernel; disable fused_linear_cross_entropy (conflicts with verl&#39;s forward patching)</span>
+        <span class="k">if</span> <span class="n">use_liger</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">liger_kernel.transformers.monkey_patch</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                <span class="n">_apply_liger_kernel_to_instance</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="n">_apply_liger_kernel_to_instance</span><span class="p">(</span>
+                <span class="n">model</span><span class="o">=</span><span class="n">module</span><span class="p">,</span>
+                <span class="n">fused_linear_cross_entropy</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">swiglu</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="n">fused_kernel_options</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">fused_kernel_options</span>
+        <span class="n">fused_kernels_backend</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">fused_kernel_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;impl_backend&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">fused_kernel_options</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">)</span>
+
+        <span class="n">use_fused_kernels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">use_fused_kernels</span>
+        <span class="n">apply_monkey_patch</span><span class="p">(</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">module</span><span class="p">,</span>
+            <span class="n">use_remove_padding</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_remove_padding</span><span class="p">,</span>
+            <span class="n">ulysses_sp_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ulysses_sequence_parallel_size</span><span class="p">,</span>
+            <span class="n">use_fused_kernels</span><span class="o">=</span><span class="n">use_fused_kernels</span><span class="p">,</span>
+            <span class="n">fused_kernels_backend</span><span class="o">=</span><span class="n">fused_kernels_backend</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_config</span><span class="o">.</span><span class="n">enable_gradient_checkpointing</span><span class="p">:</span>
+            <span class="n">module</span><span class="o">.</span><span class="n">gradient_checkpointing_enable</span><span class="p">(</span>
+                <span class="n">gradient_checkpointing_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;use_reentrant&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+            <span class="p">)</span>
+    <span class="k">return</span> <span class="n">module</span>
 
 
 <span class="c1"># from https://github.com/verl-project/verl/pull/5886</span>
@@ -1440,6 +1614,7 @@ window.runMermaid = runMermaid;</script>
     <span class="k">if</span> <span class="n">engine</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">FSDPEngine</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="s2">&quot;_patched&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="n">engine</span><span class="o">.</span><span class="n">_build_module</span> <span class="o">=</span> <span class="n">MethodType</span><span class="p">(</span><span class="n">_build_module</span><span class="p">,</span> <span class="n">engine</span><span class="p">)</span>
         <span class="n">engine</span><span class="o">.</span><span class="n">save_checkpoint</span> <span class="o">=</span> <span class="n">MethodType</span><span class="p">(</span><span class="n">save_checkpoint</span><span class="p">,</span> <span class="n">engine</span><span class="p">)</span>
         <span class="c1"># Patch prepare_model_inputs to inject seq_idx/cu_seqlens for</span>
         <span class="c1"># packed-sequence models (e.g. Qwen3.5 GateDeltaNet).</span>
