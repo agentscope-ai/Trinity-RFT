@@ -71,12 +71,7 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
         - Fused kernels VLM SP bugfix (patch_fused_kernels)
         - Flops counter registration for qwen3_5
         """
-        import verl.workers.engine.fsdp.transformer_impl as fsdp_impl
-
         from trinity.trainer.verl.monkey_patch import patch_verl_engine
-        from trinity.trainer.verl_legacy.monkey_patch import apply_monkey_patch
-
-        fsdp_impl.apply_monkey_patch = apply_monkey_patch
 
         # Patch veRL engine for LoRA + FSDP2 dtype alignment.
         # veRL's _build_lora_module does not align trainable param dtypes

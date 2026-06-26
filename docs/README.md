@@ -4,7 +4,6 @@
 
 - `docs/sphinx_doc/`: Sphinx source and build scripts for API/user docs.
 - `docs/agents/`: Agent-oriented operational docs and migration knowledge.
-- `docs/agents/verl_upgrade/`: Canonical veRL upgrade checklist and migration plans.
 
 Please use the following commands to build sphinx doc of Trinity-RFT.
 

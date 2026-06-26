@@ -1,3 +1,4 @@
+import warnings
 from types import MethodType
 from typing import Optional
 
@@ -7,7 +8,9 @@ from tensordict import TensorDict
 from verl.utils import tensordict_utils as tu
 from verl.utils.attention_utils import index_first_axis, unpad_input
 from verl.utils.dataset.dataset_utils import DatasetPadMode
-from verl.utils.model import extract_multi_modal_inputs
+from verl.utils.import_utils import is_trl_available
+from verl.utils.model import extract_multi_modal_inputs, patch_valuehead_model
+from verl.utils.transformers_compat import get_auto_model_for_vision2seq
 from verl.utils.ulysses import ulysses_pad, ulysses_pad_and_slice_inputs
 from verl.workers.engine.fsdp.transformer_impl import (
     FSDPEngine,
@@ -16,6 +19,174 @@ from verl.workers.engine.fsdp.transformer_impl import (
     offload_fsdp_model_to_cpu,
 )
 from verl.workers.utils.padding import build_attention_mask_from_nested
+
+from trinity.trainer.verl_legacy.monkey_patch import apply_monkey_patch
+
+AutoModelForVision2Seq = get_auto_model_for_vision2seq()
+
+
+def load_valuehead_model(local_path, torch_dtype, model_config, trust_remote_code, use_meta=False):
+    from transformers import AutoModelForCausalLM, AutoModelForTokenClassification
+
+    # When ``use_meta`` is True (non-rank-0 processes under FSDP2), build the model
+    # on the meta device from the config instead of loading pretrained weights, so
+    # that FSDP2 can later broadcast rank-0's materialized weights. ``from_config``
+    # is used in place of ``from_pretrained`` and (for the trl value-head path) the
+    # wrapper is instantiated directly to skip checkpoint state-dict loading. Both
+    # branches mirror rank 0's structure because ``from_config`` raises the same
+    # ``ValueError`` as ``from_pretrained`` when the config is not in the auto
+    # mapping (e.g. VLMs), keeping the try/except fallback consistent across ranks.
+    try:
+        if use_meta:
+            model = AutoModelForTokenClassification.from_config(
+                config=model_config,
+                dtype=torch_dtype,
+                attn_implementation="flash_attention_2",
+                trust_remote_code=trust_remote_code,
+            )
+        else:
+            model = AutoModelForTokenClassification.from_pretrained(
+                pretrained_model_name_or_path=local_path,
+                torch_dtype=torch_dtype,
+                config=model_config,
+                attn_implementation="flash_attention_2",
+                trust_remote_code=trust_remote_code,
+            )
+        return model
+    except BaseException as e:
+        if not is_trl_available():
+            raise RuntimeError(
+                f"model({local_path}) is not a value head model, please install trl to make it valid"
+            ) from e
+
+    assert is_trl_available()
+
+    from trl import AutoModelForCausalLMWithValueHead
+
+    if type(model_config) in AutoModelForVision2Seq._model_mapping.keys():
+        module_class = AutoModelForVision2Seq
+    else:
+        module_class = AutoModelForCausalLM
+    if use_meta:
+        ori_model = module_class.from_config(
+            config=model_config,
+            dtype=torch_dtype,
+            attn_implementation="flash_attention_2",
+            trust_remote_code=trust_remote_code,
+        )
+    else:
+        ori_model = module_class.from_pretrained(
+            pretrained_model_name_or_path=local_path,
+            torch_dtype=torch_dtype,
+            config=model_config,
+            attn_implementation="flash_attention_2",
+            trust_remote_code=trust_remote_code,
+        )
+    # vlm models
+    if hasattr(model_config, "text_config"):
+        ori_model.config.hidden_size = model_config.text_config.hidden_size
+    if use_meta:
+        # Instantiate the wrapper directly on the meta device; skip
+        # ``from_pretrained`` so no checkpoint state-dict is loaded — FSDP2 will
+        # broadcast the materialized weights from rank 0. ``_init_weights`` is a
+        # no-op for the default (``None``) ``v_head_init_strategy``.
+        model = AutoModelForCausalLMWithValueHead(ori_model)
+    else:
+        model = AutoModelForCausalLMWithValueHead.from_pretrained(ori_model)
+    patch_valuehead_model(model)
+    return model
+
+
+def _build_module(self):
+    from verl.utils.model import get_hf_auto_model_class
+    from verl.utils.torch_dtypes import PrecisionType
+
+    torch_dtype = self.engine_config.model_dtype
+
+    if torch_dtype is None:
+        # if it is training, we force torch_dtype to fp32
+        torch_dtype = torch.float32 if not self.engine_config.forward_only else torch.bfloat16
+
+    torch_dtype = PrecisionType.to_dtype(torch_dtype)
+
+    major_capability, _ = torch.cuda.get_device_capability(0)
+    use_meta = (
+        (self.rank != 0 if self.device_mesh is None else self.device_mesh.get_coordinate()[-1] != 0)
+        if self.engine_config.strategy == "fsdp2" and major_capability >= 9
+        else False
+    )
+
+    init_context = torch.device("meta") if use_meta else torch.device("cpu")
+
+    with init_context, warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        if self.model_config.model_type == "language_model":
+            auto_class = get_hf_auto_model_class(hf_config=self.model_config.hf_config)
+
+            loading_kwargs = dict(
+                dtype=torch_dtype,
+                config=self.model_config.hf_config,
+                trust_remote_code=self.model_config.trust_remote_code,
+            )
+
+            if use_meta:
+                module = auto_class.from_config(**loading_kwargs)
+            else:
+                module = auto_class.from_pretrained(
+                    pretrained_model_name_or_path=self.model_config.local_path,
+                    **loading_kwargs,
+                )
+        else:
+            assert (
+                self.model_config.model_type == "value_model"
+            ), f"Unsupported model type: {self.model_config.model_type}"
+            self.model_config.hf_config.num_labels = 1
+            self.model_config.hf_config.classifier_dropout = 0.0
+            self.model_config.hf_config.hidden_dropout = "0"
+            self.model_config.hf_config.summary_dropout_prob = 0.0
+            module = load_valuehead_model(
+                local_path=self.model_config.local_path,
+                torch_dtype=torch_dtype,
+                model_config=self.model_config.hf_config,
+                trust_remote_code=self.model_config.trust_remote_code,
+                use_meta=use_meta,
+            )
+
+        use_liger = self.model_config.use_liger
+        # Apply Liger kernel; disable fused_linear_cross_entropy (conflicts with verl's forward patching)
+        if use_liger:
+            from liger_kernel.transformers.monkey_patch import (
+                _apply_liger_kernel_to_instance,
+            )
+
+            _apply_liger_kernel_to_instance(
+                model=module,
+                fused_linear_cross_entropy=False,
+                swiglu=True,
+            )
+
+        fused_kernel_options = self.model_config.fused_kernel_options
+        fused_kernels_backend = (
+            fused_kernel_options.get("impl_backend", None)
+            if fused_kernel_options is not None
+            else None
+        )
+
+        use_fused_kernels = self.model_config.use_fused_kernels
+        apply_monkey_patch(
+            model=module,
+            use_remove_padding=self.use_remove_padding,
+            ulysses_sp_size=self.ulysses_sequence_parallel_size,
+            use_fused_kernels=use_fused_kernels,
+            fused_kernels_backend=fused_kernels_backend,
+        )
+
+        if self.model_config.enable_gradient_checkpointing:
+            module.gradient_checkpointing_enable(
+                gradient_checkpointing_kwargs={"use_reentrant": False}
+            )
+    return module
 
 
 # from https://github.com/verl-project/verl/pull/5886
@@ -381,6 +552,7 @@ def patch_verl_engine(engine):
     if engine is None:
         return
     if isinstance(engine, FSDPEngine) and not getattr(engine, "_patched", False):
+        engine._build_module = MethodType(_build_module, engine)
         engine.save_checkpoint = MethodType(save_checkpoint, engine)
         # Patch prepare_model_inputs to inject seq_idx/cu_seqlens for
         # packed-sequence models (e.g. Qwen3.5 GateDeltaNet).
