@@ -8,6 +8,7 @@ from parameterized import parameterized
 from tests.tools import get_template_config, get_unittest_dataset_config
 from trinity.buffer.reader import READER
 from trinity.buffer.reader.file_reader import TaskFileReader
+from trinity.buffer.selector.selector import ShuffleSelector
 from trinity.buffer.task_scheduler import TasksetScheduler, get_taskset_scheduler
 from trinity.common.config import DataSelectorConfig, FormatConfig, TasksetConfig
 from trinity.common.workflows.workflow import Task
@@ -356,3 +357,17 @@ class TestTaskScheduler(unittest.IsolatedAsyncioTestCase):
         task_scheduler_state = task_scheduler.state_dict()
         self.assertEqual(len(task_scheduler_state), 1)
         self.assertEqual(task_scheduler_state[0]["current_index"], 12)
+
+
+class TestShuffleSelector(unittest.TestCase):
+    def test_reshuffles_between_epochs(self):
+        class _DataSource:
+            dataset_size = 10
+
+        selector = ShuffleSelector(_DataSource(), DataSelectorConfig(seed=42))
+        epoch0 = selector.get_indices(_DataSource.dataset_size)
+        epoch1 = selector.get_indices(_DataSource.dataset_size)
+        self.assertEqual(sorted(epoch0), list(range(_DataSource.dataset_size)))
+        self.assertEqual(sorted(epoch1), list(range(_DataSource.dataset_size)))
+        # consecutive epochs must not reuse the same permutation
+        self.assertNotEqual(epoch0, epoch1)

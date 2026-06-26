@@ -137,6 +137,7 @@ class ShuffleSelector(BaseSelector):
     def get_indices(self, batch_size: int, return_extra_info: bool = False) -> List[int]:
         start = self.current_index % self.dataset_size
         end = start + batch_size
+        self.current_index += batch_size
         if end <= self.dataset_size:
             ret = self.orders[start:end]
             # At end of epoch, reshuffle for next epoch
@@ -147,7 +148,6 @@ class ShuffleSelector(BaseSelector):
             # At end of epoch, reshuffle for next epoch
             self.orders = self._get_orders()
             ret += self.orders[: (end - self.dataset_size)]
-        self.current_index += batch_size
         return ret
 
     def feedback(self, indices: List[int], values: List[float]) -> None:
