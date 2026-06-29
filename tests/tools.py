@@ -22,6 +22,7 @@ from trinity.common.constants import (
     StorageType,
 )
 
+ALTERNATIVE_MODEL_PATH_ENV_VAR = "TRINITY_ALTERNATIVE_MODEL_PATH"
 API_MODEL_PATH_ENV_VAR = "TRINITY_API_MODEL_PATH"
 MOE_MODEL_PATH_ENV_VAR = "TRINITY_MOE_MODEL_PATH"
 VLM_MODEL_PATH_ENV_VAR = "TRINITY_VLM_MODEL_PATH"
@@ -199,6 +200,15 @@ def get_model_path() -> str:
     if not path:
         raise EnvironmentError(
             f"Please set `export {MODEL_PATH_ENV_VAR}=<your_model_dir>` before running this test."
+        )
+    return path
+
+
+def get_alternative_model_path() -> str:
+    path = os.environ.get(ALTERNATIVE_MODEL_PATH_ENV_VAR)
+    if not path:
+        raise EnvironmentError(
+            f"Please set `export {ALTERNATIVE_MODEL_PATH_ENV_VAR}=<your_model_dir>` before running this test."
         )
     return path
 

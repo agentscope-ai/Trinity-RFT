@@ -22,6 +22,7 @@ from tests.tools import (
     RayUnittestBase,
     RayUnittestBaseAsync,
     TensorBoardParser,
+    get_alternative_model_path,
     get_alternative_vision_language_model_path,
     get_api_model_path,
     get_checkpoint_path,
@@ -492,6 +493,13 @@ class TestTrainerCPT(BaseTrainerCase):
         self.config.buffer.trainer_input.experience_buffer = get_unittest_dataset_config(
             "cpt_for_countdown"
         )
+        self.config.model.model_path = get_alternative_model_path()
+        self.config.trainer.trainer_config["actor_rollout_ref"]["model"] = {
+            "use_fused_kernels": True,
+            "fused_kernel_options": {
+                "impl_backend": "torch",
+            },
+        }
         self.config.check_and_update()
         train(self.config)
         parser = TensorBoardParser(os.path.join(self.config.monitor.cache_dir, "tensorboard"))
@@ -520,6 +528,13 @@ class TestTrainerSFT(BaseTrainerCase):
         self.config.buffer.trainer_input.experience_buffer = get_unittest_dataset_config(
             "sft_for_gsm8k"
         )
+        self.config.model.model_path = get_alternative_model_path()
+        self.config.trainer.trainer_config["actor_rollout_ref"]["model"] = {
+            "use_fused_kernels": True,
+            "fused_kernel_options": {
+                "impl_backend": "triton",
+            },
+        }
         self.config.check_and_update()
         train(self.config)
         parser = TensorBoardParser(os.path.join(self.config.monitor.cache_dir, "tensorboard"))

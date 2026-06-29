@@ -3,9 +3,97 @@ import sys
 from typing import Dict, Optional, Set
 
 import torch
+from torch.distributed.tensor import DTensor
 from transformers.modeling_utils import PreTrainedModel
 
 from trinity.utils.log import get_logger
+
+
+def _patch_triton_kernel_shared_memory():
+    """Patch veRL Triton kernels to avoid shared-memory OOM on GPUs with limited SMEM.
+
+    veRL's ``efficient_entropy_kernel_general_mainloop`` (and the backward
+    ``d_logits`` variants) use ``BLOCK_SIZE_N=256`` by default, which requires
+    128 * 256 * 4 = 131072 bytes of shared memory per block.  Some GPUs (e.g.
+    L20 with 99 KB / 101376 bytes per block) cannot satisfy this, raising::
+
+        triton.runtime.errors.OutOfResources: out of resource: shared memory,
+        Required: 131072, Hardware limit: 101376.
+
+    This helper detects the hardware limit and, when insufficient, replaces the
+    autotune configs of the affected kernels with ``BLOCK_SIZE_N=128``
+    (65536 bytes) so the kernels can launch successfully.
+    """
+    try:
+        from verl.utils.kernel import kernels
+    except ImportError:
+        return  # veRL not available; nothing to patch
+
+    # Only relevant on CUDA GPUs.
+    if not torch.cuda.is_available():
+        return
+
+    try:
+        # max_shared_memory_per_block is in bytes.
+        max_smem = torch.cuda.get_device_properties(0).shared_memory_per_block
+    except Exception:
+        return
+
+    # 131072 bytes is the requirement for BLOCK_SIZE_N=256 (128 * 256 * 4).
+    SMEM_THRESHOLD = 131072
+    if max_smem >= SMEM_THRESHOLD:
+        return  # Hardware is sufficient; no patch needed.
+
+    logger = get_logger(__name__)
+    logger.warning(
+        f"GPU shared memory per block ({max_smem} bytes) is insufficient for "
+        f"veRL Triton kernels with BLOCK_SIZE_N=256 (requires {SMEM_THRESHOLD} bytes). "
+        f"Patching kernel configs to use BLOCK_SIZE_N=128."
+    )
+
+    import triton
+
+    # Smaller config that fits within 65536 bytes of shared memory.
+    safe_config_mainloop = triton.Config(
+        {"BLOCK_SIZE_M": 128, "BLOCK_SIZE_N": 128, "BLOCK_SIZE_K": 32},
+        num_stages=3,
+        num_warps=8,
+    )
+    safe_config_backward = triton.Config(
+        {"BLOCK_SIZE_M": 128, "BLOCK_SIZE_N": 128, "BLOCK_SIZE_K": 32, "GROUP_SIZE_M": 16},
+        num_stages=3,
+        num_warps=8,
+    )
+
+    # Forward kernel.
+    _replace_autotune_configs(
+        kernels, "efficient_entropy_kernel_general_mainloop", [safe_config_mainloop]
+    )
+    # Backward kernels that also use BLOCK_SIZE_N=256.
+    _replace_autotune_configs(
+        kernels,
+        "efficient_entropy_backward_kernel_general_d_logits",
+        [safe_config_backward],
+    )
+    _replace_autotune_configs(
+        kernels,
+        "efficient_entropy_backward_kernel_general_d_logits_split_N",
+        [safe_config_backward],
+    )
+
+
+def _replace_autotune_configs(module, kernel_name, new_configs):
+    """Replace the autotune configs of a Triton kernel, if not already patched."""
+    kernel = getattr(module, kernel_name, None)
+    if kernel is None:
+        return
+    # Guard against double-patching.
+    if getattr(kernel, "_smem_patched", False):
+        return
+    if hasattr(kernel, "configs"):
+        kernel.configs = new_configs
+        kernel._smem_patched = True
+
 
 # Map model types to their specific implementation modules.
 # To extend support for a new model, simply add an entry here.
@@ -23,7 +111,7 @@ DEFAULT_MODULE_PATH = "verl.models.transformers.dense_common"
 VALID_BACKENDS: Set[str] = {"triton", "torch"}
 
 
-def patch_fused_kernels(fused_kernels_backend: str):
+def patch_fused_kernels(fused_kernels_backend: str):  # noqa: C901
     """Fix VLM sequence parallelism bug with optimized backend in veRL."""
 
     # fix torch
@@ -68,6 +156,11 @@ def patch_fused_kernels(fused_kernels_backend: str):
                     f"{input_ids.size(1)}."
                 )
 
+            if isinstance(vocab_weights, DTensor):
+                vocab_weights = vocab_weights.full_tensor()
+            vocab_weights = vocab_weights.to(hidden_states.device)
+            hidden_states = hidden_states.to(vocab_weights.dtype)
+
             return original_torch_backend_forward(
                 self,
                 hidden_states,
@@ -80,6 +173,10 @@ def patch_fused_kernels(fused_kernels_backend: str):
         FusedLinearForPPO._is_patched = True
     else:  # triton
         from verl.utils.kernel import linear_cross_entropy
+
+        # Patch Triton kernel configs to avoid shared-memory OOM on GPUs with
+        # limited per-block shared memory (e.g. A100 with 99 KB).
+        _patch_triton_kernel_shared_memory()
 
         # Make patch idempotent: store the original function once and avoid re-wrapping.
         if getattr(linear_cross_entropy, "_is_patched", False):
@@ -121,6 +218,10 @@ def patch_fused_kernels(fused_kernels_backend: str):
                     f"{labels.size(1)}."
                 )
 
+            if isinstance(weight, DTensor):
+                weight = weight.full_tensor()
+            weight = weight.to(hidden.device)
+            hidden = hidden.to(weight.dtype)
             return original_linear_cross_entropy(hidden, weight, labels, *args, **kwargs)
 
         linear_cross_entropy.linear_cross_entropy = triton_backend_forward

@@ -5,7 +5,6 @@ from typing import Any, Optional
 import torch
 import torch.distributed as dist
 from torch import Tensor
-from torch.distributed.tensor import DTensor
 from transformers.models.qwen3_5.modeling_qwen3_5 import (
     BaseModelOutputWithPooling,
     Cache,
@@ -390,14 +389,9 @@ def forward_with_torch_backend(
         )
 
     fused_linear_for_ppo = FusedLinearForPPO()
-    vocab_weights = self.lm_head.weight
-    if isinstance(vocab_weights, DTensor):
-        vocab_weights = vocab_weights.full_tensor()
-    vocab_weights = vocab_weights.to(hidden_states.device)
-    hidden_states = hidden_states.to(vocab_weights.dtype)
     log_probs, entropy = fused_linear_for_ppo.forward(
         hidden_states=hidden_states,
-        vocab_weights=vocab_weights,
+        vocab_weights=self.lm_head.weight,
         input_ids=rolled_labels,
         temperature=temperature,
     )
@@ -456,14 +450,9 @@ def forward_with_triton_backend(
             "To use forward_with_triton_backend, either labels or input_ids must be provided."
         )
 
-    vocab_weights = self.lm_head.weight
-    if isinstance(vocab_weights, DTensor):
-        vocab_weights = vocab_weights.full_tensor()
-    vocab_weights = vocab_weights.to(hidden_states.device)
-    hidden_states = hidden_states.to(vocab_weights.dtype)
     log_probs, entropy = linear_cross_entropy(
         hidden_states,
-        vocab_weights,
+        self.lm_head.weight,
         rolled_labels,
         temperature,
         "none",
