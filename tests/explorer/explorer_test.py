@@ -19,11 +19,11 @@ from tests.tools import (
     RayUnittestBase,
     RayUnittestBaseAsync,
     TensorBoardParser,
-    get_api_model_path,
     get_checkpoint_path,
     get_model_path,
     get_template_config,
     get_unittest_dataset_config,
+    get_vision_language_model_path,
 )
 from trinity.buffer import get_buffer_reader
 from trinity.buffer.operators import ExperienceOperatorV1
@@ -246,7 +246,7 @@ class TestExplorerGSM8KRULERNoEval(BaseExplorerCase):
         self.config.explorer.auxiliary_models = [
             InferenceModelConfig(
                 name="aux_model",
-                model_path=get_api_model_path(),
+                model_path=get_vision_language_model_path(),
                 tensor_parallel_size=1,
                 engine_num=2,
             )

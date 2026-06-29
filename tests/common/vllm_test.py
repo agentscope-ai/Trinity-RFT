@@ -15,11 +15,11 @@ from transformers import AutoConfig, AutoTokenizer
 from tests.tools import (
     CHAT_TEMPLATE,
     RayUnittestBaseAsync,
-    get_api_model_path,
     get_checkpoint_path,
     get_model_path,
     get_moe_model_path,
     get_template_config,
+    get_vision_language_model_path,
 )
 from trinity.common.config import Config
 from trinity.common.constants import ROLLOUT_WEIGHT_SYNC_GROUP_NAME, SyncMethod
@@ -351,7 +351,7 @@ class TestMultiModal(VLLMTestBase):
         # configure the model
         self.config = get_template_config()
         self.config.mode = "explore"
-        self.config.model.model_path = get_api_model_path()
+        self.config.model.model_path = get_vision_language_model_path()
         self.config.model.custom_chat_template = CHAT_TEMPLATE
         self.config.algorithm.repeat_times = 4
         self.config.explorer.rollout_model.chat_template = CHAT_TEMPLATE
@@ -725,7 +725,7 @@ class TestQwen35APIServerReasoning(VLLMTestBase):
     async def asyncSetUp(self):
         self.config = get_template_config()
         self.config.mode = "explore"
-        self.config.model.model_path = get_api_model_path()
+        self.config.model.model_path = get_vision_language_model_path()
         self.config.explorer.rollout_model.engine_type = "vllm"
         self.config.explorer.rollout_model.engine_num = 1
         self.config.explorer.rollout_model.chat_template = CHAT_TEMPLATE
@@ -802,7 +802,7 @@ class TestQwen35APIServerMultiModal(VLLMTestBase):
     async def asyncSetUp(self):
         self.config = get_template_config()
         self.config.mode = "explore"
-        self.config.model.model_path = get_api_model_path()
+        self.config.model.model_path = get_vision_language_model_path()
         self.config.explorer.rollout_model.engine_type = "vllm"
         self.config.explorer.rollout_model.engine_num = 1
         self.config.explorer.rollout_model.chat_template = CHAT_TEMPLATE
@@ -1533,7 +1533,7 @@ class TestAPIServerToolCall(VLLMTestBase):
     async def asyncSetUp(self):
         self.config = get_template_config()
         self.config.mode = "explore"
-        self.config.model.model_path = get_api_model_path()
+        self.config.model.model_path = get_vision_language_model_path()
         self.config.explorer.rollout_model.engine_type = "vllm"
         self.config.explorer.rollout_model.engine_num = 1
         self.config.explorer.rollout_model.tensor_parallel_size = 1
@@ -1558,7 +1558,7 @@ class TestAPIServerToolCall(VLLMTestBase):
         import json
         import time
 
-        tokenizer = AutoTokenizer.from_pretrained(get_api_model_path())
+        tokenizer = AutoTokenizer.from_pretrained(get_vision_language_model_path())
         print_debug("\n\n" + "=" * 30 + " Running test_api_tool_calls " + "=" * 30)
         start_time = time.time()
 

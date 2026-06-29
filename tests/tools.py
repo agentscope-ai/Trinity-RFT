@@ -22,11 +22,9 @@ from trinity.common.constants import (
     StorageType,
 )
 
-ALTERNATIVE_MODEL_PATH_ENV_VAR = "TRINITY_ALTERNATIVE_MODEL_PATH"
-API_MODEL_PATH_ENV_VAR = "TRINITY_API_MODEL_PATH"
+LARGE_MODEL_PATH_ENV_VAR = "TRINITY_LARGE_MODEL_PATH"
 MOE_MODEL_PATH_ENV_VAR = "TRINITY_MOE_MODEL_PATH"
 VLM_MODEL_PATH_ENV_VAR = "TRINITY_VLM_MODEL_PATH"
-ALTERNATIVE_VLM_MODEL_PATH_ENV_VAR = "TRINITY_ALTERNATIVE_VLM_MODEL_PATH"
 SFT_DATASET_PATH_ENV_VAR = "TRINITY_SFT_DATASET_PATH"
 
 
@@ -204,20 +202,11 @@ def get_model_path() -> str:
     return path
 
 
-def get_alternative_model_path() -> str:
-    path = os.environ.get(ALTERNATIVE_MODEL_PATH_ENV_VAR)
+def get_large_model_path() -> str:
+    path = os.environ.get(LARGE_MODEL_PATH_ENV_VAR)
     if not path:
         raise EnvironmentError(
-            f"Please set `export {ALTERNATIVE_MODEL_PATH_ENV_VAR}=<your_model_dir>` before running this test."
-        )
-    return path
-
-
-def get_api_model_path() -> str:
-    path = os.environ.get(API_MODEL_PATH_ENV_VAR)
-    if not path:
-        raise EnvironmentError(
-            f"Please set `export {API_MODEL_PATH_ENV_VAR}=<your_api_model_checkpoint_dir>` before running this test."
+            f"Please set `export {LARGE_MODEL_PATH_ENV_VAR}=<your_model_dir>` before running this test."
         )
     return path
 
@@ -245,15 +234,6 @@ def get_vision_language_model_path() -> str:
     if not path:
         raise EnvironmentError(
             f"Please set `export {VLM_MODEL_PATH_ENV_VAR}=<your_model_dir>` before running this test."
-        )
-    return path
-
-
-def get_alternative_vision_language_model_path() -> str:
-    path = os.environ.get(ALTERNATIVE_VLM_MODEL_PATH_ENV_VAR)
-    if not path:
-        raise EnvironmentError(
-            f"Please set `export {ALTERNATIVE_VLM_MODEL_PATH_ENV_VAR}=<your_model_dir>` before running this test."
         )
     return path
 
