@@ -584,8 +584,8 @@ window.runMermaid = runMermaid;</script>
           </summary>
           <ul>
             <li class="toctree-l2 current "><a class="reference" href="monkey_patch.html">latest</a></li>
+            <li class="toctree-l2  "><a class="reference" href="../../../../../v0.6.0/index.html">v0.6.0</a></li>
             <li class="toctree-l2  "><a class="reference" href="../../../../../v0.5.2/index.html">v0.5.2</a></li>
-            <li class="toctree-l2  "><a class="reference" href="../../../../../v0.5.1/index.html">v0.5.1</a></li>
           </ul>
         </details>
       </li>
@@ -1042,9 +1042,97 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.distributed.tensor</span><span class="w"> </span><span class="kn">import</span> <span class="n">DTensor</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">transformers.modeling_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">PreTrainedModel</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_patch_triton_kernel_shared_memory</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Patch veRL Triton kernels to avoid shared-memory OOM on GPUs with limited SMEM.</span>
+
+<span class="sd">    veRL&#39;s ``efficient_entropy_kernel_general_mainloop`` (and the backward</span>
+<span class="sd">    ``d_logits`` variants) use ``BLOCK_SIZE_N=256`` by default, which requires</span>
+<span class="sd">    128 * 256 * 4 = 131072 bytes of shared memory per block.  Some GPUs (e.g.</span>
+<span class="sd">    L20 with 99 KB / 101376 bytes per block) cannot satisfy this, raising::</span>
+
+<span class="sd">        triton.runtime.errors.OutOfResources: out of resource: shared memory,</span>
+<span class="sd">        Required: 131072, Hardware limit: 101376.</span>
+
+<span class="sd">    This helper detects the hardware limit and, when insufficient, replaces the</span>
+<span class="sd">    autotune configs of the affected kernels with ``BLOCK_SIZE_N=128``</span>
+<span class="sd">    (65536 bytes) so the kernels can launch successfully.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.kernel</span><span class="w"> </span><span class="kn">import</span> <span class="n">kernels</span>
+    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+        <span class="k">return</span>  <span class="c1"># veRL not available; nothing to patch</span>
+
+    <span class="c1"># Only relevant on CUDA GPUs.</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+        <span class="k">return</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="c1"># max_shared_memory_per_block is in bytes.</span>
+        <span class="n">max_smem</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">get_device_properties</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">shared_memory_per_block</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="k">return</span>
+
+    <span class="c1"># 131072 bytes is the requirement for BLOCK_SIZE_N=256 (128 * 256 * 4).</span>
+    <span class="n">SMEM_THRESHOLD</span> <span class="o">=</span> <span class="mi">131072</span>
+    <span class="k">if</span> <span class="n">max_smem</span> <span class="o">&gt;=</span> <span class="n">SMEM_THRESHOLD</span><span class="p">:</span>
+        <span class="k">return</span>  <span class="c1"># Hardware is sufficient; no patch needed.</span>
+
+    <span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">&quot;GPU shared memory per block (</span><span class="si">{</span><span class="n">max_smem</span><span class="si">}</span><span class="s2"> bytes) is insufficient for &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;veRL Triton kernels with BLOCK_SIZE_N=256 (requires </span><span class="si">{</span><span class="n">SMEM_THRESHOLD</span><span class="si">}</span><span class="s2"> bytes). &quot;</span>
+        <span class="sa">f</span><span class="s2">&quot;Patching kernel configs to use BLOCK_SIZE_N=128.&quot;</span>
+    <span class="p">)</span>
+
+    <span class="kn">import</span><span class="w"> </span><span class="nn">triton</span>
+
+    <span class="c1"># Smaller config that fits within 65536 bytes of shared memory.</span>
+    <span class="n">safe_config_mainloop</span> <span class="o">=</span> <span class="n">triton</span><span class="o">.</span><span class="n">Config</span><span class="p">(</span>
+        <span class="p">{</span><span class="s2">&quot;BLOCK_SIZE_M&quot;</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span> <span class="s2">&quot;BLOCK_SIZE_N&quot;</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span> <span class="s2">&quot;BLOCK_SIZE_K&quot;</span><span class="p">:</span> <span class="mi">32</span><span class="p">},</span>
+        <span class="n">num_stages</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="n">num_warps</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">safe_config_backward</span> <span class="o">=</span> <span class="n">triton</span><span class="o">.</span><span class="n">Config</span><span class="p">(</span>
+        <span class="p">{</span><span class="s2">&quot;BLOCK_SIZE_M&quot;</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span> <span class="s2">&quot;BLOCK_SIZE_N&quot;</span><span class="p">:</span> <span class="mi">128</span><span class="p">,</span> <span class="s2">&quot;BLOCK_SIZE_K&quot;</span><span class="p">:</span> <span class="mi">32</span><span class="p">,</span> <span class="s2">&quot;GROUP_SIZE_M&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">},</span>
+        <span class="n">num_stages</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="n">num_warps</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Forward kernel.</span>
+    <span class="n">_replace_autotune_configs</span><span class="p">(</span>
+        <span class="n">kernels</span><span class="p">,</span> <span class="s2">&quot;efficient_entropy_kernel_general_mainloop&quot;</span><span class="p">,</span> <span class="p">[</span><span class="n">safe_config_mainloop</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="c1"># Backward kernels that also use BLOCK_SIZE_N=256.</span>
+    <span class="n">_replace_autotune_configs</span><span class="p">(</span>
+        <span class="n">kernels</span><span class="p">,</span>
+        <span class="s2">&quot;efficient_entropy_backward_kernel_general_d_logits&quot;</span><span class="p">,</span>
+        <span class="p">[</span><span class="n">safe_config_backward</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="n">_replace_autotune_configs</span><span class="p">(</span>
+        <span class="n">kernels</span><span class="p">,</span>
+        <span class="s2">&quot;efficient_entropy_backward_kernel_general_d_logits_split_N&quot;</span><span class="p">,</span>
+        <span class="p">[</span><span class="n">safe_config_backward</span><span class="p">],</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_replace_autotune_configs</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">kernel_name</span><span class="p">,</span> <span class="n">new_configs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Replace the autotune configs of a Triton kernel, if not already patched.&quot;&quot;&quot;</span>
+    <span class="n">kernel</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">kernel_name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">kernel</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="c1"># Guard against double-patching.</span>
+    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="s2">&quot;_smem_patched&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+        <span class="k">return</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="s2">&quot;configs&quot;</span><span class="p">):</span>
+        <span class="n">kernel</span><span class="o">.</span><span class="n">configs</span> <span class="o">=</span> <span class="n">new_configs</span>
+        <span class="n">kernel</span><span class="o">.</span><span class="n">_smem_patched</span> <span class="o">=</span> <span class="kc">True</span>
+
 
 <span class="c1"># Map model types to their specific implementation modules.</span>
 <span class="c1"># To extend support for a new model, simply add an entry here.</span>
@@ -1064,7 +1152,7 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="patch_fused_kernels">
 <a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl_legacy.monkey_patch.html#trinity.trainer.verl_legacy.monkey_patch.patch_fused_kernels">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">patch_fused_kernels</span><span class="p">(</span><span class="n">fused_kernels_backend</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">patch_fused_kernels</span><span class="p">(</span><span class="n">fused_kernels_backend</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>  <span class="c1"># noqa: C901</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Fix VLM sequence parallelism bug with optimized backend in veRL.&quot;&quot;&quot;</span>
 
     <span class="c1"># fix torch</span>
@@ -1109,6 +1197,11 @@ window.runMermaid = runMermaid;</script>
                     <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">input_ids</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
                 <span class="p">)</span>
 
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">vocab_weights</span><span class="p">,</span> <span class="n">DTensor</span><span class="p">):</span>
+                <span class="n">vocab_weights</span> <span class="o">=</span> <span class="n">vocab_weights</span><span class="o">.</span><span class="n">full_tensor</span><span class="p">()</span>
+            <span class="n">vocab_weights</span> <span class="o">=</span> <span class="n">vocab_weights</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">hidden_states</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">hidden_states</span> <span class="o">=</span> <span class="n">hidden_states</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">vocab_weights</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
             <span class="k">return</span> <span class="n">original_torch_backend_forward</span><span class="p">(</span>
                 <span class="bp">self</span><span class="p">,</span>
                 <span class="n">hidden_states</span><span class="p">,</span>
@@ -1121,6 +1214,10 @@ window.runMermaid = runMermaid;</script>
         <span class="n">FusedLinearForPPO</span><span class="o">.</span><span class="n">_is_patched</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="k">else</span><span class="p">:</span>  <span class="c1"># triton</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.kernel</span><span class="w"> </span><span class="kn">import</span> <span class="n">linear_cross_entropy</span>
+
+        <span class="c1"># Patch Triton kernel configs to avoid shared-memory OOM on GPUs with</span>
+        <span class="c1"># limited per-block shared memory (e.g. A100 with 99 KB).</span>
+        <span class="n">_patch_triton_kernel_shared_memory</span><span class="p">()</span>
 
         <span class="c1"># Make patch idempotent: store the original function once and avoid re-wrapping.</span>
         <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">linear_cross_entropy</span><span class="p">,</span> <span class="s2">&quot;_is_patched&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
@@ -1162,6 +1259,10 @@ window.runMermaid = runMermaid;</script>
                     <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">labels</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
                 <span class="p">)</span>
 
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weight</span><span class="p">,</span> <span class="n">DTensor</span><span class="p">):</span>
+                <span class="n">weight</span> <span class="o">=</span> <span class="n">weight</span><span class="o">.</span><span class="n">full_tensor</span><span class="p">()</span>
+            <span class="n">weight</span> <span class="o">=</span> <span class="n">weight</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">hidden</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="n">hidden</span> <span class="o">=</span> <span class="n">hidden</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">weight</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">original_linear_cross_entropy</span><span class="p">(</span><span class="n">hidden</span><span class="p">,</span> <span class="n">weight</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="n">linear_cross_entropy</span><span class="o">.</span><span class="n">linear_cross_entropy</span> <span class="o">=</span> <span class="n">triton_backend_forward</span>
