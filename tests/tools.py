@@ -379,6 +379,20 @@ def get_unittest_dataset_config(dataset_name: str = "countdown", split: str = "t
                 image_key="images",
             ),
         )
+    elif dataset_name == "mm_tasks":
+        # Multi-modal RL dataset with 4 samples
+        return TasksetConfig(
+            name=dataset_name,
+            path=os.path.join(os.path.dirname(__file__), "template", "data", "mm_tasks"),
+            split="train",
+            format=FormatConfig(
+                prompt_type=PromptType.MESSAGES,
+                messages_key="question",
+                response_key="answer",
+            ),
+            default_workflow_type="math_workflow",
+            default_reward_fn_type="math_boxed_reward",
+        )
     elif dataset_name == "qwenpaw_sft":
         return ExperienceBufferConfig(
             name=dataset_name,

@@ -1255,9 +1255,11 @@ class TestServeWithTrainer(RayUnittestBaseAsync):
 class TestMultiModalGRPO(BaseTrainerCase):
     def test_trainer(self):
         """Test both mode with multi-modal data."""
-        self.config.buffer.explorer_input.taskset = get_unittest_dataset_config(
-            "geometry"
-        )  # Total 8 tasks
+        self.config.buffer.explorer_input.taskset = None
+        self.config.buffer.explorer_input.tasksets = [
+            get_unittest_dataset_config("geometry"),  # Total 8 tasks
+            get_unittest_dataset_config("mm_tasks"),  # Total 4 tasks
+        ]
         self.config.model.model_path = get_vision_language_model_path()
         self.config.algorithm.algorithm_type = "grpo"
         self.config.algorithm.advantage_fn = "grpo"
@@ -1272,20 +1274,20 @@ class TestMultiModalGRPO(BaseTrainerCase):
         parser = TensorBoardParser(os.path.join(self.config.monitor.cache_dir, "tensorboard"))
         rollout_metrics = parser.metric_list("rollout")
         self.assertGreater(len(rollout_metrics), 0)
-        self.assertEqual(parser.metric_max_step(rollout_metrics[0]), 2)
+        self.assertEqual(parser.metric_max_step(rollout_metrics[0]), 3)
         actor_metrics = parser.metric_list("actor")
         self.assertGreater(len(actor_metrics), 0)
-        self.assertEqual(parser.metric_max_step(actor_metrics[0]), 2)
+        self.assertEqual(parser.metric_max_step(actor_metrics[0]), 3)
         time_metrics = parser.metric_list("time")
         self.assertGreater(len(time_metrics), 0)
-        self.assertEqual(parser.metric_max_step(time_metrics[0]), 2)
+        self.assertEqual(parser.metric_max_step(time_metrics[0]), 3)
         # check save lastest checkpoint
-        checkpoint_step_2, step_num = get_checkpoint_dir_with_step_num(
+        checkpoint_step_3, step_num = get_checkpoint_dir_with_step_num(
             checkpoint_root_path=self.config.checkpoint_job_dir,
             trainer_type=self.config.trainer.trainer_type,
         )
-        self.assertGreater(len(os.listdir(os.path.join(checkpoint_step_2, "actor"))), 0)
-        self.assertEqual(step_num, 2)
+        self.assertGreater(len(os.listdir(os.path.join(checkpoint_step_3, "actor"))), 0)
+        self.assertEqual(step_num, 3)
 
 
 class TestMultiModalSFT(BaseTrainerCase):
