@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Workflow module"""
+from trinity.common.workflows.harbor_workflow import HarborWorkflow
 from trinity.common.workflows.workflow import Task, Workflow
 from trinity.utils.registry import Registry
 
@@ -56,6 +57,7 @@ WORKFLOWS: Registry = Registry(
 )
 
 __all__ = [
+    "HarborWorkflow",
     "Task",
     "Workflow",
     "WORKFLOWS",
