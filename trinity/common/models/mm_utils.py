@@ -356,12 +356,11 @@ class vLLMMultiModalRender(MultiModalRender):
             if multi_modal_data is None:
                 return None
 
-        def _normalize_media_item(item: Any, *, modality: str) -> Any:
-            # vLLM may return wrapper objects with `.media` for images,
-            # and tuples like (video_data, video_meta) for videos.
+        def _unwrap_media(item: Any) -> Any:
+            """Extract raw media from vLLM wrapper objects or tuples."""
             if hasattr(item, "media"):
                 return item.media
-            if modality == "video" and isinstance(item, tuple) and len(item) >= 1:
+            if isinstance(item, tuple) and len(item) >= 1:
                 return item[0]
             return item
 
@@ -371,12 +370,34 @@ class vLLMMultiModalRender(MultiModalRender):
             )
         }
         if images := multi_modal_data.get("image", None):
-            images = [_normalize_media_item(img, modality="image") for img in images]
+            images = [_unwrap_media(img) for img in images]
             image_inputs = self.mm_processor.image_processor(images=images, return_tensors="pt")
             multi_modal_inputs.update(image_inputs)
         if videos := multi_modal_data.get("video", None):
-            videos = [_normalize_media_item(vid, modality="video") for vid in videos]
-            video_inputs = self.mm_processor.video_processor(videos=videos, return_tensors="pt")
+            # vLLM returns video items as (video_array, metadata) tuples.
+            # The metadata dict contains frames_indices, fps, do_sample_frames, etc.
+            # We must pass this metadata to the HF video_processor so it uses the
+            # same frame count as vLLM's rollout, avoiding frame-count mismatch
+            # between mm_token_type_ids (from vLLM tokens) and video_grid_thw
+            # (from HF video_processor).
+            video_arrays = []
+            video_metadatas = []
+            for vid in videos:
+                if isinstance(vid, tuple) and len(vid) >= 2 and isinstance(vid[1], dict):
+                    video_arrays.append(vid[0])
+                    # Strip do_sample_frames from metadata dict — it's a kwarg
+                    # for preprocess(), not a field of VideoMetadata.
+                    meta = {k: v for k, v in vid[1].items() if k != "do_sample_frames"}
+                    video_metadatas.append(meta)
+                else:
+                    video_arrays.append(_unwrap_media(vid))
+                    video_metadatas.append(None)  # type: ignore
+            video_inputs = self.mm_processor.video_processor(
+                videos=video_arrays,
+                video_metadata=video_metadatas,
+                do_sample_frames=False,  # vLLM already sampled frames
+                return_tensors="pt",
+            )
             multi_modal_inputs.update(video_inputs)
         return multi_modal_inputs
 
