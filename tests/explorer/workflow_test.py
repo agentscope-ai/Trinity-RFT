@@ -904,7 +904,7 @@ class ConcurrentTestWorkflow(Workflow):
 class ConcurrentRecordingWorkflow(WorkflowWithRecording):
     def __init__(self, model: ModelWrapper, task: Task, auxiliary_models=None):
         super().__init__(task=task, model=model, auxiliary_models=auxiliary_models)
-        self.client = openai.AsyncOpenAI(base_url=f"{self.base_url}/v1", api_key=self.api_key)
+        self.client = openai.AsyncOpenAI(base_url=self.base_url, api_key=self.api_key)
 
     def reset(self, task: Task):
         self.task = task
