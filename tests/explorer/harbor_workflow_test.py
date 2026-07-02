@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import os
 import re
-import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -13,12 +12,6 @@ from typing import Any
 
 import openai
 import ray
-
-REPO_ROOT = Path(__file__).resolve().parents[2]
-HARBOR_SRC = REPO_ROOT / "thirdparties" / "harbor" / "src"
-if str(HARBOR_SRC) not in sys.path:
-    sys.path.insert(0, str(HARBOR_SRC))
-
 from harbor.agents.base import BaseAgent
 from harbor.environments.base import BaseEnvironment, ExecResult
 from harbor.environments.capabilities import EnvironmentCapabilities
@@ -31,6 +24,8 @@ from trinity.common.constants import MODEL_PATH_ENV_VAR
 from trinity.common.models.allocator import Allocator
 from trinity.common.workflows.harbor_workflow import HarborWorkflow
 from trinity.common.workflows.workflow import Task
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 class InProcessHarborEnvironment(BaseEnvironment):
@@ -207,26 +202,21 @@ class HarborWorkflowTest(unittest.IsolatedAsyncioTestCase):
                 raw_task={"task_dir": str(task_dir)},
                 workflow_args={
                     "agent_import_path": (
-                        "tests.explorer.harbor_workflow_test:"
-                        "OpenAIArithmeticAgent"
+                        "tests.explorer.harbor_workflow_test:" "OpenAIArithmeticAgent"
                     ),
                     "environment": {
                         "import_path": (
-                            "tests.explorer.harbor_workflow_test:"
-                            "InProcessHarborEnvironment"
+                            "tests.explorer.harbor_workflow_test:" "InProcessHarborEnvironment"
                         ),
                     },
                     "verifier": {
                         "import_path": (
-                            "tests.explorer.harbor_workflow_test:"
-                            "ExactAnswerHarborVerifier"
+                            "tests.explorer.harbor_workflow_test:" "ExactAnswerHarborVerifier"
                         ),
                         "kwargs": {"expected_answer": "42"},
                     },
                     "provider_env": (
-                        {}
-                        if uses_real_vllm
-                        else {"TRINITY_FAKE_OPENAI_RESPONSE": "not-a-number"}
+                        {} if uses_real_vllm else {"TRINITY_FAKE_OPENAI_RESPONSE": "not-a-number"}
                     ),
                     "trial_name": "harbor-workflow-vllm-arithmetic",
                     "trials_dir": tmp_dir,

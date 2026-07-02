@@ -40,7 +40,7 @@ Metrics = Dict[str, float]
 class Task(dict):
     """A Task class that defines a task and its associated reward function / workflow."""
 
-    workflow: Type[Workflow] = None
+    workflow: Type[WorkflowBase] = None
     repeat_times: Optional[int] = None
     format_args: FormatConfig = field(default_factory=FormatConfig)
     rollout_args: GenerationConfig = field(default_factory=GenerationConfig)
@@ -61,7 +61,7 @@ class Task(dict):
         self,
         model: ModelWrapper,
         auxiliary_models: Optional[List[ModelWrapper]] = None,
-    ) -> Workflow:
+    ) -> "WorkflowBase":
         """Convert the task to a workflow.
 
         Args:
@@ -104,7 +104,7 @@ class Task(dict):
 class WorkflowBase:
     """The base workflow interface."""
 
-    def __init__(self, task: Task, model: ModelWrapper) -> None:
+    def __init__(self, task: Task, model: ModelWrapper, **kwargs) -> None:
         self.task = task
         self.model = model
         self.model.set_api_key(task.api_key)  # set the API key for the rollout model

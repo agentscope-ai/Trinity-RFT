@@ -14,7 +14,7 @@ from trinity.common.constants import LOG_DIR_ENV_VAR, LOG_LEVEL_ENV_VAR
 from trinity.common.experience import Experience
 from trinity.common.models.allocator import Allocator
 from trinity.common.models.model import ModelWrapper
-from trinity.common.workflows import Status, Task, Workflow
+from trinity.common.workflows import Status, Task, WorkflowBase
 from trinity.utils.log import get_logger
 
 
@@ -46,7 +46,7 @@ class WorkflowRunner:
             )
             for index, auxiliary_model_id in enumerate(auxiliary_model_ids or [])
         ]
-        self.workflow_instance: Workflow = None
+        self.workflow_instance: WorkflowBase = None
         self.rollout_model_id = rollout_model_id
         self.runner_id = runner_id
         self.runner_state = {
@@ -84,7 +84,7 @@ class WorkflowRunner:
     def is_alive(self):
         return True
 
-    def _create_workflow_instance(self, task: Task) -> Workflow:
+    def _create_workflow_instance(self, task: Task) -> WorkflowBase:
         if task.workflow is None:
             raise ValueError("Workflow is not set in the task.")
         if (
@@ -104,7 +104,7 @@ class WorkflowRunner:
         self.workflow_instance.set_single_run_context(task.run_id)
         return self.workflow_instance
 
-    async def _run_workflow(self, workflow_instance: Workflow) -> Status:
+    async def _run_workflow(self, workflow_instance: WorkflowBase) -> Status:
         status = await workflow_instance.execute()
         if not isinstance(status, Status):
             raise TypeError(
@@ -113,7 +113,7 @@ class WorkflowRunner:
             )
         return status
 
-    def _create_isolated_workflow_instance(self, task: Task, run_id: int) -> Workflow:
+    def _create_isolated_workflow_instance(self, task: Task, run_id: int) -> WorkflowBase:
         model_wrapper = self.model_wrapper.clone_with_isolated_state()
         # only a shallow copy is enough; use copy.copy so the result stays a Task
         # (Task inherits dict, so task.copy() would return a plain dict)
@@ -238,7 +238,7 @@ class WorkflowRunner:
 
     async def _execute_single_run(
         self,
-        workflow: Workflow,
+        workflow: WorkflowBase,
     ) -> Status:
         st = time.time()
         self.runner_state["terminate_time"] = None
