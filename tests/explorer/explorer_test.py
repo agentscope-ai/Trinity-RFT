@@ -438,6 +438,11 @@ def run_agent(proxy_url, model_path: str, stream: bool):
         return response.choices[0].message.content
 
 
+@unittest.skip(
+    "serve-mode experience collection moved to rollout model-side recording stores; "
+    "the proxy /feedback//commit path and external reward reporting are being "
+    "redesigned (see recording refactor plan)."
+)
 class ServeTest(RayUnittestBaseAsync):
     def setUp(self):
         self.config = get_template_config()

@@ -133,7 +133,7 @@ class WorkflowTest(unittest.TestCase):
             workflow_args={"max_env_steps": 10, "actual_steps": 5},
         )
         workflow = task.to_workflow(model=self.model)
-        if workflow.asynchronous:
+        if workflow.is_async:
             experiences = asyncio.run(workflow.run_async())
         else:
             experiences = workflow.run()
@@ -156,7 +156,7 @@ class WorkflowTest(unittest.TestCase):
             workflow_args={"max_env_steps": 10, "actual_steps": 5},
         )
         workflow = task.to_workflow(model=self.model)
-        if workflow.asynchronous:
+        if workflow.is_async:
             experiences = asyncio.run(workflow.run_async())
         else:
             experiences = workflow.run()
@@ -169,14 +169,14 @@ class WorkflowTest(unittest.TestCase):
             self.assertAlmostEqual(exp.reward, expected_reward)  # type: ignore
 
     def test_workflows_stop_at_max_env_steps(self) -> None:
-        for workflow in _dummy_workflows:
+        for workflow_cls in _dummy_workflows:
             task = Task(
-                workflow=workflow,
+                workflow=workflow_cls,
                 repeat_times=self.taskset_config.repeat_times,
                 workflow_args={"max_env_steps": 3, "actual_steps": 100},  # actual > max
             )
             workflow = task.to_workflow(model=self.model)
-            if workflow.asynchronous:
+            if workflow.is_async:
                 experiences = asyncio.run(workflow.run_async())  # type: ignore
             else:
                 experiences = workflow.run()
@@ -184,9 +184,9 @@ class WorkflowTest(unittest.TestCase):
 
     def test_workflows_raise_error(self) -> None:
         self.model.enable_history = False
-        for workflow in _dummy_workflows:
+        for workflow_cls in _dummy_workflows:
             task = Task(
-                workflow=workflow,
+                workflow=workflow_cls,
                 repeat_times=self.taskset_config.repeat_times,
                 workflow_args={"max_env_steps": 10, "actual_steps": 5},
             )

@@ -295,7 +295,6 @@ class Explorer:
         """
         while True:
             try:
-                self.logger.info(f"Explore step {self.explore_step_num + 1} started.")
                 explore_contionue = await self.explore_step()
                 if not explore_contionue:
                     # TODO: support eval on last checkpoint
@@ -343,6 +342,7 @@ class Explorer:
             )
             await self._finish_explore_step(step=oldest_step)
             self.last_monitored_step = oldest_step
+        self.logger.info(f"Explore step {self.explore_step_num} started.")
         await self.rollout_coordinator.submit_batch.remote(
             batch_id=self.explore_step_num,
             tasks=tasks,

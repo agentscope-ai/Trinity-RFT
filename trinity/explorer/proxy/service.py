@@ -3,18 +3,22 @@ import time
 from collections import deque
 from typing import Dict, List, Tuple
 
-import torch
-
 from trinity.common.constants import RunningStatus, SyncMethod
-from trinity.common.experience import Experience
 from trinity.common.models.model import ModelWrapper
 from trinity.explorer.explorer import Explorer
-from trinity.explorer.proxy.recorder import HistoryRecorder
 from trinity.utils.log import get_logger
 
 
 class ExplorerService:
-    """Manages the lifecycle and operations of the Explorer API service."""
+    """Manages the lifecycle and operations of the Explorer API service.
+
+    The proxy is a request router + model-weight sync coordinator for serve
+    mode. Experience collection used to live here (SQL-mediated
+    ``/feedback``/``/commit``); it has been removed in favor of rollout
+    model-side recording stores drained through actor methods. Serve-mode
+    external reward reporting is therefore pending
+    (see the recording refactor plan).
+    """
 
     def __init__(self, explorer: Explorer, listen_address: str = "localhost", port: int = 8010):
         self.logger = get_logger(__name__)
@@ -31,16 +35,6 @@ class ExplorerService:
         self.model_version_map: Dict[int, int] = {}  # model index -> model version
         self.sync_task_map: Dict[asyncio.Future, int] = {}  # sync task -> model index
         self.latest_model_version = 0
-        self.session_level_experience_queue: Dict[int, deque[Experience]] = {}
-        self.commit_lock = asyncio.Lock()
-        self.ready_experiences = deque()
-        self.recorder = HistoryRecorder(
-            db_url=explorer.config.explorer.db_url
-            or f"sqlite:///{explorer.config.buffer.cache_dir}/proxy_history.db",
-            table_name="proxy_history",
-        )
-        self.total_experience_count = 0
-        self.ready_experience_count = 0
 
     async def serve(self) -> None:
         from trinity.explorer.proxy.app import run_app
@@ -123,7 +117,8 @@ class ExplorerService:
         self.running_model_ids.rotate(-1)
         if model.api_address is None:
             raise ValueError(
-                "Model does not have a valid API address, please set `enable_openai_api` to `True`."
+                "Model does not have a valid API address; the OpenAI API server "
+                "should have been started automatically during model preparation."
             )
         return model.api_address, self.model_version_map[model_id]
 
@@ -132,57 +127,7 @@ class ExplorerService:
         for i, model in enumerate(self.models):
             metrics[f"rollout/model_{i}/total_request_count"] = model.request_count
             metrics[f"rollout/model_{i}/model_version"] = model.model_version
-        metrics["rollout/total_experience_count"] = self.total_experience_count
-        metrics["rollout/ready_experience_count"] = self.ready_experience_count
         return metrics
-
-    async def record_experience(self, response, model_version: int) -> None:
-        experiences = []
-        for choice in response["choices"]:
-            exp = Experience(
-                tokens=torch.cat(
-                    (
-                        torch.tensor(response["prompt_token_ids"], dtype=torch.int32),
-                        torch.tensor(choice["token_ids"], dtype=torch.int32),
-                    )
-                ),
-                logprobs=(
-                    torch.tensor(
-                        [logprob["logprob"] for logprob in choice["logprobs"]["content"]],
-                        dtype=torch.float32,
-                    )
-                    if "logprobs" in choice and choice["logprobs"] is not None
-                    else torch.tensor([], dtype=torch.float32)
-                ),
-                prompt_length=len(response["prompt_token_ids"]),
-            )
-            exp.eid.suffix = response["id"]
-            exp.info["model_version"] = model_version
-            experiences.append(exp)
-
-        self.total_experience_count += len(experiences)
-        await self.recorder.record_history(experiences)
-
-    async def submit_experiences(self) -> None:
-        async with self.commit_lock:
-            experiences = list(self.ready_experiences)
-            self.ready_experiences.clear()
-            metrics = await self.explorer.rollout_coordinator.process_experiences.remote(
-                [Experience.serialize_many(experiences)]
-            )
-            metrics.update(self.collect_metrics())
-            self.explorer.explore_step_num += 1
-            self.explorer.monitor.log(metrics, self.explorer.explore_step_num)
-
-    async def record_feedback(self, reward: float, msg_ids: List[str], task_id: str, run_id: int):
-        exps = await self.recorder.update_reward(
-            reward=reward,
-            msg_ids=msg_ids,
-            task_id=task_id,
-            run_id=run_id,
-        )
-        self.ready_experience_count += len(exps)
-        self.ready_experiences.extend(exps)
 
     async def shutdown(self):
         if not self.running:

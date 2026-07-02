@@ -82,6 +82,18 @@ class Allocator:
         config = deepcopy(config)
         config.engine_id = engine_id
 
+        if config.engine_type.startswith("vllm") or config.engine_type == "sglang":
+            # ``enable_history`` and ``enable_openai_api`` are both forced on for
+            # the rollout model by ``ConfigValidator`` (the recorder runs inside
+            # the OpenAI API server). Nothing to do here. Note:
+            # ``enable_return_routed_experts`` is NOT forced — it is driven by the
+            # user's ``enable_router_replay`` (see ``config_validator``), so dense
+            # models can record history without vLLM's routed-experts capturer
+            # (which raises on configs lacking ``num_experts_per_tok``). The
+            # recorder simply leaves ``Experience.routed_experts`` as None when
+            # the engine did not capture any.
+            pass
+
         actor_bundle_lists = []
         for node_id in range(config.nnodes):
             actor_name = self.get_actor_name(role, engine_id, node_id)

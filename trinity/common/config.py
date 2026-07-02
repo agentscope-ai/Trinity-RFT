@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """Configs for RFT."""
+
 from __future__ import annotations
 
 import os
@@ -567,11 +568,27 @@ class InferenceModelConfig:
     # For Qwen3
     enable_thinking: Optional[bool] = None
 
-    # For history recording
+    # [Deprecated, not user-settable] Controls engine-side experience recording.
+    # When enabled, the engine wraps ``engine_client.generate`` / the API server
+    # middleware and writes each finished turn as a Trinity ``Experience`` to the
+    # in-process ``MemoryStore``, keyed by the recording identity (``record_key``).
+    # The ``ConfigValidator`` forces this to ``True`` for the rollout model of
+    # every engine type (the ``Workflow.execute`` overwrite path and the Scheduler
+    # drain both rely on experiences being captured) and to ``False`` for
+    # auxiliary models (which must never record). Any user-supplied value is
+    # overridden. The capture width (top-k logprobs) reuses ``logprobs`` below
+    # (default 1). Routed-experts capture is opt-in via ``enable_router_replay``
+    # (mirrored to ``enable_return_routed_experts`` in ``config_validator``); it is
+    # not implied by ``enable_history``, so dense models can record history too.
     enable_history: bool = False
 
-    # For OpenAI API
-    enable_openai_api: bool = False
+    # [Deprecated, not user-settable] Whether to start the OpenAI API server for
+    # this model. The API server is now always enabled: it hosts the recording
+    # runner (vLLM/SGLang) and backs the OpenAI client used by workflows.
+    # ``ConfigValidator`` forces this to ``True`` for both the rollout model and
+    # auxiliary models regardless of any user-supplied value. The field is kept
+    # only for backward compatibility with existing YAML configs.
+    enable_openai_api: bool = True
     enable_log_requests: bool = False  # whether to enable request logging in vLLM API server
     base_port: Optional[int] = None
     api_key: str = "EMPTY"
@@ -774,8 +791,6 @@ class ExplorerConfig:
     service_status_check_interval: int = 60
     # keep at least 1 model in running status
     min_running_model_num: int = 1
-    # db url for proxy history recorder, if not set, use proxy_history.db in buffer cache dir
-    db_url: Optional[str] = None
 
     # Experimental feature
     over_rollout: OverRolloutConfig = field(default_factory=OverRolloutConfig)

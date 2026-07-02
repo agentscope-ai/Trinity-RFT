@@ -65,7 +65,6 @@ ssh_port="${port_override:-$TRINITY_REMOTE_SSH_PORT}"
 rsync_args=(
     -az
     --itemize-changes
-    --files-from=-
     --from0
     -e "ssh -p ${ssh_port} -o StrictHostKeyChecking=accept-new"
 )
@@ -83,6 +82,12 @@ if [[ -n "$untracked" ]]; then
     echo "" >&2
 fi
 
+# Write file list to a temp file to avoid the "Bad file descriptor" race
+# condition that occurs when rsync reads --files-from stdin via a pipe.
+tmpfile="$(mktemp -t trinity-sync-XXXXXX)"
+trap 'rm -f "$tmpfile"' EXIT
+git -C "$PROJECT_DIR" ls-files -z > "$tmpfile"
+
 dest="${TRINITY_REMOTE_HOST}:${TRINITY_REMOTE_WORKSPACE}/"
 echo "Syncing git-tracked files: ${PROJECT_DIR}/ -> ${dest}"
-git -C "$PROJECT_DIR" ls-files -z | rsync "${rsync_args[@]}" "${PROJECT_DIR}/" "$dest"
+rsync "${rsync_args[@]}" --files-from="$tmpfile" "${PROJECT_DIR}/" "$dest"

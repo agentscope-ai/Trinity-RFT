@@ -5,7 +5,7 @@ import asyncio
 import copy
 import socket
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
 
 import httpx
 import ray
@@ -14,15 +14,10 @@ from ray.actor import ActorHandle
 from torch import Tensor
 from transformers import AutoConfig
 
+from trinity.buffer.store import ExperienceUpdate
 from trinity.common.config import InferenceModelConfig
 from trinity.common.constants import RunningStatus, SyncMethod
 from trinity.common.experience import Experience
-from trinity.common.models.experience_extraction import (
-    HistoryRecordingStream,
-    convert_api_output_to_experience,
-    get_routed_experts_layout,
-)
-from trinity.common.models.mm_utils import should_use_processor, vLLMMultiModalRender
 from trinity.common.models.utils import get_action_mask_method
 from trinity.utils.log import get_logger
 
@@ -138,9 +133,117 @@ class InferenceModel(ABC):
         """Get the API server URL if available."""
         return None
 
+    def get_api_server_exit_reason(self) -> Optional[str]:
+        """Return API server exit reason if the background server task has exited."""
+        return None
+
     def get_api_key(self) -> str:
         """Get the API key."""
         return "EMPTY"
+
+    async def extract_experience_from_history(
+        self, key: str, clear_history: bool = True
+    ) -> List[Experience]:
+        """Extract recorded experiences by record key from the in-process store.
+
+        Both vLLM and SGLang keep the recorder and its store in-process (the
+        engine / embedded HTTP server runs in the same event loop as the model),
+        so extraction is a direct store lookup with no HTTP hop. Subclasses that
+        enable recording must set ``self.recorder`` (a ``Recorder`` whose
+        ``.store`` is a ``RecordStore``); this base implementation is shared.
+        """
+        return await self._collect_experiences(
+            key,
+            remove=clear_history,
+        )
+
+    async def update_experience_reward(
+        self,
+        key: str,
+        reward: float,
+        info: Optional[dict] = None,
+        sample_ids: Optional[List[str]] = None,
+    ) -> None:
+        """Update reward and optional info on recorded experiences."""
+        await self.update_experience_records(
+            key=key,
+            update=ExperienceUpdate(reward=reward, info=info),
+            sample_ids=sample_ids,
+        )
+
+    async def update_experience_records(
+        self,
+        key: str,
+        update: ExperienceUpdate,
+        sample_ids: Optional[List[str]] = None,
+    ) -> None:
+        """Patch recorded experiences with generation-time training signals."""
+        recorder = getattr(self, "recorder", None)
+        if recorder is None:
+            raise ValueError("Recording is not enabled for this model.")
+        await recorder.flush()
+        if not recorder.store.get(key):
+            return
+        recorder.store.update(
+            key=key,
+            update=update,
+            sample_ids=sample_ids,
+        )
+
+    async def overwrite_history_experiences(self, key: str, payload: bytes) -> None:
+        """Overwrite recorded experiences under one complete record key."""
+        recorder = getattr(self, "recorder", None)
+        if recorder is None:
+            raise ValueError("Recording is not enabled for this model.")
+        await recorder.flush()
+        recorder.store.overwrite(key, Experience.deserialize_many(payload))
+        recorder.forget_record(key)
+
+    async def _drain_experience_records(self, prefix: str) -> List[Experience]:
+        """Remove and return recorded experiences matching a key or prefix."""
+        return await self._collect_experiences(
+            prefix,
+            remove=True,
+        )
+
+    async def _collect_experiences(
+        self,
+        key: str,
+        *,
+        remove: bool,
+    ) -> List[Experience]:
+        """Collect recorded experiences by exact key or store-supported prefix."""
+        recorder = getattr(self, "recorder", None)
+        if recorder is None:
+            raise ValueError("Recording is not enabled for this model.")
+        await recorder.flush()
+        if remove:
+            exps = recorder.store.remove(key)
+            recorder.forget_record(key)
+            return exps
+        return recorder.store.get(key)
+
+    async def drain_experience_records_bytes(self, prefix: str) -> bytes:
+        """Remove matching recorded experiences and return serialized bytes."""
+        return Experience.serialize_many(await self._drain_experience_records(prefix))
+
+    async def delete_experience_records(self, prefix: str) -> None:
+        """Remove recorded experiences matching a key or prefix."""
+        await self._drain_experience_records(prefix)
+
+    async def block_experience_records(self, prefix: str) -> None:
+        """Block future writes for the given batch prefix on this rollout rank.
+
+        Sets the block flag before flushing the recorder so that any in-flight
+        experiences still queued in the recorder are dropped by ``MemoryStore``
+        rather than written back as orphans. ``prefix`` is the batch segment
+        of the store key (``str(batch_id)``).
+        """
+        recorder = getattr(self, "recorder", None)
+        if recorder is None:
+            return
+        recorder.store.block_prefix(prefix)
+        await recorder.flush()
 
     def get_model_config(self) -> InferenceModelConfig:
         """Get the model configuration."""
@@ -284,6 +387,11 @@ class BaseInferenceModel(InferenceModel):
         tools: Optional[List[dict]] = None,
         temperature: Optional[float] = None,
     ) -> Experience:
+        # TODO(recording): when the in-vLLM recorder is active, this is
+        # redundant — it re-tokenizes messages and runs an extra logprobs
+        # forward (and fakes routed_experts), all of which build_experience
+        # already captured at generation time into the MemoryStore. Redirect to
+        # a store lookup by the call's record_key once it's threaded here.
         """Convert a list of messages into an experience in async.
 
         Args:
@@ -357,24 +465,6 @@ class BaseInferenceModel(InferenceModel):
         )
 
 
-def _history_recorder(func):
-    """Decorator to record history of the model calls."""
-
-    async def async_wrapper(self, *args, **kwargs):
-        result = await func(self, *args, **kwargs)
-        if self.enable_history:
-            self._record_history(result)
-        return result
-
-    def sync_wrapper(self, *args, **kwargs):
-        result = func(self, *args, **kwargs)
-        if self.enable_history:
-            self._record_history(result)
-        return result
-
-    return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
-
-
 class ModelWrapper:
     """A wrapper for the InferenceModel Ray Actor"""
 
@@ -427,27 +517,18 @@ class ModelWrapper:
         self.logger = get_logger(__name__)
         self.enable_lora = config.enable_lora
         self.enable_history = config.enable_history
-        self.history = []
         self.status = RunningStatus.RUNNING
-        self.workflow_state: Dict = {}
         self.request_count = 0
-        self.state_lock = asyncio.Lock()
-        self._routed_experts_layout: Optional[Tuple[int, int]] = None
-        self._mm_render = None
 
     async def prepare(self) -> None:
         """Prepare some necessary information for the model before inference."""
-        if not self.config.enable_openai_api:
+        # The OpenAI API server is always enabled for vLLM/SGLang models; only the
+        # Tinker and external backends skip the HTTP probe — Tinker has no real
+        # API server (its OpenAI client is a Ray-remote shim), and external's
+        # address comes from the environment. This short-circuit is intentionally
+        # based on engine type, not on the deprecated ``enable_openai_api`` flag.
+        if self.config.engine_type in {"tinker", "external"}:
             return
-        if (
-            self.config.enable_return_routed_experts
-            and self.config.engine_type == "sglang"
-            and self._routed_experts_layout is None
-        ):
-            self._routed_experts_layout = get_routed_experts_layout(
-                self.model_path,
-                trust_remote_code=self.config.trust_remote_code,
-            )
         if self.api_address is None:
             if self.model is None:
                 raise ValueError("Cannot get API address from the model.")
@@ -462,6 +543,11 @@ class ModelWrapper:
         max_retries = 30
         interval = 2  # seconds
         for i in range(max_retries):
+            reason = await self.model.get_api_server_exit_reason.remote()
+            if reason is not None:
+                raise RuntimeError(
+                    f"API server at {self.api_address} exited before becoming ready: {reason}."
+                )
             try:
                 async with httpx.AsyncClient() as client:
                     response = await client.get(self.api_address + "/health", timeout=5)
@@ -474,61 +560,46 @@ class ModelWrapper:
             f"API server at {self.api_address} not ready after {max_retries} attempts."
         )
 
-    def _record_history(self, exps: Union[Experience, List[Experience]]) -> None:
-        """Record experiences to history."""
-        if isinstance(exps, Experience):
-            self.history.append(exps)
-        elif isinstance(exps, list):
-            self.history.extend(exps)
-        else:
-            raise TypeError("Expected Experience or List[Experience], got {}".format(type(exps)))
-
-    def _assert_openai_routed_experts_request_supported(
-        self, extra_body: Dict[str, Any], kwargs: Dict[str, Any]
-    ) -> None:
-        """Validate routed_experts constraints for OpenAI-compatible backends."""
-        requested_routed_experts = self.config.enable_return_routed_experts or bool(
-            extra_body.get("return_routed_experts", False)
-        )
-        if requested_routed_experts:
-            if self.config.engine_type not in {"sglang", "vllm"}:
-                raise ValueError("Routed experts can only be returned from SGLang or vLLM.")
-            if kwargs.get("stream", False):
-                raise ValueError("Routed experts cannot be returned for streaming requests.")
-            if self.config.engine_type == "sglang" and kwargs.get("n", 1) != 1:
-                raise ValueError(
-                    "SGLang OpenAI API returns routed_experts at response level only; "
-                    "set n=1 when requesting routed_experts."
-                )
-
-    @_history_recorder
-    def generate(self, prompts: List[str], **kwargs) -> List[Experience]:
+    def generate(
+        self, prompts: List[str], enable_recording: bool = False, **kwargs
+    ) -> List[Experience]:
         """Generate a list of experiences from a list of prompts."""
         lora_request = self.get_lora_request()
+        if self.config.enable_history and enable_recording:
+            kwargs["key"] = self._api_key
         results = ray.get(
             [self.model.generate.remote(prompt, lora_request, **kwargs) for prompt in prompts]
         )
         return [exp for exps in results for exp in exps]
 
-    @_history_recorder
-    async def generate_async(self, prompts: List[str], **kwargs) -> List[Experience]:
+    async def generate_async(
+        self, prompts: List[str], enable_recording: bool = False, **kwargs
+    ) -> List[Experience]:
         """Generate a list of experiences from a list of prompts in async."""
         lora_request = await self.get_lora_request_async()
+        if self.config.enable_history and enable_recording:
+            kwargs["key"] = self._api_key
         results = await asyncio.gather(
             *[self.model.generate.remote(prompt, lora_request, **kwargs) for prompt in prompts]
         )
         return [exp for exps in results for exp in exps]
 
-    @_history_recorder
-    def chat(self, messages: List[dict], **kwargs) -> List[Experience]:
+    def chat(
+        self, messages: List[dict], enable_recording: bool = False, **kwargs
+    ) -> List[Experience]:
         """Generate a list of experiences from a list of messages."""
         lora_request = self.get_lora_request()
+        if self.config.enable_history and enable_recording:
+            kwargs["key"] = self._api_key
         return ray.get(self.model.chat.remote(messages, lora_request=lora_request, **kwargs))
 
-    @_history_recorder
-    async def chat_async(self, messages: List[dict], **kwargs) -> List[Experience]:
+    async def chat_async(
+        self, messages: List[dict], enable_recording: bool = False, **kwargs
+    ) -> List[Experience]:
         """Generate a list of experiences from a list of messages in async."""
         lora_request = await self.get_lora_request_async()
+        if self.config.enable_history and enable_recording:
+            kwargs["key"] = self._api_key
         return await self.model.chat.remote(messages, lora_request=lora_request, **kwargs)
 
     def logprobs(self, tokens: List[int], temperature: Optional[float] = None) -> Tensor:
@@ -566,9 +637,24 @@ class ModelWrapper:
         )
 
     @property
+    def base_url(self) -> str:
+        """Get the base URL of the API server."""
+        if not self.api_address:
+            raise ValueError("API address is not set. Cannot get base URL.")
+        return f"{self.api_address}/v1"
+
+    @property
     def api_key(self) -> str:
         """Get the API key."""
         return self._api_key
+
+    def set_api_key(self, api_key: str) -> None:
+        """Set the API key used by existing and future OpenAI clients."""
+        self._api_key = api_key
+        if self.openai_client is not None:
+            self.openai_client.api_key = api_key
+        if self.openai_async_client is not None:
+            self.openai_async_client.api_key = api_key
 
     @property
     def model_version(self) -> int:
@@ -617,23 +703,6 @@ class ModelWrapper:
     async def get_message_token_len(self, messages: List[dict]) -> int:
         return await self.model.get_message_token_len.remote(messages)
 
-    def _get_multi_modal_inputs(
-        self,
-        *,
-        messages: List[dict] = None,
-        tools: Optional[List[dict]] = None,
-        input_ids: Optional[List[int]] = None,
-    ) -> Optional[dict[str, torch.Tensor]]:
-        if should_use_processor(self.model_path):
-            if self._mm_render is None:
-                self._mm_render = vLLMMultiModalRender(  # TODO: support sglang
-                    self.model_path,
-                )
-            return self._mm_render.build_mm_input_for_training(
-                messages=messages, tools=tools, input_ids=input_ids
-            )
-        return None
-
     def get_openai_client(self) -> "openai.OpenAI":
         """Get the openai client.
 
@@ -641,11 +710,6 @@ class ModelWrapper:
             openai.OpenAI: The openai client. And `model_path` is added to the client which refers to the model path.
         """
         import openai
-
-        if not self.config.enable_openai_api:
-            raise ValueError(
-                "OpenAI API is not enabled for this model. OpenAI client is unavailable."
-            )
 
         if self.openai_client is not None:
             setattr(self.openai_client, "model_path", self.config.model_path)
@@ -672,49 +736,14 @@ class ModelWrapper:
                         messages=messages,
                         with_chat_completion=True,
                         return_token_ids=self.enable_history,
+                        record_key=(self._api_key if self.enable_history else None),
                         **kwargs,
                     )
                 )
                 response = chat_response.pop()
-                if self.enable_history:
-                    self.history.extend(chat_response)
                 return response
 
             self.openai_client.chat.completions.create = chat_completions
-        elif self.enable_history:
-            # add a decorator to the openai client to record history
-
-            ori_create = self.openai_client.chat.completions.create
-
-            def record_chat_completions(*args, **kwargs):
-                logprobs = kwargs.pop("logprobs", True)
-                extra_body = dict(kwargs.pop("extra_body", {}))
-                if self.config.enable_thinking is not None:
-                    chat_template_kwargs = dict(extra_body.get("chat_template_kwargs", {}))
-                    chat_template_kwargs["enable_thinking"] = self.config.enable_thinking
-                    extra_body["chat_template_kwargs"] = chat_template_kwargs
-                extra_body["return_token_ids"] = True
-                if self.config.enable_return_routed_experts:
-                    extra_body["return_routed_experts"] = True
-                self._assert_openai_routed_experts_request_supported(extra_body, kwargs)
-                response = ori_create(*args, extra_body=extra_body, logprobs=logprobs, **kwargs)
-                if kwargs.get("stream", False):
-                    return HistoryRecordingStream(response, self.history, is_async=False)
-                messages = args[-2] if len(args) > 2 else kwargs.get("messages")
-                tools = kwargs.get("tools", None)
-                multi_modal_inputs = self._get_multi_modal_inputs(
-                    messages=messages, tools=tools, input_ids=response.prompt_token_ids
-                )
-                self.history.extend(
-                    convert_api_output_to_experience(
-                        response,
-                        multi_modal_inputs=multi_modal_inputs,
-                        routed_experts_layout=self._routed_experts_layout,
-                    )
-                )
-                return response
-
-            self.openai_client.chat.completions.create = record_chat_completions
         setattr(self.openai_client, "model_path", self.config.model_path)
         return self.openai_client
 
@@ -752,50 +781,13 @@ class ModelWrapper:
                     messages=messages,
                     with_chat_completion=True,
                     return_token_ids=self.enable_history,
+                    record_key=(self._api_key if self.enable_history else None),
                     **kwargs,
                 )
                 response = chat_response.pop()
-                if self.enable_history:
-                    self.history.extend(chat_response)
                 return response
 
             self.openai_async_client.chat.completions.create = chat_completions
-        elif self.enable_history:
-            # add a decorator to the openai client to record history
-
-            ori_create = self.openai_async_client.chat.completions.create
-
-            async def record_chat_completions(*args, **kwargs):
-                logprobs = kwargs.pop("logprobs", True)
-                extra_body = dict(kwargs.pop("extra_body", {}))
-                if self.config.enable_thinking is not None:
-                    chat_template_kwargs = dict(extra_body.get("chat_template_kwargs", {}))
-                    chat_template_kwargs["enable_thinking"] = self.config.enable_thinking
-                    extra_body["chat_template_kwargs"] = chat_template_kwargs
-                extra_body["return_token_ids"] = True
-                if self.config.enable_return_routed_experts:
-                    extra_body["return_routed_experts"] = True
-                self._assert_openai_routed_experts_request_supported(extra_body, kwargs)
-                response = await ori_create(
-                    *args, extra_body=extra_body, logprobs=logprobs, **kwargs
-                )
-                if kwargs.get("stream", False):
-                    return HistoryRecordingStream(response, self.history, is_async=True)
-                messages = args[-2] if len(args) > 2 else kwargs.get("messages")
-                tools = kwargs.get("tools", None)
-                multi_modal_inputs = self._get_multi_modal_inputs(
-                    messages=messages, tools=tools, input_ids=response.prompt_token_ids
-                )
-                self.history.extend(
-                    convert_api_output_to_experience(
-                        response,
-                        multi_modal_inputs=multi_modal_inputs,
-                        routed_experts_layout=self._routed_experts_layout,
-                    )
-                )
-                return response
-
-            self.openai_async_client.chat.completions.create = record_chat_completions
         # get model_path from the sync openai client to avoid async call here
         setattr(self.openai_async_client, "model_path", self.config.model_path)
         return self.openai_async_client
@@ -852,26 +844,125 @@ class ModelWrapper:
             # update the model path after syncing weights for tinker engine
             self._model_path = await self.model.get_model_path.remote()
 
-    def extract_experience_from_history(self, clear_history: bool = True) -> List[Experience]:
+    def extract_experience_from_history(
+        self, clear_history: bool = True, key: Optional[str] = None
+    ) -> List[Experience]:
         """Extract experiences from the history."""
         if not self.enable_history:
             raise ValueError("History recording is not enabled.")
-        exps = [exp for exp in self.history]
-        if clear_history:
-            self.history.clear()
+        if self.model is None:
+            raise ValueError("Recording extraction requires an inference model actor.")
+        key = key or self._api_key
+        if key is None:
+            raise ValueError("key is required when recording is enabled.")
+        exps = ray.get(
+            self.model.extract_experience_from_history.remote(
+                key=key,
+                clear_history=clear_history,
+            )
+        )
         return exps
 
-    # Workflow state management methods
-    async def set_workflow_state(self, state: Dict) -> None:
-        """Set the state of workflow using the model."""
-        async with self.state_lock:
-            self.workflow_state.update(state)
+    async def update_experience_reward_async(
+        self,
+        key: str,
+        reward: float,
+        info: Optional[dict] = None,
+        sample_ids: Optional[List[str]] = None,
+    ) -> None:
+        """Update reward and optional info on recorded experiences."""
+        await self.update_experience_records_async(
+            key=key,
+            update=ExperienceUpdate(reward=reward, info=info),
+            sample_ids=sample_ids,
+        )
 
-    async def clean_workflow_state(self) -> None:
-        """Clean the state of workflow using the model."""
-        async with self.state_lock:
-            self.workflow_state = {}
-            self.history.clear()
+    async def update_experience_records_async(
+        self,
+        key: str,
+        update: ExperienceUpdate,
+        sample_ids: Optional[List[str]] = None,
+    ) -> None:
+        """Patch recorded experiences with generation-time training signals."""
+        if not self.enable_history:
+            raise ValueError("History recording is not enabled.")
+        if self.model is None:
+            raise ValueError("Recording update requires an inference model actor.")
+        await self.model.update_experience_records.remote(
+            key=key,
+            update=update,
+            sample_ids=sample_ids,
+        )
+
+    def update_experience_reward(
+        self,
+        key: str,
+        reward: float,
+        info: Optional[dict] = None,
+        sample_ids: Optional[List[str]] = None,
+    ) -> None:
+        """Update reward and optional info on recorded experiences."""
+        self.update_experience_records(
+            key=key,
+            update=ExperienceUpdate(reward=reward, info=info),
+            sample_ids=sample_ids,
+        )
+
+    def update_experience_records(
+        self,
+        key: str,
+        update: ExperienceUpdate,
+        sample_ids: Optional[List[str]] = None,
+    ) -> None:
+        """Patch recorded experiences with generation-time training signals."""
+        if not self.enable_history:
+            raise ValueError("History recording is not enabled.")
+        if self.model is None:
+            raise ValueError("Recording update requires an inference model actor.")
+        ray.get(
+            self.model.update_experience_records.remote(
+                key=key,
+                update=update,
+                sample_ids=sample_ids,
+            )
+        )
+
+    async def overwrite_history_experiences_async(
+        self, experiences: List[Experience], key: str
+    ) -> None:
+        """Overwrite recorded experiences under one complete record key."""
+        if not self.enable_history:
+            raise ValueError("History recording is not enabled.")
+        if self.model is None:
+            raise ValueError("Recording overwrite requires an inference model actor.")
+        await self.model.overwrite_history_experiences.remote(
+            key=key,
+            payload=Experience.serialize_many(experiences),
+        )
+
+    async def drain_experience_records_bytes_async(self, prefix: str) -> bytes:
+        """Remove matching recorded experiences and return serialized bytes."""
+        if not self.enable_history:
+            raise ValueError("History recording is not enabled.")
+        if self.model is None:
+            raise ValueError("Recording drain requires an inference model actor.")
+        return await self.model.drain_experience_records_bytes.remote(prefix=prefix)
+
+    async def delete_experience_records_async(self, prefix: str) -> None:
+        """Remove recorded experiences matching a key or prefix."""
+        if not self.enable_history:
+            raise ValueError("History recording is not enabled.")
+        if self.model is None:
+            raise ValueError("Recording delete requires an inference model actor.")
+        await self.model.delete_experience_records.remote(prefix=prefix)
+
+    async def block_experience_records_async(self, prefix: str) -> None:
+        """Block future writes for the given batch prefix on the rollout actor."""
+        if not self.enable_history:
+            raise ValueError("History recording is not enabled.")
+        if self.model is None:
+            raise ValueError("Recording block requires an inference model actor.")
+        await self.model.block_experience_records.remote(prefix=prefix)
 
     async def shutdown(self) -> None:
         """Shutdown all underlying model actors cleanly."""
@@ -882,15 +973,9 @@ class ModelWrapper:
                 f"Error during model {self.config.model_path}[{self.config.engine_id}:{self.config.node_rank}] shutdown: {e}"
             )
 
-    async def get_workflow_state(self) -> Dict:
-        """Get the state of workflow using the model."""
-        async with self.state_lock:
-            return self.workflow_state.copy()
-
-    def clone_with_isolated_history(self) -> "ModelWrapper":
-        """Clone the current ModelWrapper with isolated history."""
+    def clone_with_isolated_state(self) -> "ModelWrapper":
+        """Clone the current ModelWrapper with isolated state."""
         new_wrapper = copy.copy(self)
         new_wrapper.openai_async_client = None
         new_wrapper.openai_client = None
-        new_wrapper.history = []
         return new_wrapper

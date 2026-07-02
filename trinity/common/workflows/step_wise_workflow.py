@@ -13,8 +13,8 @@ class StepWiseRewardWorkflow(Workflow):
     ):
         super().__init__(task=task, model=model, auxiliary_models=auxiliary_models)
         assert model.enable_history, (
-            "Rollout Model must have history enabled for step-wise rewards, please "
-            "set `explorer.rollout_model.enable_history` to `True` in your config."
+            "Rollout Model must have history enabled for step-wise rewards, "
+            "please set `explorer.rollout_model.enable_history` to `True` in your config."
         )
         # use the rollout model's OpenAI client to write your agent application
         if use_openai_client:
@@ -122,8 +122,8 @@ class RewardPropagationWorkflow(Workflow):
     ):
         super().__init__(task=task, model=model, auxiliary_models=auxiliary_models)
         assert model.enable_history, (
-            "Rollout Model must have history enabled for step-wise rewards, please "
-            "set `explorer.rollout_model.enable_history` to `True` in your config."
+            "Rollout Model must have history enabled for step-wise rewards, "
+            "please set `explorer.rollout_model.enable_history` to `True` in your config."
         )
         # use the rollout model's OpenAI client to write your agent application
         if use_openai_client:

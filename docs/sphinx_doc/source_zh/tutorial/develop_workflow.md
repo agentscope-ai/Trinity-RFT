@@ -12,22 +12,21 @@
 
 ```{mermaid}
 flowchart LR
-    A([Task]) & B([Model]) --> C[Workflow]
-    C --> D([Experience])
+    A([Task]) --> C[Workflow]
+    C -- "调用 OpenAI API" --> B([Rollout Model])
+    B -- "自动 recording" --> D([Experience])
+    C -- "update_reward" --> D
 ```
 
 - **任务（Task）** ({class}`trinity.common.workflows.Task`)：结构化的数据实例，包含了工作流一次运行所需的各种信息。一般情况下由训练数据集提供，数据集中的每个样本都会被转化为一个 `Task` 实例。`Task` 的内容根据任务类型而异：
   - **数学问题**：包含问题和答案。
   - **编程场景**：包含题目的描述、测试用例、运行环境等复杂信息。
 
-- **模型（Model）** ({class}`trinity.common.models.model.ModelWrapper`)：被训练的模型，工作流内需要使用该模型来执行推理。该实例由 Trinity-RFT 自动提供，支持同步以及异步的 `generate` 以及 `chat` 等方法，同时也提供了 OpenAI API 接口，能够兼容大部分 Agent 框架。
+- **模型（Rollout Model）** ({class}`trinity.common.models.model.ModelWrapper`)：被训练的模型。工作流通过模型暴露的 `base_url` 和 `api_key` 自行创建 OpenAI 客户端来调用模型推理接口；模型在响应的同时会**自动记录**生成过程并转化为可用于训练的 `Experience`，工作流无需手动构造。
 
-- **工作流（Workflow）** ({class}`trinity.common.workflows.Workflow`)：定义了 Agent 与 Environment 的交互流程。`Workflow` 通过 `Task` 中提供的信息初始化自身，并借助 `Model` 来执行其中定义好的交互流程。与常规 Agent 应用不同的是，工作流内部还需要计算奖励信号（reward）以指导训练过程。Trinity-RFT 包含多个内置工作流：
-  - `MathWorkflow` ({class}`trinity.common.workflows.MathWorkflow`)：用于数学场景，将问题提交给 LLM，解析 LLM 响应，并计算分数（奖励）。
-  - `WebShopWorkflow` ({class}`trinity.common.workflows.WebShopWorkflow`)：用于 webshop 场景，包含与环境的多轮交互。
-  - `AgentScopeReActWorkflow` ({class}`trinity.common.workflows.AgentScopeReActWorkflow`)：直接使用现有的 ReActAgent（基于 AgentScope）来解决问题。
+- **工作流（Workflow）** ({class}`trinity.common.workflows.WorkflowBase`)：定义了 Agent 与 Environment 的交互流程。`Workflow` 通过 `Task` 中提供的信息初始化自身，并借助 Rollout Model 执行其中定义好的交互流程。与常规 Agent 应用不同的是，工作流内部还需要计算奖励信号（reward）以指导训练过程，并通过 `update_reward` 方法将奖励回填到模型自动记录的 `Experience` 上。
 
-- **经验（Experience）** ({class}`trinity.common.experience.Experience`)：`Workflow` 的运行产出。产出的数量以及内部数据格式取决于所使用的训练算法。例如，对于常见的 PPO/GRPO 算法，`Experience` 包含 token ID 列表、动作掩码（标识哪些 token 是由 LLM 生成的）、每个 token 的对数概率（logprobs）、奖励信号（reward）等。
+- **经验（Experience）** ({class}`trinity.common.experience.Experience`)：训练所需的数据单元。`Experience` 会由 Rollout Model 在推理过程中自动记录产生，其数量与内部数据格式取决于所使用的训练算法。例如，对于常见的 PPO/GRPO 算法，`Experience` 包含 token ID 列表、动作掩码（标识哪些 token 是由 LLM 生成的）、每个 token 的对数概率（logprobs）、奖励信号（reward）等。工作流不需要、也不应该手动构造 `Experience` 对象。
 
 ---
 
@@ -37,8 +36,10 @@ flowchart LR
 为处理 `Task` 内容的差异，Trinity-RFT 提供了一个统一的 `Task` 接口，包含以下字段：
 
 - **`workflow`** (`str`)：你的工作流类的注册名称。你可以在 YAML 配置文件的 `buffer.explorer_input.taskset.default_workflow_type` 中指定。
+- **`raw_task`** (`Dict`)：原始数据的记录，以 `Dict` 格式存储。对于高度定制化的工作流，你可以直接使用 `raw_task` 初始化 `Workflow` 实例，而不依赖后续的字段。
+
+下面的字段都是可选字段，一般情况下无需设置：
 - **`reward_fn`** (`Optional[str]`)：你的奖励函数的注册名称。你可以在 `buffer.explorer_input.taskset.default_reward_fn_type` 中指定。注意某些工作流已内置奖励计算；此时可省略该字段。
-- **`raw_task`** (`Dict`)：原始数据的记录，以 `Dict` 格式存储。对于高度定制化的工作流，你可以直接使用 `raw_task` 初始化 `Workflow` 实例，而不依赖以下字段。
 - **`format_args`** ({class}`trinity.common.config.FormatConfig`)：便于构造 `Workflow` 实例的参数。例如，`prompt_key` 和 `response_key` 可用于从 `raw_task` 中提取 prompt 和 response。这些设置来自 YAML 配置文件，可在 `buffer.explorer_input.task_set.format` 中设置。
 - **`rollout_args`** ({class}`trinity.common.config.GenerationConfig`)：控制 rollout 过程的参数，如 `temperature`。该字段也来自 YAML 配置文件，可在 `buffer.explorer_input.task_set.rollout_args` 中设置。
 - **`workflow_args`** (`Dict`)：用于构造 `Workflow` 实例的参数字典。相比 `format_args` 和 `rollout_args` 更灵活。该字段也来自 YAML 配置文件，可在 `buffer.explorer_input.task_set.workflow_args` 中设置。通常无需设置此字段。
@@ -66,7 +67,7 @@ flowchart LR
 buffer:
   explorer_input:
     taskset:
-      default_workflow: "math_workflow"
+      default_workflow_type: "math_workflow"
       path: ${oc.env:TRINITY_TASKSET_PATH}
       format:
         prompt_key: "question"
@@ -82,62 +83,80 @@ buffer:
 
 ### 步骤 2：实现工作流
 
-`Workflow` 基类接口如下：
+要实现一个新的工作流你需要继承 `WorkflowWithRecording` 基类：
 
 ```python
-class Workflow(ABC):
+class WorkflowWithRecording(WorkflowBase):
 
     def __init__(
         self,
         *,
         task: Task,
         model: ModelWrapper,
-        auxiliary_models: Optional[List[ModelWrapper]] = None,  # 主要用于 LLM-as-a-judge 场景, 也可以用作distillation的techer
+        auxiliary_models: Optional[List[ModelWrapper]] = None,
     ):
-        self.task = task
-        self.model = model
-        self.auxiliary_model_wrappers = auxiliary_models
-        self.auxiliary_models = ...  # 从 ModelWrapper 自动派生的 OpenAI client
-        self.logger = get_logger(__name__)  # 用于运行时监控的内置 logger
+        """初始化工作流"""
 
-    @abstractmethod
-    def run(self) -> List[Experience]:
-        """Run the workflow and return a list of Experiences."""
+    async def run_async(self) -> Metrics:
+        """运行工作流并返回一个 Metric 字典。"""
+        # 你需要实现该方法
+
+    @property
+    def base_url(self) -> str:
+        """返回 rollout 模型的 base_url。"""
+
+    @property
+    def api_key(self) -> str:
+        """返回 rollout 模型的 api_key。"""
+
+    @property
+    def model_name(self) -> str:
+        """返回 rollout 模型的 model_name。"""
+
+    async def update_reward(
+        self,
+        reward: float,
+        info: Optional[Dict] = None,
+    ):
+        """将 reward 回填到模型自动记录的 Experience 上，同时可选附带额外信息 info。"""
+
 ```
 
 #### 初始化你的工作流
 
-`Workflow` 接受以下初始化参数：
+`WorkflowWithRecording` 接受以下初始化参数：
 
 - `task`({class}`trinity.common.workflows.Task`)：数据集中的单个任务。
-- `model`({class}`trinity.common.models.model.ModelWrapper`)：正在训练的模型，提供类似于 OpenAI 的接口，能够接收对话消息列表并返回 LLM 生成的内容（包括回复文本 `response_text`、完整序列 token id `tokens`、prompt 部分 token 长度 `prompt_length`，以及输出 token 对数概率列表 `logprobs`）。
-- `auxiliary_models`(`List[ModelWrapper]`)：辅助模型的 ModelWrapper 列表。可通过 `self.auxiliary_models` 访问 OpenAI client（根据 workflow 的 `is_async` 自动派生）。
+- `model`({class}`trinity.common.models.model.ModelWrapper`)：正在训练的 rollout 模型，你可以直接通过 `WorkflowWithRecording` 的 `base_url`，`api_key` 以及 `model_name` 属性来创建 OpenAI 客户端从而调用模型推理接口。
+- `auxiliary_models`(`List[ModelWrapper]`)：辅助模型的 `ModelWrapper` 列表。每个元素同样暴露 `base_url`、`api_key`、`model_name`，可直接用于创建 OpenAI 客户端（详见 [LLM-as-a-judge 支持](#llm-as-a-judge-支持)）。
 
-以下是一个仅使用 `raw_task` 和 `rollout_args` 初始化简单工作流的示例。在更复杂的情况下，你可以使用 `format_args` 进行进一步自定义。
+以下是一个简单工作流的初始化示例。我们在 `__init__` 中使用 `base_url` 和 `api_key` 创建异步 OpenAI 客户端，并取出模型名称：
 
 ```python
-class ExampleWorkflow(Workflow):
+import openai
+from trinity.common.workflows import WorkflowWithRecording
 
-    def __init__(self, task: Task, model: ModelWrapper, auxiliary_models: List):
+class ExampleWorkflow(WorkflowWithRecording):
+
+    def __init__(self, *, task: Task, model: ModelWrapper, auxiliary_models: List = None):
         super().__init__(task=task, model=model, auxiliary_models=auxiliary_models)
         self.question = task.raw_task.get("question")
         self.answer = task.raw_task.get("answer")
         self.rollout_args = task.rollout_args
-        # Optional: If you want to use OpenAI API in your workflow
-        # self.openai_client = self.model.get_openai_client()
+        # 通过 base_url 和 api_key 创建 OpenAI 客户端
+        self.client = openai.AsyncOpenAI(base_url=self.base_url, api_key=self.api_key)
 ```
 
-#### 实现 `run` 方法
+#### 实现 `run_async` 方法
 
-`run` 方法是工作流的核心方法。该方法没有输入参数，返回一个 `Experience` 列表。
-以下是一个数学工作流的简单实现。
+`run_async` 是工作流的核心方法。它没有输入参数，返回一个 `Metrics` 字典。
 
-我们首先调用模型，使用给定的问题和 rollout 参数生成答案。
-然后使用 `calculate_reward` 函数计算答案的奖励。
-最后，我们将生成的答案和奖励封装为`Experience` 实例并返回。
+工作流的职责是：调用模型完成 agent 任务、计算 reward、通过 `update_reward` 将 reward 回填到模型自动记录的 `Experience` 上，最后返回用于监控的 metric。
+
+以下是一个数学工作流的简单实现。我们先用 OpenAI 客户端生成答案，再计算奖励并回填：
 
 ```python
-class ExampleWorkflow(Workflow):
+class ExampleWorkflow(WorkflowWithRecording):
 
     # the __init__ function
 
@@ -147,10 +166,11 @@ class ExampleWorkflow(Workflow):
         else:
             return 0.0
 
-    def run(self) -> List[Experience]:
-        # call the model to generate multiple responses
-        responses = self.model.chat(
-            [
+    async def run_async(self) -> Metrics:
+        # 调用模型生成回复
+        resp = await self.client.chat.completions.create(
+            model=self.model_name,
+            messages=[
                 {
                     "role": "user",
                     "content": f"Question:\n{self.question}",
@@ -158,115 +178,75 @@ class ExampleWorkflow(Workflow):
             ],
             temperature=self.rollout_args.temperature,
         )
-        response = responses[0]  # there is only one response
-        reward: float = self.calculate_reward(response.response_text, self.answer)
-        return [
-            Experience(
-                tokens=response.tokens,
-                prompt_length=response.prompt_length,
-                reward=reward,
-                logprobs=response.logprobs,
-            )
-        ]
+        response_text = resp.choices[0].message.content
+        # 计算 reward 并回填到模型自动记录的 Experience 上
+        reward: float = self.calculate_reward(response_text, self.answer)
+        await self.update_reward(reward)
+        # 返回需要监控的 metric
+        return {"example/reward": reward}
+```
+
+```{note}
+1. rollout 模型会自动记录每次 `chat.completions.create` 调用产生的训练数据并转化为 `Experience`。`update_reward` 会将 reward 精确回填到本次运行产生的 `Experience` 上。
+2. 对于包含多轮交互的工作流，`update_reward` 会将 reward 回填到本次运行产生的所有 `Experience` 上。
+3. `run_async` 返回的 `Metrics` 字典仅用于运行时监控与日志展示。
 ```
 
 #### 注册你的工作流
 
-为了让 Trinity-RFT 能够通过配置文件中的名称自动找到你的工作流，你需要在 `trinity/common/workflows/__init__.py` 中的 `default_mapping` 中注册。
+为了让 Trinity-RFT 能够通过配置文件中的名称自动找到你的工作流，你需要将其注册到 `WORKFLOWS` 注册表中。推荐使用装饰器方式注册：
 
 ```python
-WORKFLOWS = Registry(
-    "workflows",
-    default_mapping={
-        "example_workflow": "trinity.common.workflows.workflow.ExampleWorkflow",
-    },
-)
+from trinity.common.workflows import WORKFLOWS, WorkflowWithRecording
+
+@WORKFLOWS.register_module(name="example_workflow")
+class ExampleWorkflow(WorkflowWithRecording):
+    ...
 ```
+
+也可以直接注册，或在 `trinity/common/workflows/__init__.py` 的 `default_mapping` 中添加一条 `"example_workflow": "path.to.module.ExampleWorkflow"` 映射。
 
 #### 性能调优
 
-以下是一些可选的性能调优方法，能够提升工作流的运行效率。当然，这些方法并非所有工作流都需要实现，具体取决于你的工作流设计。
+对于较为复杂的工作流，每次重新初始化会带来额外计算开销。此时，你可以设置 `can_reset` 类属性并实现 `reset` 方法以避免重复初始化。
 
-##### 避免重复初始化
+注意在 `reset` 方法中必须使用输入的 `task` 覆盖工作流的 `task` 属性，并使用 `task.api_key` 更新模型和客户端的 API Key。
 
-对于较为复杂的工作流，每次重新初始化会带来额外计算开销。
-此时，你可以设置 `can_reset` 属性并实现 `reset` 方法以避免重复初始化。
+> Trinity-RFT 内部借助 `api_key` 来区分不同任务产生的 Experience，如果不更新 API Key，可能会导致不同任务的 Experience 被错误地归类，导致 reward 回填错误。
 
-`can_reset` 是一个类属性，表示工作流是否支持轻量化重置。
-
-`reset` 方法接受一个新的 `Task` 实例，并使用该实例更新工作流的状态。
+以下是一个简单示例：
 
 ```python
-class ExampleWorkflow(Workflow):
+class ExampleWorkflow(WorkflowWithRecording):
     can_reset: bool = True
 
     # some code
     # ...
 
     def reset(self, task: Task):
+        self.task = task
+        self.model.set_api_key(task.api_key)
+        self.client.api_key = task.api_key
         self.question = task.raw_task.get("question")
         self.answer = task.raw_task.get("answer")
 ```
-
-##### 批量运行推理任务
-
-当前流行的很多 RL 算法需要多次运行同一个任务(例如 GRPO)。该场景下一些简单任务可以直接通过模型批量推理来获得一个问题的多个回复以提升效率。
-针对该情况，你可以设置 `can_repeat` 属性并实现 `set_repeat_times` 方法。
-
-`can_repeat` 是一个类属性，指示工作流是否支持在 `run` 方法内多次执行。
-
-`set_repeat_times` 方法接受两个参数：`repeat_times` 指定了在 `run` 方法内需要执行的次数，`run_id_base` 是一个整数，用于标识多次运行中第一次的运行 ID，之后各次的 ID 基于此递增（该参数用于多轮交互场景，单次模型调用即可完成的任务可以忽略该项）。
-
-```python
-class ExampleWorkflow(Workflow):
-    can_repeat: bool = True
-    # some code
-
-    def set_repeat_times(self, repeat_times, run_id_base):
-        self.repeat_times = repeat_times
-        self.run_id_base = run_id_base
-
-    def run(self) -> List[Experience]:
-        # call the model to generate multiple responses
-        responses = self.model.chat(
-            [
-                {
-                    "role": "user",
-                    "content": f"Question:\n{self.question}",
-                }
-            ],
-            n=self.repeat_times,  # run multiple times in one call
-            temperature=self.rollout_args.temperature,
-        )
-        experiences = []
-        for response in responses:
-            # calculate reward
-            reward: float = self.calculate_reward(response.response_text, self.answer)
-            # construct Experience
-            experiences.append(
-                Experience(
-                    tokens=response.tokens,
-                    prompt_length=response.prompt_length,
-                    reward=reward,
-                    logprobs=response.logprobs,
-                )
-            )
-        return experiences
-```
-
 
 #### 完整代码示例
 
 ```python
-class ExampleWorkflow(Workflow):
-    can_reset: bool = True
-    can_repeat: bool = True
+import openai
+from trinity.common.workflows import WORKFLOWS, WorkflowWithRecording
 
-    def __init__(self, task: Task, model: ModelWrapper, auxiliary_models: List):
+@WORKFLOWS.register_module(name="example_workflow")
+class ExampleWorkflow(WorkflowWithRecording):
+    can_reset: bool = True
+
+    def __init__(self, *, task: Task, model: ModelWrapper, auxiliary_models: List = None):
         super().__init__(task=task, model=model, auxiliary_models=auxiliary_models)
         self.question = task.raw_task.get("question")
         self.answer = task.raw_task.get("answer")
         self.rollout_args = task.rollout_args
+        self.client = openai.AsyncOpenAI(base_url=self.base_url, api_key=self.api_key)
 
     def calculate_reward(self, response: str, truth: str) -> float:
         if response == truth:
@@ -274,47 +254,35 @@ class ExampleWorkflow(Workflow):
         else:
             return 0.0
 
-    def run(self) -> List[Experience]:
-        # call the model to generate multiple responses
-        responses = self.model.chat(
-            [
+    async def run_async(self) -> Metrics:
+        resp = await self.client.chat.completions.create(
+            model=self.model_name,
+            messages=[
                 {
                     "role": "user",
                     "content": f"Question:\n{self.question}",
                 }
             ],
-            n=self.rollout_args.n,
             temperature=self.rollout_args.temperature,
         )
-        experiences = []
-        for response in responses:
-            # calulcate reward
-            reward: float = self.calculate_reward(response.response_text, self.answer)
-            # construct Experience
-            experiences.append(
-                Experience(
-                    tokens=response.tokens,
-                    prompt_length=response.prompt_length,
-                    reward=reward,
-                    logprobs=response.logprobs,
-                )
-            )
-        return experiences
+        response_text = resp.choices[0].message.content
+        reward: float = self.calculate_reward(response_text, self.answer)
+        await self.update_reward(reward)
+        return {"example/reward": reward}
 
     def reset(self, task: Task):
+        self.task = task
+        self.model.set_api_key(task.api_key)
+        self.client.api_key = task.api_key
         self.question = task.raw_task.get("question")
         self.answer = task.raw_task.get("answer")
-
-    def set_repeat_times(self, repeat_times, run_id_base):
-        self.repeat_times = repeat_times
-        self.run_id_base = run_id_base
 ```
 
 ---
 
 ### 步骤 3：使用你的工作流
 
-实现并注册工作流后，就可以通过将配置文件中 `buffer.explorer_input.taskset` 的 `default_workflow_type` 域设置为你的工作流名称来使用它。例如：
+实现并注册工作流后，就可以通过将配置文件中 `buffer.explorer_input.taskset` 的 `default_workflow_type` 设置为你的工作流名称来使用它。例如：
 
 ```yaml
 buffer:
@@ -334,74 +302,7 @@ trinity run --config <your_yaml_file>
 
 ---
 
-### 其他进阶特性
-
-#### async 支持
-
-本节样例主要针对同步模式，如果你的工作流需要使用异步方法（例如异步 API）,你可以将 `is_async` 属性设置为 `True`，然后实现 `run_async` 方法，在这种情况下不再需要实现 `run` 方法，并且初始化参数 `auxiliary_models` 也会自动变为 `List[openai.AsyncOpenAI]` 类型，其余方法和属性保持不变。
-
-```python
-class ExampleWorkflowAsync(Workflow):
-
-    is_async: bool = True
-
-    async def run_async(self) -> List[Experience]:
-        # your async code here
-
-    # no need to implement run() method
-```
-
-#### 使用 OpenAI API
-
-Trinity-RFT 的 Model 提供了 OpenAI API 接口，能够降低模型推理部分的学习成本并简化工作流的实现。
-
-为了激活 OpenAI API 服务，你需要将配置文件中 `explorer.rollout_model.enable_openai_api` 设置为 `true` 。这样就可以通过 `Model` 实例的 `get_openai_client` 方法获取 `openai.OpenAI` 实例。
-
-另外，由于 OpenAI API 无法提供训练所需的各项数据，你还需要将 `explorer.rollout_model.enable_history` 设置为 `true`，让框架自动记录可用于训练的数据并转化为 `Experience` 列表。你可以通过 `extract_experience_from_history` 方法来提取这些可用于训练的数据。
-
-
-```yaml
-# example config snippet
-explorer:
-  rollout_model:
-    enable_openai_api: true
-    enable_history: true
-    # Other fields
-```
-
-```python
-class ExampleWorkflow(Workflow):
-
-    def __init__(self, task: Task, model: ModelWrapper, auxiliary_models: List):
-        super().__init__(task=task, model=model, auxiliary_models=auxiliary_models)
-        self.model = model
-        self.client: openai.OpenAI = self.model.get_openai_client()
-        # or async client
-        # self.client: openai.AsyncOpenAI = self.model.get_openai_async_client()
-        self.agent = MyAgent(openai_client=self.client)
-
-    def calculate_reward(self, response: str) -> float:
-        # your reward calculation logic
-
-    def run(self) -> List[Experience]:
-        # run your agent
-        response = self.agent.run()
-        # calculate reward
-        reward = self.calculate_reward(response)
-        # extract experiences from history recorded in self.model
-        experiences = self.model.extract_experience_from_history()
-        for exp in experiences:
-            exp.reward = reward
-        return experiences
-```
-
-```{tip}
-1. 当前的 OpenAI API 仅会自动记录 `openai.OpenAI.chat.completions.create` 以及 `openai.AsyncOpenAI.chat.completions.create` 方法的调用历史并转化为 `Experience` 结构，且不支持流式输出。
-2. 调用 `chat.completions.create` 时，其中的 `model` 字段可通过 `openai_client.models.list().data[0].id` 或 `openai_client.model_path` 获取。
-3. 更复杂的使用 OpenAI API 的工作流实例可参考 [ReAct Agent 训练](./example_react.md)。
-```
-
-#### LLM-as-a-judge 支持
+### LLM-as-a-judge 支持
 
 LLM-as-a-judge 是一种常见的奖励计算方法，尤其适用于开放式任务（如编程、写作等）。在这类场景下，Workflow 需要借助额外的 LLM 来评估答案质量并计算奖励信号（reward）。
 
@@ -430,24 +331,21 @@ explorer:
 
 请注意，每个辅助模型会独立占用 `tensor_parallel_size * engine_num` 个 GPU，请根据硬件资源合理配置。在启用辅助模型后，Trainer 可用的 GPU 数量为总 GPU 数量减去所有辅助模型及被训练的推理模型（`rollout_model`）所占用的 GPU 数量。
 
-配置文件中指定的辅助模型会自动激活 OpenAI API，并将对应的 `openai.OpenAI` 或 `openai.AsyncOpenAI` 实例 (取决于 `is_async`) 传递给 `Workflow` 初始化方法的 `auxiliary_models` 参数。例如：
+配置文件中指定的辅助模型会以 `ModelWrapper` 实例列表的形式传递给 `Workflow` 初始化方法的 `auxiliary_models` 参数。每个 `ModelWrapper` 同样暴露 `base_url`、`api_key`、`model_name`，推荐直接用它们创建 OpenAI 客户端来访问辅助模型：
 
 ```python
-class MyWorkflow(Workflow):
-    def __init__(
-        self,
-        *,
-        task: Task,
-        model: ModelWrapper,
-        auxiliary_models: Optional[List[ModelWrapper]] = None,
-    ):
+class MyWorkflow(WorkflowWithRecording):
+    def __init__(self, *, task, model, auxiliary_models=None):
         super().__init__(task=task, model=model, auxiliary_models=auxiliary_models)
-        self.judge_model = self.auxiliary_models[0]  # 从 ModelWrapper 自动派生的 OpenAI client
+        self.judge = self.auxiliary_models[0]  # ModelWrapper
+        self.judge_client = openai.AsyncOpenAI(
+            base_url=self.judge.base_url, api_key=self.judge.api_key
+        )
 
-    def run(self) -> List[Experience]:
-        response = self.do_something()
-        reward_response = self.judge_model.chat.completions.create(
-            model=self.judge_model.model_path,
+    async def run_async(self) -> Metrics:
+        response = await self.do_something()
+        reward_response = await self.judge_client.chat.completions.create(
+            model=self.judge.model_name,
             messages=[
                 {
                     "role": "system",
@@ -455,7 +353,7 @@ class MyWorkflow(Workflow):
                 },
                 {
                     "role": "user",
-                    "content": f"Question:\n{self.task.raw_task['question']}\nAnswer:\n{response.response_text}\nPlease give a score from 0 to 1.",
+                    "content": f"Question:\n{self.task.raw_task['question']}\nAnswer:\n{response}\nPlease give a score from 0 to 1.",
                 },
             ],
             temperature=0.0,
@@ -463,14 +361,8 @@ class MyWorkflow(Workflow):
         )
         # 解析奖励分数
         reward = float(reward_response.choices[0].message.content.strip())
-        return [
-            Experience(
-                tokens=response.tokens,
-                prompt_length=response.prompt_length,
-                reward=reward,
-                logprobs=response.logprobs,
-            )
-        ]
+        await self.update_reward(reward, info={"source": "llm_as_a_judge"})
+        return {"my_workflow/judge_reward": reward}
 ```
 
 #### 调试模式（Debug Mode）
@@ -504,7 +396,7 @@ trinity debug --config <config_file_path> --module workflow --output-dir <output
 - `--enable-profiling`（可选）：启用性能分析，使用 [viztracer](https://github.com/gaogaotiantian/viztracer) 对 Workflow 运行过程进行性能分析。
 - `--disable-overwrite`（可选）：禁用输出目录覆盖功能。如果指定的文件夹非空，程序将自动创建一个带有时间戳后缀的新目录（例如 `debug_output_20251203211200`）以避免覆盖现有数据。
 
-调试过程中，配置文件中的 `buffer.explorer_input.taskset` 字段会被加载，用于初始化 Workflow 所需的任务数据集和实例。需注意，调试模式仅会读取数据集中的第一条数据进行测试。运行上述命令后，工作流的返回 Experience 会被写入指定输出目录下的 `experiences.db` 文件中，而运行过程中记录的指标会打印在终端以便检查。
+调试过程中，配置文件中的 `buffer.explorer_input.taskset` 字段会被加载，用于初始化 Workflow 所需的任务数据集和实例。需注意，调试模式仅会读取数据集中的第一条数据进行测试。运行上述命令后，工作流产出的 Experience 会被写入指定输出目录下的 `experiences.db` 文件中，而运行过程中记录的指标会打印在终端以便检查。
 
 ```bash
 trinity debug --config <config_file_path> --module viewer --output-dir <output_dir> --port 8502
@@ -517,10 +409,10 @@ trinity debug --config <config_file_path> --module viewer --output-dir <output_d
 
 #### 运行时监控
 
-在上述调试模式中，你可以快速测试和验证工作流的实现。然而，在实际训练过程中，你可能希望实时监控工作流的运行状态，以确保其按预期工作。为此，Trinity-RFT 提供了基于日志系统的监控功能。`Workflow` 基类内置了一个日志记录器（logger），你可以使用它来记录重要的运行时信息。
+在上述调试模式中，你可以快速测试和验证工作流的实现。然而，在实际训练过程中，你可能希望实时监控工作流的运行状态，以确保其按预期工作。为此，Trinity-RFT 提供了基于日志系统的监控功能。`WorkflowWithRecording` 基类内置了一个日志记录器（logger），你可以使用它来记录重要的运行时信息。
 
 ```python
-class Workflow(ABC):
+class WorkflowWithRecording(WorkflowBase):
 
     def __init__(
         self,
@@ -536,14 +428,14 @@ class Workflow(ABC):
 该内置的 logger 会将日志输出到控制台和 `<checkpoint_root_dir>/<project>/<group>/<name>/log` 目录下的文件中。这样就可以方便地在训练过程中监控工作流的运行状态。由于所有 Workflow 子类均继承该 logger，因此你可以直接在自定义工作流中使用它来记录关键信息。
 
 ```python
-class ExampleWorkflow(Workflow):
-    def run(self) -> List[Experience]:
+class ExampleWorkflow(WorkflowWithRecording):
+    async def run_async(self) -> Metrics:
         self.logger.info(f"Starting workflow for task: {self.task}")
         # your workflow logic
         if some_error_condition:
             self.logger.error("An error occurred during workflow execution.")
         self.logger.info(f"Completed workflow for task: {self.task}")
-        return experiences
+        return {"example/reward": reward}
 ```
 
 由于 Trinity-RFT 会自动创建一组 Workflow Runners 来并行执行 Workflow。每个运行器会将其日志输出到一个单独的日志文件中。日志文件的命名规则为 `explorer_runner_<runner_id>.log`，其中 `<runner_id>` 是工作流运行器的唯一标识符。通过这种设计，你可以独立地追踪正在并行执行的每个工作流实例的运行情况。日志文件的具体组织结构如下：
@@ -557,3 +449,169 @@ class ExampleWorkflow(Workflow):
 ```
 
 Trinity-RFT 还提供了一个方便的 `log` 命令来实时查看这些日志。你可以使用 `trinity log --log-dir /path/to/log/dir -k explorer_runner` 命令来过滤并查看所有 workflow runner 的日志，或者使用 `trinity log --log-dir /path/to/log/dir -k explorer_runner_0` 来查看特定 workflow runner 的日志。
+
+---
+
+### 附录：旧版 Workflow 接口（兼容）
+
+对于简单的单轮任务，Trinity-RFT 仍保留旧版 `Workflow` 接口。与 `WorkflowWithRecording` 不同，旧版接口要求工作流**手动构造并返回 `Experience` 列表**，模型也不会自动 recording。所有内置工作流（`MathWorkflow` 等）目前仍基于此接口。如果你不需要复杂的 agent 循环，可以继续使用它。
+
+旧版 `Workflow` 基类接口如下：
+
+```python
+class Workflow(WorkflowBase):
+
+    def __init__(
+        self,
+        *,
+        task: Task,
+        model: ModelWrapper,
+        auxiliary_models: Optional[List[ModelWrapper]] = None,  # 主要用于 LLM-as-a-judge 场景, 也可以用作distillation的techer
+    ):
+        self.task = task
+        self.model = model
+        self.auxiliary_model_wrappers = auxiliary_models
+        self.auxiliary_models = ...  # 从 ModelWrapper 自动派生的 OpenAI client
+        self.logger = get_logger(__name__)  # 用于运行时监控的内置 logger
+
+    @abstractmethod
+    def run(self) -> List[Experience]:
+        """Run the workflow and return a list of Experiences."""
+```
+
+##### 初始化与 `run` 方法
+
+`Workflow` 接受与新版相同的初始化参数（`task`、`model`、`auxiliary_models`），但 `model` 提供的是同步/异步的 `generate` 以及 `chat` 方法，返回结构包含 `response_text`、`tokens`、`prompt_length`、`logprobs`。`auxiliary_models` 则是框架自动派生的 `openai.OpenAI` / `openai.AsyncOpenAI` 客户端列表。
+
+以下是一个手动构造 `Experience` 的简单实现：
+
+```python
+class ExampleWorkflow(Workflow):
+
+    def __init__(self, task: Task, model: ModelWrapper, auxiliary_models: List):
+        super().__init__(task=task, model=model, auxiliary_models=auxiliary_models)
+        self.question = task.raw_task.get("question")
+        self.answer = task.raw_task.get("answer")
+        self.rollout_args = task.rollout_args
+
+    def calculate_reward(self, response: str, truth: str) -> float:
+        if response == truth:
+            return 1.0
+        else:
+            return 0.0
+
+    def run(self) -> List[Experience]:
+        responses = self.model.chat(
+            [
+                {
+                    "role": "user",
+                    "content": f"Question:\n{self.question}",
+                }
+            ],
+            temperature=self.rollout_args.temperature,
+        )
+        response = responses[0]
+        reward: float = self.calculate_reward(response.response_text, self.answer)
+        return [
+            Experience(
+                tokens=response.tokens,
+                prompt_length=response.prompt_length,
+                reward=reward,
+                logprobs=response.logprobs,
+            )
+        ]
+```
+
+##### 批量重复运行
+
+旧版 `Workflow` 支持 `can_repeat` 与 `set_repeat_times`，可在一次 `run` 内通过模型批量推理获得同一问题的多个回复（适用于 GRPO 等算法）。`set_repeat_times` 接受 `repeat_times`（执行次数）和 `run_id_base`（首次运行 ID，多轮交互场景使用）：
+
+```python
+class ExampleWorkflow(Workflow):
+    can_repeat: bool = True
+
+    def set_repeat_times(self, repeat_times, run_id_base):
+        self.repeat_times = repeat_times
+        self.run_id_base = run_id_base
+
+    def run(self) -> List[Experience]:
+        responses = self.model.chat(
+            [
+                {
+                    "role": "user",
+                    "content": f"Question:\n{self.question}",
+                }
+            ],
+            n=self.repeat_times,
+            temperature=self.rollout_args.temperature,
+        )
+        experiences = []
+        for response in responses:
+            reward: float = self.calculate_reward(response.response_text, self.answer)
+            experiences.append(
+                Experience(
+                    tokens=response.tokens,
+                    prompt_length=response.prompt_length,
+                    reward=reward,
+                    logprobs=response.logprobs,
+                )
+            )
+        return experiences
+```
+
+##### 使用 OpenAI API 与 `extract_experience_from_history`
+
+旧版接口下若要使用 OpenAI API 风格调用模型，可通过 `self.model.get_openai_client()`（或 `get_openai_async_client()`）获取客户端。recording 与 OpenAI API 服务由框架自动开启（无需手动配置 `enable_history` / `enable_openai_api`），框架会自动记录可训练数据，你可通过 `extract_experience_from_history` 将其提取为 `Experience` 列表：
+
+```python
+class ExampleWorkflow(Workflow):
+
+    def __init__(self, task: Task, model: ModelWrapper, auxiliary_models: List):
+        super().__init__(task=task, model=model, auxiliary_models=auxiliary_models)
+        self.client: openai.OpenAI = self.model.get_openai_client()
+        self.agent = MyAgent(openai_client=self.client)
+
+    def calculate_reward(self, response: str) -> float:
+        # your reward calculation logic
+
+    def run(self) -> List[Experience]:
+        response = self.agent.run()
+        reward = self.calculate_reward(response)
+        experiences = self.model.extract_experience_from_history()
+        for exp in experiences:
+            exp.reward = reward
+        return experiences
+```
+
+```{tip}
+1. 旧版 OpenAI API 仅自动记录 `openai.OpenAI.chat.completions.create` 及 `openai.AsyncOpenAI.chat.completions.create` 的调用历史，且不支持流式输出。
+2. 调用 `chat.completions.create` 时，`model` 字段可通过 `openai_client.models.list().data[0].id` 或 `openai_client.model_path` 获取。
+3. 更复杂的使用 OpenAI API 的工作流实例可参考 [ReAct Agent 训练](./example_react.md)。
+```
+
+对于旧版接口下的 LLM-as-a-judge，`auxiliary_models` 是框架自动派生的 OpenAI client 列表，可直接调用：
+
+```python
+class MyWorkflow(Workflow):
+    def __init__(self, *, task, model, auxiliary_models=None):
+        super().__init__(task=task, model=model, auxiliary_models=auxiliary_models)
+        self.judge_model = self.auxiliary_models[0]  # 自动派生的 OpenAI client
+
+    def run(self) -> List[Experience]:
+        response = self.do_something()
+        reward_response = self.judge_model.chat.completions.create(
+            model=self.judge_model.model_path,
+            messages=[...],
+            temperature=0.0,
+            max_tokens=10,
+        )
+        reward = float(reward_response.choices[0].message.content.strip())
+        return [
+            Experience(
+                tokens=response.tokens,
+                prompt_length=response.prompt_length,
+                reward=reward,
+                logprobs=response.logprobs,
+            )
+        ]
+```
