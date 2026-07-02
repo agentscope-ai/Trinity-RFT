@@ -1,6 +1,7 @@
 """In-memory implementation of the experience store interface."""
 
 import logging
+import threading
 from collections import OrderedDict
 from typing import Iterable, List
 
@@ -50,6 +51,12 @@ class MemoryStore(RecordStore):
     ``add``, ``overwrite`` and ``update`` require complete keys in the form
     ``<batch_id>/<task_id>/<run_id>``. ``get`` and ``remove`` also accept prefixes
     so callers can drain a batch or task at once.
+
+    A coarse reentrant lock guards every public method: the store may be written
+    to from the recorder's background flusher thread while the engine event loop
+    reads/updates it (e.g. ``VLLMModel.generate`` short-circuit adds, actor
+    ``block_prefix``/``update`` calls). The lock is uncontended on the fast path
+    (single consumer) and only serializes the rare cross-thread overlap.
     """
 
     def __init__(self) -> None:
@@ -63,66 +70,73 @@ class MemoryStore(RecordStore):
         # finalized batches); see ``block_prefix``. Only grows since batch_id
         # is never reused.
         self._blocked_batches: set[str] = set()
+        # Serializes all dict mutations/reads across the flusher thread and the
+        # engine event loop. Reentrant so ``overwrite`` -> ``add`` works.
+        self._lock = threading.RLock()
 
     def __len__(self) -> int:
-        return sum(len(exps) for exps in self._records.values())
+        with self._lock:
+            return sum(len(exps) for exps in self._records.values())
 
     def add(self, key: str, exps: List[Experience]) -> None:
-        batch, task, _ = self._parse_complete_key(key)  # validate key format
-        if batch in self._blocked_batches:
-            _logger.debug(
-                "Dropping write to blocked batch '%s' (key=%s, %d exps).",
-                batch,
-                key,
-                len(exps),
-            )
-            return
-        if not exps:
-            return
-
-        records = self._records.setdefault(key, OrderedDict())
-        self._index_key(batch, task, key)
-        for exp in exps:
-            sample_id = get_sample_id(exp)
-            owner_key = self._sample_to_key.get(sample_id)
-            if owner_key is not None:
-                raise ValueError(
-                    f"Duplicate sample_id '{sample_id}' already exists under key '{owner_key}'."
+        with self._lock:
+            batch, task, _ = self._parse_complete_key(key)  # validate key format
+            if batch in self._blocked_batches:
+                _logger.debug(
+                    "Dropping write to blocked batch '%s' (key=%s, %d exps).",
+                    batch,
+                    key,
+                    len(exps),
                 )
-            records[sample_id] = exp
-            self._sample_to_key[sample_id] = key
+                return
+            if not exps:
+                return
+
+            records = self._records.setdefault(key, OrderedDict())
+            self._index_key(batch, task, key)
+            for exp in exps:
+                sample_id = get_sample_id(exp)
+                owner_key = self._sample_to_key.get(sample_id)
+                if owner_key is not None:
+                    raise ValueError(
+                        f"Duplicate sample_id '{sample_id}' already exists under key '{owner_key}'."
+                    )
+                records[sample_id] = exp
+                self._sample_to_key[sample_id] = key
 
     def overwrite(self, key: str, exps: List[Experience]) -> None:
-        self._parse_complete_key(key)  # validate key format
-        self._drop_key(key)
-        self.add(key, exps)
+        with self._lock:
+            self._parse_complete_key(key)  # validate key format
+            self._drop_key(key)
+            self.add(key, exps)
 
     def replace(self, key: str, old_sample_id: str, exp: Experience) -> None:
-        self._parse_complete_key(key)  # validate key format
-        records = self._records.get(key)
-        if records is None:
-            raise KeyError(f"Key '{key}' does not exist.")
-        if old_sample_id not in records:
-            raise KeyError(f"sample_id '{old_sample_id}' does not exist under key '{key}'.")
+        with self._lock:
+            self._parse_complete_key(key)  # validate key format
+            records = self._records.get(key)
+            if records is None:
+                raise KeyError(f"Key '{key}' does not exist.")
+            if old_sample_id not in records:
+                raise KeyError(f"sample_id '{old_sample_id}' does not exist under key '{key}'.")
 
-        new_sample_id = get_sample_id(exp)
-        owner_key = self._sample_to_key.get(new_sample_id)
-        if owner_key is not None and (owner_key != key or new_sample_id != old_sample_id):
-            raise ValueError(
-                f"Duplicate sample_id '{new_sample_id}' already exists under key '{owner_key}'."
-            )
+            new_sample_id = get_sample_id(exp)
+            owner_key = self._sample_to_key.get(new_sample_id)
+            if owner_key is not None and (owner_key != key or new_sample_id != old_sample_id):
+                raise ValueError(
+                    f"Duplicate sample_id '{new_sample_id}' already exists under key '{owner_key}'."
+                )
 
-        items = []
-        for sample_id, record in records.items():
-            if sample_id == old_sample_id:
-                items.append((new_sample_id, exp))
-            else:
-                items.append((sample_id, record))
+            items = []
+            for sample_id, record in records.items():
+                if sample_id == old_sample_id:
+                    items.append((new_sample_id, exp))
+                else:
+                    items.append((sample_id, record))
 
-        records.clear()
-        records.update(items)
-        self._sample_to_key.pop(old_sample_id, None)
-        self._sample_to_key[new_sample_id] = key
+            records.clear()
+            records.update(items)
+            self._sample_to_key.pop(old_sample_id, None)
+            self._sample_to_key[new_sample_id] = key
 
     def update(
         self,
@@ -130,49 +144,55 @@ class MemoryStore(RecordStore):
         update: ExperienceUpdate,
         sample_ids: List[str] | None,
     ) -> None:
-        batch, task, run = self._parse_complete_key(key)  # validate key format
-        records = self._records.get(key)
-        if records is None:
-            raise KeyError(f"Key '{key}' does not exist.")
-        target_ids: Iterable[str] = list(records.keys()) if sample_ids is None else sample_ids
-        for sample_id in target_ids:
-            if sample_id not in records:
-                raise KeyError(f"sample_id '{sample_id}' does not exist under key '{key}'.")
-            exp = records[sample_id]
-            exp.eid.batch = batch
-            exp.eid.task = task
-            exp.eid.run = run
-            if update.reward is not None:
-                exp.reward = update.reward
-            if update.info:
-                if exp.info is None:
-                    exp.info = {}
-                exp.info.update(update.info)
-            if update.teacher_logprobs is not None:
-                exp.teacher_logprobs = update.teacher_logprobs
+        with self._lock:
+            batch, task, run = self._parse_complete_key(key)  # validate key format
+            records = self._records.get(key)
+            if records is None:
+                raise KeyError(f"Key '{key}' does not exist.")
+            target_ids: Iterable[str] = list(records.keys()) if sample_ids is None else sample_ids
+            for sample_id in target_ids:
+                if sample_id not in records:
+                    raise KeyError(f"sample_id '{sample_id}' does not exist under key '{key}'.")
+                exp = records[sample_id]
+                exp.eid.batch = batch
+                exp.eid.task = task
+                exp.eid.run = run
+                if update.reward is not None:
+                    exp.reward = update.reward
+                if update.info:
+                    if exp.info is None:
+                        exp.info = {}
+                    exp.info.update(update.info)
+                if update.teacher_logprobs is not None:
+                    exp.teacher_logprobs = update.teacher_logprobs
 
     def get(self, key: str) -> List[Experience]:
-        result: List[Experience] = []
-        for matched_key in self._matching_keys(key):
-            result.extend(self._records[matched_key].values())
-        return result
+        with self._lock:
+            result: List[Experience] = []
+            for matched_key in self._matching_keys(key):
+                result.extend(self._records[matched_key].values())
+            return result
 
     def remove(self, key: str) -> List[Experience]:
-        result: List[Experience] = []
-        for matched_key in self._matching_keys(key):
-            result.extend(self._drop_key(matched_key))
-        return result
+        with self._lock:
+            result: List[Experience] = []
+            for matched_key in self._matching_keys(key):
+                result.extend(self._drop_key(matched_key))
+            return result
 
     def keys(self) -> list[str]:
-        return list(self._records.keys())
+        with self._lock:
+            return list(self._records.keys())
 
     def block_prefix(self, prefix: str) -> None:
         """Mark a batch prefix as blocked; future ``add``/``overwrite`` are dropped."""
-        self._blocked_batches.add(prefix)
+        with self._lock:
+            self._blocked_batches.add(prefix)
 
     def is_prefix_blocked(self, prefix: str) -> bool:
         """Return whether the given batch prefix is blocked."""
-        return prefix in self._blocked_batches
+        with self._lock:
+            return prefix in self._blocked_batches
 
     @staticmethod
     def _parse_complete_key(key: str) -> tuple[str, str, int]:

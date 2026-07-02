@@ -51,8 +51,8 @@ class RecorderPrefixMergeTest(unittest.IsolatedAsyncioTestCase):
             logprobs=[-0.4, -0.5, -0.6],
         )
 
-        await recorder._safe_append(first)
-        await recorder._safe_append(second)
+        recorder._safe_append(first)
+        recorder._safe_append(second)
 
         recorded = store.get(record_key)
         self.assertEqual(len(recorded), 1)
@@ -89,7 +89,7 @@ class RecorderPrefixMergeTest(unittest.IsolatedAsyncioTestCase):
         )
         record_key = "0/task_a/1"
 
-        await recorder._safe_append(
+        recorder._safe_append(
             make_turn(
                 request_id="req-1",
                 record_key=record_key,
@@ -98,7 +98,7 @@ class RecorderPrefixMergeTest(unittest.IsolatedAsyncioTestCase):
                 logprobs=[-0.2],
             )
         )
-        await recorder._safe_append(
+        recorder._safe_append(
             make_turn(
                 request_id="req-2",
                 record_key=record_key,
@@ -143,9 +143,9 @@ class RecorderPrefixMergeTest(unittest.IsolatedAsyncioTestCase):
             sample_index=1,
         )
 
-        await recorder._safe_append(sample_zero)
-        await recorder._safe_append(sample_one_first)
-        await recorder._safe_append(sample_one_final)
+        recorder._safe_append(sample_zero)
+        recorder._safe_append(sample_one_first)
+        recorder._safe_append(sample_one_final)
 
         recorded = store.get(record_key)
         self.assertEqual(len(recorded), 2)
@@ -199,10 +199,10 @@ class RecorderPrefixMergeTest(unittest.IsolatedAsyncioTestCase):
             sample_index=0,
         )
 
-        await recorder._safe_append(branch_a_first)
-        await recorder._safe_append(branch_b_first)
-        await recorder._safe_append(branch_a_final)
-        await recorder._safe_append(branch_b_final)
+        recorder._safe_append(branch_a_first)
+        recorder._safe_append(branch_b_first)
+        recorder._safe_append(branch_a_final)
+        recorder._safe_append(branch_b_final)
 
         recorded = store.get(record_key)
         self.assertEqual(len(recorded), 2)
@@ -252,10 +252,10 @@ class RecorderPrefixMergeTest(unittest.IsolatedAsyncioTestCase):
             logprobs=[-0.5],
         )
 
-        await recorder._safe_append(short_prefix)
-        await recorder._safe_append(long_prefix)
-        await recorder._safe_append(unrelated)
-        await recorder._safe_append(final)
+        recorder._safe_append(short_prefix)
+        recorder._safe_append(long_prefix)
+        recorder._safe_append(unrelated)
+        recorder._safe_append(final)
 
         recorded = store.get(record_key)
         self.assertEqual(len(recorded), 2)
@@ -286,8 +286,8 @@ class RecorderPrefixMergeTest(unittest.IsolatedAsyncioTestCase):
             logprobs=[-0.4, -0.5, -0.6, -0.7],
         )
 
-        await recorder._safe_append(short_completion)
-        await recorder._safe_append(long_completion)
+        recorder._safe_append(short_completion)
+        recorder._safe_append(long_completion)
 
         recorded = store.get(record_key)
         self.assertEqual(len(recorded), 2)
@@ -317,9 +317,9 @@ class RecorderPrefixMergeTest(unittest.IsolatedAsyncioTestCase):
             logprobs=[-0.3],
         )
 
-        await recorder._safe_append(first)
+        recorder._safe_append(first)
         store.remove(record_key)
-        await recorder._safe_append(second)
+        recorder._safe_append(second)
 
         recorded = store.get(record_key)
         self.assertEqual(len(recorded), 1)

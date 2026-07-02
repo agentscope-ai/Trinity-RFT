@@ -2,6 +2,8 @@
 
 import asyncio
 import logging
+import queue
+import threading
 from collections.abc import Callable, Sequence
 from datetime import datetime, timezone
 from typing import Any, Optional
@@ -17,12 +19,22 @@ TRINITY_RECORD_STORE_ATTR = "trinity_record_store"
 
 BuildExperiencesFn = Callable[..., Sequence[Experience]]
 
+# Sentinel pushed onto the queue to request the flusher thread to exit.
+_STOP = object()
+
 
 class Recorder:
-    """Drains finished turns into a ``RecordStore`` from a background task.
+    """Drains finished turns into a ``RecordStore`` from a background thread.
 
     Engine-specific code supplies ``build_experiences``, which converts a
     finished engine output object into Trinity ``Experience`` instances.
+
+    The CPU-bound store writes (and prefix merging) run on a dedicated daemon
+    thread so they never stall the engine's event loop. Producers (engine-loop
+    coroutines) push onto an unbounded, thread-safe ``queue.Queue`` and never
+    block. ``MemoryStore`` is expected to be thread-safe (it guards its
+    dictionaries with a lock) since engine-loop code may touch the store
+    concurrently with the flusher.
     """
 
     def __init__(
@@ -41,23 +53,31 @@ class Recorder:
         self.engine_client = engine_client
         self.merge_prefix_experiences = merge_prefix_experiences
         self._build_experiences = build_experiences
-        self._queue: "asyncio.Queue[Optional[Experience]]" = asyncio.Queue()
-        self._flusher: Optional[asyncio.Task] = None
+        # Thread-safe unbounded queue; producers never block on put.
+        self._queue: "queue.Queue[Optional[Experience]]" = queue.Queue()
+        self._flusher: Optional[threading.Thread] = None
         self._pending: "set[asyncio.Task]" = set()
         self._prefix_merger = PrefixExperienceMerger(store)
 
     def start(self) -> None:
-        """Start the background flusher. Idempotent."""
+        """Start the background flusher thread. Idempotent."""
         if self._flusher is not None or not self.enabled:
             return
-        self._flusher = asyncio.create_task(self._flush_loop())
+        self._flusher = threading.Thread(
+            target=self._flush_loop,
+            name=f"trinity-recorder-flusher-rank{self.rank}",
+            daemon=True,
+        )
+        self._flusher.start()
 
     async def stop(self) -> None:
-        """Drain in-flight + queued turns, then stop the flusher."""
+        """Drain in-flight + queued turns, then stop the flusher thread."""
         if self._flusher is None:
             return
         await self.flush()
-        self._flusher.cancel()
+        self._queue.put(_STOP)  # type: ignore [arg-type]
+        # join() blocks; run it off the event loop.
+        await asyncio.to_thread(self._flusher.join)
         self._flusher = None
 
     def schedule_record(self, output: Any, record_key: Optional[str], **builder_kwargs) -> None:
@@ -71,7 +91,9 @@ class Recorder:
         if self._pending:
             await asyncio.gather(*self._pending, return_exceptions=True)
         if self._flusher is not None:
-            await self._queue.join()
+            # queue.Queue.join() is a blocking call; run it off the event loop
+            # so the engine keeps scheduling while the flusher drains.
+            await asyncio.to_thread(self._queue.join)
 
     async def _record(self, output: Any, record_key: Optional[str], **builder_kwargs) -> None:
         if skip_recording_ctx.get():
@@ -86,19 +108,24 @@ class Recorder:
             **builder_kwargs,
         )
         for exp in exps:
-            await self._queue.put(exp)
+            self._queue.put(exp)  # non-blocking on an unbounded queue
 
-    async def _flush_loop(self) -> None:
+    def _flush_loop(self) -> None:
         while True:
-            exp = await self._queue.get()
+            exp = self._queue.get()
             try:
-                if exp is None:
+                if exp is _STOP:
                     return
-                await self._safe_append(exp)
+                self._safe_append(exp)  # type: ignore [arg-type]
+            except Exception:
+                logging.getLogger(__name__).exception(
+                    "recording flusher failed for request %s",
+                    exp.eid.suffix if exp is not _STOP else None,
+                )
             finally:
                 self._queue.task_done()
 
-    async def _safe_append(self, exp: Experience) -> None:
+    def _safe_append(self, exp: Experience) -> None:
         try:
             record_key = get_record_key(exp)
             if self.merge_prefix_experiences and self._prefix_merger.try_merge(record_key, exp):
