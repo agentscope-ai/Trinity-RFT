@@ -51,6 +51,8 @@ WORKFLOWS: Registry = Registry(
         "math_trainable_ruler_workflow": "trinity.common.workflows.math_trainable_ruler_workflow.MathTrainableRULERWorkflow",
         "rubric_judge_workflow": "trinity.common.workflows.rubric_judge_workflow.RubricJudgeWorkflow",
         "rubric_judge_openai_workflow": "trinity.common.workflows.rubric_judge_workflow.RubricJudgeWorkflowWithAPI",
+        # harbor
+        "harbor_workflow": "trinity.common.workflows.harbor_workflow.HarborWorkflow",
         # others
         "simple_mm_workflow": "trinity.common.workflows.simple_mm_workflow.SimpleMMWorkflow",
         "async_simple_mm_workflow": "trinity.common.workflows.simple_mm_workflow.AsyncSimpleMMWorkflow",
