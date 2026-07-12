@@ -112,6 +112,9 @@ class Allocator:
 
     async def create_all_models(self) -> Tuple[List[ModelWrapper], List[List[ModelWrapper]]]:
         """Create all model actors for the rollout model and auxiliary models based on the configuration."""
+        if self.config.mode == "colocate":
+            return await self._create_colocate_model()
+
         self.bundle_result = self.allocate_bundles()
         self.pg = placement_group(self.bundle_result.bundles, strategy="PACK")
         await self.pg.ready()
@@ -146,6 +149,55 @@ class Allocator:
             for index in range(len(self.config.auxiliary_models))
         ]
         return rollout_models, auxiliary_models
+
+    async def _create_colocate_model(
+        self,
+    ) -> Tuple[List[ModelWrapper], List[List[ModelWrapper]]]:
+        """Create the rollout model without reserving a placement group.
+
+        In colocate mode the trainer and rollout model share the same GPU. Reserving
+        that GPU in a placement group would prevent the trainer from acquiring it.
+        """
+        config = deepcopy(self.config.rollout_model)
+        config.engine_id = 0
+        actor_name = self.get_actor_name("rollout", 0, 0)
+        config.ray_actor_name = actor_name
+
+        if config.engine_type.startswith("vllm"):
+            from trinity.common.models.vllm_model import vLLMRolloutModel
+
+            model_cls = vLLMRolloutModel
+            num_gpus = 0
+        elif config.engine_type == "sglang":
+            from trinity.common.models.sglang_model import SGLangRolloutModel
+
+            model_cls = SGLangRolloutModel
+            num_gpus = config.tensor_parallel_size
+        else:
+            raise ValueError(
+                f"Unsupported engine type in colocate mode: {config.engine_type}"
+            )
+
+        self.logger.info(
+            "Creating colocated inference_model %s in %s.",
+            actor_name,
+            config.ray_namespace,
+        )
+        handler = (
+            ray.remote(model_cls)
+            .options(
+                name=actor_name,
+                num_cpus=0,
+                num_gpus=num_gpus,
+                namespace=config.ray_namespace,
+            )
+            .remote(config=config)
+        )
+        await handler.prepare.remote()
+        server_address = await handler.get_api_server_url.remote()
+        wrapper = ModelWrapper(models=[handler], config=config, api_address=server_address)
+        await wrapper.prepare()
+        return [wrapper], []
 
     def get_model(self, config: InferenceModelConfig, role: str, engine_id: int) -> ModelWrapper:
         """Get the model actor for the given role and engine ID."""

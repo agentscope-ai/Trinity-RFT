@@ -689,6 +689,7 @@ class ExplorerConfigValidator(ConfigValidator):
         config.explorer.rollout_model.enable_return_routed_experts = (
             config.algorithm.enable_router_replay
         )
+        config.explorer.mode = config.mode
         config.explorer.rollout_model.ray_namespace = config.ray_namespace
         config.explorer.rollout_model.sync_method = config.synchronizer.sync_method
         config.explorer.rollout_model.checkpoint_job_dir = config.checkpoint_job_dir
