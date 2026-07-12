@@ -163,20 +163,13 @@ class Allocator:
         actor_name = self.get_actor_name("rollout", 0, 0)
         config.ray_actor_name = actor_name
 
-        if config.engine_type.startswith("vllm"):
-            from trinity.common.models.vllm_model import vLLMRolloutModel
-
-            model_cls = vLLMRolloutModel
-            num_gpus = 0
-        elif config.engine_type == "sglang":
-            from trinity.common.models.sglang_model import SGLangRolloutModel
-
-            model_cls = SGLangRolloutModel
-            num_gpus = config.tensor_parallel_size
-        else:
+        if not config.engine_type.startswith("vllm"):
             raise ValueError(
-                f"Unsupported engine type in colocate mode: {config.engine_type}"
+                "Colocate mode only supports vLLM, "
+                f"but got engine type: {config.engine_type}"
             )
+
+        from trinity.common.models.vllm_model import vLLMRolloutModel
 
         self.logger.info(
             "Creating colocated inference_model %s in %s.",
@@ -184,11 +177,11 @@ class Allocator:
             config.ray_namespace,
         )
         handler = (
-            ray.remote(model_cls)
+            ray.remote(vLLMRolloutModel)
             .options(
                 name=actor_name,
                 num_cpus=0,
-                num_gpus=num_gpus,
+                num_gpus=0,
                 namespace=config.ray_namespace,
             )
             .remote(config=config)
