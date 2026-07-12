@@ -165,8 +165,7 @@ class Allocator:
 
         if not config.engine_type.startswith("vllm"):
             raise ValueError(
-                "Colocate mode only supports vLLM, "
-                f"but got engine type: {config.engine_type}"
+                f"Colocate mode only supports vLLM, but got engine type: {config.engine_type}"
             )
 
         from trinity.common.models.vllm_model import vLLMRolloutModel
