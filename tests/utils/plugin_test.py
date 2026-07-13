@@ -3,6 +3,7 @@ import shutil
 import unittest
 from pathlib import Path
 from typing import Type
+from unittest.mock import MagicMock
 
 import ray
 from parameterized import parameterized
@@ -10,7 +11,7 @@ from parameterized import parameterized
 from tests.tools import TensorBoardParser, get_checkpoint_path, get_template_config
 from trinity.common.config import Config
 from trinity.common.constants import PLUGIN_DIRS_ENV_VAR
-from trinity.common.workflows import WORKFLOWS, Workflow
+from trinity.common.workflows import WORKFLOWS, Task, Workflow
 from trinity.utils.monitor import MONITOR
 from trinity.utils.plugin_loader import load_plugins
 
@@ -43,7 +44,7 @@ class PluginActor:
     def run(self, workflow_cls=Type[Workflow]):
         if self.monitor:
             self.monitor.log({"rollout": 2}, step=1, commit=True)
-        return workflow_cls(task=None, model=None).run()
+        return workflow_cls(task=Task(), model=MagicMock()).run()
 
 
 class TestPluginLoader(unittest.TestCase):
@@ -65,7 +66,7 @@ class TestPluginLoader(unittest.TestCase):
             pass
         my_workflow_cls = WORKFLOWS.get("my_workflow")
         self.assertIsNotNone(my_workflow_cls)
-        my_plugin = my_workflow_cls(task=None, model=None, auxiliary_models=None)
+        my_plugin = my_workflow_cls(task=Task(), model=MagicMock(), auxiliary_models=None)
         self.assertTrue(my_plugin.__module__.startswith("trinity.plugins"))
         res = my_plugin.run()
         self.assertEqual(res[0], "Hello world")

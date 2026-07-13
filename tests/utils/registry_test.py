@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Test cases for workflows registry mapping."""
 import unittest
+from unittest.mock import MagicMock
 
 import ray
 import torch
@@ -27,7 +28,7 @@ from trinity.buffer.selector import SELECTORS, BaseSelector
 from trinity.buffer.storage import PRIORITY_FUNC
 from trinity.buffer.storage.queue import PriorityFunction
 from trinity.common.rewards import REWARD_FUNCTIONS, RewardFn
-from trinity.common.workflows import WORKFLOWS, Workflow
+from trinity.common.workflows import WORKFLOWS, Task, Workflow
 from trinity.utils.monitor import MONITOR, Monitor
 
 
@@ -51,7 +52,7 @@ class ImportUtils:
 
         workflow_cls = WORKFLOWS.get("tests.utils.plugins.main.MainDummyWorkflow")
         assert issubclass(workflow_cls, Workflow)
-        workflow = workflow_cls(task=None, model=None)
+        workflow = workflow_cls(task=Task(), model=MagicMock())
         res = workflow.run()
         assert res[0] == 0
         assert res[1] == "0"

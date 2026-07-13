@@ -6,9 +6,12 @@ import unittest
 from copy import deepcopy
 from typing import cast
 
+import httpx
+import openai
 import ray
 import torch
 from openai import BadRequestError
+from packaging.version import parse as parse_version
 from parameterized import parameterized_class
 from transformers import AutoConfig, AutoTokenizer
 
@@ -21,10 +24,13 @@ from tests.tools import (
     get_template_config,
     get_vision_language_model_path,
 )
+from trinity.buffer.store import get_record_key
 from trinity.common.config import Config
 from trinity.common.constants import ROLLOUT_WEIGHT_SYNC_GROUP_NAME, SyncMethod
+from trinity.common.experience import Experience
 from trinity.common.models.allocator import Allocator
 from trinity.common.models.model import ModelWrapper
+from trinity.common.models.vllm_patch import get_vllm_version
 from trinity.manager.synchronizer import Synchronizer
 
 DEBUG = False
@@ -80,6 +86,44 @@ def _assert_routed_experts_shape(test_case, exp, expected_layers: int, expected_
         tuple(routed_experts.shape),
         (len(exp.tokens) - 1, expected_layers, expected_topk),
     )
+
+
+def _assert_recorded_experiences_match_unordered(
+    test_case,
+    expected_exps,
+    recorded_exps,
+    *,
+    enable_return_routed_experts: bool,
+    expected_layers: int,
+    expected_topk: int,
+):
+    test_case.assertEqual(len(recorded_exps), len(expected_exps))
+    unmatched_recorded = list(recorded_exps)
+    for exp in expected_exps:
+        exp_tokens = exp.tokens.tolist()
+        match_index = next(
+            (
+                i
+                for i, recorded_exp in enumerate(unmatched_recorded)
+                if recorded_exp.tokens.tolist() == exp_tokens
+            ),
+            None,
+        )
+        test_case.assertIsNotNone(
+            match_index,
+            f"Recorded history does not contain expected response: {exp.response_text[:200]}",
+        )
+        recorded_exp = unmatched_recorded.pop(match_index)  # type: ignore [arg-type]
+        test_case.assertEqual(exp.response_text, recorded_exp.response_text)
+        test_case.assertEqual(exp.prompt_length, recorded_exp.prompt_length)
+        test_case.assertEqual(exp.logprobs.tolist(), recorded_exp.logprobs.tolist())
+        if enable_return_routed_experts:
+            _assert_routed_experts_shape(
+                test_case,
+                recorded_exp,
+                expected_layers,
+                expected_topk,
+            )
 
 
 def _load_gsm8k_questions() -> list[str]:
@@ -158,6 +202,8 @@ class ModelWrapperTest(VLLMTestBase):
         self.config.algorithm.repeat_times = self.repeat_times
         self.config.explorer.rollout_model.enable_history = self.enable_history
         self.config.explorer.rollout_model.enable_openai_api = self.enable_return_routed_experts
+        requested_enable_history = self.config.explorer.rollout_model.enable_history
+        requested_enable_openai_api = self.config.explorer.rollout_model.enable_openai_api
         self.config.explorer.rollout_model.chat_template = CHAT_TEMPLATE
         self.config.explorer.rollout_model.extra_engine_args = {"max_num_seqs": 24}
         if self.enable_return_routed_experts:
@@ -165,18 +211,12 @@ class ModelWrapperTest(VLLMTestBase):
             self.config.explorer.rollout_model.extra_engine_args["gdn_prefill_backend"] = "triton"
         self.config.algorithm.enable_router_replay = self.enable_return_routed_experts
         self.config.check_and_update()
+        self.config.explorer.rollout_model.enable_history = requested_enable_history
+        self.config.explorer.rollout_model.enable_openai_api = requested_enable_openai_api
 
         self.engines, self.auxiliary_engines = await create_test_models(self.config)
         self.model_wrapper = self.engines[0]
-
-    def _assert_openai_response_routed_experts(self, response, expected_choices: int):
-        self.assertEqual(len(response.choices), expected_choices)
-        if not self.enable_return_routed_experts:
-            return
-        for choice in response.choices:
-            self.assertTrue(hasattr(choice, "routed_experts"))
-            self.assertIsInstance(choice.routed_experts, str)
-            self.assertGreater(len(choice.routed_experts), 0)
+        self.model_wrapper.set_api_key("model_wrapper/0/0")
 
     async def test_generate(self):  # noqa: C901
         self.assertEqual(self.model_wrapper.model_path, self.config.model.model_path)
@@ -184,10 +224,18 @@ class ModelWrapperTest(VLLMTestBase):
         n = self.config.algorithm.repeat_times
         if self.use_async:
             generate_results = await self.model_wrapper.generate_async(
-                prompts, n=n, temperature=1.0
+                prompts,
+                n=n,
+                temperature=1.0,
+                enable_recording=True,
             )
         else:
-            generate_results = self.model_wrapper.generate(prompts, n=n, temperature=1.0)
+            generate_results = self.model_wrapper.generate(
+                prompts,
+                n=n,
+                temperature=1.0,
+                enable_recording=True,
+            )
         self.assertEqual(len(generate_results), len(prompts) * n)
         if self.enable_return_routed_experts:
             for exp in generate_results:
@@ -201,19 +249,14 @@ class ModelWrapperTest(VLLMTestBase):
             history_experiences = self.model_wrapper.extract_experience_from_history(
                 clear_history=False
             )
-            self.assertEqual(len(history_experiences), len(generate_results))
-            for exp, history_exp in zip(generate_results, history_experiences):
-                self.assertEqual(exp.response_text, history_exp.response_text)
-                self.assertEqual(exp.tokens.tolist(), history_exp.tokens.tolist())
-                self.assertEqual(exp.prompt_length, history_exp.prompt_length)
-                self.assertEqual(exp.logprobs.tolist(), history_exp.logprobs.tolist())
-                if self.enable_return_routed_experts:
-                    _assert_routed_experts_shape(
-                        self,
-                        history_exp,
-                        self.expected_routed_experts_layers,
-                        self.expected_routed_experts_topk,
-                    )
+            _assert_recorded_experiences_match_unordered(
+                self,
+                generate_results,
+                history_experiences,
+                enable_return_routed_experts=self.enable_return_routed_experts,
+                expected_layers=self.expected_routed_experts_layers,
+                expected_topk=self.expected_routed_experts_topk,
+            )
         else:
             with self.assertRaises(ValueError):
                 self.model_wrapper.extract_experience_from_history(clear_history=False)
@@ -227,9 +270,11 @@ class ModelWrapperTest(VLLMTestBase):
             {"role": "user", "content": "OK, thanks!"},
         ]
         if self.use_async:
-            results = await self.model_wrapper.chat_async(messages, n=n, temperature=1.0)
+            results = await self.model_wrapper.chat_async(
+                messages, n=n, temperature=1.0, enable_recording=True
+            )
         else:
-            results = self.model_wrapper.chat(messages, n=n, temperature=1.0)
+            results = self.model_wrapper.chat(messages, n=n, temperature=1.0, enable_recording=True)
         self.assertEqual(len(results), n)
         if self.enable_return_routed_experts:
             for exp in results:
@@ -241,19 +286,15 @@ class ModelWrapperTest(VLLMTestBase):
                 )
         if self.config.explorer.rollout_model.enable_history:
             history_experiences = self.model_wrapper.extract_experience_from_history()
-            self.assertEqual(len(history_experiences) - len(generate_results), len(results))
-            for exp, history_exp in zip(results, history_experiences[len(generate_results) :]):
-                self.assertEqual(exp.response_text, history_exp.response_text)
-                self.assertEqual(exp.tokens.tolist(), history_exp.tokens.tolist())
-                self.assertEqual(exp.prompt_length, history_exp.prompt_length)
-                self.assertEqual(exp.logprobs.tolist(), history_exp.logprobs.tolist())
-                if self.enable_return_routed_experts:
-                    _assert_routed_experts_shape(
-                        self,
-                        history_exp,
-                        self.expected_routed_experts_layers,
-                        self.expected_routed_experts_topk,
-                    )
+            self.assertEqual(len(history_experiences), len(generate_results) + len(results))
+            _assert_recorded_experiences_match_unordered(
+                self,
+                results,
+                history_experiences[len(generate_results) :],
+                enable_return_routed_experts=self.enable_return_routed_experts,
+                expected_layers=self.expected_routed_experts_layers,
+                expected_topk=self.expected_routed_experts_topk,
+            )
         for result in results:
             self.assertTrue(torch.any(result.logprobs != 0))
         if self.use_async:
@@ -289,10 +330,10 @@ class ModelWrapperTest(VLLMTestBase):
         )
         self.assertTrue(exp.logprobs.shape[0] == exp.tokens.shape[0] - prompt_length)
         self.assertTrue(torch.equal(result_dict["input_ids"][0], exp.tokens))
-        if self.enable_return_routed_experts:
-            self.assertIsNotNone(self.model_wrapper.get_openai_client())
-        else:
-            self.assertRaises(ValueError, self.model_wrapper.get_openai_client)
+        # The OpenAI API server is now always enabled for the rollout model
+        # (``enable_openai_api`` is a deprecated no-op), so the client is always
+        # available regardless of the requested value.
+        self.assertIsNotNone(self.model_wrapper.get_openai_client())
 
         if self.enable_return_routed_experts:
             openai_messages = [
@@ -319,7 +360,7 @@ class ModelWrapperTest(VLLMTestBase):
                     max_tokens=32,
                 )
 
-            self._assert_openai_response_routed_experts(openai_response, n)
+            self.assertEqual(len(openai_response.choices), n)
 
             history_experiences = self.model_wrapper.extract_experience_from_history()
             self.assertEqual(len(history_experiences), n)
@@ -422,6 +463,7 @@ class TestModelLen(VLLMTestBase):
 
         self.engines, self.auxiliary_engines = await create_test_models(self.config)
         self.model_wrapper = self.engines[0]
+        self.model_wrapper.set_api_key("model_len/0/0")
         self.tokenizer = AutoTokenizer.from_pretrained(self.config.model.model_path)
 
     async def test_model_len(self):
@@ -456,7 +498,7 @@ class TestModelLen(VLLMTestBase):
                 self.assertLessEqual(len(exp.tokens), self.config.model.max_model_len)
 
         # For vllm engine, max_prompt_tokens and max_response_tokens work
-        response = self.model_wrapper.chat(messages)
+        response = self.model_wrapper.chat(messages, enable_recording=True)
         self.assertEqual(len(response), 1)
         if self.max_prompt_tokens == 5:
             self.assertEqual(response[0].truncate_status, "prompt_truncated")
@@ -493,7 +535,7 @@ class TestModelLen(VLLMTestBase):
             ][0].tolist()
             self.assertGreater(len(prompt_token_ids), self.config.model.max_prompt_tokens)
 
-            responses = self.model_wrapper.generate([prompt], n=2)
+            responses = self.model_wrapper.generate([prompt], n=2, enable_recording=True)
             self.assertEqual(len(responses), 2)
 
             for response in responses:
@@ -522,6 +564,7 @@ class TestModelLenWithoutPromptTruncation(VLLMTestBase):
 
         self.engines, self.auxiliary_engines = await create_test_models(self.config)
         self.model_wrapper = self.engines[0]
+        self.model_wrapper.set_api_key("model_len_no_truncation/0/0")
 
     async def test_model_len(self):
         messages = [
@@ -529,7 +572,7 @@ class TestModelLenWithoutPromptTruncation(VLLMTestBase):
         ]
 
         # For vllm engine, max_prompt_tokens and max_response_tokens work
-        response = self.model_wrapper.chat(messages)
+        response = self.model_wrapper.chat(messages, enable_recording=True)
         self.assertEqual(len(response), 1)
         self.assertLessEqual(
             len(response[0].tokens) - response[0].prompt_length,
@@ -641,6 +684,7 @@ class TestAPIServerCommon(VLLMTestBase):
         self.config.check_and_update()
         self.engines, self.auxiliary_engines = await create_test_models(self.config)
         self.model_wrapper = self.engines[0]
+        self.model_wrapper.set_api_key("0/vllm_api_server/0")
         self.model_wrapper_no_history = clone_wrapper(self.model_wrapper, enable_history=False)
 
     async def test_api(self):
@@ -671,13 +715,13 @@ class TestAPIServerCommon(VLLMTestBase):
         self.assertEqual(0, len(response.choices[0].logprobs.content[2].top_logprobs))
         # here we check the 3rd token logprob, because the first two tokens (`<think>`,`\n` usually have zero logprob)
         self.assertTrue(response.choices[0].logprobs.content[2].logprob < 0)
-        self.assertTrue(hasattr(response, "prompt_token_ids"))
-        self.assertTrue(len(response.prompt_token_ids) > 0)
-        self.assertTrue(hasattr(response.choices[0], "token_ids"))
-        self.assertTrue(len(response.choices[0].token_ids) > 0)
         exps = self.model_wrapper.extract_experience_from_history()
         self.assertEqual(len(exps), 3)
         self.assertEqual(exps[0].response_text, content)
+        for exp in exps:
+            self.assertTrue(len(exp.tokens) > 0)
+            self.assertTrue(len(exp.logprobs) > 0)
+            self.assertTrue(exp.prompt_length + len(exp.logprobs) == len(exp.tokens))
         response = openai_client.chat.completions.create(
             model=model_id,
             messages=messages,
@@ -707,9 +751,11 @@ class TestAPIServerCommon(VLLMTestBase):
             messages=messages,
             logprobs=False,
         )
+        self.assertIsNone(response.choices[0].logprobs)
         exps = self.model_wrapper.extract_experience_from_history()
         self.assertEqual(len(exps), 1)
-        self.assertTrue(len(exps[0].logprobs) == 0)
+        self.assertTrue(len(exps[0].logprobs) > 0)
+        self.assertTrue(exps[0].prompt_length + len(exps[0].logprobs) == len(exps[0].tokens))
         response = self.model_wrapper_no_history.get_openai_client().chat.completions.create(
             model=model_id, messages=messages, n=2
         )
@@ -718,7 +764,6 @@ class TestAPIServerCommon(VLLMTestBase):
         self.assertTrue(response.choices[0].token_ids is None)
         with self.assertRaises(ValueError):
             self.model_wrapper_no_history.extract_experience_from_history()
-        self.assertEqual(len(self.model_wrapper_no_history.history), 0)
 
 
 class TestQwen35APIServerReasoning(VLLMTestBase):
@@ -738,6 +783,7 @@ class TestQwen35APIServerReasoning(VLLMTestBase):
         self.config.check_and_update()
         self.engines, self.auxiliary_engines = await create_test_models(self.config)
         self.model_wrapper = self.engines[0]
+        self.model_wrapper.set_api_key("qwen35_reasoning/0/0")
 
     async def test_reasoning_content(self):
         openai_client = self.model_wrapper.get_openai_client()
@@ -815,6 +861,7 @@ class TestQwen35APIServerMultiModal(VLLMTestBase):
         self.config.check_and_update()
         self.engines, self.auxiliary_engines = await create_test_models(self.config)
         self.model_wrapper = self.engines[0]
+        self.model_wrapper.set_api_key("qwen35_mm/0/0")
 
     async def test_multi_modal_content(self):
         openai_client = self.model_wrapper.get_openai_client()
@@ -909,6 +956,7 @@ class TestLogprobs(VLLMTestBase):
         self.config.check_and_update()
         self.engines, self.auxiliary_engines = await create_test_models(self.config)
         self.model_wrapper = self.engines[0]
+        self.model_wrapper.set_api_key("logprobs/0/0")
 
     async def test_logprobs_api(self):
         messages = [
@@ -1029,7 +1077,6 @@ class TestLogprobs(VLLMTestBase):
         )
 
         # test openai api and vllm engine logprobs consistency
-        await self.model_wrapper.clean_workflow_state()
         _ = await self.model_client.chat.completions.create(
             model=self.model_client.model_path,
             messages=messages,
@@ -1103,6 +1150,7 @@ class TestAsyncAPIServer(VLLMTestBase):
     async def _setup_engines(self):
         self.engines, self.auxiliary_engines = await create_test_models(self.config)
         self.model_wrapper = self.engines[0]
+        self.model_wrapper.set_api_key("0/vllm_async_api_server/0")
         self.model_wrapper_no_history = clone_wrapper(self.model_wrapper, enable_history=False)
 
     async def test_api_async(self):
@@ -1131,12 +1179,12 @@ class TestAsyncAPIServer(VLLMTestBase):
         # here we check the 3rd token logprob, because the first two tokens (`<think>`,`\n` usually have zero logprob)
         if "Instruct" not in self.model_path:
             self.assertTrue(response.choices[0].logprobs.content[2].logprob < 0)
-        self.assertTrue(hasattr(response, "prompt_token_ids"))
-        self.assertTrue(len(response.prompt_token_ids) > 0)
-        self.assertTrue(hasattr(response.choices[0], "token_ids"))
-        self.assertTrue(len(response.choices[0].token_ids) > 0)
         exps = self.model_wrapper.extract_experience_from_history()
         self.assertEqual(len(exps), 3)
+        for exp in exps:
+            self.assertTrue(len(exp.tokens) > 0)
+            self.assertTrue(len(exp.logprobs) > 0)
+            self.assertTrue(exp.prompt_length + len(exp.logprobs) == len(exp.tokens))
         response = await openai_client.chat.completions.create(
             model=model_id,
             messages=messages,
@@ -1173,9 +1221,11 @@ class TestAsyncAPIServer(VLLMTestBase):
             messages=messages,
             logprobs=False,
         )
+        self.assertIsNone(response.choices[0].logprobs)
         exps = self.model_wrapper.extract_experience_from_history()
         self.assertEqual(len(exps), 1)
-        self.assertTrue(len(exps[0].logprobs) == 0)
+        self.assertTrue(len(exps[0].logprobs) > 0)
+        self.assertTrue(exps[0].prompt_length + len(exps[0].logprobs) == len(exps[0].tokens))
         response = (
             await self.model_wrapper_no_history.get_openai_async_client().chat.completions.create(
                 model=model_id, messages=messages, n=2
@@ -1186,7 +1236,6 @@ class TestAsyncAPIServer(VLLMTestBase):
         self.assertTrue(response.choices[0].token_ids is None)
         with self.assertRaises(ValueError):
             self.model_wrapper_no_history.extract_experience_from_history()
-        self.assertEqual(len(self.model_wrapper_no_history.history), 0)
 
 
 @unittest.skipIf("TINKER_API_KEY" not in os.environ, "TINKER_API_KEY is not set")
@@ -1499,11 +1548,13 @@ class TestConcurrentSyncWeights(VLLMTestBase):
 
                     self.assertTrue(
                         logprobs_similar,
-                        f"Logprobs for interrupted request {idx + 1} are not consistent "
-                        f"after weight sync (mean_diff={mean_diff:.6f}, max_diff={max_diff:.6f}, "
-                        f"num_mismatched={len(mismatch_indices) if not logprobs_similar else 0})"
-                        if not logprobs_similar
-                        else "",
+                        (
+                            f"Logprobs for interrupted request {idx + 1} are not consistent "
+                            f"after weight sync (mean_diff={mean_diff:.6f}, max_diff={max_diff:.6f}, "
+                            f"num_mismatched={len(mismatch_indices) if not logprobs_similar else 0})"
+                            if not logprobs_similar
+                            else ""
+                        ),
                     )
                 else:
                     print("  [WARNING] No matching experience found in history")
@@ -1549,6 +1600,7 @@ class TestAPIServerToolCall(VLLMTestBase):
         self.config.check_and_update()
         self.engines, self.auxiliary_engines = await create_test_models(self.config)
         self.model_wrapper = self.engines[0]
+        self.model_wrapper.set_api_key("tool_call/0/0")
         self.model_wrapper_no_history = clone_wrapper(self.model_wrapper, enable_history=False)
 
     async def test_api_tool_calls(self):
@@ -1756,7 +1808,10 @@ class TestAPIServerToolCall(VLLMTestBase):
         final_exps = self.model_wrapper.extract_experience_from_history()
         self.assertEqual(len(final_exps), 1)
         print_debug(f"    > Final recorded experience response_text: {final_exps[0].response_text}")
-        self.assertEqual(final_exps[0].response_text, final_choice.message.content)
+        if self.reasoning_parser:
+            self.assertIn(final_choice.message.content.strip(), final_exps[0].response_text)
+        else:
+            self.assertEqual(final_exps[0].response_text, final_choice.message.content)
         print_debug(f"[{time.time() - start_time:.2f}s] Final experience history check passed.")
 
         exp = final_exps[0]
@@ -1804,6 +1859,253 @@ class TestAPIServerToolCall(VLLMTestBase):
         print_debug(
             "\n" + "=" * 28 + f" test_api_tool_calls PASSED in {total_time:.2f}s " + "=" * 28 + "\n"
         )
+
+
+class TestRecording(VLLMTestBase):
+    """Correctness of the in-vLLM generation recording flow (``enable_history``).
+
+    Verifies that every call path lands its finished turn in the in-process
+    ``MemoryStore`` under the right ``record_key``, and that actor-side
+    reward update + drain APIs stamp and return recorded experiences.
+
+    Paths covered (all async):
+      * Ray-direct ``generate`` / ``chat`` — record_key propagated via
+        ``recording_ctx`` (set inside the actor by ``VLLMModel``).
+      * OpenAI HTTP regular / streaming / tool-call — record_key propagated
+        via the ``Authorization: Bearer <api_key>`` header, captured by
+        ``RecordingIdentityMiddleware``.
+
+    ``enable_history`` forces ``enable_return_routed_experts`` in the
+    Allocator, and vLLM's routed-experts capturer raises on a non-MoE model,
+    so this test requires a MoE checkpoint (``TRINITY_MOE_MODEL_PATH``).
+    """
+
+    async def asyncSetUp(self):
+        if get_vllm_version() < parse_version("0.23.0"):
+            self.skipTest("generation recording requires vLLM >= 0.23.0")
+        self.config = get_template_config()
+        self.config.mode = "explore"
+        # enable_history forces enable_return_routed_experts -> needs a MoE
+        # model (vLLM raises on dense models). Use a Qwen3-MoE checkpoint.
+        self.config.model.model_path = get_moe_model_path()
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.config.model.model_path,
+            trust_remote_code=True,
+        )
+        self.text_config = _get_text_config(self.config.model.model_path)
+        self.expected_routed_experts_layers = _count_moe_layers(self.text_config)
+        self.expected_routed_experts_topk = int(self.text_config.num_experts_per_tok)
+        self.config.model.custom_chat_template = CHAT_TEMPLATE
+        self.config.explorer.rollout_model.engine_type = "vllm"
+        self.config.explorer.rollout_model.engine_num = 1
+        self.config.explorer.rollout_model.tensor_parallel_size = 2
+        self.config.explorer.rollout_model.chat_template = CHAT_TEMPLATE
+        # enable_history requires the OpenAI API server (the recording runner).
+        self.config.explorer.rollout_model.enable_openai_api = True
+        self.config.explorer.rollout_model.enable_history = True
+        self.config.explorer.rollout_model.enable_expert_parallel = True
+        # Tool-call coverage; qwen3_coder matches the Qwen3.5 chat template.
+        self.config.explorer.rollout_model.enable_auto_tool_choice = True
+        self.config.explorer.rollout_model.tool_call_parser = "qwen3_coder"
+        self.config.explorer.rollout_model.enable_thinking = False
+        # The in-vLLM recorder is the subject.
+        self.config.explorer.rollout_model.extra_engine_args = {
+            "max_num_seqs": 24,
+            "moe_backend": "triton",
+            "gdn_prefill_backend": "triton",
+        }
+        # check_and_update derives enable_return_routed_experts from this.
+        self.config.algorithm.enable_router_replay = True
+        self.config.check_and_update()
+
+        self.engines, self.auxiliary_engines = await create_test_models(self.config)
+        self.model_wrapper = self.engines[0]
+        self.api_address = self.model_wrapper.api_address
+        self.expected_model_version = await self.model_wrapper.model_version_async
+        self._http = httpx.AsyncClient(timeout=120.0)
+        self._model_id = None
+
+    async def asyncTearDown(self):
+        await self._http.aclose()
+        await super().asyncTearDown()
+
+    # -- actor-side recording store helpers -----------------------------------
+
+    async def _consume(self, record_key: str, reward: float) -> list[Experience]:
+        await self.model_wrapper.update_experience_reward_async(record_key, reward=reward)
+        payload = await self.model_wrapper.drain_experience_records_bytes_async(record_key)
+        return Experience.deserialize_many(payload)
+
+    async def _openai_client(self, record_key: str) -> openai.AsyncOpenAI:
+        # record_key travels as the Bearer api_key -> RecordingIdentityMiddleware.
+        return openai.AsyncOpenAI(base_url=f"{self.api_address}/v1", api_key=record_key)
+
+    async def _get_model_id(self, client: openai.AsyncOpenAI) -> str:
+        if self._model_id is None:
+            self._model_id = (await client.models.list()).data[0].id
+        return self._model_id  # type: ignore [return-value]
+
+    # -- per-recorded-experience invariants -----------------------------------
+
+    def _assert_recorded_experience(self, exp: Experience, record_key: str):
+        self.assertEqual(get_record_key(exp), record_key)
+        self.assertTrue(exp.eid.suffix)
+        self.assertEqual(exp.info.get("model_version"), self.expected_model_version)
+        self.assertGreater(len(exp.tokens), exp.prompt_length)  # type: ignore [arg-type]
+        # The recorder forces top-1 logprobs even when the client omitted them.
+        self.assertGreater(len(exp.logprobs), 0)  # type: ignore [arg-type]
+        self.assertEqual(len(exp.logprobs), len(exp.tokens) - exp.prompt_length)  # type: ignore [arg-type]
+        # Ray-direct generate may pass token ids into vLLM; in that path
+        # RequestOutput.prompt is not populated. Recording intentionally does
+        # not decode token ids back to text on the hot path.
+        if exp.prompt_text is not None:
+            self.assertGreater(len(exp.prompt_text), 0)
+        # OpenAI streaming clients receive text as delta chunks. The finished
+        # engine output recorded below may carry an empty native
+        # CompletionOutput.text even when response token ids are present; avoid
+        # decoding tokens on the recording hot path just to populate this field.
+        self.assertGreater(len(exp.response_text), 0)
+
+    def _assert_recorded_routed_experts(self, exp: Experience):
+        # enable_return_routed_experts is forced on by enable_history.
+        self.assertIsNotNone(exp.routed_experts)
+        re = exp.routed_experts
+        self.assertEqual(re.dtype, torch.uint8)
+        self.assertEqual(re.ndim, 3)
+        self.assertEqual(re.shape[1], self.expected_routed_experts_layers)
+        self.assertEqual(re.shape[2], self.expected_routed_experts_topk)
+
+    async def test_record(self):  # noqa: C901
+        messages = [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "Say hello in one short sentence."},
+        ]
+        no_think = {"chat_template_kwargs": {"enable_thinking": False}}
+
+        # ===== 1. Ray-direct generate (record_key via recording_ctx) =====
+        rk_gen = "0/t_gen/1"
+        await self.model_wrapper.generate_async(
+            ["Hello, world!"], n=1, temperature=1.0, max_tokens=16, key=rk_gen
+        )
+        consumed = await self._consume(rk_gen, reward=0.5)
+        self.assertEqual(len(consumed), 1)
+        self.assertEqual(consumed[0].reward, 0.5)
+        self.assertEqual(consumed[0].eid.run, 1)
+        self.assertEqual(consumed[0].eid.task, "t_gen")
+        self._assert_recorded_experience(consumed[0], rk_gen)
+        self._assert_recorded_routed_experts(consumed[0])
+
+        # ===== 2. Ray-direct chat, n=2 (one record-key group, two samples) =====
+        rk_chat = "0/t_chat/2"
+        chat_exps = await self.model_wrapper.chat_async(
+            messages, n=2, temperature=1.0, max_tokens=16, key=rk_chat
+        )
+        self.assertEqual(len(chat_exps), 2)
+        consumed = await self._consume(rk_chat, reward=0.8)
+        self.assertEqual(len(consumed), 2)
+        # n=2 of one engine request -> two completions distinguished by
+        # sample_index and a sample-qualified EID suffix.
+        self.assertEqual(sorted(exp.info["sample_index"] for exp in consumed), [0, 1])
+        self.assertEqual(len({exp.eid.suffix for exp in consumed}), 2)
+        for exp in consumed:
+            self.assertEqual(exp.reward, 0.8)
+            self.assertEqual(exp.eid.run, 2)
+            self.assertEqual(exp.eid.task, "t_chat")
+            self._assert_recorded_experience(exp, rk_chat)
+            self._assert_recorded_routed_experts(exp)
+
+        # ===== 3. OpenAI regular (HTTP; key = Bearer api_key) =====
+        rk_oai = "0/t_oai/3"
+        client = await self._openai_client(rk_oai)
+        model_id = await self._get_model_id(client)
+        resp = await client.chat.completions.create(
+            model=model_id,
+            messages=messages,
+            n=1,
+            temperature=0.7,
+            max_tokens=32,
+            extra_body=no_think,
+        )
+        consumed = await self._consume(rk_oai, reward=0.3)
+        self.assertEqual(len(consumed), 1)
+        self._assert_recorded_experience(consumed[0], rk_oai)
+        self._assert_recorded_routed_experts(consumed[0])
+        self.assertEqual(consumed[0].response_text, resp.choices[0].message.content)
+
+        # ===== 4. OpenAI streaming (HTTP) =====
+        rk_str = "0/t_str/4"
+        sclient = await self._openai_client(rk_str)
+        stream = await sclient.chat.completions.create(
+            model=model_id,
+            messages=messages,
+            n=1,
+            stream=True,
+            temperature=0.7,
+            max_tokens=32,
+            extra_body=no_think,
+        )
+        content = ""
+        async for chunk in stream:
+            delta = chunk.choices[0].delta.content
+            if delta:
+                content += delta
+        self.assertGreater(len(content), 0)
+        consumed = await self._consume(rk_str, reward=0.1)
+        self.assertEqual(len(consumed), 1)
+        self._assert_recorded_experience(consumed[0], rk_str)
+        self._assert_recorded_routed_experts(consumed[0])
+        response_token_ids = consumed[0].tokens[consumed[0].prompt_length :].tolist()
+        decoded_content = self.tokenizer.decode(response_token_ids, skip_special_tokens=True)
+        self.assertEqual(decoded_content, content)
+        self.assertEqual(consumed[0].response_text, content)
+
+        # ===== 5. OpenAI tool usage (HTTP) =====
+        rk_tool = "0/t_tool/5"
+        tclient = await self._openai_client(rk_tool)
+        tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_current_weather",
+                    "description": "Get the current weather in a given location",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "location": {
+                                "type": "string",
+                                "description": "The city and state, e.g. San Francisco, CA",
+                            }
+                        },
+                        "required": ["location"],
+                    },
+                },
+            }
+        ]
+        tool_messages = [{"role": "user", "content": "What's the weather like in Boston?"}]
+        tresp = await tclient.chat.completions.create(
+            model=model_id,
+            messages=tool_messages,
+            tools=tools,
+            tool_choice="auto",
+            max_tokens=64,
+            extra_body=no_think,
+        )
+        consumed = await self._consume(rk_tool, reward=1.0)
+        self.assertEqual(len(consumed), 1)
+        self._assert_recorded_experience(consumed[0], rk_tool)
+        self._assert_recorded_routed_experts(consumed[0])
+        # The tool-augmented prompt (tool defs rendered by the chat template)
+        # must be part of the recorded experience.
+        self.assertIn("get_current_weather", consumed[0].prompt_text)
+        # If the model emitted a tool call, its function name is in the raw
+        # recorded response text.
+        choice = tresp.choices[0]
+        if choice.finish_reason == "tool_calls" and choice.message.tool_calls:
+            for tc in choice.message.tool_calls:
+                self.assertIn(tc.function.name, consumed[0].response_text)
+
+        # ===== global: every group consumed -> store is drained =====
+        await self.model_wrapper.delete_experience_records_async("0")
 
 
 class TestSuperLongGeneration(VLLMTestBase):

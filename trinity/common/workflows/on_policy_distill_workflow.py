@@ -117,6 +117,7 @@ class OnPolicyDistillWorkflow(Workflow):
             resp_start = response.prompt_length - 1
             teacher_resp_logprobs = teacher_logprobs[resp_start:]
             student_resp_logprobs = response.logprobs
+            assert student_resp_logprobs is not None, "Student logprobs should not be None."
 
             # Verify lengths match (they should be equal for the same token sequence)
             assert len(teacher_resp_logprobs) == len(student_resp_logprobs), (

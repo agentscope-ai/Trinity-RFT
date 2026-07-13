@@ -46,7 +46,7 @@ class FakeScheduler:
         self.stopped = False
         self.schedule_calls = []
         self.scheduled_task_counts = {}
-        self.abort_calls = []
+        self.cleanup_calls = []
         self.batch_results = {}
         self.get_statuses_calls = []
 
@@ -99,10 +99,10 @@ class FakeScheduler:
         _ = min_num, timeout, clear_timeout_tasks, return_partial_tasks
         return self.batch_results.pop(batch_id, ([], []))
 
-    async def abort_batch(self, batch_id, return_partial_tasks=False, restart_runners=True):
-        """Record one scheduler abort request."""
+    async def cleanup_batch(self, batch_id, return_partial_tasks=False, restart_runners=True):
+        """Record one scheduler cleanup request."""
 
-        self.abort_calls.append(
+        self.cleanup_calls.append(
             {
                 "batch_id": batch_id,
                 "return_partial_tasks": return_partial_tasks,
@@ -145,6 +145,7 @@ class CoordinatorHarness(RolloutCoordinator):
 
         self._test_pipeline = pipeline
         self._test_scheduler = scheduler
+        self.discard_recorded_prefixes = []
         super().__init__(config)
 
     async def _init_experience_pipeline(self):
@@ -157,6 +158,16 @@ class CoordinatorHarness(RolloutCoordinator):
         """Return the injected fake scheduler."""
 
         self.scheduler = self._test_scheduler
+
+    def _init_rollout_actors(self):
+        """Skip Ray actor resolution in unit tests."""
+
+        self._rollout_actors = {}
+
+    async def _discard_recorded_experiences(self, prefix: str) -> None:
+        """Record cleanup requests without resolving real rollout actors."""
+
+        self.discard_recorded_prefixes.append(prefix)
 
 
 class TestRolloutCoordinator(unittest.IsolatedAsyncioTestCase):
@@ -199,6 +210,7 @@ class TestRolloutCoordinator(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["metrics"]["experience_pipeline/experience_count"], 2.0)
         self.assertTrue(self.pipeline.prepare_called)
         self.assertEqual(self.pipeline.process_chunk_calls, [[b"payload-0", b"payload-1"]])
+        self.assertEqual(self.coordinator.discard_recorded_prefixes[-1], "1")
         self.assertNotIn(1, self.coordinator.pending_batches)
 
         with self.assertRaisesRegex(KeyError, "not registered"):
@@ -223,7 +235,8 @@ class TestRolloutCoordinator(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(result["finished_task_count"], 1)
         self.assertEqual(self.pipeline.process_chunk_calls[-1], [b"payload-0"])
-        self.assertEqual(self.scheduler.abort_calls[-1]["batch_id"], 2)
+        self.assertEqual(self.scheduler.cleanup_calls[-1]["batch_id"], 2)
+        self.assertIn("2", self.coordinator.discard_recorded_prefixes)
         self.assertNotIn(2, self.coordinator.pending_batches)
 
     async def test_finalize_train_batch_times_out_without_any_results(self):
@@ -258,6 +271,7 @@ class TestRolloutCoordinator(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["metrics"]["eval/eval_set/run_metrics"], 4.0)
         self.assertEqual(self.pipeline.process_chunk_calls, [])
         self.assertEqual(self.scheduler.get_statuses_calls[0]["batch_id"], batch_id)
+        self.assertEqual(self.coordinator.discard_recorded_prefixes[-1], batch_id)
         self.assertNotIn(batch_id, self.coordinator.pending_batches)
 
     async def test_finalize_train_batch_rejects_eval_batches_before_waiting(self):
@@ -284,6 +298,7 @@ class TestRolloutCoordinator(unittest.IsolatedAsyncioTestCase):
         )
         self.scheduler.batch_results[eval_batch_id] = ([_build_status(3.0)], [])
         await self.coordinator.finalize_eval_batch(eval_batch_id, timeout=1.0)
+        self.assertEqual(self.coordinator.discard_recorded_prefixes[-1], eval_batch_id)
 
         with self.assertRaisesRegex(KeyError, "not registered"):
             await self.coordinator.finalize_train_batch(eval_batch_id, timeout=0.1)
@@ -316,7 +331,8 @@ class TestRolloutCoordinator(unittest.IsolatedAsyncioTestCase):
 
         await self.coordinator.abort_batch(4, reason="shutdown")
 
-        self.assertEqual(self.scheduler.abort_calls[0]["batch_id"], 4)
+        self.assertEqual(self.scheduler.cleanup_calls[0]["batch_id"], 4)
+        self.assertEqual(self.coordinator.discard_recorded_prefixes[-1], "4")
         self.assertNotIn(4, self.coordinator.pending_batches)
 
         with self.assertRaisesRegex(KeyError, "not registered"):

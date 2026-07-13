@@ -59,7 +59,9 @@ class LinearDecayPriority(PriorityFunction):
         self.decay = decay
 
     def __call__(self, item: List[Experience]) -> Tuple[float, bool]:
-        priority = float(item[0].info["model_version"] - self.decay * item[0].info["use_count"])
+        priority = float(
+            item[0].info["model_version"] - self.decay * item[0].info.get("use_count", 0)
+        )
         put_into_queue = True
         return priority, put_into_queue
 
@@ -82,11 +84,15 @@ class LinearDecayUseCountControlPriority(PriorityFunction):
         self.sigma = sigma
 
     def __call__(self, item: List[Experience]) -> Tuple[float, bool]:
-        priority = float(item[0].info["model_version"] - self.decay * item[0].info["use_count"])
+        priority = float(
+            item[0].info["model_version"] - self.decay * item[0].info.get("use_count", 0)
+        )
         if self.sigma > 0.0:
             priority += float(np.random.randn() * self.sigma)
         put_into_queue = (
-            item[0].info["use_count"] < self.use_count_limit if self.use_count_limit > 0 else True
+            item[0].info.get("use_count", 0) < self.use_count_limit
+            if self.use_count_limit > 0
+            else True
         )
         return priority, put_into_queue
 
@@ -293,7 +299,7 @@ class AsyncPriorityQueue(QueueBuffer):
                     break
 
         for exp in item:
-            exp.info["use_count"] += 1
+            exp.info["use_count"] = exp.info.get("use_count", 0) + 1
         # Optionally resubmit the item after a cooldown
         if self.reuse_cooldown_time is not None:
             asyncio.create_task(self._put(item, delay=self.reuse_cooldown_time))

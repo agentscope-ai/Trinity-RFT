@@ -133,7 +133,7 @@ class Experience:
     )
 
     eid: EID = field(default_factory=EID)  # Unique identifier for the experience
-    tokens: Optional[Tensor] = None  # [seq_length]
+    tokens: Tensor = field(default_factory=lambda: torch.tensor([]))  # [seq_length]
     prompt_length: int = 1  # Length of the prompt in tokens, used for generating attention masks
     logprobs: Optional[Tensor] = None  # [resp_length]
     reward: Optional[float] = None
@@ -151,7 +151,7 @@ class Experience:
     )  # Metrics associated with the experience, directly used by the monitor
 
     # for single-turn experiences
-    response_text: Optional[str] = None  # Text of the response
+    response_text: str = ""  # Text of the response
     prompt_text: Optional[str] = None  # Text of the prompt
 
     # for multi-turn experiences

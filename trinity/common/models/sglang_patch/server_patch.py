@@ -4,7 +4,7 @@ import asyncio
 import os
 import time
 from logging import Logger
-from typing import Any, Callable, Coroutine, Dict, List, Optional
+from typing import Any, Callable, Coroutine, Dict, List, Optional, Tuple
 
 import uvicorn
 from fastapi import FastAPI, Response
@@ -304,6 +304,11 @@ def get_api_server(
     master_addr: Optional[str],
     master_port: Optional[int],
     logger: Logger,
+    enable_history: bool = False,
+    recorder: Optional[Any] = None,
+    record_store: Optional[Any] = None,
+    routed_experts_layout: Optional[Tuple[int, int]] = None,
+    tool_call_parser: Optional[str] = None,
 ) -> "asyncio.Task[None]":
     _apply_openai_api_monkey_patch()
 
@@ -329,7 +334,18 @@ def get_api_server(
         enable_return_routed_experts=enable_return_routed_experts,
         skip_server_warmup=True,
         disable_piecewise_cuda_graph=True,
-        api_key=api_key,
+        # When recording is on, disable SGLang's api_key auth so the
+        # Authorization bearer is used purely as the per-task record_key (read
+        # by RecordingIdentityMiddleware). Trinity's record_key is per-task
+        # ("batch_id/task_id/run_index") and differs from the single configured
+        # api_key, so the auth middleware would otherwise 401-reject it. This
+        # mirrors vLLM, whose recording server sets no api_key auth. The
+        # embedded server is localhost/in-Ray-actor, so auth is not needed.
+        api_key=None if enable_history else api_key,
+        # SGLang enables tool calling via tool_call_parser (no separate
+        # enable_auto_tool_choice flag in this version). Only render/parse tools
+        # when a parser is configured, matching vLLM's enable_auto_tool_choice.
+        tool_call_parser=tool_call_parser,
         nnodes=nnodes,
         node_rank=node_rank,
         dist_init_addr=(
@@ -363,6 +379,22 @@ def get_api_server(
             server_args=server_args,
             subprocess_watchdog=subprocess_watchdog,
             logger=logger,
+        )
+
+    # Wire generation recording before the uvicorn task starts serving. The
+    # recorder/store are owned by ``SGLangRolloutModel``; this installs the
+    # engine wrap on ``tokenizer_manager`` and ``RecordingIdentityMiddleware``
+    # on ``app``, and stashes store/recorder on ``app.state``.
+    if enable_history:
+        from trinity.common.models.sglang_patch.recording import setup_sglang_recording
+
+        setup_sglang_recording(
+            tokenizer_manager,
+            app,
+            logger,
+            recorder=recorder,
+            store=record_store,
+            routed_experts_layout=routed_experts_layout,
         )
 
     config = uvicorn.Config(

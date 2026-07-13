@@ -3,8 +3,9 @@
 
 from __future__ import annotations
 
+from abc import abstractmethod
 from dataclasses import asdict, dataclass, field
-from typing import TYPE_CHECKING, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Dict, List, Optional, Type, Union
 
 from trinity.common.config import FormatConfig, GenerationConfig
 from trinity.common.experience import Experience
@@ -17,11 +18,29 @@ if TYPE_CHECKING:
     from trinity.common.models.model import ModelWrapper
 
 
+@dataclass(frozen=True)
+class Status:
+    """Status of workflow, task, and batch execution."""
+
+    completed_runs: int
+    total_runs: int
+    metrics: List[Dict[str, float]]
+    successful_ids: List[str] = field(default_factory=list)
+    message: Optional[str] = None
+
+    @property
+    def ok(self) -> bool:
+        return self.completed_runs == self.total_runs
+
+
+Metrics = Dict[str, float]
+
+
 @dataclass
 class Task(dict):
     """A Task class that defines a task and its associated reward function / workflow."""
 
-    workflow: Type[Workflow] = None
+    workflow: Type[WorkflowBase] = None
     repeat_times: Optional[int] = None
     format_args: FormatConfig = field(default_factory=FormatConfig)
     rollout_args: GenerationConfig = field(default_factory=GenerationConfig)
@@ -34,6 +53,7 @@ class Task(dict):
     # automatically assigned ids
     batch_id: Union[int, str] = ""
     task_id: Union[int, str] = ""
+    run_id: int = 0
 
     index: dict = field(default_factory=dict)
 
@@ -41,7 +61,7 @@ class Task(dict):
         self,
         model: ModelWrapper,
         auxiliary_models: Optional[List[ModelWrapper]] = None,
-    ) -> Workflow:
+    ) -> "WorkflowBase":
         """Convert the task to a workflow.
 
         Args:
@@ -71,11 +91,36 @@ class Task(dict):
         response_key = self.format_args.response_key
         return self.raw_task[response_key] if response_key in self.raw_task else None  # type: ignore
 
+    @property
+    def api_key(self) -> str:
+        if self.batch_id is None or self.task_id is None or self.run_id is None:
+            raise ValueError("batch_id, task_id, and run_id must be set before generating API_KEY.")
+        return f"{self.batch_id}/{self.task_id}/{self.run_id}"
+
     def to_dict(self) -> dict:
         return self.raw_task  # type: ignore
 
 
-class Workflow:
+class WorkflowBase:
+    """The base workflow interface."""
+
+    def __init__(self, task: Task, model: ModelWrapper, **kwargs) -> None:
+        self.task = task
+        self.model = model
+        self.model.set_api_key(task.api_key)  # set the API key for the rollout model
+        self.logger = get_logger(__name__)
+
+    @abstractmethod
+    async def execute(self) -> Status:
+        """Execute the workflow and return a Status object."""
+
+    def reset(self, task: Task):
+        """Reset the workflow with a new task."""
+        self.task = task
+        self.model.set_api_key(task.api_key)  # set the API key for the rollout model
+
+
+class Workflow(WorkflowBase):
     """The base workflow class.
 
     A workflow is a runnable object which generates a list of experiences.
@@ -96,41 +141,18 @@ class Workflow:
         model: ModelWrapper,
         auxiliary_models: Optional[List[ModelWrapper]] = None,
     ):
-        self.task = task
-        self.model = model
+        super().__init__(task=task, model=model)
         # Store ModelWrapper instances
         self.auxiliary_model_wrappers = auxiliary_models
         # Get OpenAI clients from ModelWrapper (async or sync based on workflow type)
         self.auxiliary_models: Optional[Union[List[openai.OpenAI], List[openai.AsyncOpenAI]]] = None
         if auxiliary_models:
-            if self.__class__.is_async:
+            if self.is_async:
                 self.auxiliary_models = [m.get_openai_async_client() for m in auxiliary_models]
             else:
                 self.auxiliary_models = [m.get_openai_client() for m in auxiliary_models]
         self.run_id_base = 0
-        self.logger = get_logger(__name__)
-
-    @property
-    def resettable(self):
-        """Deprecated, use cls.can_reset instead."""
-        return self.__class__.can_reset
-
-    @property
-    def repeatable(self):
-        """Deprecated, use cls.can_repeat instead.
-        A workflow is repeatable if it can be run multiple times within the run() or run_async() method.
-        """
-        return self.__class__.can_repeat
-
-    @property
-    def asynchronous(self):
-        """Deprecated, use cls.is_async instead.
-        Whether the workflow runs in async mode."""
-        return self.__class__.is_async
-
-    def reset(self, task: Task):
-        """Reset the workflow."""
-        raise NotImplementedError
+        self.repeat_times = 1
 
     def set_repeat_times(self, repeat_times: int, run_id_base: int) -> None:
         """
@@ -139,9 +161,18 @@ class Workflow:
             repeat_times (int): number of times to repeat the workflow (if repeatable).
             run_id_base (int): base run_id for setting run_id in experiences.
         """
-        raise NotImplementedError(
-            "set_repeat_times() must be implemented for a repeatable workflow."
-        )
+        self.repeat_times = repeat_times
+        self.run_id_base = run_id_base
+
+    def set_single_run_context(self, run_id_base: int) -> None:
+        """
+        Set the workflow context for a single non-repeat run.
+
+        This only updates runner bookkeeping fields and intentionally avoids
+        repeat-workflow side effects such as changing rollout_args.n.
+        """
+        self.repeat_times = 1
+        self.run_id_base = run_id_base
 
     def run(self) -> List[Experience]:
         """Run workflow and return a list of experiences."""
@@ -151,28 +182,26 @@ class Workflow:
         """Run workflow in async and return a list of experiences."""
         raise NotImplementedError
 
+    async def execute(self) -> Status:
+        if self.is_async:
+            exps = await self.run_async()
+        else:
+            exps = self.run()
+        await self.model.overwrite_history_experiences_async(
+            experiences=exps, key=self.task.api_key
+        )
+        return Status(
+            completed_runs=self.can_repeat and self.repeat_times or 1,
+            total_runs=self.can_repeat and self.repeat_times or 1,
+            metrics=[exp.metrics for exp in exps if exp.metrics is not None],
+            successful_ids=[self.task.api_key],
+        )
+
 
 class MultiTurnWorkflow(Workflow):
     """
     The base workflow class for concatenated multi-turn tasks.
     """
-
-    def __init__(
-        self,
-        *,
-        task: Task,
-        model: ModelWrapper,
-        auxiliary_models: Optional[List[ModelWrapper]] = None,
-    ):
-        super().__init__(
-            task=task,
-            model=model,
-            auxiliary_models=auxiliary_models,
-        )
-
-    def set_repeat_times(self, repeat_times, run_id_base):
-        self.repeat_times = repeat_times
-        self.run_id_base = run_id_base
 
     def _build_experience_from_converted(
         self, converted_experience, reward, info={}, truncate_status=None
@@ -240,6 +269,9 @@ class MultiTurnWorkflow(Workflow):
 
 
 class BaseSimpleWorkflow(Workflow):
+    """A simple workflow for single-round tasks, which use the batch generation
+    API to generate multiple responses in one call."""
+
     def __init__(
         self,
         *,
@@ -271,9 +303,8 @@ class BaseSimpleWorkflow(Workflow):
             raise ValueError("`reward_fn` must be a subclass of `RewardFn`")
 
     def set_repeat_times(self, repeat_times, run_id_base):
-        self.repeat_times = repeat_times
+        super().set_repeat_times(repeat_times, run_id_base)
         self.task.rollout_args.n = repeat_times
-        self.run_id_base = run_id_base
 
     @property
     def rollout_args(self):
@@ -295,6 +326,7 @@ class SimpleWorkflow(BaseSimpleWorkflow):
 
     can_reset: bool = True
     can_repeat: bool = True
+    is_async: bool = False
 
     def run(self) -> List[Experience]:
         # TODO: Optimize the generate function
@@ -307,7 +339,6 @@ class SimpleWorkflow(BaseSimpleWorkflow):
                 response=response.response_text,  # type: ignore [arg-type]
                 truth=self.truth,
             )
-
             if response.metrics is None:
                 response.metrics = {}
             response.metrics.update(reward_dict)
@@ -322,6 +353,8 @@ class SimpleWorkflow(BaseSimpleWorkflow):
 
 
 class AsyncSimpleWorkflow(BaseSimpleWorkflow):
+    can_reset: bool = True
+    can_repeat: bool = True
     is_async: bool = True
 
     async def run_async(self) -> List[Experience]:
@@ -382,3 +415,83 @@ class MathWorkflow(SimpleWorkflow):
 
 class AsyncMathWorkflow(AsyncSimpleWorkflow, MathWorkflow):
     pass
+
+
+class WorkflowWithRecording(WorkflowBase):
+    """A workflow that using the rollout model's built-in recording path to capture
+    experience data.
+
+    This interface is designed for complex agentic workflows (e.g., QwenPaw, Claude Code)
+    which are hard to extract experience data from the agent itself.
+
+    It provides `base_url` and `api_key` to the OpenAI API of the rollout model, and the
+    workflow can use them to call the model and the model will record the experience data
+    automatically.
+    After the agentic workflow is completed, the workflow can call `update_reward` to update
+    the recorded experience data with the reward and optional info.
+    """
+
+    can_reset: bool = False
+    is_async: bool = True
+
+    def __init__(
+        self,
+        *,
+        task: Task,
+        model: ModelWrapper,
+        auxiliary_models: Optional[List[ModelWrapper]] = None,
+    ):
+        super().__init__(task=task, model=model)
+        # Store ModelWrapper instances
+        self.auxiliary_models = auxiliary_models
+
+    @property
+    def base_url(self) -> str:
+        """BASE_URL of the OpenAI API of the rollout model."""
+        return self.model.base_url
+
+    @property
+    def api_key(self) -> str:
+        """API_KEY of the OpenAI API of the rollout model."""
+        return self.task.api_key
+
+    @property
+    def model_name(self) -> str:
+        """Model name of the rollout model."""
+        return self.model.model_name
+
+    async def run_async(self) -> Metrics:
+        """Run workflow asynchronously and return metrics for the completed run."""
+        raise NotImplementedError
+
+    async def execute(self) -> Status:
+        """Execute the workflow and normalize the user return value to Status."""
+        result = await self.run_async()
+        return self._to_status(result)
+
+    def _to_status(self, result: Metrics) -> Status:
+        return Status(
+            completed_runs=1,
+            total_runs=1,
+            metrics=[result],
+            successful_ids=[self.task.api_key],
+        )
+
+    async def update_reward(
+        self,
+        reward: float,
+        info: Optional[dict] = None,
+        sample_ids: Optional[List[str]] = None,
+    ) -> None:
+        """Update recorded experiences for one run with reward and optional info."""
+        await self.model.update_experience_reward_async(
+            key=self.api_key,
+            reward=reward,
+            info=info,
+            sample_ids=sample_ids,
+        )
+
+    def set_single_run_context(self, run_id_base: int) -> None:
+        """Only a placeholder to align with the Workflow interface.
+        This workflow does not support repeat runs."""
+        pass

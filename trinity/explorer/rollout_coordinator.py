@@ -64,11 +64,41 @@ class RolloutCoordinator:
         self.pending_batches: Dict[BatchId, BatchState] = {}
         self.running = False
         self.detailed_stats = getattr(getattr(config, "monitor", None), "detailed_stats", False)
+        # Prepared map of rollout engine_id -> rollout actor handle, for
+        # scheduler construction and recording residual cleanup.
+        self._rollout_actors: Dict[int, ActorHandle] = {}
+
+    def _init_rollout_actors(self) -> None:
+        """Resolve each rollout engine's actor handle via named Ray actors.
+
+        Mirrors ``Allocator.get_actor_name`` + ``ray.get_actor``: rollout model
+        actors are named ``f"{explorer.name}_rollout_model_{engine_id}_0"``
+        (node_id 0 holds the recording store).
+        """
+        if self._rollout_actors:
+            return
+        rollout_cfg = self.config.explorer.rollout_model
+        name = self.config.explorer.name
+        namespace = rollout_cfg.ray_namespace
+        actors: Dict[int, ActorHandle] = {}
+        for engine_id in range(rollout_cfg.engine_num):
+            actor_name = f"{name}_rollout_model_{engine_id}_0"
+            try:
+                actors[engine_id] = ray.get_actor(actor_name, namespace=namespace)
+            except ValueError as exc:
+                raise RuntimeError(
+                    "Rollout actor %s not found in namespace %s."
+                    " RolloutCoordinator cannot initialize Scheduler without all rollout actors."
+                    % (actor_name, namespace)
+                ) from exc
+        self._rollout_actors = actors
 
     async def prepare(self) -> None:
         """Initialize the owned pipeline and scheduler."""
         if self.running:
             return
+        if not self._rollout_actors and getattr(self.config, "mode", None) != "serve":
+            self._init_rollout_actors()
         if self.experience_pipeline is None:
             await self._init_experience_pipeline()
         if self.scheduler is None:
@@ -87,17 +117,18 @@ class RolloutCoordinator:
 
     async def _init_experience_pipeline(self):
         """Create the experience pipeline owned by this coordinator actor."""
-        if self.config.mode == "bench":
+        if getattr(self.config, "mode", None) == "bench":
             return None
         self.experience_pipeline = ExperiencePipeline(self.config)
         await self.experience_pipeline.prepare()
 
     async def _init_scheduler(self):
         """Create the scheduler owned by this coordinator."""
-        if self.config.mode == "serve":
+        if getattr(self.config, "mode", None) == "serve":
             return
         self.scheduler = Scheduler(
             self.config,
+            rollout_actors=self._rollout_actors,
         )
         await self.scheduler.start()
 
@@ -174,6 +205,7 @@ class RolloutCoordinator:
                 if task_id in batch_state.statuses:
                     continue
                 batch_state.statuses[task_id] = status
+            await self._discard_recorded_experiences(str(batch_state.batch_id))
             return self._finish_batch(batch_state, pipeline_metrics={})
 
     async def abort_batch(
@@ -192,12 +224,13 @@ class RolloutCoordinator:
             return
 
         self.logger.warning("Abort batch %s: %s", batch_id, reason)
-        await scheduler.abort_batch(
+        await scheduler.cleanup_batch(
             batch_id,
             return_partial_tasks=keep_partial_results,
             restart_runners=True,
         )
         scheduler.discard_completed_results(batch_id)
+        await self._discard_recorded_experiences(str(batch_id))
 
         batch_state.state = BatchLifecycleState.ABORTED
         batch_state.final_result = self._build_batch_result(batch_state, pipeline_metrics={})
@@ -276,6 +309,7 @@ class RolloutCoordinator:
             batch_state.state = BatchLifecycleState.FINALIZING
             try:
                 pipeline_metrics = await self.process_experiences(payload_chunks)
+                await self._discard_recorded_experiences(str(batch_state.batch_id))
                 if not is_complete:
                     await self._cleanup_train_batch_runtime(batch_state)
             except Exception:
@@ -283,6 +317,33 @@ class RolloutCoordinator:
                 raise
 
             return self._finish_batch(batch_state, pipeline_metrics=pipeline_metrics)
+
+    async def _discard_recorded_experiences(self, prefix: str) -> None:
+        """Block future writes and delete recorded experiences for a prefix.
+
+        Blocking happens before deleting across all rollout ranks so that any
+        in-flight write that lands after the delete is dropped by the store
+        instead of reappearing as an orphan. The block flag persists on each
+        rollout actor (batch_id is never reused), so the prefix stays
+        unwritable for the lifetime of the process.
+        """
+        block_results = await asyncio.gather(
+            *[
+                actor.block_experience_records.remote(prefix=prefix)
+                for actor in self._rollout_actors.values()
+            ],
+            return_exceptions=True,
+        )
+        delete_results = await asyncio.gather(
+            *[
+                actor.delete_experience_records.remote(prefix=prefix)
+                for actor in self._rollout_actors.values()
+            ],
+            return_exceptions=True,
+        )
+        for result in [*block_results, *delete_results]:
+            if isinstance(result, Exception):
+                self.logger.error("records cleanup on rollout actor failed: %s", result)
 
     def _finish_batch(
         self,
@@ -305,11 +366,12 @@ class RolloutCoordinator:
     async def _cleanup_train_batch_runtime(self, batch_state: BatchState) -> None:
         """Drop unfinished train work after a non-complete finalize result."""
         scheduler = self._require_scheduler()
-        await scheduler.abort_batch(
+        await scheduler.cleanup_batch(
             batch_state.batch_id,
             return_partial_tasks=False,
             restart_runners=True,
         )
+        await self._discard_recorded_experiences(str(batch_state.batch_id))
 
     def _build_batch_result(
         self,

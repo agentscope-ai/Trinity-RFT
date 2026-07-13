@@ -1,5 +1,7 @@
 import asyncio
 
+import httpx
+import openai
 import torch
 from parameterized import parameterized_class
 from transformers import AutoConfig, AutoTokenizer
@@ -11,6 +13,8 @@ from tests.tools import (
     get_moe_model_path,
     get_template_config,
 )
+from trinity.buffer.store import get_record_key
+from trinity.common.experience import Experience
 from trinity.common.models.allocator import Allocator
 
 
@@ -101,9 +105,13 @@ class TestSGLangOpenAIAPI(RayUnittestBaseAsync):
         self.config.explorer.rollout_model.base_port = 13000
         self.config.algorithm.enable_router_replay = self.enable_return_routed_experts
         self.config.check_and_update()
+        self.config.explorer.rollout_model.enable_history = self.enable_history
         allocator = Allocator(self.config.explorer)
         rollout_models, _ = await allocator.create_all_models()
         self.model_wrapper = rollout_models[0]
+        self.record_key = "0/sglang_openai_api/0"
+        if self.enable_history:
+            self.model_wrapper.set_api_key(self.record_key)
         self.tokenizer = AutoTokenizer.from_pretrained(
             self.config.model.model_path,
             trust_remote_code=self.config.explorer.rollout_model.trust_remote_code,
@@ -118,7 +126,8 @@ class TestSGLangOpenAIAPI(RayUnittestBaseAsync):
 
     def _assert_history_matches_responses(self, expected_count, prompt_contents, response_texts):
         if not self.enable_history:
-            self.assertEqual(len(self.model_wrapper.history), 0)
+            with self.assertRaises(ValueError):
+                self.model_wrapper.extract_experience_from_history()
             return []
 
         exps = self.model_wrapper.extract_experience_from_history()
@@ -134,15 +143,6 @@ class TestSGLangOpenAIAPI(RayUnittestBaseAsync):
                     self.expected_routed_experts_topk,
                 )
         return exps
-
-    def _assert_openai_response_routed_experts(self, response):
-        if not self.enable_return_routed_experts:
-            return
-        self.assertTrue(hasattr(response, "sglext"))
-        self.assertIsNotNone(response.sglext)
-        self.assertTrue("routed_experts" in response.sglext)
-        self.assertIsInstance(response.sglext["routed_experts"], str)
-        self.assertGreater(len(response.sglext["routed_experts"]), 0)
 
     def _get_tool_call_case(self):
         tool_messages = [
@@ -231,7 +231,6 @@ class TestSGLangOpenAIAPI(RayUnittestBaseAsync):
         )
 
         self.assertEqual(len(response.choices), 1)
-        self._assert_openai_response_routed_experts(response)
         response_texts = await self._collect_response_texts(response)
         self._assert_history_matches_responses(1, prompt_contents, response_texts)
 
@@ -246,7 +245,6 @@ class TestSGLangOpenAIAPI(RayUnittestBaseAsync):
         )
 
         self.assertEqual(len(tool_response.choices), 1)
-        self._assert_openai_response_routed_experts(tool_response)
         tool_response_texts = await self._collect_response_texts(tool_response)
         self._assert_history_matches_responses(1, tool_prompt_contents, tool_response_texts)
 
@@ -284,6 +282,7 @@ class TestSGLangOpenAIAPI(RayUnittestBaseAsync):
 
         chat_exps = await self.model_wrapper.chat_async(
             messages,
+            enable_recording=self.enable_history,
             n=2,
             temperature=0.7,
             max_tokens=32,
@@ -319,11 +318,13 @@ class TestSGLangOpenAIAPI(RayUnittestBaseAsync):
                         self.expected_routed_experts_topk,
                     )
         else:
-            self.assertEqual(len(self.model_wrapper.history), 0)
+            with self.assertRaises(ValueError):
+                self.model_wrapper.extract_experience_from_history()
 
         generate_prompt = "Write one short sentence about Boston."
         generate_exps = await self.model_wrapper.generate_async(
             [generate_prompt],
+            enable_recording=self.enable_history,
             n=2,
             temperature=0.7,
             max_tokens=32,
@@ -348,7 +349,6 @@ class TestSGLangOpenAIAPI(RayUnittestBaseAsync):
             self.assertEqual(len(generate_history), 2)
             for exp, recorded_exp in zip(generate_exps, generate_history):
                 self.assertEqual(recorded_exp.response_text, exp.response_text)
-                self.assertEqual(recorded_exp.prompt_text, exp.prompt_text)
                 self._assert_experience_matches_text(
                     recorded_exp, [generate_prompt], exp.response_text
                 )
@@ -360,4 +360,260 @@ class TestSGLangOpenAIAPI(RayUnittestBaseAsync):
                         self.expected_routed_experts_topk,
                     )
         else:
-            self.assertEqual(len(self.model_wrapper.history), 0)
+            with self.assertRaises(ValueError):
+                self.model_wrapper.extract_experience_from_history()
+
+
+class TestRecording(RayUnittestBaseAsync):
+    """Correctness of the in-SGLang generation recording flow (``enable_history``).
+
+    Mirrors ``tests/common/vllm_test.py::TestRecording``. Verifies that every
+    call path lands its finished turn in the in-process ``MemoryStore`` under
+    the right ``record_key``, and that actor-side reward update + drain APIs
+    stamp and return recorded experiences.
+
+    Paths covered (all async):
+      * Ray-direct ``generate`` / ``chat`` — SGLang's Ray-direct path is over
+        HTTP (unlike vLLM's in-process call), so ``record_key`` travels as the
+        ``Authorization: Bearer <record_key>`` header.
+      * OpenAI HTTP regular / streaming / tool-augmented — same bearer path.
+
+    Recording disables SGLang's api_key auth middleware (Option A, see
+    ``sglang_patch/server_patch.py``), so the bearer is used purely as the
+    per-task ``record_key`` (captured by ``RecordingIdentityMiddleware``),
+    matching vLLM (which sets no api_key auth in recording mode).
+
+    ``enable_router_replay`` (mirrored to ``enable_return_routed_experts`` by
+    ``check_and_update``) is on, so this test uses a MoE checkpoint
+    (``get_moe_model_path``) and asserts routed_experts shapes.
+    """
+
+    async def asyncSetUp(self):
+        self.config = get_template_config()
+        self.config.mode = "explore"
+        # enable_router_replay drives enable_return_routed_experts (see
+        # ``config_validator``) -> needs a MoE model (otherwise routed_experts
+        # is absent and the shape asserts below would fail). Use a Qwen3-MoE
+        # checkpoint.
+        self.config.model.model_path = get_moe_model_path()
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            self.config.model.model_path,
+            trust_remote_code=True,
+        )
+        self.text_config = _get_text_config(self.config.model.model_path)
+        self.expected_routed_experts_layers = int(self.text_config.num_hidden_layers)
+        self.expected_routed_experts_topk = int(self.text_config.num_experts_per_tok)
+        self.config.model.custom_chat_template = CHAT_TEMPLATE
+        self.config.explorer.rollout_model.engine_type = "sglang"
+        self.config.explorer.rollout_model.engine_num = 1
+        self.config.explorer.rollout_model.tensor_parallel_size = 2
+        self.config.explorer.rollout_model.chat_template = CHAT_TEMPLATE
+        # enable_history requires the OpenAI API server (the recording runner).
+        self.config.explorer.rollout_model.enable_openai_api = True
+        self.config.explorer.rollout_model.enable_history = True
+        self.config.explorer.rollout_model.enable_expert_parallel = True
+        # enable_router_replay is mirrored to enable_return_routed_experts by
+        # ``check_and_update`` (config_validator); it is NOT implied by
+        # enable_history. The routed-experts asserts below require it on, so
+        # the in-SGLang recorder captures routed_experts on every path.
+        self.config.algorithm.enable_router_replay = True
+        # Tool-call parsing coverage (qwen3_coder matches the Qwen3.5 chat
+        # template). SGLang enables tool calling via tool_call_parser (no
+        # separate enable_auto_tool_choice flag); enable_auto_tool_choice is
+        # set for parity with the vLLM TestRecording config.
+        self.config.explorer.rollout_model.enable_auto_tool_choice = True
+        self.config.explorer.rollout_model.tool_call_parser = "qwen3_coder"
+        self.config.explorer.rollout_model.enable_thinking = False
+        # The in-SGLang recorder is the subject.
+        self.config.explorer.rollout_model.base_port = 13400
+        self.config.check_and_update()
+
+        allocator = Allocator(self.config.explorer)
+        rollout_models, _ = await allocator.create_all_models()
+        self.model_wrapper = rollout_models[0]
+        self.api_address = self.model_wrapper.api_address
+        self._http = httpx.AsyncClient(timeout=120.0)
+        self._model_id = None
+
+    async def asyncTearDown(self):
+        await self._http.aclose()
+        await self.model_wrapper.shutdown()
+        await super().asyncTearDown()
+
+    # -- actor-side recording store helpers -----------------------------------
+
+    async def _consume(self, record_key: str, reward: float) -> list[Experience]:
+        await self.model_wrapper.update_experience_reward_async(record_key, reward=reward)
+        payload = await self.model_wrapper.drain_experience_records_bytes_async(record_key)
+        return Experience.deserialize_many(payload)
+
+    async def _openai_client(self, record_key: str) -> openai.AsyncOpenAI:
+        # record_key travels as the Bearer api_key -> RecordingIdentityMiddleware.
+        return openai.AsyncOpenAI(base_url=f"{self.api_address}/v1", api_key=record_key)
+
+    async def _get_model_id(self, client: openai.AsyncOpenAI) -> str:
+        if self._model_id is None:
+            self._model_id = (await client.models.list()).data[0].id
+        return self._model_id  # type: ignore [return-value]
+
+    # -- per-recorded-experience invariants -----------------------------------
+
+    def _assert_recorded_experience(self, exp: Experience, record_key: str):
+        self.assertEqual(get_record_key(exp), record_key)
+        self.assertTrue(exp.eid.suffix)
+        # SGLang stamps meta_info.weight_version ("default" until a weight sync);
+        # unlike vLLM it is a server-tracked string, not the model_version int.
+        self.assertIsNotNone(exp.info.get("model_version"))
+        self.assertGreater(len(exp.tokens), exp.prompt_length)  # type: ignore [arg-type]
+        # The recorder forces return_logprob=True even when the client omitted it.
+        self.assertGreater(len(exp.logprobs), 0)  # type: ignore [arg-type]
+        self.assertEqual(len(exp.logprobs), len(exp.tokens) - exp.prompt_length)  # type: ignore [arg-type]
+        # SGLang's ret does not carry prompt text, so prompt_text is None on the
+        # recording hot path (decode token ids lazily where a check is needed).
+        if exp.prompt_text is not None:
+            self.assertGreater(len(exp.prompt_text), 0)
+        self.assertGreater(len(exp.response_text), 0)
+
+    def _assert_recorded_routed_experts(self, exp: Experience):
+        # enable_router_replay -> enable_return_routed_experts is on for this test.
+        self.assertIsNotNone(exp.routed_experts)
+        re = exp.routed_experts
+        self.assertEqual(re.dtype, torch.uint8)
+        self.assertEqual(re.ndim, 3)
+        self.assertEqual(re.shape[1], self.expected_routed_experts_layers)
+        self.assertEqual(re.shape[2], self.expected_routed_experts_topk)
+
+    async def test_record(self):  # noqa: C901
+        messages = [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "Say hello in one short sentence."},
+        ]
+
+        # ===== 1. Ray-direct generate (record_key via Authorization bearer) =====
+        rk_gen = "0/t_gen/1"
+        await self.model_wrapper.generate_async(
+            ["Hello, world!"], n=1, temperature=1.0, max_tokens=16, key=rk_gen
+        )
+        consumed = await self._consume(rk_gen, reward=0.5)
+        self.assertEqual(len(consumed), 1)
+        self.assertEqual(consumed[0].reward, 0.5)
+        self.assertEqual(consumed[0].eid.run, 1)
+        self.assertEqual(consumed[0].eid.task, "t_gen")
+        self._assert_recorded_experience(consumed[0], rk_gen)
+        self._assert_recorded_routed_experts(consumed[0])
+
+        # ===== 2. Ray-direct chat, n=2 (one record-key group, two samples) =====
+        rk_chat = "0/t_chat/2"
+        chat_exps = await self.model_wrapper.chat_async(
+            messages, n=2, temperature=1.0, max_tokens=16, key=rk_chat
+        )
+        self.assertEqual(len(chat_exps), 2)
+        consumed = await self._consume(rk_chat, reward=0.8)
+        self.assertEqual(len(consumed), 2)
+        # SGLang expands n=2 parallel sampling into two scheduler requests.
+        # The list position becomes sample_index (0, 1) to order the two
+        # samples within the record-key group.
+        self.assertEqual(sorted(exp.info["sample_index"] for exp in consumed), [0, 1])
+        self.assertEqual(len({exp.eid.suffix for exp in consumed}), 2)
+        for exp in consumed:
+            self.assertEqual(exp.reward, 0.8)
+            self.assertEqual(exp.eid.run, 2)
+            self.assertEqual(exp.eid.task, "t_chat")
+            self._assert_recorded_experience(exp, rk_chat)
+            self._assert_recorded_routed_experts(exp)
+
+        # ===== 3. OpenAI regular (HTTP; record_key = Bearer api_key) =====
+        rk_oai = "0/t_oai/3"
+        client = await self._openai_client(rk_oai)
+        model_id = await self._get_model_id(client)
+        resp = await client.chat.completions.create(
+            model=model_id,
+            messages=messages,
+            n=1,
+            temperature=0.7,
+            max_tokens=32,
+        )
+        consumed = await self._consume(rk_oai, reward=0.3)
+        self.assertEqual(len(consumed), 1)
+        self._assert_recorded_experience(consumed[0], rk_oai)
+        self._assert_recorded_routed_experts(consumed[0])
+        # No reasoning_parser is configured, so message.content == ret.text.
+        self.assertEqual(consumed[0].response_text, resp.choices[0].message.content)
+
+        # ===== 4. OpenAI streaming (HTTP) =====
+        rk_str = "0/t_str/4"
+        sclient = await self._openai_client(rk_str)
+        stream = await sclient.chat.completions.create(
+            model=model_id,
+            messages=messages,
+            n=1,
+            stream=True,
+            temperature=0.7,
+            max_tokens=32,
+        )
+        content = ""
+        async for chunk in stream:
+            delta = chunk.choices[0].delta.content
+            if delta:
+                content += delta
+        self.assertGreater(len(content), 0)
+        consumed = await self._consume(rk_str, reward=0.1)
+        self.assertEqual(len(consumed), 1)
+        self._assert_recorded_experience(consumed[0], rk_str)
+        self._assert_recorded_routed_experts(consumed[0])
+        response_token_ids = consumed[0].tokens[consumed[0].prompt_length :].tolist()
+        decoded_content = self.tokenizer.decode(response_token_ids, skip_special_tokens=True)
+        self.assertEqual(decoded_content, content)
+        self.assertEqual(consumed[0].response_text, content)
+
+        # ===== 5. OpenAI tool-call parsing (HTTP) =====
+        rk_tool = "0/t_tool/5"
+        tclient = await self._openai_client(rk_tool)
+        tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_current_weather",
+                    "description": "Get the current weather in a given location",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "location": {
+                                "description": "The city and state, e.g. San Francisco, CA",
+                                "type": "string",
+                            }
+                        },
+                        "required": ["location"],
+                    },
+                },
+            }
+        ]
+        tool_messages = [{"role": "user", "content": "What's the weather like in Boston?"}]
+        no_think = {"chat_template_kwargs": {"enable_thinking": False}}
+        tresp = await tclient.chat.completions.create(
+            model=model_id,
+            messages=tool_messages,
+            tools=tools,
+            tool_choice="auto",
+            max_tokens=64,
+            extra_body=no_think,
+        )
+        consumed = await self._consume(rk_tool, reward=1.0)
+        self.assertEqual(len(consumed), 1)
+        self._assert_recorded_experience(consumed[0], rk_tool)
+        self._assert_recorded_routed_experts(consumed[0])
+        # tool_choice != "none" -> SGLang renders the tool defs into the prompt
+        # (serving_chat._process_messages), so the recorded prompt tokens carry
+        # the tool name. SGLang's ret does not carry prompt text, so decode.
+        decoded = self.tokenizer.decode(consumed[0].tokens.tolist(), skip_special_tokens=False)
+        self.assertIn("get_current_weather", decoded)
+        # If the model emitted a tool call, its function name is in the raw
+        # recorded response text (ret.text), which the qwen3_coder parser also
+        # surfaces as choice.message.tool_calls.
+        choice = tresp.choices[0]
+        if choice.finish_reason == "tool_calls" and choice.message.tool_calls:
+            for tc in choice.message.tool_calls:
+                self.assertIn(tc.function.name, consumed[0].response_text)
+
+        # ===== global: every group consumed -> store is drained =====
+        await self.model_wrapper.delete_experience_records_async("0")

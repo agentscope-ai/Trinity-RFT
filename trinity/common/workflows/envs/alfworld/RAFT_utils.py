@@ -113,6 +113,10 @@ async def process_messages_to_experience_async(model, messages, info=None) -> Ex
         info = {}
 
     try:
+        # TODO(recording): when enable_history is on, replace this
+        # client-side conversion with a MemoryStore lookup by the session's
+        # record_key (concatenate turns via info["sample_index"]); see
+        # workflow.process_messages_to_experience.
         converted_experience = await model.convert_messages_to_experience_async(messages)
 
         metrics = {}

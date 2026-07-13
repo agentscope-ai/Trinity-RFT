@@ -1,7 +1,6 @@
-import json
 import traceback
 from contextlib import asynccontextmanager
-from typing import Any, Dict
+from typing import Dict
 
 import httpx
 import uvicorn
@@ -65,112 +64,24 @@ def _build_json_or_text_response(upstream_response: httpx.Response):
     )
 
 
-def _consume_sse_line(line: str, aggregate: Dict[str, Any]) -> None:
-    line = line.strip()
-    if not line or not line.startswith("data:"):
-        return
-
-    payload = line[5:].strip()
-    if not payload or payload == "[DONE]":
-        return
-
-    try:
-        data = json.loads(payload)
-    except json.JSONDecodeError:
-        return
-
-    if isinstance(data.get("id"), str) and data["id"]:
-        aggregate["id"] = data["id"]
-
-    prompt_token_ids = data.get("prompt_token_ids")
-    if isinstance(prompt_token_ids, list) and prompt_token_ids:
-        aggregate["prompt_token_ids"] = prompt_token_ids
-
-    for choice in data.get("choices", []):
-        if not isinstance(choice, dict):
-            continue
-
-        choice_index = choice.get("index", 0)
-        if not isinstance(choice_index, int):
-            choice_index = 0
-
-        choice_acc = aggregate["choices"].setdefault(
-            choice_index,
-            {
-                "index": choice_index,
-                "token_ids": [],
-                "logprobs": {"content": []},
-            },
-        )
-
-        token_ids = choice.get("token_ids")
-        if isinstance(token_ids, list) and token_ids:
-            choice_acc["token_ids"].extend(token_ids)
-
-        logprobs = choice.get("logprobs")
-        if isinstance(logprobs, dict):
-            content = logprobs.get("content")
-            if isinstance(content, list) and content:
-                choice_acc["logprobs"]["content"].extend(content)
-
-
-def _finalize_stream_aggregate(aggregate: Dict[str, Any]) -> Dict[str, Any] | None:
-    prompt_token_ids = aggregate.get("prompt_token_ids")
-    if not isinstance(prompt_token_ids, list) or not prompt_token_ids:
-        return None
-
-    ordered_choices = []
-    for _, choice in sorted(aggregate["choices"].items(), key=lambda item: item[0]):
-        if not choice.get("token_ids"):
-            continue
-        ordered_choices.append(choice)
-
-    if not ordered_choices:
-        return None
-
-    return {
-        "id": aggregate.get("id", ""),
-        "prompt_token_ids": prompt_token_ids,
-        "choices": ordered_choices,
-    }
-
-
-async def _proxy_chat_stream_with_experience(
+async def _proxy_chat_stream(
     request: Request,
     upstream_response: httpx.Response,
-    model_version: int,
 ):
-    async def iterator():
-        stream_buffer = ""
-        aggregate = {
-            "id": "",
-            "prompt_token_ids": [],
-            "choices": {},
-        }
+    """Pure passthrough: stream the upstream SSE bytes to the client unchanged.
 
+    Experience capture is handled in-process by the vLLM recorder (wrapping
+    ``engine_client.generate``), so the proxy no longer parses/aggregates the
+    stream here.
+    """
+
+    async def iterator():
         try:
             async for chunk in upstream_response.aiter_raw():
                 if chunk:
-                    stream_buffer += chunk.decode("utf-8", errors="ignore")
-                    while "\n" in stream_buffer:
-                        line, stream_buffer = stream_buffer.split("\n", 1)
-                        _consume_sse_line(line.rstrip("\r"), aggregate)
                     yield chunk
         finally:
-            if stream_buffer:
-                _consume_sse_line(stream_buffer.rstrip("\r"), aggregate)
-
             await upstream_response.aclose()
-
-            experience_response = _finalize_stream_aggregate(aggregate)
-            if experience_response is not None:
-                try:
-                    await request.app.state.service.record_experience(
-                        experience_response,
-                        model_version,
-                    )
-                except Exception:
-                    pass
 
     return StreamingResponse(
         content=iterator(),
@@ -189,16 +100,15 @@ async def chat_completions(request: Request):
         raise HTTPException(status_code=400, detail=f"Invalid JSON: {str(e)}")
 
     forward_headers = _build_forward_headers(request)
-    # for experience data recording, we need to return token ids and logprobs
-    request_data["return_token_ids"] = True
-    request_data["logprobs"] = True
-    # temperature must be set from config, ignore user's input
+    # Temperature is a policy knob controlled by the explorer config; override
+    # the client's value. (Experience capture — token_ids/logprobs — is handled
+    # in-process by the vLLM recorder, so we no longer force them onto the wire.)
     request_data["temperature"] = request.app.state.temperature
 
-    url, model_version = await request.app.state.service.allocate_model()
+    url, _ = await request.app.state.service.allocate_model()
 
     if request_data.get("stream", False):
-        # For streaming response, we need to handle it differently to aggregate experience data
+        # Streaming: passthrough the upstream SSE bytes unchanged.
         try:
             upstream_request = request.app.state.http_client.build_request(
                 method="POST",
@@ -234,10 +144,9 @@ async def chat_completions(request: Request):
                 },
             )
 
-        return await _proxy_chat_stream_with_experience(
+        return await _proxy_chat_stream(
             request=request,
             upstream_response=upstream_response,
-            model_version=model_version,
         )
 
     try:
@@ -282,7 +191,9 @@ async def chat_completions(request: Request):
             headers=_build_downstream_headers(resp.headers),
         )
 
-    await request.app.state.service.record_experience(resp_data, model_version)
+    # Non-streaming success: forward unchanged. Experience capture happens
+    # in-process at the vLLM engine boundary (the recorder wraps
+    # engine_client.generate), so nothing to record here.
     return JSONResponse(
         status_code=resp.status_code,
         content=resp_data,
@@ -320,33 +231,6 @@ async def metrics(request: Request):
     metrics = request.app.state.service.collect_metrics()
     metrics["explore_step_num"] = request.app.state.service.explorer.explore_step_num
     return JSONResponse(content=metrics)
-
-
-@app.post("/feedback")
-async def feedback(request: Request):
-    """Receive feedback for the current session."""
-    body = await request.json()
-    reward = body.get("reward")
-    msg_ids = body.get("msg_ids")
-    task_id = body.get("task_id")
-    run_id = body.get("run_id", 0)
-    if msg_ids is None or reward is None:
-        return JSONResponse(status_code=400, content={"error": "msg_ids and reward are required"})
-    if not isinstance(msg_ids, list) or not isinstance(reward, (int, float)):
-        return JSONResponse(
-            status_code=400, content={"error": "msg_ids must be a list and reward must be a number"}
-        )
-    await request.app.state.service.record_feedback(
-        reward=reward, msg_ids=msg_ids, task_id=task_id, run_id=run_id
-    )
-    return JSONResponse(content={"status": "success"})
-
-
-@app.post("/commit")
-async def commit(request: Request):
-    """Commit the current experiences."""
-    await request.app.state.service.submit_experiences()
-    return JSONResponse(content={"status": "success"})
 
 
 async def serve_http(app: FastAPI, host: str, port: int) -> None:

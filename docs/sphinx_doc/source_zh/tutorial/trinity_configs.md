@@ -418,8 +418,6 @@ explorer:
     engine_type: vllm
     engine_num: 1
     tensor_parallel_size: 1
-    enable_history: false
-    enable_openai_api: false
     nnodes: 1
   auxiliary_models:
   - model_path: Qwen/Qwen2.5-7B-Instruct
@@ -456,8 +454,6 @@ explorer:
   - `external`: 使用外部 API 引擎。
 - `rollout_model.engine_num`: 推理引擎实例的数量。
 - `rollout_model.tensor_parallel_size`: 每个实例的张量并行度。
-- `rollout_model.enable_history`: 是否启用模型调用历史记录功能。若设为 `True`，模型会自动记录调用返回的 experience。请定期通过 `extract_experience_from_history` 提取历史，以避免内存溢出。默认为 `False`。
-- `rollout_model.enable_openai_api`: 是否启用 OpenAI API 推理服务。默认为 `False`。
 - `rollout_model.nnodes`: 部署每个推理引擎实例所需的节点数。默认为 `1`。仅在 `rollout_model.engine_type` 为 `vllm` 或 `sglang` 时生效。当 `nnodes` 大于 `1` 时，每个引擎实例将会占用完整的 `nnodes` 个节点的 GPU 资源 (`nnodes * cluster.gpu_per_node`)，不支持与其他实例共享节点。
 - `auxiliary_models`: 用于自定义工作流的辅助模型，配置与 `rollout_model` 相同。
 - `eval_interval`: 模型评估的间隔（以 step 为单位）。
