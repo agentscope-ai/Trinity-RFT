@@ -253,6 +253,8 @@ class RayClusterConfigValidator(ConfigValidator):
                 )
         elif config.mode == "colocate":
             self.logger.warning("`colocate` is only for single GPU scenario.")
+            if not config.explorer.rollout_model.engine_type.startswith("vllm"):
+                raise ValueError("Colocate mode only supports vLLM.")
             if cluster.total_gpu_num != 1:
                 raise ValueError(
                     f"Colocate mode requires exactly 1 GPU, but got {cluster.total_gpu_num} GPUs. Please use `both` mode instead."
@@ -689,6 +691,7 @@ class ExplorerConfigValidator(ConfigValidator):
         config.explorer.rollout_model.enable_return_routed_experts = (
             config.algorithm.enable_router_replay
         )
+        config.explorer.mode = config.mode
         config.explorer.rollout_model.ray_namespace = config.ray_namespace
         config.explorer.rollout_model.sync_method = config.synchronizer.sync_method
         config.explorer.rollout_model.checkpoint_job_dir = config.checkpoint_job_dir

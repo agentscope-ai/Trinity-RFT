@@ -41,6 +41,11 @@ class Allocator:
         """Generate a unique actor name based on the model config, engine ID, and node ID."""
         return f"{self.config.name}_{role}_model_{engine_id}_{node_id}"
 
+    @property
+    def placement_group_name(self) -> str:
+        """Generate a descriptive name for the inference model placement group."""
+        return f"{self.config.name}_rollout_model"
+
     def allocate_bundles(self) -> BundleResult:
         """Allocate bundles for the rollout model and auxiliary models based on the configuration."""
         rollout_model = self.config.rollout_model
@@ -112,8 +117,15 @@ class Allocator:
 
     async def create_all_models(self) -> Tuple[List[ModelWrapper], List[List[ModelWrapper]]]:
         """Create all model actors for the rollout model and auxiliary models based on the configuration."""
+        if self.config.mode == "colocate":
+            return await self._create_colocate_model()
+
         self.bundle_result = self.allocate_bundles()
-        self.pg = placement_group(self.bundle_result.bundles, strategy="PACK")
+        self.pg = placement_group(
+            self.bundle_result.bundles,
+            strategy="PACK",
+            name=self.placement_group_name,
+        )
         await self.pg.ready()
         self.analyze_placement_group(self.pg, self.bundle_result)
         # create rollout_models
@@ -146,6 +158,47 @@ class Allocator:
             for index in range(len(self.config.auxiliary_models))
         ]
         return rollout_models, auxiliary_models
+
+    async def _create_colocate_model(
+        self,
+    ) -> Tuple[List[ModelWrapper], List[List[ModelWrapper]]]:
+        """Create the rollout model without reserving a placement group.
+
+        In colocate mode the trainer and rollout model share the same GPU. Reserving
+        that GPU in a placement group would prevent the trainer from acquiring it.
+        """
+        config = deepcopy(self.config.rollout_model)
+        config.engine_id = 0
+        actor_name = self.get_actor_name("rollout", 0, 0)
+        config.ray_actor_name = actor_name
+
+        if not config.engine_type.startswith("vllm"):
+            raise ValueError(
+                f"Colocate mode only supports vLLM, but got engine type: {config.engine_type}"
+            )
+
+        from trinity.common.models.vllm_model import vLLMRolloutModel
+
+        self.logger.info(
+            "Creating colocated inference_model %s in %s.",
+            actor_name,
+            config.ray_namespace,
+        )
+        handler = (
+            ray.remote(vLLMRolloutModel)
+            .options(
+                name=actor_name,
+                num_cpus=0,
+                num_gpus=0,
+                namespace=config.ray_namespace,
+            )
+            .remote(config=config)
+        )
+        await handler.prepare.remote()
+        server_address = await handler.get_api_server_url.remote()
+        wrapper = ModelWrapper(models=[handler], config=config, api_address=server_address)
+        await wrapper.prepare()
+        return [wrapper], []
 
     def get_model(self, config: InferenceModelConfig, role: str, engine_id: int) -> ModelWrapper:
         """Get the model actor for the given role and engine ID."""

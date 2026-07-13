@@ -730,6 +730,8 @@ class ExplorerConfig:
     """Config for explorer."""
 
     name: str = EXPLORER_NAME
+    # ! DO NOT SET, automatically copied from Config.mode
+    mode: str = "both"
     # for workflow runner
     # number of workflow runners.
     runner_per_model: int = 8  # number of runners per each rollout model
