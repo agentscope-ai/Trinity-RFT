@@ -41,6 +41,11 @@ class Allocator:
         """Generate a unique actor name based on the model config, engine ID, and node ID."""
         return f"{self.config.name}_{role}_model_{engine_id}_{node_id}"
 
+    @property
+    def placement_group_name(self) -> str:
+        """Generate a descriptive name for the inference model placement group."""
+        return f"{self.config.name}_rollout_model"
+
     def allocate_bundles(self) -> BundleResult:
         """Allocate bundles for the rollout model and auxiliary models based on the configuration."""
         rollout_model = self.config.rollout_model
@@ -116,7 +121,11 @@ class Allocator:
             return await self._create_colocate_model()
 
         self.bundle_result = self.allocate_bundles()
-        self.pg = placement_group(self.bundle_result.bundles, strategy="PACK")
+        self.pg = placement_group(
+            self.bundle_result.bundles,
+            strategy="PACK",
+            name=self.placement_group_name,
+        )
         await self.pg.ready()
         self.analyze_placement_group(self.pg, self.bundle_result)
         # create rollout_models
