@@ -9,8 +9,12 @@ from dataclasses import dataclass as _dataclass
 from numbers import Real as _Real
 from typing import Any as _Any
 
-from trinity.common.rewards.eval_utils import simple_answer_parser as _simple_answer_parser
-from trinity.common.rewards.eval_utils import verify_with_timeout as _verify_with_timeout
+from trinity.common.rewards.eval_utils import (
+    simple_answer_parser as _simple_answer_parser,
+)
+from trinity.common.rewards.eval_utils import (
+    verify_with_timeout as _verify_with_timeout,
+)
 from trinity.common.rewards.reward_fn import RewardFn as _RewardFn
 
 __all__ = ["RLCRRewardFn"]
