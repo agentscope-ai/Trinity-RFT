@@ -13,6 +13,7 @@ REWARD_FUNCTIONS = Registry(
         "countdown_reward": "trinity.common.rewards.countdown_reward.CountDownRewardFn",
         "accuracy_reward": "trinity.common.rewards.accuracy_reward.AccuracyReward",
         "math_dapo_reward": "trinity.common.rewards.dapo_reward.MathDAPORewardFn",
+        "rlcr_reward": "trinity.common.rewards.rlcr_reward.RLCRRewardFn",
     },
 )
 
