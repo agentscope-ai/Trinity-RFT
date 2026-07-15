@@ -7,7 +7,7 @@ import pytest
 
 from trinity.common.rewards import REWARD_FUNCTIONS
 from trinity.common.rewards.reward_fn import RewardFn
-from trinity.common.rewards.rlcr_reward import RLCRRewardFn
+from trinity.common.rewards.rlcr_reward import RLCRRewardFn, _parse_terminal
 
 
 def _identity(value: str) -> str:
@@ -173,6 +173,70 @@ def test_only_trailing_whitespace_is_allowed_after_terminal_chain() -> None:
 
 
 @pytest.mark.parametrize(
+    ("response", "reason"),
+    [
+        (
+            "<think>x</think><answer>42</answer><analysis>x</analysis>",
+            "missing_tag",
+        ),
+        (
+            "<think>x</think><answer>42</answer><analysis>x</analysis>" "<confidence>0.8",
+            "unbalanced_tags",
+        ),
+        (
+            "<think>x</answer><answer>42</think><analysis>x</analysis>"
+            "<confidence>0.8</confidence>",
+            "crossed_tags",
+        ),
+        (
+            "<think>x<answer>nested</answer></think>" + _response(),
+            "nested_tags",
+        ),
+        (
+            "<think>x</think><analysis>x</analysis><answer>42</answer>"
+            "<confidence>0.8</confidence>",
+            "wrong_order",
+        ),
+        (_response() + " trailing junk", "trailing_junk"),
+        (_response(confidence=""), "confidence_empty"),
+        (_response(confidence="not-a-number"), "confidence_non_numeric"),
+        (_response(confidence="NaN"), "confidence_non_finite"),
+        (_response(confidence="1.01"), "confidence_out_of_range"),
+    ],
+    ids=[
+        "missing",
+        "unbalanced",
+        "crossed",
+        "nested",
+        "wrong-order",
+        "trailing-junk",
+        "empty",
+        "non-numeric",
+        "non-finite",
+        "out-of-range",
+    ],
+)
+def test_terminal_parser_exposes_stable_structured_failure_reasons(
+    response: str, reason: str
+) -> None:
+    result = _parse_terminal(response)
+
+    assert result.ok is False
+    assert result.answer is None
+    assert result.confidence is None
+    assert result.reason == reason
+
+
+def test_terminal_parser_success_has_no_failure_reason() -> None:
+    result = _parse_terminal(_response(answer="42", confidence="0.8"))
+
+    assert result.ok is True
+    assert result.answer == "42"
+    assert result.confidence == pytest.approx(0.8)
+    assert result.reason is None
+
+
+@pytest.mark.parametrize(
     "confidence",
     ["", "not-a-number", "NaN", "Inf", "+inf", "-inf", "-0.01", "1.01"],
 )
@@ -204,6 +268,41 @@ def test_a_later_truncated_confidence_makes_the_micro_confidence_unsafe() -> Non
     scores = _reward()(response=response, truth="42")
 
     _assert_all_zero(scores)
+
+
+@pytest.mark.parametrize(
+    "response",
+    [
+        "<answer>42</answer><analysis>x</analysis>" "<confidence>0<confidence>1</confidence>",
+        "<answer>42</answer><analysis>x</analysis>" "<confidence>1</confidence></confidence>",
+        "</confidence><answer>42</answer><analysis>x</analysis>" "<confidence>1</confidence>",
+        "<answer>42</answer><analysis>x</analysis>" "<confidence>0</confidence><confidence>1",
+    ],
+    ids=["nested", "orphan-closer", "leading-orphan-closer", "truncated-last"],
+)
+def test_malformed_confidence_structure_never_earns_micro_rewards(response: str) -> None:
+    scores = _reward()(response=response, truth="42")
+
+    _assert_all_zero(scores)
+
+
+def test_multiple_complete_confidence_pairs_keep_the_last_safe_q_without_think() -> None:
+    response = (
+        "<confidence>0.2</confidence>draft"
+        "<answer>42</answer><analysis>x</analysis><confidence>1</confidence>"
+    )
+
+    scores = _reward()(response=response, truth="42")
+
+    assert scores == pytest.approx(
+        {
+            "format": 0.0,
+            "accuracy": 0.0,
+            "brier": 0.0,
+            "mean_confidence": 1e-5,
+            "confidence_one_or_zero": 1e-5,
+        }
+    )
 
 
 @pytest.mark.parametrize(
