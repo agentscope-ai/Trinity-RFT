@@ -805,10 +805,7 @@ class TestQwen35APIServerReasoning(VLLMTestBase):
         messages = [{"role": "user", "content": "Which is larger, 9.11 or 9.8? Explain."}]
         task = Task(
             raw_task={"messages": messages},
-            workflow_args={
-                "thinking_token_budget": thinking_token_budget,
-                "reasoning_end_str": "</think>",
-            },
+            workflow_args={"thinking_token_budget": thinking_token_budget},
             rollout_args=GenerationConfig(n=1, max_tokens=32, temperature=0.0),
         )
 

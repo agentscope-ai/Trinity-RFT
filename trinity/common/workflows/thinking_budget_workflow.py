@@ -24,6 +24,7 @@ class ThinkingBudgetWorkflow(Workflow):
     """
 
     can_repeat = True
+    DEFAULT_REASONING_END_STR = "</think>"
 
     def __init__(
         self,
@@ -43,7 +44,9 @@ class ThinkingBudgetWorkflow(Workflow):
             raise ValueError(
                 "workflow_args['thinking_token_budget'] must be a non-negative integer."
             )
-        self.reasoning_end_str = task.workflow_args.get("reasoning_end_str")
+        self.reasoning_end_str = task.workflow_args.get(
+            "reasoning_end_str", self.DEFAULT_REASONING_END_STR
+        )
         if not isinstance(self.reasoning_end_str, str) or not self.reasoning_end_str:
             raise ValueError("workflow_args['reasoning_end_str'] must be a non-empty string.")
         if not model.enable_history:
