@@ -6,6 +6,7 @@ from dataclasses import asdict
 from typing import TYPE_CHECKING, List, Optional
 
 import torch
+from transformers import AutoTokenizer
 
 from trinity.common.experience import Experience
 from trinity.common.workflows.workflow import Task, Workflow
@@ -17,10 +18,9 @@ if TYPE_CHECKING:
 class ThinkingBudgetWorkflow(Workflow):
     """Run raw OpenAI messages with a per-request reasoning-token budget.
 
-    vLLM enforces the end-of-reasoning sequence by forcing its logits. Those
-    tokens therefore have an exact log probability of zero. The workflow masks
-    the first such contiguous forced run at/after the budget boundary out of the
-    action mask so it does not contribute to the policy loss.
+    vLLM forces the configured end-of-reasoning token sequence when the budget
+    is exhausted. The workflow locates that sequence in the returned completion
+    token IDs and masks it out so it does not contribute to the policy loss.
     """
 
     can_repeat = True
@@ -44,8 +44,8 @@ class ThinkingBudgetWorkflow(Workflow):
                 "workflow_args['thinking_token_budget'] must be a non-negative integer."
             )
         self.reasoning_end_str = task.workflow_args.get("reasoning_end_str")
-        if self.reasoning_end_str is not None and not isinstance(self.reasoning_end_str, str):
-            raise ValueError("workflow_args['reasoning_end_str'] must be a string.")
+        if not isinstance(self.reasoning_end_str, str) or not self.reasoning_end_str:
+            raise ValueError("workflow_args['reasoning_end_str'] must be a non-empty string.")
         if not model.enable_history:
             raise ValueError(
                 "ThinkingBudgetWorkflow requires explorer.rollout_model.enable_history=true."
@@ -53,6 +53,15 @@ class ThinkingBudgetWorkflow(Workflow):
         self.repeat_times = task.rollout_args.n
         self.run_id_base = 0
         self.client = model.get_openai_client()
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            model.model_path,
+            trust_remote_code=model.config.trust_remote_code,
+        )
+        self.reasoning_end_token_ids = self.tokenizer.encode(
+            self.reasoning_end_str, add_special_tokens=False
+        )
+        if not self.reasoning_end_token_ids:
+            raise ValueError("workflow_args['reasoning_end_str'] encodes to no tokens.")
 
     def set_repeat_times(self, repeat_times: int, run_id_base: int) -> None:
         self.repeat_times = repeat_times
@@ -61,35 +70,18 @@ class ThinkingBudgetWorkflow(Workflow):
     @staticmethod
     def _mask_forced_reasoning_end(
         exp: Experience,
-        budget: int,
-        reasoning_end_token_ids: Optional[List[int]] = None,
+        reasoning_end_token_ids: List[int],
     ) -> None:
         """Set the vLLM-forced reasoning-end token action entries to zero."""
         response_len = len(exp.tokens) - exp.prompt_length  # type: ignore [arg-type]
         if exp.action_mask is None or len(exp.action_mask) != response_len:
             exp.action_mask = torch.ones(response_len, dtype=torch.bool)
         response_token_ids = exp.tokens[exp.prompt_length :].tolist()  # type: ignore [index]
-        if reasoning_end_token_ids:
-            for start in range(response_len - len(reasoning_end_token_ids) + 1):
-                end = start + len(reasoning_end_token_ids)
-                if response_token_ids[start:end] == reasoning_end_token_ids:
-                    exp.action_mask[start:end] = False
-                    return
-        if exp.logprobs is None or len(exp.logprobs) != response_len:
-            return
-
-        # Forced tokens receive probability 1 after vLLM's logits override, so
-        # their returned log probability is exactly 0. Search from the earliest
-        # possible budget boundary and mask only the first contiguous run.
-        forced = torch.eq(exp.logprobs, 0)
-        start = min(budget, response_len)
-        while start < response_len and not bool(forced[start]):
-            start += 1
-        end = start
-        while end < response_len and bool(forced[end]):
-            end += 1
-        if start < end:
-            exp.action_mask[start:end] = False
+        for start in range(response_len - len(reasoning_end_token_ids) + 1):
+            end = start + len(reasoning_end_token_ids)
+            if response_token_ids[start:end] == reasoning_end_token_ids:
+                exp.action_mask[start:end] = False
+                return
 
     def run(self) -> List[Experience]:
         rollout_args = {
@@ -109,16 +101,10 @@ class ThinkingBudgetWorkflow(Workflow):
             **rollout_args,
         )
         experiences = self.model.extract_experience_from_history()
-        reasoning_end_token_ids = None
-        if self.reasoning_end_str:
-            reasoning_end_token_ids = self.model.tokenizer.encode(
-                self.reasoning_end_str, add_special_tokens=False
-            )
         for index, exp in enumerate(experiences):
             self._mask_forced_reasoning_end(
                 exp,
-                self.thinking_token_budget,
-                reasoning_end_token_ids=reasoning_end_token_ids,
+                reasoning_end_token_ids=self.reasoning_end_token_ids,
             )
             exp.eid.run = self.run_id_base + index
         return experiences

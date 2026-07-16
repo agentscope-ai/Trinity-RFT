@@ -848,7 +848,6 @@ class TestQwen35APIServerReasoning(VLLMTestBase):
         reasoning_end_stop = reasoning_end_start + len(reasoning_end_token_ids)
         self.assertTrue(torch.all(exp.action_mask[:reasoning_end_start]))
         self.assertTrue(torch.all(~exp.action_mask[reasoning_end_start:reasoning_end_stop]))
-        self.assertTrue(torch.all(exp.logprobs[reasoning_end_start:reasoning_end_stop] == 0))
         self.assertTrue(torch.all(exp.action_mask[reasoning_end_stop:]))
 
 
