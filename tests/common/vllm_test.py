@@ -21,10 +21,12 @@ from tests.tools import (
     get_template_config,
     get_vision_language_model_path,
 )
-from trinity.common.config import Config
+from trinity.common.config import Config, GenerationConfig
 from trinity.common.constants import ROLLOUT_WEIGHT_SYNC_GROUP_NAME, SyncMethod
 from trinity.common.models.allocator import Allocator
 from trinity.common.models.model import ModelWrapper
+from trinity.common.workflows.thinking_budget_workflow import ThinkingBudgetWorkflow
+from trinity.common.workflows.workflow import Task
 from trinity.manager.synchronizer import Synchronizer
 
 DEBUG = False
@@ -733,6 +735,7 @@ class TestQwen35APIServerReasoning(VLLMTestBase):
         self.config.explorer.rollout_model.enable_openai_api = True
         self.config.explorer.rollout_model.enable_auto_tool_choice = True
         self.config.explorer.rollout_model.tool_call_parser = "qwen3_coder"
+        self.config.explorer.rollout_model.reasoning_parser = "qwen3"
         self.config.explorer.rollout_model.enable_history = True
 
         self.config.check_and_update()
@@ -796,6 +799,57 @@ class TestQwen35APIServerReasoning(VLLMTestBase):
         self.tokenizer = AutoTokenizer.from_pretrained(self.config.model.model_path)
         text = self.tokenizer.decode(exps[0].tokens.tolist())
         self.assertIn("Use `list_agents` tool to get the list of agents.", text)
+
+    async def test_thinking_token_budget_action_mask(self):
+        thinking_token_budget = 3
+        messages = [{"role": "user", "content": "Which is larger, 9.11 or 9.8? Explain."}]
+        task = Task(
+            raw_task={"messages": messages},
+            workflow_args={
+                "thinking_token_budget": thinking_token_budget,
+                "reasoning_end_str": "</think>",
+            },
+            rollout_args=GenerationConfig(n=1, max_tokens=32, temperature=0.0),
+        )
+
+        exps = ThinkingBudgetWorkflow(task=task, model=self.model_wrapper).run()
+
+        self.assertEqual(len(exps), 1)
+        exp = exps[0]
+        response_token_ids = exp.tokens[exp.prompt_length :].tolist()
+        tokenizer = AutoTokenizer.from_pretrained(self.config.model.model_path)
+        reasoning_start_token_ids = tokenizer.encode("<think>", add_special_tokens=False)
+        reasoning_end_token_ids = tokenizer.encode("</think>", add_special_tokens=False)
+        self.assertGreater(len(reasoning_start_token_ids), 0)
+        self.assertGreater(len(reasoning_end_token_ids), 0)
+
+        def find_subsequence(token_ids, subsequence):
+            return next(
+                (
+                    index
+                    for index in range(len(token_ids) - len(subsequence) + 1)
+                    if token_ids[index : index + len(subsequence)] == subsequence
+                ),
+                -1,
+            )
+
+        reasoning_start = find_subsequence(response_token_ids, reasoning_start_token_ids)
+        reasoning_end_start = find_subsequence(response_token_ids, reasoning_end_token_ids)
+        self.assertGreaterEqual(reasoning_end_start, 0)
+        reasoning_content_start = (
+            reasoning_start + len(reasoning_start_token_ids) if reasoning_start >= 0 else 0
+        )
+        self.assertGreaterEqual(reasoning_end_start, reasoning_content_start)
+        self.assertLessEqual(
+            reasoning_end_start - reasoning_content_start,
+            thinking_token_budget,
+        )
+
+        reasoning_end_stop = reasoning_end_start + len(reasoning_end_token_ids)
+        self.assertTrue(torch.all(exp.action_mask[:reasoning_end_start]))
+        self.assertTrue(torch.all(~exp.action_mask[reasoning_end_start:reasoning_end_stop]))
+        self.assertTrue(torch.all(exp.logprobs[reasoning_end_start:reasoning_end_stop] == 0))
+        self.assertTrue(torch.all(exp.action_mask[reasoning_end_stop:]))
 
 
 class TestQwen35APIServerMultiModal(VLLMTestBase):
