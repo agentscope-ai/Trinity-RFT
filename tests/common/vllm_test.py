@@ -10,6 +10,8 @@ import ray
 import torch
 from openai import BadRequestError
 from parameterized import parameterized_class
+from ray.util import remove_placement_group
+from ray.util.placement_group import placement_group_table
 from transformers import AutoConfig, AutoTokenizer
 
 from tests.tools import (
@@ -39,7 +41,19 @@ def print_debug(*args):
 
 async def create_test_models(config: Config):
     allocator = Allocator(config.explorer)
-    return await allocator.create_all_models()
+    try:
+        engines, auxiliary_engines = await allocator.create_all_models()
+    except BaseException:
+        if hasattr(allocator, "pg"):
+            remove_placement_group(allocator.pg)
+        raise
+
+    for wrapper in engines:
+        setattr(wrapper, "_test_placement_group", allocator.pg)
+    for wrappers in auxiliary_engines:
+        for wrapper in wrappers:
+            setattr(wrapper, "_test_placement_group", allocator.pg)
+    return engines, auxiliary_engines
 
 
 def clone_wrapper(wrapper: ModelWrapper, enable_history: bool) -> ModelWrapper:
@@ -110,8 +124,26 @@ class VLLMTestBase(RayUnittestBaseAsync):
                 for model_list in value:
                     wrappers.extend(model_list)
 
-        if wrappers:
+        if not wrappers:
+            return
+
+        placement_groups = {
+            getattr(wrapper, "_test_placement_group").id: getattr(wrapper, "_test_placement_group")
+            for wrapper in wrappers
+            if hasattr(wrapper, "_test_placement_group")
+        }
+        try:
             await asyncio.gather(*[wrapper.shutdown() for wrapper in wrappers])
+        finally:
+            for pg in placement_groups.values():
+                remove_placement_group(pg)
+        for _ in range(100):
+            tables = [placement_group_table(pg) for pg in placement_groups.values()]
+            if all(not table or table.get("state") == "REMOVED" for table in tables):
+                break
+            await asyncio.sleep(0.1)
+        else:
+            self.fail("Timed out while removing vLLM test placement groups.")
 
 
 @parameterized_class(
