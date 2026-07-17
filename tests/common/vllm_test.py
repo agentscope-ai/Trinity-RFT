@@ -50,9 +50,19 @@ async def create_test_models(config: Config):
 
     for wrapper in engines:
         setattr(wrapper, "_test_placement_group", allocator.pg)
+        setattr(
+            wrapper,
+            "_test_actor_names",
+            tuple(allocator.bundle_result.actor_bundle_map),
+        )
     for wrappers in auxiliary_engines:
         for wrapper in wrappers:
             setattr(wrapper, "_test_placement_group", allocator.pg)
+            setattr(
+                wrapper,
+                "_test_actor_names",
+                tuple(allocator.bundle_result.actor_bundle_map),
+            )
     return engines, auxiliary_engines
 
 
@@ -132,18 +142,37 @@ class VLLMTestBase(RayUnittestBaseAsync):
             for wrapper in wrappers
             if hasattr(wrapper, "_test_placement_group")
         }
+        actors = [actor for wrapper in wrappers for actor in wrapper.models]
+        actor_names = {
+            name
+            for wrapper in wrappers
+            for name in getattr(wrapper, "_test_actor_names", ())
+        }
+        namespace = self.config.explorer.rollout_model.ray_namespace
         try:
             await asyncio.gather(*[wrapper.shutdown() for wrapper in wrappers])
         finally:
+            for actor in actors:
+                ray.kill(actor, no_restart=True)
             for pg in placement_groups.values():
                 remove_placement_group(pg)
         for _ in range(100):
             tables = [placement_group_table(pg) for pg in placement_groups.values()]
-            if all(not table or table.get("state") == "REMOVED" for table in tables):
+            live_actor_names = set()
+            for name in actor_names:
+                try:
+                    ray.get_actor(name, namespace=namespace)
+                    live_actor_names.add(name)
+                except ValueError:
+                    pass
+            if (
+                all(not table or table.get("state") == "REMOVED" for table in tables)
+                and not live_actor_names
+            ):
                 break
             await asyncio.sleep(0.1)
         else:
-            self.fail("Timed out while removing vLLM test placement groups.")
+            self.fail("Timed out while removing vLLM test actors or placement groups.")
 
 
 @parameterized_class(
