@@ -1,15 +1,115 @@
+import asyncio
 import io
 from types import SimpleNamespace
 from unittest import TestCase
+from unittest.mock import AsyncMock, MagicMock
 
 import numpy as np
 import pybase64
 import torch
 
-from trinity.common.models.experience_extraction import convert_api_output_to_experience
+from trinity.common.models.experience_extraction import (
+    HistoryRecordingStream,
+    convert_api_output_to_experience,
+)
+from trinity.common.models.vllm_model import vLLMRolloutModel
 
 
 class TestExperienceExtraction(TestCase):
+    def test_vllm_generate_maps_finish_reason_per_output(self):
+        def logprob(value: float):
+            return {0: SimpleNamespace(logprob=value)}
+
+        model = vLLMRolloutModel.__new__(vLLMRolloutModel)
+        model.tokenizer = MagicMock()
+        model.tokenizer.decode.return_value = "prompt"
+        model._handle_prompt_truncation = MagicMock(return_value=([1, 2], True))
+        model._extract_routed_experts = MagicMock(return_value=None)
+        model._generate_internal = AsyncMock(
+            return_value=SimpleNamespace(
+                prompt_token_ids=[1, 2],
+                outputs=[
+                    SimpleNamespace(
+                        token_ids=[3],
+                        logprobs=[logprob(-0.1)],
+                        text="truncated",
+                        finish_reason="length",
+                    ),
+                    SimpleNamespace(
+                        token_ids=[4],
+                        logprobs=[logprob(-0.2)],
+                        text="complete",
+                        finish_reason="stop",
+                    ),
+                ],
+            )
+        )
+
+        experiences = asyncio.run(model.generate("prompt", n=2))
+
+        self.assertEqual(experiences[0].truncate_status, "response_truncated")
+        self.assertIsNone(experiences[1].truncate_status)
+
+    def test_convert_completion_output_maps_finish_reason(self):
+        output = SimpleNamespace(
+            prompt_token_ids=[1, 2],
+            choices=[
+                SimpleNamespace(
+                    token_ids=[3],
+                    logprobs=None,
+                    message=SimpleNamespace(content="truncated"),
+                    finish_reason="length",
+                    routed_experts=None,
+                ),
+                SimpleNamespace(
+                    token_ids=[4],
+                    logprobs=None,
+                    message=SimpleNamespace(content="complete"),
+                    finish_reason="stop",
+                    routed_experts=None,
+                ),
+            ],
+        )
+
+        experiences = convert_api_output_to_experience(output)
+
+        self.assertEqual(experiences[0].truncate_status, "response_truncated")
+        self.assertIsNone(experiences[1].truncate_status)
+
+    def test_stream_conversion_preserves_final_finish_reason(self):
+        chunks = [
+            SimpleNamespace(
+                prompt_token_ids=[1, 2],
+                choices=[
+                    SimpleNamespace(
+                        index=0,
+                        token_ids=[3],
+                        logprobs=None,
+                        delta=SimpleNamespace(content="go"),
+                        finish_reason=None,
+                    )
+                ],
+            ),
+            SimpleNamespace(
+                choices=[
+                    SimpleNamespace(
+                        index=0,
+                        token_ids=None,
+                        logprobs=None,
+                        delta=SimpleNamespace(content=None),
+                        finish_reason="length",
+                    )
+                ]
+            ),
+        ]
+        history = []
+
+        list(HistoryRecordingStream(iter(chunks), history))
+
+        self.assertEqual(len(history), 1)
+        self.assertEqual(history[0].response_text, "go")
+        self.assertEqual(history[0].truncate_status, "response_truncated")
+
     def test_convert_completion_output_extracts_sglang_routed_experts(self):
         routed_experts = torch.tensor(
             [

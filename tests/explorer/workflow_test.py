@@ -32,6 +32,7 @@ from trinity.common.models.model import ModelWrapper
 from trinity.common.workflows import WORKFLOWS, Workflow
 from trinity.common.workflows.customized_math_workflows import MathBoxedWorkflow
 from trinity.common.workflows.eval_workflow import MathEvalWorkflow
+from trinity.common.workflows.envs.alfworld.alfworld_workflow import AlfworldWorkflow
 from trinity.common.workflows.workflow import MathWorkflow, MultiTurnWorkflow, Task
 from trinity.explorer.workflow_runner import WorkflowRunner
 
@@ -192,6 +193,36 @@ class DummyAsyncMultiTurnWorkflow(MultiTurnWorkflow):
 
 
 class WorkflowTest(unittest.TestCase):
+    def test_alfworld_stops_before_env_step_after_response_truncation(self) -> None:
+        workflow = AlfworldWorkflow.__new__(AlfworldWorkflow)
+        workflow.max_env_steps = 3
+        workflow.get_model_response = AsyncMock(
+            return_value=[
+                MockResponse(
+                    "go",
+                    truncate_status="response_truncated",
+                )
+            ]
+        )
+        final_experience = Experience(tokens=Tensor([0, 1]), prompt_length=1)
+        workflow.process_messages_to_experience_async = AsyncMock(
+            return_value=final_experience
+        )
+        env = MagicMock()
+        env.reset.return_value = ("initial observation", {})
+
+        experiences = asyncio.run(workflow.generate_env_inference_samples(env))
+
+        env.step.assert_not_called()
+        env.close.assert_called_once()
+        self.assertEqual(experiences, [final_experience])
+        self.assertEqual(
+            workflow.process_messages_to_experience_async.call_args.kwargs[
+                "truncate_status"
+            ],
+            "response_truncated",
+        )
+
     def test_math_workflow(self) -> None:
         model = MagicMock()
         model.chat.return_value = [

@@ -287,35 +287,41 @@ class vLLMRolloutModel(BaseInferenceModel):
                 input_ids=output.prompt_token_ids,
                 multi_modal_data=prompt.get("multi_modal_data", {}),
             )
-        experiences = [
-            Experience(
-                tokens=torch.cat(
-                    (
-                        torch.tensor(output.prompt_token_ids, dtype=torch.int32),
-                        torch.tensor(output.outputs[i].token_ids, dtype=torch.int32),
-                    )
-                ),
-                logprobs=torch.cat(
-                    (
-                        torch.tensor(
-                            [
-                                list(logprob_dict.values())[0].logprob
-                                for logprob_dict in output.outputs[i].logprobs
-                            ],
-                            dtype=torch.float32,
-                        ),
-                    )
-                ),
-                prompt_length=len(output.prompt_token_ids),
-                prompt_text=self.tokenizer.decode(output.prompt_token_ids),
-                response_text=output.outputs[i].text,
-                multi_modal_inputs=combine_output_token_ids(
-                    output.outputs[i].token_ids, multi_modal_inputs
-                ),
-                routed_experts=self._extract_routed_experts(output, i),
+        experiences = []
+        for output_index, seq_output in enumerate(output.outputs):
+            experiences.append(
+                Experience(
+                    tokens=torch.cat(
+                        (
+                            torch.tensor(output.prompt_token_ids, dtype=torch.int32),
+                            torch.tensor(seq_output.token_ids, dtype=torch.int32),
+                        )
+                    ),
+                    logprobs=torch.cat(
+                        (
+                            torch.tensor(
+                                [
+                                    list(logprob_dict.values())[0].logprob
+                                    for logprob_dict in seq_output.logprobs
+                                ],
+                                dtype=torch.float32,
+                            ),
+                        )
+                    ),
+                    prompt_length=len(output.prompt_token_ids),
+                    prompt_text=self.tokenizer.decode(output.prompt_token_ids),
+                    response_text=seq_output.text,
+                    truncate_status=(
+                        "response_truncated"
+                        if seq_output.finish_reason == "length"
+                        else None
+                    ),
+                    multi_modal_inputs=combine_output_token_ids(
+                        seq_output.token_ids, multi_modal_inputs
+                    ),
+                    routed_experts=self._extract_routed_experts(output, output_index),
+                )
             )
-            for i in range(len(output.outputs))
-        ]
         return experiences
 
     async def logprobs(  # type: ignore [override]
