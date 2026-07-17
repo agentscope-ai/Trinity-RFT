@@ -312,9 +312,7 @@ class vLLMRolloutModel(BaseInferenceModel):
                     prompt_text=self.tokenizer.decode(output.prompt_token_ids),
                     response_text=seq_output.text,
                     truncate_status=(
-                        "response_truncated"
-                        if seq_output.finish_reason == "length"
-                        else None
+                        "response_truncated" if seq_output.finish_reason == "length" else None
                     ),
                     multi_modal_inputs=combine_output_token_ids(
                         seq_output.token_ids, multi_modal_inputs

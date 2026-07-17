@@ -31,8 +31,8 @@ from trinity.common.models.allocator import Allocator
 from trinity.common.models.model import ModelWrapper
 from trinity.common.workflows import WORKFLOWS, Workflow
 from trinity.common.workflows.customized_math_workflows import MathBoxedWorkflow
-from trinity.common.workflows.eval_workflow import MathEvalWorkflow
 from trinity.common.workflows.envs.alfworld.alfworld_workflow import AlfworldWorkflow
+from trinity.common.workflows.eval_workflow import MathEvalWorkflow
 from trinity.common.workflows.workflow import MathWorkflow, MultiTurnWorkflow, Task
 from trinity.explorer.workflow_runner import WorkflowRunner
 
@@ -205,9 +205,7 @@ class WorkflowTest(unittest.TestCase):
             ]
         )
         final_experience = Experience(tokens=Tensor([0, 1]), prompt_length=1)
-        workflow.process_messages_to_experience_async = AsyncMock(
-            return_value=final_experience
-        )
+        workflow.process_messages_to_experience_async = AsyncMock(return_value=final_experience)
         env = MagicMock()
         env.reset.return_value = ("initial observation", {})
 
@@ -217,9 +215,7 @@ class WorkflowTest(unittest.TestCase):
         env.close.assert_called_once()
         self.assertEqual(experiences, [final_experience])
         self.assertEqual(
-            workflow.process_messages_to_experience_async.call_args.kwargs[
-                "truncate_status"
-            ],
+            workflow.process_messages_to_experience_async.call_args.kwargs["truncate_status"],
             "response_truncated",
         )
 

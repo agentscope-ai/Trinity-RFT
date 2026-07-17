@@ -193,9 +193,7 @@ class WorkflowTest(unittest.TestCase):
                     Experience(
                         tokens=Tensor([0, 0]),
                         prompt_length=1,
-                        truncate_status=(
-                            "response_truncated" if call_count == 2 else None
-                        ),
+                        truncate_status=("response_truncated" if call_count == 2 else None),
                     )
                 ]
 

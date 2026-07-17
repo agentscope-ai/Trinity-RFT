@@ -173,9 +173,7 @@ def _convert_completion_output_to_experience(
             prompt_length=len(output.prompt_token_ids),
             response_text=getattr(choice.message, "content", None),
             truncate_status=(
-                "response_truncated"
-                if getattr(choice, "finish_reason", None) == "length"
-                else None
+                "response_truncated" if getattr(choice, "finish_reason", None) == "length" else None
             ),
             routed_experts=_extract_completion_routed_experts(
                 output,
@@ -189,7 +187,7 @@ def _convert_completion_output_to_experience(
     ]
 
 
-def _convert_stream_chunks_to_experience(chunks: Sequence[Any]) -> List[Experience]:
+def _convert_stream_chunks_to_experience(chunks: Sequence[Any]) -> List[Experience]:  # noqa
     prompt_token_ids: Optional[List[int]] = None
     by_choice: Dict[int, Dict[str, Any]] = {}
 
