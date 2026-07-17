@@ -144,9 +144,7 @@ class VLLMTestBase(RayUnittestBaseAsync):
         }
         actors = [actor for wrapper in wrappers for actor in wrapper.models]
         actor_names = {
-            name
-            for wrapper in wrappers
-            for name in getattr(wrapper, "_test_actor_names", ())
+            name for wrapper in wrappers for name in getattr(wrapper, "_test_actor_names", ())
         }
         namespace = self.config.explorer.rollout_model.ray_namespace
         try:
