@@ -49,7 +49,7 @@ pip install -e ".[vllm,flash_attn]"
 # pip install -e ".[tinker]"
 
 # If you encounter issues when installing flash-attn, try:
-# pip install flash-attn==2.8.1 --no-build-isolation
+# pip install "flash-attn>=2.8.3" --no-build-isolation
 
 pip install -e ".[dev]"  # for development like linting and debugging
 ```
@@ -66,7 +66,7 @@ pip install -e ".[vllm,flash_attn]"
 # pip install -e ".[tinker]"
 
 # If you encounter issues when installing flash-attn, try:
-# pip install flash-attn==2.8.1 --no-build-isolation
+# pip install "flash-attn>=2.8.3" --no-build-isolation
 
 pip install -e ".[dev]"  # for development like linting and debugging
 ```
@@ -146,14 +146,14 @@ If you just want to use the package without modifying the code:
 
 ```bash
 pip install trinity-rft
-pip install flash-attn==2.8.1  --no-build-isolation
+pip install "flash-attn>=2.8.3" --no-build-isolation
 ```
 
 Or with `uv`:
 
 ```bash
 uv pip install trinity-rft
-uv pip install flash-attn==2.8.1  --no-build-isolation
+uv pip install "flash-attn>=2.8.3" --no-build-isolation
 ```
 
 ---
