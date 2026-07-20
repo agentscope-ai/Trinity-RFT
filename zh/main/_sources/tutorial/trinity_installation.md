@@ -49,7 +49,7 @@ pip install -e ".[vllm,flash_attn]"
 # pip install -e ".[tinker]"
 
 # 如果安装 flash-attn 时遇到问题，可尝试：
-# pip install flash-attn==2.8.1 --no-build-isolation
+# pip install "flash-attn>=2.8.3" --no-build-isolation
 
 pip install -e ".[dev]"  # 用于调试和开发
 ```
@@ -66,7 +66,7 @@ pip install -e ".[vllm,flash_attn]"
 # pip install -e ".[tinker]"
 
 # 如果安装 flash-attn 时遇到问题，可尝试：
-# pip install flash-attn==2.8.1 --no-build-isolation
+# pip install "flash-attn>=2.8.3" --no-build-isolation
 
 pip install -e ".[dev]"  # 用于调试和开发
 ```
@@ -147,14 +147,14 @@ docker run -it \
 
 ```bash
 pip install trinity-rft
-pip install flash-attn==2.8.1 --no-build-isolation
+pip install "flash-attn>=2.8.3" --no-build-isolation
 ```
 
 或使用 `uv`：
 
 ```bash
 uv pip install trinity-rft
-uv pip install flash-attn==2.8.1 --no-build-isolation
+uv pip install "flash-attn>=2.8.3" --no-build-isolation
 ```
 
 ---
