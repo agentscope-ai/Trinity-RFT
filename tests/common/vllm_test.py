@@ -10,6 +10,8 @@ import ray
 import torch
 from openai import BadRequestError
 from parameterized import parameterized_class
+from ray.util import remove_placement_group
+from ray.util.placement_group import placement_group_table
 from transformers import AutoConfig, AutoTokenizer
 
 from tests.tools import (
@@ -21,10 +23,12 @@ from tests.tools import (
     get_template_config,
     get_vision_language_model_path,
 )
-from trinity.common.config import Config
+from trinity.common.config import Config, GenerationConfig
 from trinity.common.constants import ROLLOUT_WEIGHT_SYNC_GROUP_NAME, SyncMethod
 from trinity.common.models.allocator import Allocator
 from trinity.common.models.model import ModelWrapper
+from trinity.common.workflows.thinking_budget_workflow import ThinkingBudgetWorkflow
+from trinity.common.workflows.workflow import Task
 from trinity.manager.synchronizer import Synchronizer
 
 DEBUG = False
@@ -37,7 +41,29 @@ def print_debug(*args):
 
 async def create_test_models(config: Config):
     allocator = Allocator(config.explorer)
-    return await allocator.create_all_models()
+    try:
+        engines, auxiliary_engines = await allocator.create_all_models()
+    except BaseException:
+        if hasattr(allocator, "pg"):
+            remove_placement_group(allocator.pg)
+        raise
+
+    for wrapper in engines:
+        setattr(wrapper, "_test_placement_group", allocator.pg)
+        setattr(
+            wrapper,
+            "_test_actor_names",
+            tuple(allocator.bundle_result.actor_bundle_map),
+        )
+    for wrappers in auxiliary_engines:
+        for wrapper in wrappers:
+            setattr(wrapper, "_test_placement_group", allocator.pg)
+            setattr(
+                wrapper,
+                "_test_actor_names",
+                tuple(allocator.bundle_result.actor_bundle_map),
+            )
+    return engines, auxiliary_engines
 
 
 def clone_wrapper(wrapper: ModelWrapper, enable_history: bool) -> ModelWrapper:
@@ -108,8 +134,43 @@ class VLLMTestBase(RayUnittestBaseAsync):
                 for model_list in value:
                     wrappers.extend(model_list)
 
-        if wrappers:
+        if not wrappers:
+            return
+
+        placement_groups = {
+            getattr(wrapper, "_test_placement_group").id: getattr(wrapper, "_test_placement_group")
+            for wrapper in wrappers
+            if hasattr(wrapper, "_test_placement_group")
+        }
+        actors = [actor for wrapper in wrappers for actor in wrapper.models]
+        actor_names = {
+            name for wrapper in wrappers for name in getattr(wrapper, "_test_actor_names", ())
+        }
+        namespace = self.config.explorer.rollout_model.ray_namespace
+        try:
             await asyncio.gather(*[wrapper.shutdown() for wrapper in wrappers])
+        finally:
+            for actor in actors:
+                ray.kill(actor, no_restart=True)
+            for pg in placement_groups.values():
+                remove_placement_group(pg)
+        for _ in range(100):
+            tables = [placement_group_table(pg) for pg in placement_groups.values()]
+            live_actor_names = set()
+            for name in actor_names:
+                try:
+                    ray.get_actor(name, namespace=namespace)
+                    live_actor_names.add(name)
+                except ValueError:
+                    pass
+            if (
+                all(not table or table.get("state") == "REMOVED" for table in tables)
+                and not live_actor_names
+            ):
+                break
+            await asyncio.sleep(0.1)
+        else:
+            self.fail("Timed out while removing vLLM test actors or placement groups.")
 
 
 @parameterized_class(
@@ -733,6 +794,7 @@ class TestQwen35APIServerReasoning(VLLMTestBase):
         self.config.explorer.rollout_model.enable_openai_api = True
         self.config.explorer.rollout_model.enable_auto_tool_choice = True
         self.config.explorer.rollout_model.tool_call_parser = "qwen3_coder"
+        self.config.explorer.rollout_model.reasoning_parser = "qwen3"
         self.config.explorer.rollout_model.enable_history = True
 
         self.config.check_and_update()
@@ -796,6 +858,53 @@ class TestQwen35APIServerReasoning(VLLMTestBase):
         self.tokenizer = AutoTokenizer.from_pretrained(self.config.model.model_path)
         text = self.tokenizer.decode(exps[0].tokens.tolist())
         self.assertIn("Use `list_agents` tool to get the list of agents.", text)
+
+    async def test_thinking_token_budget_action_mask(self):
+        thinking_token_budget = 3
+        messages = [{"role": "user", "content": "Which is larger, 9.11 or 9.8? Explain."}]
+        task = Task(
+            raw_task={"messages": messages},
+            workflow_args={"thinking_token_budget": thinking_token_budget},
+            rollout_args=GenerationConfig(n=1, max_tokens=32, temperature=0.0),
+        )
+
+        exps = ThinkingBudgetWorkflow(task=task, model=self.model_wrapper).run()
+
+        self.assertEqual(len(exps), 1)
+        exp = exps[0]
+        response_token_ids = exp.tokens[exp.prompt_length :].tolist()
+        tokenizer = AutoTokenizer.from_pretrained(self.config.model.model_path)
+        reasoning_start_token_ids = tokenizer.encode("<think>", add_special_tokens=False)
+        reasoning_end_token_ids = tokenizer.encode("</think>", add_special_tokens=False)
+        self.assertGreater(len(reasoning_start_token_ids), 0)
+        self.assertGreater(len(reasoning_end_token_ids), 0)
+
+        def find_subsequence(token_ids, subsequence):
+            return next(
+                (
+                    index
+                    for index in range(len(token_ids) - len(subsequence) + 1)
+                    if token_ids[index : index + len(subsequence)] == subsequence
+                ),
+                -1,
+            )
+
+        reasoning_start = find_subsequence(response_token_ids, reasoning_start_token_ids)
+        reasoning_end_start = find_subsequence(response_token_ids, reasoning_end_token_ids)
+        self.assertGreaterEqual(reasoning_end_start, 0)
+        reasoning_content_start = (
+            reasoning_start + len(reasoning_start_token_ids) if reasoning_start >= 0 else 0
+        )
+        self.assertGreaterEqual(reasoning_end_start, reasoning_content_start)
+        self.assertLessEqual(
+            reasoning_end_start - reasoning_content_start,
+            thinking_token_budget,
+        )
+
+        reasoning_end_stop = reasoning_end_start + len(reasoning_end_token_ids)
+        self.assertTrue(torch.all(exp.action_mask[:reasoning_end_start]))
+        self.assertTrue(torch.all(~exp.action_mask[reasoning_end_start:reasoning_end_stop]))
+        self.assertTrue(torch.all(exp.action_mask[reasoning_end_stop:]))
 
 
 class TestQwen35APIServerMultiModal(VLLMTestBase):
