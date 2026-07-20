@@ -223,6 +223,13 @@ docker run -it \
 ```
 > This image has used `uv` to install all GPU-related dependencies of Trinity-RFT. The virtual environment will be automatically activated upon entering the container (you can also manually activate it via `source /opt/venv/bin/activate` if needed). You can use `uv pip install` to add extra packages as necessary.
 
+**Using the Installation Script (uv)**
+
+```bash
+bash scripts/install/install_trinity.sh
+source .venv/bin/activate
+```
+
 **Using Conda**
 
 ```bash
@@ -235,7 +242,7 @@ pip install -e ".[vllm,flash_attn]"
 # pip install -e ".[tinker]"
 
 # If you encounter issues when installing flash-attn, try:
-# pip install flash-attn==2.8.1 --no-build-isolation
+# pip install "flash-attn>=2.8.3" --no-build-isolation
 pip install -e ".[dev]"  # for development like linting and debugging
 ```
 
@@ -251,19 +258,30 @@ pip install -e ".[vllm,flash_attn]"
 # pip install -e ".[tinker]"
 
 # If you encounter issues when installing flash-attn, try:
-# pip install flash-attn==2.8.1 --no-build-isolation
+# pip install "flash-attn>=2.8.3" --no-build-isolation
 
 pip install -e ".[dev]"  # for development like linting and debugging
 ```
 
-**Using uv**
+**Using uv manually**
 
 ```bash
-uv sync --extra vllm --extra dev --extra flash_attn
+uv venv .venv
+
+uv pip install \
+  --python .venv/bin/python \
+  --overrides scripts/install/trinity-overrides.txt \
+  -e ".[vllm,dev]"
+
+.venv/bin/python scripts/install/install_flash_attn.py --uv
 
 # If you have no GPU, try to use Tinker instead:
-# uv sync --extra tinker --extra dev
+# uv pip install --python .venv/bin/python -e ".[tinker,dev]"
+
+source .venv/bin/activate
 ```
+
+If conflicts remain, add or adjust versions in `scripts/install/trinity-overrides.txt`.
 
 #### Via PyPI
 
@@ -271,14 +289,7 @@ If you just want to use the package without modifying the code:
 
 ```bash
 pip install trinity-rft
-pip install flash-attn==2.8.1
-```
-
-Or with `uv`:
-
-```bash
-uv pip install trinity-rft
-uv pip install flash-attn==2.8.1
+pip install "flash-attn>=2.8.3" --no-build-isolation
 ```
 
 > For training with **Megatron-LM**, please refer to [Megatron-LM Backend](https://agentscope-ai.github.io/Trinity-RFT/en/main/tutorial/example_megatron.html).
@@ -363,9 +374,10 @@ export WANDB_API_KEY=<your_api_key>
 wandb login
 ```
 
-For command-line users, run the RFT process:
+For command-line users, activate the environment and run the RFT process:
 
 ```shell
+source .venv/bin/activate  # If using venv or uv
 trinity run --config <config_path>
 ```
 

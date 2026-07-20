@@ -71,7 +71,7 @@ File ".../flash_attn/flash_attn_interface.py", line 15, in ‹module>
 ImportError: ...
 ```
 
-**A:** The `flash-attn` module is not properly installed. Try to fix it by running `pip install flash-attn==2.8.1` or `pip install flash-attn==2.8.1 -v --no-build-isolation`.
+**A:** The `flash-attn` module is not properly installed. Try to fix it by running `pip install "flash-attn>=2.8.3"` or `pip install "flash-attn>=2.8.3" -v --no-build-isolation`.
 
 ---
 

@@ -245,6 +245,13 @@ docker run -it \
 
 > 该镜像已经通过 `uv` 安装了 Trinity-RFT 以及所有 GPU 相关依赖，且会自动激活虚拟环境（也可通过 `source /opt/venv/bin/activate` 手动激活）。必要时可使用 `uv pip install` 添加额外的包。
 
+**使用安装脚本（uv）**
+
+```bash
+bash scripts/install/install_trinity.sh
+source .venv/bin/activate
+```
+
 **使用 Conda**
 
 ```bash
@@ -257,7 +264,7 @@ pip install -e ".[vllm,flash_attn]"
 # pip install -e ".[tinker]"
 
 # 如果安装 flash-attn 时遇到问题，可尝试：
-# pip install flash-attn==2.8.1 --no-build-isolation
+# pip install "flash-attn>=2.8.3" --no-build-isolation
 
 pip install -e ".[dev]"  # 用于调试和开发
 ```
@@ -274,21 +281,33 @@ pip install -e ".[vllm,flash_attn]"
 # pip install -e ".[tinker]"
 
 # 如果安装 flash-attn 时遇到问题，可尝试：
-# pip install flash-attn==2.8.1 --no-build-isolation
+# pip install "flash-attn>=2.8.3" --no-build-isolation
 
 pip install -e ".[dev]"  # 用于调试和开发
 ```
 
-**使用 uv**
+**手动使用 uv**
 
 [`uv`](https://github.com/astral-sh/uv) 是现代的 Python 包管理工具。
 
 ```bash
-uv sync --extra vllm --extra dev --extra flash_attn
+uv venv .venv
 
-# 如果没有GPU，可以改为使用Tinker：
-# uv sync --extra tinker --extra dev
+uv pip install \
+  --python .venv/bin/python \
+  --overrides scripts/install/trinity-overrides.txt \
+  -e ".[vllm,dev]"
+
+.venv/bin/python scripts/install/install_flash_attn.py --uv
+
+# 如果没有 GPU，可以改用 Tinker：
+# uv pip install --python .venv/bin/python -e ".[tinker,dev]"
+
+source .venv/bin/activate
 ```
+
+脚本会安装匹配当前环境的第三方 [flash-attn wheel](https://github.com/mjun0812/flash-attention-prebuild-wheels)。
+如果仍有依赖冲突，可在 `scripts/install/trinity-overrides.txt` 中新增或调整版本约束。
 
 #### 通过 PyPI 安装
 
@@ -296,14 +315,7 @@ uv sync --extra vllm --extra dev --extra flash_attn
 
 ```bash
 pip install trinity-rft
-pip install flash-attn==2.8.1
-```
-
-或使用 `uv`：
-
-```bash
-uv pip install trinity-rft
-uv pip install flash-attn==2.8.1
+pip install "flash-attn>=2.8.3" --no-build-isolation
 ```
 
 > 如需使用 **Megatron-LM** 进行训练，请参考 [Megatron-LM 支持](https://agentscope-ai.github.io/Trinity-RFT/zh/main/tutorial/example_megatron.html)
@@ -398,9 +410,10 @@ export WANDB_API_KEY=<your_api_key>
 wandb login
 ```
 
-对于命令行用户，运行 RFT 流程：
+对于命令行用户，先激活环境，再运行 RFT 流程：
 
 ```shell
+source .venv/bin/activate  # 使用 venv 或 uv 时
 trinity run --config <config_path>
 ```
 
