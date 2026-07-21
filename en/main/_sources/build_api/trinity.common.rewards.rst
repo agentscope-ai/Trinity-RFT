@@ -18,6 +18,7 @@ Submodules
    trinity.common.rewards.naive_dapo_score
    trinity.common.rewards.qwen25_eval
    trinity.common.rewards.reward_fn
+   trinity.common.rewards.rlcr_reward
    trinity.common.rewards.tool_reward
 
 Module contents
