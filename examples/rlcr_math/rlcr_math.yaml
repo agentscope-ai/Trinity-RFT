@@ -1,0 +1,69 @@
+project: Trinity-RFT-example
+name: rlcr-math
+checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
+model:
+  model_path: ${oc.env:TRINITY_MODEL_PATH,Qwen/Qwen2.5-7B-Instruct}
+  max_response_tokens: 3072
+  max_model_len: 4096
+algorithm:
+  algorithm_type: grpo
+  repeat_times: 8
+  optimizer:
+    lr: 5e-7
+cluster:
+  node_num: 1
+  gpu_per_node: 8
+buffer:
+  total_epochs: 1
+  batch_size: 96
+  explorer_input:
+    taskset:
+      name: rlcr-math
+      storage_type: file
+      path: open-r1/DAPO-Math-17k-Processed
+      subset_name: all
+      split: train
+      format:
+        prompt_key: prompt
+        response_key: solution
+        system_prompt: |-
+          Solve the math problem and finish with exactly this four-tag sequence:
+          <think>your reasoning</think><answer>your final answer</answer><analysis>check whether the final answer is correct</analysis><confidence>q</confidence>
+          Use the tags exactly as written and put nothing but whitespace after </confidence>.
+          Set q to a finite number from 0 to 1 representing the probability that your final answer is correct.
+      rollout_args:
+        temperature: 1.0
+        logprobs: 0
+      default_workflow_type: math_workflow
+      default_reward_fn_type: rlcr_reward
+      reward_fn_args:
+        weights:
+          format: 0.5
+          accuracy: 0.5
+          brier: 0.5
+          mean_confidence: 1.0e-5
+          confidence_one_or_zero: 1.0e-5
+  trainer_input:
+    experience_buffer:
+      name: rlcr_math_buffer
+      storage_type: queue
+explorer:
+  eval_interval: 10
+  runner_per_model: 8
+  rollout_model:
+    engine_num: 2
+    tensor_parallel_size: 1
+    enable_prefix_caching: false
+    enforce_eager: true
+    dtype: bfloat16
+    seed: 42
+synchronizer:
+  sync_method: nccl
+  sync_interval: 1
+  sync_timeout: 1200
+trainer:
+  save_interval: 100
+  grad_clip: 1.0
+  use_dynamic_bsz: true
+  max_token_len_per_gpu: 16384
+  ulysses_sequence_parallel_size: 1
