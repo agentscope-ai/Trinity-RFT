@@ -172,6 +172,9 @@ def _convert_completion_output_to_experience(
             logprobs=extract_logprobs(choice),
             prompt_length=len(output.prompt_token_ids),
             response_text=getattr(choice.message, "content", None),
+            truncate_status=(
+                "response_truncated" if getattr(choice, "finish_reason", None) == "length" else None
+            ),
             routed_experts=_extract_completion_routed_experts(
                 output,
                 choice,
@@ -184,7 +187,7 @@ def _convert_completion_output_to_experience(
     ]
 
 
-def _convert_stream_chunks_to_experience(chunks: Sequence[Any]) -> List[Experience]:
+def _convert_stream_chunks_to_experience(chunks: Sequence[Any]) -> List[Experience]:  # noqa
     prompt_token_ids: Optional[List[int]] = None
     by_choice: Dict[int, Dict[str, Any]] = {}
 
@@ -201,8 +204,13 @@ def _convert_stream_chunks_to_experience(chunks: Sequence[Any]) -> List[Experien
                     "token_ids": [],
                     "logprobs": [],
                     "response_text_parts": [],
+                    "finish_reason": None,
                 }
             data = by_choice[idx]
+
+            finish_reason = getattr(choice, "finish_reason", None)
+            if finish_reason is not None:
+                data["finish_reason"] = finish_reason
 
             token_ids = getattr(choice, "token_ids", None)
             if token_ids is not None:
@@ -240,6 +248,9 @@ def _convert_stream_chunks_to_experience(chunks: Sequence[Any]) -> List[Experien
                 logprobs=torch.tensor(data["logprobs"], dtype=torch.float32),
                 prompt_length=len(prompt_token_ids),
                 response_text=response_text,
+                truncate_status=(
+                    "response_truncated" if data["finish_reason"] == "length" else None
+                ),
             )
         )
     return exps
