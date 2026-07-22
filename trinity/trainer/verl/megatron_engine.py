@@ -20,6 +20,7 @@ import torch
 from verl.utils.memory_utils import aggressive_empty_cache
 
 from trinity.trainer.verl.checkpoint import CheckpointCoordinator
+from trinity.utils.device import get_device_name
 
 
 def megatron_save_state_dict(
@@ -115,7 +116,7 @@ def megatron_upload_state_dict(engine, synchronizer, global_step: int, logger):
         ray.get(synchronizer.set_model_state_dict.remote(state_dict, global_step))
 
     torch.distributed.barrier()
-    torch.cuda.empty_cache()
+    getattr(torch, get_device_name()).empty_cache()
     logger.info(f"[Megatron] state_dict uploaded to Synchronizer: step={global_step}")
 
 
@@ -134,4 +135,4 @@ def megatron_sync_weight_nccl(engine, model_update_group):
         torch.distributed.broadcast(param, src=0, group=model_update_group)
 
     if torch.distributed.get_rank() == 0:
-        torch.cuda.synchronize()
+        getattr(torch, get_device_name()).synchronize()

@@ -71,7 +71,10 @@ class Explorer:
         else:
             self.min_wait_num = None
         self.rollout_coordinator = None
-        self.use_nccl_sync = self.config.synchronizer.sync_method == SyncMethod.NCCL
+        self.use_nccl_sync = self.config.synchronizer.sync_method in (
+            SyncMethod.NCCL,
+            SyncMethod.HCCL,
+        )
         self.pending_eval_tasks = deque()
 
         # For checkpoint weights update
@@ -367,7 +370,7 @@ class Explorer:
         """
         while not self._async_watch_stopped:
             try:
-                if self.sync_method == SyncMethod.NCCL:
+                if self.sync_method in (SyncMethod.NCCL, SyncMethod.HCCL):
                     ready = await self.synchronizer.trainer_requires_weight_sync.remote()
                     if ready is None:
                         break  # trainer stopped
@@ -394,7 +397,10 @@ class Explorer:
             return False
         if (self.explore_step_num - self.sync_offset) % self.sync_interval == 0:
             await self.finish_current_steps()
-            if self.sync_style == SyncStyle.TRAINER_DRIVEN and self.sync_method == SyncMethod.NCCL:
+            if (
+                self.sync_style == SyncStyle.TRAINER_DRIVEN
+                and self.sync_method in (SyncMethod.NCCL, SyncMethod.HCCL)
+            ):
                 require_sync = bool(await self.synchronizer.trainer_requires_weight_sync.remote())
             else:
                 require_sync = True

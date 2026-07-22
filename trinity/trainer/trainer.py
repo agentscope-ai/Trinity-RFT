@@ -211,7 +211,10 @@ class Trainer:
             )
         else:  # explorer driven
             # for memory & checkpoint; TODO: apply to nccl sync
-            if self.last_sync_step == self.train_step_num and self.sync_method != SyncMethod.NCCL:
+            if (
+                self.last_sync_step == self.train_step_num
+                and self.sync_method not in (SyncMethod.NCCL, SyncMethod.HCCL)
+            ):
                 await self.synchronizer.notify_no_new_model_state_dict.remote()
                 return False
             return await self.synchronizer.explorer_requires_sync.remote()
@@ -227,20 +230,20 @@ class Trainer:
         if self.last_sync_time is not None:
             metrics["time/trainer_sync_interval"] = time.time() - self.last_sync_time
         with Timer(metrics, "time/sync_weight"):
-            if self.sync_method == SyncMethod.NCCL:
+            if self.sync_method in (SyncMethod.NCCL, SyncMethod.HCCL):
                 result = await self.synchronizer.ready_to_nccl_sync.remote(
                     "trainer", self.train_step_num
                 )
                 if result is None:
                     self.logger.warning(
-                        "NCCL weight sync skipped: Explorer has stopped or is unreachable."
+                        "Online weight sync skipped: Explorer has stopped or is unreachable."
                     )
                 else:
                     try:
                         self.engine.sync_weight_nccl()
                     except Exception:
                         self.logger.warning(
-                            "NCCL weight sync failed (Explorer may have exited);"
+                            "Online weight sync failed (Explorer may have exited);"
                             f" continuing with stale weights:\n{traceback.format_exc()}"
                         )
             elif self.train_step_num > 0:

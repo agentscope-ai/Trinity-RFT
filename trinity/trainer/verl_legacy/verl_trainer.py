@@ -30,6 +30,7 @@ from verl.trainer.ppo.ray_trainer import (
 from verl.utils import hf_processor, hf_tokenizer
 from verl.utils.checkpoint.checkpoint_manager import find_latest_ckpt_path
 from verl.utils.debug import marked_timer
+from verl.utils.device import auto_set_device
 from verl.utils.fs import copy_local_path_from_hdfs
 from verl.utils.metric import reduce_metrics
 from verl.workers.config import FSDPEngineConfig
@@ -196,6 +197,7 @@ class VerlPPOTrainerWrapper(RayPPOTrainer, TrainEngineWrapper):
         )
         train_config = global_config.trainer
         config = OmegaConf.structured(train_config.trainer_config)
+        auto_set_device(config)
         # download the checkpoint from hdfs
         local_path = copy_local_path_from_hdfs(config.actor_rollout_ref.model.path)
 
