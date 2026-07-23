@@ -50,7 +50,6 @@ from verl.utils.config import omega_conf_to_dataclass
 from verl.utils.device import (
     get_device_id,
     get_device_name,
-    get_nccl_backend,
     get_torch_device,
 )
 from verl.utils.flops_counter import FlopsCounter
@@ -100,6 +99,7 @@ from trinity.trainer.verl_legacy.utils import (
     rank0_iterator,
     save_rank0_safetensors,
 )
+from trinity.utils.device import get_collective_backend, get_device_capability
 from trinity.utils.distributed import WeightTransferEngine
 from trinity.utils.log import get_logger
 
@@ -134,7 +134,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
             rank = int(os.environ.get("RANK", 0))
             world_size = int(os.environ.get("WORLD_SIZE", 1))
             torch.distributed.init_process_group(
-                backend=f"cpu:gloo,{get_device_name()}:{get_nccl_backend()}",
+                backend=f"cpu:gloo,{get_device_name()}:{get_collective_backend()}",
                 rank=rank,
                 world_size=world_size,
                 timeout=datetime.timedelta(seconds=self.config.get("nccl_timeout", 600)),
@@ -410,7 +410,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
         if self.rank == 0:
             self.logger.info(f"Model config after override: {actor_model_config}")
 
-        major_capability, _ = torch.cuda.get_device_capability(0)
+        major_capability = get_device_capability()
         use_meta = (
             (
                 self.rank != 0
@@ -893,7 +893,7 @@ class ActorRolloutRefWorker(Worker, DistProfilerExtension):
                     raise RuntimeError("Weight sync group has not been initialized.")
                 self.logger.info("Starting NCCL weight sync broadcast.")
                 self.weight_transfer_engine.sync_weight(iterator=weight_iterator)
-                torch.cuda.synchronize()
+                getattr(torch, get_device_name()).synchronize()
                 self.logger.info("Finished NCCL weight sync broadcast.")
             else:
                 for _ in weight_iterator:
@@ -1264,7 +1264,7 @@ class CriticWorker(Worker, DistProfilerExtension):
 
         if not torch.distributed.is_initialized():
             torch.distributed.init_process_group(
-                backend=get_nccl_backend(),
+                backend=get_collective_backend(),
                 timeout=datetime.timedelta(seconds=self.config.get("nccl_timeout", 600)),
                 init_method=os.environ.get("DIST_INIT_METHOD", None),
             )

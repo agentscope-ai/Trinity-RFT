@@ -57,6 +57,7 @@ from verl.workers.utils.padding import no_padding_2_padding
 from trinity.algorithm import ADVANTAGE_FN, ALGORITHM_TYPE, KL_FN
 from trinity.algorithm.utils import prefix_metrics
 from trinity.common.config import Config
+from trinity.utils.device import get_device_name
 from trinity.common.constants import SaveStrategy
 from trinity.common.experience import Experience
 from trinity.trainer.trainer import TrainEngineWrapper
@@ -297,8 +298,8 @@ class VERLTrainer(TrainEngineWrapper):
 
         # Training steps config
         self.total_training_steps = global_config.trainer.total_steps or sys.maxsize
-        # we only support cuda for now
-        self.device_name = "cuda"
+        # Device-aware: 'npu' on Ascend NPU, 'cuda' on GPU.
+        self.device_name = get_device_name()
         checkpoint_monitor = CheckpointMonitor.get_actor(
             namespace=global_config.synchronizer.ray_namespace,
             save_strategy=global_config.trainer.save_strategy,

@@ -32,6 +32,7 @@ from trinity.common.config import AlgorithmConfig
 from trinity.manager.synchronizer import Synchronizer
 from trinity.trainer.verl.checkpoint import CheckpointCoordinator
 from trinity.trainer.verl.losses import build_trinity_loss
+from trinity.utils.device import get_device_name
 from trinity.utils.distributed import WeightTransferEngine
 from trinity.utils.log import get_logger
 from trinity.utils.stream_saver import save_safetensors_streaming
@@ -178,7 +179,7 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
 
         try:
             if fsdp_version(model) > 0:
-                model = model.to(torch.cuda.current_device())
+                model = model.to(getattr(torch, get_device_name()).current_device())
                 lora_params = layered_summon_lora_params(model)
                 if rank == 0:
                     save_file(
@@ -350,7 +351,7 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
             self.weight_transfer_engine.sync_weight(
                 iterator=weight_iterator,
             )
-            torch.cuda.synchronize()
+            getattr(torch, get_device_name()).synchronize()
             self.logger.info("Finished NCCL weight sync broadcast.")
         else:
             for _ in weight_iterator:

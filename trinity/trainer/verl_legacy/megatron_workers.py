@@ -47,7 +47,6 @@ from verl.utils.config import omega_conf_to_dataclass
 from verl.utils.device import (
     get_device_id,
     get_device_name,
-    get_nccl_backend,
     get_torch_device,
     set_expandable_segments,
 )
@@ -95,6 +94,7 @@ from trinity.trainer.verl_legacy.utils import (
     rank0_iterator,
     save_rank0_safetensors,
 )
+from trinity.utils.device import get_collective_backend
 from trinity.utils.distributed import WeightTransferEngine
 from trinity.utils.log import get_logger
 
@@ -329,7 +329,7 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
             set_numa_affinity()
             rank = int(os.environ["LOCAL_RANK"])
             torch.distributed.init_process_group(
-                backend=f"cpu:gloo,{get_device_name()}:{get_nccl_backend()}",
+                backend=f"cpu:gloo,{get_device_name()}:{get_collective_backend()}",
                 timeout=datetime.timedelta(seconds=self.config.get("nccl_timeout", 600)),
                 init_method=os.environ.get("DIST_INIT_METHOD", None),
             )
@@ -825,7 +825,7 @@ class ActorRolloutRefWorker(MegatronWorker, DistProfilerExtension):
                 raise RuntimeError("Weight sync group has not been initialized.")
             self.logger.info("Starting NCCL weight sync broadcast.")
             self.weight_transfer_engine.sync_weight(iterator=weight_iterator)
-            torch.cuda.synchronize()
+            getattr(torch, get_device_name()).synchronize()
             self.logger.info("Finished NCCL weight sync broadcast.")
         else:
             for _ in weight_iterator:
@@ -1147,7 +1147,7 @@ class CriticWorker(MegatronWorker, DistProfilerExtension):
             set_numa_affinity()
             rank = int(os.environ["LOCAL_RANK"])
             torch.distributed.init_process_group(
-                backend=get_nccl_backend(),
+                backend=get_collective_backend(),
                 timeout=datetime.timedelta(seconds=self.config.get("nccl_timeout", 600)),
                 init_method=os.environ.get("DIST_INIT_METHOD", None),
             )

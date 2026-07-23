@@ -19,6 +19,8 @@ from trinity.common.models.mm_utils import (
 )
 from trinity.common.models.model import BaseInferenceModel
 from trinity.common.models.vllm_patch import get_vllm_version
+from trinity.common.models.vllm_worker import get_trinity_worker_cls_name
+from trinity.utils.device import get_collective_backend
 
 
 # V0 engine is deprecated since vLLM v0.10.2, related code will be removed in the future.
@@ -126,7 +128,7 @@ class vLLMRolloutModel(BaseInferenceModel):
                 return
 
             weight_transfer_config = WeightTransferConfig(
-                backend="nccl" if self.config.sync_method == SyncMethod.NCCL else "checkpoint"
+                backend=get_collective_backend() if self.config.sync_method in (SyncMethod.NCCL, SyncMethod.HCCL) else "checkpoint"
             )
 
             rope_params = defaultdict(dict)
@@ -142,7 +144,7 @@ class vLLMRolloutModel(BaseInferenceModel):
             engine_args = vllm.AsyncEngineArgs(
                 model=self.config.model_path,
                 enforce_eager=self.config.enforce_eager,
-                worker_cls="trinity.common.models.vllm_worker.TrinityGPUWorker",
+                worker_cls=get_trinity_worker_cls_name(),
                 tensor_parallel_size=self.config.tensor_parallel_size,
                 pipeline_parallel_size=self.config.pipeline_parallel_size,
                 data_parallel_size=self.config.data_parallel_size,
@@ -589,7 +591,7 @@ class vLLMRolloutModel(BaseInferenceModel):
 
         await self.async_llm.start_weight_update(is_checkpoint_format=True)
         update_info = {}
-        if method == SyncMethod.NCCL:
+        if method in (SyncMethod.NCCL, SyncMethod.HCCL):
             update_info = dict(
                 names=[meta[0] for meta in self.state_dict_meta],
                 dtype_names=[meta[1] for meta in self.state_dict_meta],
@@ -614,11 +616,13 @@ class vLLMRolloutModel(BaseInferenceModel):
         rank_offset: int,
         world_size: int,
         group_name: str,
-        backend: str = "nccl",
+        backend: Optional[str] = None,
         timeout: float = 1200,
     ):
         from vllm.distributed.weight_transfer.base import WeightTransferInitRequest
 
+        if backend is None:
+            backend = get_collective_backend()
         if self.config.node_rank != 0:
             self.logger.warning(
                 "init_process_group should only be called on the main node (node_rank=0). "
@@ -638,7 +642,7 @@ class vLLMRolloutModel(BaseInferenceModel):
             rank_offset=rank_offset,
             world_size=world_size,
         )
-        if self.config.sync_method != SyncMethod.NCCL:
+        if self.config.sync_method not in (SyncMethod.NCCL, SyncMethod.HCCL):
             init_info["namespace"] = self.ray_namespace
             init_info["sync_method"] = self.config.sync_method.value
         await self.async_llm.init_weight_transfer_engine(
