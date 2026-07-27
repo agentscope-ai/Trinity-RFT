@@ -17,6 +17,7 @@ from ray.util.scheduling_strategies import PlacementGroupSchedulingStrategy
 
 from trinity.common.config import ExplorerConfig, InferenceModelConfig
 from trinity.common.models.model import ModelWrapper
+from trinity.utils.device import get_ray_resource_key, is_npu
 from trinity.utils.log import get_logger
 
 
@@ -61,7 +62,7 @@ class Allocator:
             gpus_per_bundle = config.gpu_per_engine // config.nnodes
             for engine_id in range(config.engine_num):
                 for node_id in range(config.nnodes):
-                    bundles.append({"GPU": float(gpus_per_bundle), "CPU": 1})
+                    bundles.append({get_ray_resource_key(): float(gpus_per_bundle), "CPU": 1})
                     actor_name = self.get_actor_name(role, engine_id, node_id)
                     actor_bundle_map[actor_name] = bundle_id
                     bundle_actor_map[bundle_id] = actor_name
@@ -240,20 +241,36 @@ async def get_model_wrapper(
         engine_config = deepcopy(config)
         engine_config.ray_actor_name = actor_name
         engine_config.node_rank = i
-        handlers.append(
-            ray.remote(actor_cls)
-            .options(
-                name=actor_name,
-                num_gpus=engine_config.gpu_per_engine / engine_config.nnodes,
-                namespace=engine_config.ray_namespace,
-                scheduling_strategy=PlacementGroupSchedulingStrategy(
-                    placement_group=pg,
-                    placement_group_capture_child_tasks=True,
-                    placement_group_bundle_index=bundle_id,
-                ),
+        if is_npu():
+            handlers.append(
+                ray.remote(actor_cls)
+                .options(
+                    name=actor_name,
+                    resources={"NPU": engine_config.gpu_per_engine / engine_config.nnodes},
+                    namespace=engine_config.ray_namespace,
+                    scheduling_strategy=PlacementGroupSchedulingStrategy(
+                        placement_group=pg,
+                        placement_group_capture_child_tasks=True,
+                        placement_group_bundle_index=bundle_id,
+                    ),
+                )
+                .remote(config=engine_config)
             )
-            .remote(config=engine_config)
-        )
+        else:
+            handlers.append(
+                ray.remote(actor_cls)
+                .options(
+                    name=actor_name,
+                    num_gpus=engine_config.gpu_per_engine / engine_config.nnodes,
+                    namespace=engine_config.ray_namespace,
+                    scheduling_strategy=PlacementGroupSchedulingStrategy(
+                        placement_group=pg,
+                        placement_group_capture_child_tasks=True,
+                        placement_group_bundle_index=bundle_id,
+                    ),
+                )
+                .remote(config=engine_config)
+            )
     if len(actor_bundle_list) > 1:
         # get master address and port from the first handler and set it to all handlers for distributed communication
         master_addr, master_port = await handlers[0].get_available_address.remote(random_port=True)

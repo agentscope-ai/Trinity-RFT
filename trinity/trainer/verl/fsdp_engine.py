@@ -25,7 +25,7 @@ from torch.distributed.fsdp import (
     ShardedStateDictConfig,
     StateDictType,
 )
-from verl.utils.device import is_cuda_available
+from verl.utils.device import get_device_name, is_cuda_available
 from verl.utils.fs import local_mkdir_safe
 from verl.utils.fsdp_utils import get_fsdp_full_state_dict, get_fsdp_state_ctx
 
@@ -187,4 +187,4 @@ def fsdp_sync_weight_nccl(engine, model_update_group):
                 torch.distributed.broadcast(full_param, 0, group=model_update_group)
 
     if torch.distributed.get_rank() == 0:
-        torch.cuda.synchronize()
+        getattr(torch, get_device_name()).synchronize()

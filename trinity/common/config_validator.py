@@ -17,6 +17,7 @@ from trinity.common.config import (
 from trinity.common.constants import StorageType, SyncMethod, SyncStyle
 from trinity.common.dataclass_utils import build_dataclass_from_mapping
 from trinity.common.patch import kimi_vl_monkey_patch_decorator
+from trinity.utils.device import get_ray_resource_key
 from trinity.utils.log import get_logger
 from trinity.utils.lora_utils import create_dummy_lora
 
@@ -192,8 +193,9 @@ class RayClusterConfigValidator(ConfigValidator):
         # set gpu_per_node
         if not config.cluster.gpu_per_node:
             gpu_per_node = 0
+            resource_key = get_ray_resource_key()
             for node in alive_nodes:
-                node_gpus = node.get("Resources", {}).get("GPU")
+                node_gpus = node.get("Resources", {}).get(resource_key)
                 if node_gpus and node_gpus > 0:
                     gpu_per_node = int(node_gpus)
                     break
@@ -548,10 +550,10 @@ class ModelConfigValidator(ConfigValidator):
             config.trainer.trainer_type = "tinker"
             self.logger.warning("Trainer type is set to `tinker`.")
 
-        if config.synchronizer.sync_method == SyncMethod.NCCL:
+        if config.synchronizer.sync_method in (SyncMethod.NCCL, SyncMethod.HCCL):
             config.synchronizer.sync_method = SyncMethod.CHECKPOINT
             self.logger.warning(
-                "Tinker do not support NCCL, `synchronizer.sync_method` is set to `checkpoint`."
+                "Tinker does not support NCCL/HCCL, `synchronizer.sync_method` is set to `checkpoint`."
             )
 
     def _check_model_len(self, config: Config) -> None:
@@ -841,23 +843,23 @@ class SynchronizerConfigValidator(ConfigValidator):
         """
         config.synchronizer.ray_namespace = config.ray_namespace
         config.synchronizer.explorer_world_size = config.cluster.rollout_gpu_num
-        if config.synchronizer.sync_method == SyncMethod.NCCL:
+        if config.synchronizer.sync_method in (SyncMethod.NCCL, SyncMethod.HCCL):
             if config.mode in ["train", "explore", "bench", "serve"]:
                 config.synchronizer.sync_method = SyncMethod.CHECKPOINT
                 self.logger.warning(
-                    f"`{config.mode}` mode does not support NCCL synchronization, "
+                    f"`{config.mode}` mode does not support NCCL/HCCL synchronization, "
                     "set `synchronizer.sync_method` to `checkpoint`."
                 )
             if config.model.lora_configs is not None:
                 config.synchronizer.sync_method = SyncMethod.CHECKPOINT
                 self.logger.warning(
-                    "LoRA is not supported with NCCL synchronization, "
+                    "LoRA is not supported with NCCL/HCCL synchronization, "
                     "set `synchronizer.sync_method` to `checkpoint`."
                 )
             if config.mode == "colocate":
                 config.synchronizer.sync_method = SyncMethod.MEMORY
                 self.logger.warning(
-                    "Colocate mode can't use NCCL synchronization. "
+                    "Colocate mode can't use NCCL/HCCL synchronization. "
                     "Set `synchronizer.sync_method` to `memory` instead."
                 )
 

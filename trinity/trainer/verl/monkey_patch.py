@@ -20,6 +20,7 @@ from verl.workers.engine.fsdp.transformer_impl import (
 from verl.workers.utils.padding import build_attention_mask_from_nested
 
 from trinity.trainer.verl_legacy.monkey_patch import apply_monkey_patch
+from trinity.utils.device import get_device_capability
 
 AutoModelForVision2Seq = get_auto_model_for_vision2seq()
 
@@ -108,7 +109,7 @@ def _build_module(self):
 
     torch_dtype = PrecisionType.to_dtype(torch_dtype)
 
-    major_capability, _ = torch.cuda.get_device_capability(0)
+    major_capability = get_device_capability()
     use_meta = (
         (self.rank != 0 if self.device_mesh is None else self.device_mesh.get_coordinate()[-1] != 0)
         if self.engine_config.strategy == "fsdp2" and major_capability >= 9

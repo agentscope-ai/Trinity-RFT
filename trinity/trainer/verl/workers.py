@@ -21,6 +21,7 @@ from typing import Optional
 import torch
 from omegaconf import DictConfig
 from verl.single_controller.base.decorator import Dispatch, register
+from verl.utils.device import get_device_name
 from verl.utils.memory_utils import aggressive_empty_cache
 from verl.workers.engine_workers import (
     ActorRolloutRefWorker,
@@ -178,7 +179,7 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
 
         try:
             if fsdp_version(model) > 0:
-                model = model.to(torch.cuda.current_device())
+                model = model.to(getattr(torch, get_device_name()).current_device())
                 lora_params = layered_summon_lora_params(model)
                 if rank == 0:
                     save_file(
@@ -350,7 +351,7 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
             self.weight_transfer_engine.sync_weight(
                 iterator=weight_iterator,
             )
-            torch.cuda.synchronize()
+            getattr(torch, get_device_name()).synchronize()
             self.logger.info("Finished NCCL weight sync broadcast.")
         else:
             for _ in weight_iterator:

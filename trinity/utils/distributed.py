@@ -61,11 +61,6 @@ def init_process_group(
     """
     This function is used to initialize the process group. It requires torch >= 2.6.0
     """
-    assert backend == "nccl", "Only nccl backend is supported for now."
-
-    from torch.distributed.distributed_c10d import is_nccl_available
-
-    assert is_nccl_available()
 
     init_method = (
         f"tcp://[{host}]:{port}" if is_ipv6_address(ip_str=host) else f"tcp://{host}:{port}"
@@ -134,37 +129,72 @@ class WeightTransferEngine:
 
 
 class VLLMWeightTransferEngine(WeightTransferEngine):
-    """A helper class to manage NCCL weight synchronization using vLLM's API."""
+    """A helper class to manage weight synchronization using vLLM's API.
+
+    Device-aware: uses HCCL engine on NPU and NCCL engine on GPU. Both engines
+    expose the same ``trainer_init`` / ``trainer_send_weights`` API surface, so
+    the only difference is the engine class and args dataclass used.
+    """
 
     def __init__(self, master_address: str, master_port: int, world_size: int, group_name: str):
-        """Initialize the NCCL process group for weight sync with vLLM's API."""
-        from vllm.distributed.weight_transfer.nccl_engine import (
-            NCCLWeightTransferEngine,
-        )
+        """Initialize the process group for weight sync with vLLM's API."""
+        from trinity.utils.device import is_npu
 
-        del group_name  # vLLM's NCCL engine does not require a group name
-        self._model_update_group = NCCLWeightTransferEngine.trainer_init(
-            dict(
-                master_address=master_address,
-                master_port=master_port,
-                world_size=world_size,
+        del group_name  # vLLM's weight transfer engines do not require a group name
+        self._is_npu = is_npu()
+        if self._is_npu:
+            from vllm_ascend.distributed.weight_transfer.hccl_engine import (
+                HCCLWeightTransferEngine,
             )
-        )
+
+            self._engine_cls = HCCLWeightTransferEngine
+            self._model_update_group = HCCLWeightTransferEngine.trainer_init(
+                dict(
+                    master_address=master_address,
+                    master_port=master_port,
+                    world_size=world_size,
+                )
+            )
+        else:
+            from vllm.distributed.weight_transfer.nccl_engine import (
+                NCCLWeightTransferEngine,
+            )
+
+            self._engine_cls = NCCLWeightTransferEngine
+            self._model_update_group = NCCLWeightTransferEngine.trainer_init(
+                dict(
+                    master_address=master_address,
+                    master_port=master_port,
+                    world_size=world_size,
+                )
+            )
 
     def sync_weight(self, iterator):
-        """Perform the NCCL weight sync using vLLM's API."""
-        from vllm.distributed.weight_transfer.nccl_engine import (
-            NCCLTrainerSendWeightsArgs,
-            NCCLWeightTransferEngine,
-        )
+        """Perform the weight sync using vLLM's API (HCCL on NPU, NCCL on GPU)."""
+        if self._is_npu:
+            from vllm_ascend.distributed.weight_transfer.hccl_engine import (
+                HCCLTrainerSendWeightsArgs,
+            )
 
-        NCCLWeightTransferEngine.trainer_send_weights(
-            iterator=iterator,
-            trainer_args=NCCLTrainerSendWeightsArgs(
-                group=self._model_update_group,
-                packed=True,
-            ),
-        )
+            self._engine_cls.trainer_send_weights(
+                iterator=iterator,
+                trainer_args=HCCLTrainerSendWeightsArgs(
+                    group=self._model_update_group,
+                    packed=True,
+                ),
+            )
+        else:
+            from vllm.distributed.weight_transfer.nccl_engine import (
+                NCCLTrainerSendWeightsArgs,
+            )
+
+            self._engine_cls.trainer_send_weights(
+                iterator=iterator,
+                trainer_args=NCCLTrainerSendWeightsArgs(
+                    group=self._model_update_group,
+                    packed=True,
+                ),
+            )
 
     def teardown(self):
         self._model_update_group.destroy()

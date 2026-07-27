@@ -167,6 +167,7 @@ class Actor:
     ulysses_sequence_parallel_size: Optional[int] = None
     entropy_from_logits_with_chunking: bool = False
     entropy_checkpointing: bool = False
+    use_torch_compile: Optional[bool] = None  # None = inherit from trainer.use_torch_compile
     checkpoint: _CheckpointConfig = field(default_factory=_CheckpointConfig)
     optim: Optim = field(default_factory=Optim)
     fsdp_config: FSDPConfig = field(default_factory=FSDPConfig)
@@ -200,6 +201,7 @@ class Ref:
     ulysses_sequence_parallel_size: Optional[int] = None
     entropy_from_logits_with_chunking: bool = False
     entropy_checkpointing: bool = False
+    use_torch_compile: Optional[bool] = None  # None = inherit from trainer.use_torch_compile
     checkpoint: _CheckpointConfig = field(
         default_factory=lambda: _CheckpointConfig(load_contents=["model"], save_contents=["model"])
     )
@@ -550,6 +552,7 @@ class veRLConfig:
             ("ulysses_sequence_parallel_size",) * 2,
             ("ppo_max_token_len_per_gpu", "max_token_len_per_gpu"),
             ("strategy", "trainer_strategy"),
+            ("use_torch_compile",) * 2,
         ]:
             set_if_none(actor_config, actor_attr, getattr(config.trainer, trainer_attr))
         self._check_parallel_config(
@@ -573,6 +576,7 @@ class veRLConfig:
             ("log_prob_max_token_len_per_gpu", "max_token_len_per_gpu"),
             ("ulysses_sequence_parallel_size",) * 2,
             ("strategy", "trainer_strategy"),
+            ("use_torch_compile",) * 2,
         ]:
             set_if_none(ref_config, ref_attr, getattr(config.trainer, trainer_attr))
         self._check_parallel_config(

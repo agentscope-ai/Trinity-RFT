@@ -79,6 +79,7 @@ class SyncMethodEnumMeta(CaseInsensitiveEnumMeta):
 class SyncMethod(CaseInsensitiveEnum, metaclass=SyncMethodEnumMeta):
     """Sync Method."""
 
+    HCCL = "hccl"
     NCCL = "nccl"
     CHECKPOINT = "checkpoint"
     MEMORY = "memory"

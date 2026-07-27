@@ -250,7 +250,7 @@ def both(config: Config) -> StageStatus:
         # This must happen after both sides are prepared (Trainer has model
         # meta cached, Explorer has rollout models created) and before the
         # first weight sync.
-        if config.synchronizer.sync_method == SyncMethod.NCCL:
+        if config.synchronizer.sync_method in (SyncMethod.NCCL, SyncMethod.HCCL):
             synchronizer = Synchronizer.get_actor(namespace=config.ray_namespace)
             ray.get(synchronizer.coordinate_weight_sync_setup.remote())
         ray.get(
@@ -303,7 +303,7 @@ def both(config: Config) -> StageStatus:
     finally:
         # Tear down the NCCL weight sync group before shutting down actors.
         # Best-effort: if actors or Synchronizer are already dead, skip.
-        if config.synchronizer.sync_method == SyncMethod.NCCL:
+        if config.synchronizer.sync_method in (SyncMethod.NCCL, SyncMethod.HCCL):
             try:
                 synchronizer = Synchronizer.get_actor(namespace=config.ray_namespace)
                 ray.get(synchronizer.coordinate_weight_sync_teardown.remote(), timeout=30)

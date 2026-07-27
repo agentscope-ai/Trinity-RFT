@@ -68,6 +68,7 @@ from trinity.trainer.verl.workers import (
     TrinityActorRolloutRefWorker,
     TrinityCriticWorker,
 )
+from trinity.utils.device import is_npu
 from trinity.utils.log import get_logger
 
 
@@ -297,8 +298,8 @@ class VERLTrainer(TrainEngineWrapper):
 
         # Training steps config
         self.total_training_steps = global_config.trainer.total_steps or sys.maxsize
-        # we only support cuda for now
-        self.device_name = "cuda"
+        # Device-aware: 'npu' on Ascend NPU, 'cuda' on GPU.
+        self.device_name = "npu" if is_npu() else "cuda"
         checkpoint_monitor = CheckpointMonitor.get_actor(
             namespace=global_config.synchronizer.ray_namespace,
             save_strategy=global_config.trainer.save_strategy,

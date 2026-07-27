@@ -25,6 +25,7 @@ from trinity.common.constants import (
     SyncStyle,
 )
 from trinity.utils.annotations import Experimental
+from trinity.utils.device import is_npu
 from trinity.utils.log import get_logger
 
 logger = get_logger(__name__)
@@ -829,6 +830,7 @@ class TrainerConfig:
     max_token_len_per_gpu: Optional[int] = None
     ulysses_sequence_parallel_size: int = 1  # sp size
     fix_actor_microbatch_loss_scale: bool = False  # EXPERIMENTAL
+    use_torch_compile: bool = True  # whether to use torch.compile in actor/ref; set to false on NPU
 
     # offloading
     param_offload: bool = False
@@ -867,7 +869,9 @@ class MonitorConfig:
 class SynchronizerConfig:
     """Configs for model weight synchronization."""
 
-    sync_method: SyncMethod = SyncMethod.NCCL
+    sync_method: SyncMethod = field(
+        default_factory=lambda: SyncMethod.HCCL if is_npu() else SyncMethod.NCCL
+    )
     sync_style: SyncStyle = SyncStyle.FIXED
     # sync weights every `sync_interval` steps
     sync_interval: int = 1
