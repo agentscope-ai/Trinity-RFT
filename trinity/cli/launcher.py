@@ -1,4 +1,5 @@
 """Launch the trainer"""
+import contextlib
 import os
 import time
 import traceback
@@ -234,86 +235,92 @@ def both(config: Config) -> StageStatus:
     from trinity.explorer.explorer import Explorer
     from trinity.manager.synchronizer import Synchronizer
     from trinity.trainer.trainer import Trainer
+    from trinity.utils.monitor import SharedRun
 
-    explorer = Explorer.get_actor(config)
-    trainer = Trainer.get_actor(config)
-    started_at = time.perf_counter()
-    try:
-        ray.get([explorer.__ray_ready__.remote(), trainer.__ray_ready__.remote()])
-        ray.get(
-            [
-                explorer.prepare.remote(),
-                trainer.prepare.remote(),
-            ]
-        )
-        # Set up NCCL weight sync group between Trainer and Explorer.
-        # This must happen after both sides are prepared (Trainer has model
-        # meta cached, Explorer has rollout models created) and before the
-        # first weight sync.
-        if config.synchronizer.sync_method == SyncMethod.NCCL:
-            synchronizer = Synchronizer.get_actor(namespace=config.ray_namespace)
-            ray.get(synchronizer.coordinate_weight_sync_setup.remote())
-        ray.get(
-            [
-                explorer.sync_weight.remote(),
-                trainer.sync_weight.remote(),
-            ]
-        )
-        ready_ref, wait_ref = ray.wait(
-            [
-                explorer.explore.remote(),
-                trainer.train.remote(),
-            ],
-            num_returns=1,
-        )
-
-        ready = ray.get(ready_ref[0])
-        if ready == config.trainer.name:
-            logger.info(
-                "===========================================================\n"
-                "> Launcher detected that the `Trainer` process has finished.\n"
-                "> Stopping the explorer process immediately.\n"
-                "==========================================================="
+    # A shared run (one backend run shared by explorer + trainer) is opt-in. When enabled,
+    # the orchestration runs inside SharedRun, which creates the shared run on entry and
+    # tears it down on exit; when disabled, it runs unwrapped — same behavior as before.
+    shared_run_ctx = SharedRun(config) if config.monitor.shared_run else contextlib.nullcontext()
+    with shared_run_ctx:
+        explorer = Explorer.get_actor(config)
+        trainer = Trainer.get_actor(config)
+        started_at = time.perf_counter()
+        try:
+            ray.get([explorer.__ray_ready__.remote(), trainer.__ray_ready__.remote()])
+            ray.get(
+                [
+                    explorer.prepare.remote(),
+                    trainer.prepare.remote(),
+                ]
             )
-            ray.wait(wait_ref, timeout=5)
-        elif ready == config.explorer.name:
-            logger.info(
-                "===============================================================\n"
-                "> Launcher detected that the `Explorer` process has finished.\n"
-                "> `Trainer` process may need to save the model checkpoint.\n"
-                f"> Waiting {config.synchronizer.sync_timeout} s for the trainer process...\n"
-                "> You can force stop the `Trainer` process by pressing Ctrl+C.\n"
-                "==============================================================="
-            )
-            ray.wait(wait_ref, timeout=config.synchronizer.sync_timeout)
-        return StageStatus(
-            stage="both",
-            success=True,
-            total_time_sec=time.perf_counter() - started_at,
-        )
-    except Exception as exc:
-        error = _build_stage_error(exc)
-        logger.error(f"Explorer or Trainer failed:\n{error.traceback_text}")
-        return StageStatus(
-            stage="both",
-            success=False,
-            total_time_sec=time.perf_counter() - started_at,
-            error=error,
-        )
-    finally:
-        # Tear down the NCCL weight sync group before shutting down actors.
-        # Best-effort: if actors or Synchronizer are already dead, skip.
-        if config.synchronizer.sync_method == SyncMethod.NCCL:
-            try:
+            # Set up NCCL weight sync group between Trainer and Explorer.
+            # This must happen after both sides are prepared (Trainer has model
+            # meta cached, Explorer has rollout models created) and before the
+            # first weight sync.
+            if config.synchronizer.sync_method == SyncMethod.NCCL:
                 synchronizer = Synchronizer.get_actor(namespace=config.ray_namespace)
-                ray.get(synchronizer.coordinate_weight_sync_teardown.remote(), timeout=30)
-            except Exception:
-                logger.warning("Weight sync teardown skipped (actors may have already exited).")
-        ray.wait(
-            [explorer.shutdown.remote(), trainer.shutdown.remote()],
-            timeout=config.synchronizer.sync_timeout,
-            num_returns=2,
-        )
+                ray.get(synchronizer.coordinate_weight_sync_setup.remote())
+            ray.get(
+                [
+                    explorer.sync_weight.remote(),
+                    trainer.sync_weight.remote(),
+                ]
+            )
+            ready_ref, wait_ref = ray.wait(
+                [
+                    explorer.explore.remote(),
+                    trainer.train.remote(),
+                ],
+                num_returns=1,
+            )
+
+            ready = ray.get(ready_ref[0])
+            if ready == config.trainer.name:
+                logger.info(
+                    "===========================================================\n"
+                    "> Launcher detected that the `Trainer` process has finished.\n"
+                    "> Stopping the explorer process immediately.\n"
+                    "==========================================================="
+                )
+                ray.wait(wait_ref, timeout=5)
+            elif ready == config.explorer.name:
+                logger.info(
+                    "===============================================================\n"
+                    "> Launcher detected that the `Explorer` process has finished.\n"
+                    "> `Trainer` process may need to save the model checkpoint.\n"
+                    f"> Waiting {config.synchronizer.sync_timeout} s for the trainer process...\n"
+                    "> You can force stop the `Trainer` process by pressing Ctrl+C.\n"
+                    "==============================================================="
+                )
+                ray.wait(wait_ref, timeout=config.synchronizer.sync_timeout)
+            return StageStatus(
+                stage="both",
+                success=True,
+                total_time_sec=time.perf_counter() - started_at,
+            )
+        except Exception as exc:
+            error = _build_stage_error(exc)
+            logger.error(f"Explorer or Trainer failed:\n{error.traceback_text}")
+            return StageStatus(
+                stage="both",
+                success=False,
+                total_time_sec=time.perf_counter() - started_at,
+                error=error,
+            )
+        finally:
+            # Tear down the NCCL weight sync group before shutting down actors.
+            # Best-effort: if actors or Synchronizer are already dead, skip.
+            if config.synchronizer.sync_method == SyncMethod.NCCL:
+                try:
+                    synchronizer = Synchronizer.get_actor(namespace=config.ray_namespace)
+                    ray.get(synchronizer.coordinate_weight_sync_teardown.remote(), timeout=30)
+                except Exception:
+                    logger.warning("Weight sync teardown skipped (actors may have already exited).")
+            ray.wait(
+                [explorer.shutdown.remote(), trainer.shutdown.remote()],
+                timeout=config.synchronizer.sync_timeout,
+                num_returns=2,
+            )
 
 
 MODE_MAP = {
