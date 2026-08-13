@@ -1012,6 +1012,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">SyncStyle</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.annotations</span><span class="w"> </span><span class="kn">import</span> <span class="n">Experimental</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.device</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_npu</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
@@ -1905,6 +1906,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">max_token_len_per_gpu</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">ulysses_sequence_parallel_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>  <span class="c1"># sp size</span>
     <span class="n">fix_actor_microbatch_loss_scale</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># EXPERIMENTAL</span>
+    <span class="n">use_torch_compile</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># whether to use torch.compile in actor/ref; set to false on NPU</span>
 
     <span class="c1"># offloading</span>
     <span class="n">param_offload</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
@@ -1949,7 +1951,9 @@ window.runMermaid = runMermaid;</script>
 <span class="k">class</span><span class="w"> </span><span class="nc">SynchronizerConfig</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Configs for model weight synchronization.&quot;&quot;&quot;</span>
 
-    <span class="n">sync_method</span><span class="p">:</span> <span class="n">SyncMethod</span> <span class="o">=</span> <span class="n">SyncMethod</span><span class="o">.</span><span class="n">NCCL</span>
+    <span class="n">sync_method</span><span class="p">:</span> <span class="n">SyncMethod</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
+        <span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">SyncMethod</span><span class="o">.</span><span class="n">HCCL</span> <span class="k">if</span> <span class="n">is_npu</span><span class="p">()</span> <span class="k">else</span> <span class="n">SyncMethod</span><span class="o">.</span><span class="n">NCCL</span>
+    <span class="p">)</span>
     <span class="n">sync_style</span><span class="p">:</span> <span class="n">SyncStyle</span> <span class="o">=</span> <span class="n">SyncStyle</span><span class="o">.</span><span class="n">FIXED</span>
     <span class="c1"># sync weights every `sync_interval` steps</span>
     <span class="n">sync_interval</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>

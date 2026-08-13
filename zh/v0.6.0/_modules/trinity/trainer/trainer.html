@@ -1256,7 +1256,10 @@ window.runMermaid = runMermaid;</script>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>  <span class="c1"># explorer driven</span>
             <span class="c1"># for memory &amp; checkpoint; TODO: apply to nccl sync</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_sync_step</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_step_num</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">sync_method</span> <span class="o">!=</span> <span class="n">SyncMethod</span><span class="o">.</span><span class="n">NCCL</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_sync_step</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_step_num</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">sync_method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span>
+                <span class="n">SyncMethod</span><span class="o">.</span><span class="n">NCCL</span><span class="p">,</span>
+                <span class="n">SyncMethod</span><span class="o">.</span><span class="n">HCCL</span><span class="p">,</span>
+            <span class="p">):</span>
                 <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">notify_no_new_model_state_dict</span><span class="o">.</span><span class="n">remote</span><span class="p">()</span>
                 <span class="k">return</span> <span class="kc">False</span>
             <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">explorer_requires_sync</span><span class="o">.</span><span class="n">remote</span><span class="p">()</span></div>
@@ -1278,20 +1281,20 @@ window.runMermaid = runMermaid;</script>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_sync_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;time/trainer_sync_interval&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_sync_time</span>
         <span class="k">with</span> <span class="n">Timer</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="s2">&quot;time/sync_weight&quot;</span><span class="p">):</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sync_method</span> <span class="o">==</span> <span class="n">SyncMethod</span><span class="o">.</span><span class="n">NCCL</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sync_method</span> <span class="ow">in</span> <span class="p">(</span><span class="n">SyncMethod</span><span class="o">.</span><span class="n">NCCL</span><span class="p">,</span> <span class="n">SyncMethod</span><span class="o">.</span><span class="n">HCCL</span><span class="p">):</span>
                 <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">ready_to_nccl_sync</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span>
                     <span class="s2">&quot;trainer&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_step_num</span>
                 <span class="p">)</span>
                 <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                        <span class="s2">&quot;NCCL weight sync skipped: Explorer has stopped or is unreachable.&quot;</span>
+                        <span class="s2">&quot;Online weight sync skipped: Explorer has stopped or is unreachable.&quot;</span>
                     <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="k">try</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">sync_weight_nccl</span><span class="p">()</span>
                     <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                            <span class="s2">&quot;NCCL weight sync failed (Explorer may have exited);&quot;</span>
+                            <span class="s2">&quot;Online weight sync failed (Explorer may have exited);&quot;</span>
                             <span class="sa">f</span><span class="s2">&quot; continuing with stale weights:</span><span class="se">\n</span><span class="si">{</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
                         <span class="p">)</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_step_num</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>

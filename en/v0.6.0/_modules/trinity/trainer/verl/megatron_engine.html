@@ -1030,6 +1030,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ray</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.device</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_device_name</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.memory_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">aggressive_empty_cache</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.trainer.verl.checkpoint</span><span class="w"> </span><span class="kn">import</span> <span class="n">CheckpointCoordinator</span>
@@ -1133,7 +1134,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">ray</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">set_model_state_dict</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">state_dict</span><span class="p">,</span> <span class="n">global_step</span><span class="p">))</span>
 
     <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span>
-    <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">empty_cache</span><span class="p">()</span>
+    <span class="nb">getattr</span><span class="p">(</span><span class="n">torch</span><span class="p">,</span> <span class="n">get_device_name</span><span class="p">())</span><span class="o">.</span><span class="n">empty_cache</span><span class="p">()</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Megatron] state_dict uploaded to Synchronizer: step=</span><span class="si">{</span><span class="n">global_step</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
 
 
@@ -1155,7 +1156,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">broadcast</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">src</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">model_update_group</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">get_rank</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">synchronize</span><span class="p">()</span></div>
+        <span class="nb">getattr</span><span class="p">(</span><span class="n">torch</span><span class="p">,</span> <span class="n">get_device_name</span><span class="p">())</span><span class="o">.</span><span class="n">synchronize</span><span class="p">()</span></div>
 
 </pre></div>
 

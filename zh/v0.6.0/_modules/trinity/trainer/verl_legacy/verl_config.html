@@ -1213,6 +1213,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">ulysses_sequence_parallel_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">entropy_from_logits_with_chunking</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">entropy_checkpointing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">use_torch_compile</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># None = inherit from trainer.use_torch_compile</span>
     <span class="n">checkpoint</span><span class="p">:</span> <span class="n">_CheckpointConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">_CheckpointConfig</span><span class="p">)</span>
     <span class="n">optim</span><span class="p">:</span> <span class="n">Optim</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Optim</span><span class="p">)</span>
     <span class="n">fsdp_config</span><span class="p">:</span> <span class="n">FSDPConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">FSDPConfig</span><span class="p">)</span>
@@ -1249,6 +1250,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">ulysses_sequence_parallel_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">entropy_from_logits_with_chunking</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">entropy_checkpointing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">use_torch_compile</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># None = inherit from trainer.use_torch_compile</span>
     <span class="n">checkpoint</span><span class="p">:</span> <span class="n">_CheckpointConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
         <span class="n">default_factory</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">_CheckpointConfig</span><span class="p">(</span><span class="n">load_contents</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">],</span> <span class="n">save_contents</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">])</span>
     <span class="p">)</span>
@@ -1634,6 +1636,7 @@ window.runMermaid = runMermaid;</script>
             <span class="p">(</span><span class="s2">&quot;ulysses_sequence_parallel_size&quot;</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
             <span class="p">(</span><span class="s2">&quot;ppo_max_token_len_per_gpu&quot;</span><span class="p">,</span> <span class="s2">&quot;max_token_len_per_gpu&quot;</span><span class="p">),</span>
             <span class="p">(</span><span class="s2">&quot;strategy&quot;</span><span class="p">,</span> <span class="s2">&quot;trainer_strategy&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;use_torch_compile&quot;</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
         <span class="p">]:</span>
             <span class="n">set_if_none</span><span class="p">(</span><span class="n">actor_config</span><span class="p">,</span> <span class="n">actor_attr</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="p">,</span> <span class="n">trainer_attr</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_parallel_config</span><span class="p">(</span>
@@ -1657,6 +1660,7 @@ window.runMermaid = runMermaid;</script>
             <span class="p">(</span><span class="s2">&quot;log_prob_max_token_len_per_gpu&quot;</span><span class="p">,</span> <span class="s2">&quot;max_token_len_per_gpu&quot;</span><span class="p">),</span>
             <span class="p">(</span><span class="s2">&quot;ulysses_sequence_parallel_size&quot;</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
             <span class="p">(</span><span class="s2">&quot;strategy&quot;</span><span class="p">,</span> <span class="s2">&quot;trainer_strategy&quot;</span><span class="p">),</span>
+            <span class="p">(</span><span class="s2">&quot;use_torch_compile&quot;</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span>
         <span class="p">]:</span>
             <span class="n">set_if_none</span><span class="p">(</span><span class="n">ref_config</span><span class="p">,</span> <span class="n">ref_attr</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">trainer</span><span class="p">,</span> <span class="n">trainer_attr</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_check_parallel_config</span><span class="p">(</span>

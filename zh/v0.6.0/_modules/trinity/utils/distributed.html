@@ -1095,11 +1095,6 @@ window.runMermaid = runMermaid;</script>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This function is used to initialize the process group. It requires torch &gt;= 2.6.0</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">assert</span> <span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;nccl&quot;</span><span class="p">,</span> <span class="s2">&quot;Only nccl backend is supported for now.&quot;</span>
-
-    <span class="kn">from</span><span class="w"> </span><span class="nn">torch.distributed.distributed_c10d</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_nccl_available</span>
-
-    <span class="k">assert</span> <span class="n">is_nccl_available</span><span class="p">()</span>
 
     <span class="n">init_method</span> <span class="o">=</span> <span class="p">(</span>
         <span class="sa">f</span><span class="s2">&quot;tcp://[</span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">]:</span><span class="si">{</span><span class="n">port</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">is_ipv6_address</span><span class="p">(</span><span class="n">ip_str</span><span class="o">=</span><span class="n">host</span><span class="p">)</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;tcp://</span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">port</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -1183,42 +1178,77 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="VLLMWeightTransferEngine">
 <a class="viewcode-back" href="../../../build_api/trinity.utils.distributed.html#trinity.utils.distributed.VLLMWeightTransferEngine">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">VLLMWeightTransferEngine</span><span class="p">(</span><span class="n">WeightTransferEngine</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A helper class to manage NCCL weight synchronization using vLLM&#39;s API.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A helper class to manage weight synchronization using vLLM&#39;s API.</span>
+
+<span class="sd">    Device-aware: uses HCCL engine on NPU and NCCL engine on GPU. Both engines</span>
+<span class="sd">    expose the same ``trainer_init`` / ``trainer_send_weights`` API surface, so</span>
+<span class="sd">    the only difference is the engine class and args dataclass used.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="VLLMWeightTransferEngine.__init__">
 <a class="viewcode-back" href="../../../build_api/trinity.utils.distributed.html#trinity.utils.distributed.VLLMWeightTransferEngine.__init__">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">master_address</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">master_port</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">world_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">group_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the NCCL process group for weight sync with vLLM&#39;s API.&quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">vllm.distributed.weight_transfer.nccl_engine</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-            <span class="n">NCCLWeightTransferEngine</span><span class="p">,</span>
-        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the process group for weight sync with vLLM&#39;s API.&quot;&quot;&quot;</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.device</span><span class="w"> </span><span class="kn">import</span> <span class="n">is_npu</span>
 
-        <span class="k">del</span> <span class="n">group_name</span>  <span class="c1"># vLLM&#39;s NCCL engine does not require a group name</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_model_update_group</span> <span class="o">=</span> <span class="n">NCCLWeightTransferEngine</span><span class="o">.</span><span class="n">trainer_init</span><span class="p">(</span>
-            <span class="nb">dict</span><span class="p">(</span>
-                <span class="n">master_address</span><span class="o">=</span><span class="n">master_address</span><span class="p">,</span>
-                <span class="n">master_port</span><span class="o">=</span><span class="n">master_port</span><span class="p">,</span>
-                <span class="n">world_size</span><span class="o">=</span><span class="n">world_size</span><span class="p">,</span>
+        <span class="k">del</span> <span class="n">group_name</span>  <span class="c1"># vLLM&#39;s weight transfer engines do not require a group name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_npu</span> <span class="o">=</span> <span class="n">is_npu</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_npu</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">vllm_ascend.distributed.weight_transfer.hccl_engine</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                <span class="n">HCCLWeightTransferEngine</span><span class="p">,</span>
             <span class="p">)</span>
-        <span class="p">)</span></div>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_engine_cls</span> <span class="o">=</span> <span class="n">HCCLWeightTransferEngine</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_model_update_group</span> <span class="o">=</span> <span class="n">HCCLWeightTransferEngine</span><span class="o">.</span><span class="n">trainer_init</span><span class="p">(</span>
+                <span class="nb">dict</span><span class="p">(</span>
+                    <span class="n">master_address</span><span class="o">=</span><span class="n">master_address</span><span class="p">,</span>
+                    <span class="n">master_port</span><span class="o">=</span><span class="n">master_port</span><span class="p">,</span>
+                    <span class="n">world_size</span><span class="o">=</span><span class="n">world_size</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">vllm.distributed.weight_transfer.nccl_engine</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                <span class="n">NCCLWeightTransferEngine</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_engine_cls</span> <span class="o">=</span> <span class="n">NCCLWeightTransferEngine</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_model_update_group</span> <span class="o">=</span> <span class="n">NCCLWeightTransferEngine</span><span class="o">.</span><span class="n">trainer_init</span><span class="p">(</span>
+                <span class="nb">dict</span><span class="p">(</span>
+                    <span class="n">master_address</span><span class="o">=</span><span class="n">master_address</span><span class="p">,</span>
+                    <span class="n">master_port</span><span class="o">=</span><span class="n">master_port</span><span class="p">,</span>
+                    <span class="n">world_size</span><span class="o">=</span><span class="n">world_size</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="VLLMWeightTransferEngine.sync_weight">
 <a class="viewcode-back" href="../../../build_api/trinity.utils.distributed.html#trinity.utils.distributed.VLLMWeightTransferEngine.sync_weight">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">sync_weight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iterator</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform the NCCL weight sync using vLLM&#39;s API.&quot;&quot;&quot;</span>
-        <span class="kn">from</span><span class="w"> </span><span class="nn">vllm.distributed.weight_transfer.nccl_engine</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-            <span class="n">NCCLTrainerSendWeightsArgs</span><span class="p">,</span>
-            <span class="n">NCCLWeightTransferEngine</span><span class="p">,</span>
-        <span class="p">)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform the weight sync using vLLM&#39;s API (HCCL on NPU, NCCL on GPU).&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_npu</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">vllm_ascend.distributed.weight_transfer.hccl_engine</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                <span class="n">HCCLTrainerSendWeightsArgs</span><span class="p">,</span>
+            <span class="p">)</span>
 
-        <span class="n">NCCLWeightTransferEngine</span><span class="o">.</span><span class="n">trainer_send_weights</span><span class="p">(</span>
-            <span class="n">iterator</span><span class="o">=</span><span class="n">iterator</span><span class="p">,</span>
-            <span class="n">trainer_args</span><span class="o">=</span><span class="n">NCCLTrainerSendWeightsArgs</span><span class="p">(</span>
-                <span class="n">group</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_model_update_group</span><span class="p">,</span>
-                <span class="n">packed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="p">),</span>
-        <span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_engine_cls</span><span class="o">.</span><span class="n">trainer_send_weights</span><span class="p">(</span>
+                <span class="n">iterator</span><span class="o">=</span><span class="n">iterator</span><span class="p">,</span>
+                <span class="n">trainer_args</span><span class="o">=</span><span class="n">HCCLTrainerSendWeightsArgs</span><span class="p">(</span>
+                    <span class="n">group</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_model_update_group</span><span class="p">,</span>
+                    <span class="n">packed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="kn">from</span><span class="w"> </span><span class="nn">vllm.distributed.weight_transfer.nccl_engine</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+                <span class="n">NCCLTrainerSendWeightsArgs</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">_engine_cls</span><span class="o">.</span><span class="n">trainer_send_weights</span><span class="p">(</span>
+                <span class="n">iterator</span><span class="o">=</span><span class="n">iterator</span><span class="p">,</span>
+                <span class="n">trainer_args</span><span class="o">=</span><span class="n">NCCLTrainerSendWeightsArgs</span><span class="p">(</span>
+                    <span class="n">group</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_model_update_group</span><span class="p">,</span>
+                    <span class="n">packed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="p">),</span>
+            <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="VLLMWeightTransferEngine.teardown">

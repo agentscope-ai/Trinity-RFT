@@ -8,6 +8,7 @@ Submodules
    :maxdepth: 4
 
    trinity.utils.annotations
+   trinity.utils.device
    trinity.utils.distributed
    trinity.utils.dlc_utils
    trinity.utils.log
