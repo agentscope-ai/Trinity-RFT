@@ -123,20 +123,30 @@ class AlfworldWorkflow(MultiTurnWorkflow):
     async def generate_env_inference_samples(self, env) -> List[Experience]:
         observation, info = env.reset()
         final_reward = -0.1
+        done = False
+        response_truncate_status = None
+        r = -1
         memory = []
         memory.append({"role": "system", "content": AlfWORLD_SYSTEM_PROMPT})
         for r in range(self.max_env_steps):
             format_obs = format_observation(observation)
             memory = memory + [{"role": "user", "content": format_obs}]
-            response_text = await self.get_model_response_text(memory)
+            response = (await self.get_model_response(memory))[0]
+            response_text = response.response_text
+            response_truncate_status = response.truncate_status
             memory.append({"role": "assistant", "content": response_text})
+            if response_truncate_status == "response_truncated":
+                break
             action = parse_action(response_text)
             observation, reward, done, info = env.step(action)
             if done:
                 final_reward = reward
                 break
         experience = await self.process_messages_to_experience_async(
-            memory, final_reward, {"env_rounds": r, "env_done": 1 if done else 0}
+            memory,
+            final_reward,
+            {"env_rounds": r, "env_done": 1 if done else 0},
+            truncate_status=response_truncate_status,
         )
         # Close the env to save cpu memory
         env.close()
