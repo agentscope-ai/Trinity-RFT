@@ -96,6 +96,8 @@ class OptimizerConfig:
     warmup_style: Optional[str] = None  # deprecated !
     lr_scheduler_type: str = "constant"
     optimizer_type: str = "adam"
+    fused: Optional[bool] = None
+    foreach: Optional[bool] = None
     betas: List[float] = field(default_factory=lambda: [0.9, 0.999])
     weight_decay: float = 0.01
     clip_grad: float = 1.0
