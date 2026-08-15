@@ -11,11 +11,11 @@ from unittest.mock import patch
 import torch
 
 from tests.tools import get_template_config, get_unittest_dataset_config
-from trinity.common.config import InferenceModelConfig, load_config
+from trinity.common.config import InferenceModelConfig, OptimizerConfig, load_config
 from trinity.common.constants import SyncMethod
 from trinity.common.models.model import InferenceModel
 from trinity.trainer.trainer import is_verl_legacy
-from trinity.trainer.verl.config import build_verl_config
+from trinity.trainer.verl.config import _build_optimizer_config, build_verl_config
 
 CHECKPOINT_ROOT_DIR = os.path.join(os.path.dirname(__file__), "temp_checkpoint_dir")
 
@@ -368,6 +368,29 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(verl_config.critic.optim.lr, 1e-5)
         self.assertEqual(verl_config.critic.optim.weight_decay, 0.01)
         self.assertEqual(verl_config.critic.optim.clip_grad, 1.0)
+
+    def test_fsdp_optimizer_backend_options_are_propagated(self):
+        cases = [
+            (OptimizerConfig(), None),
+            (OptimizerConfig(fused=True), {"fused": True}),
+            (OptimizerConfig(foreach=False), {"foreach": False}),
+            (
+                OptimizerConfig(fused=True, foreach=False),
+                {"fused": True, "foreach": False},
+            ),
+        ]
+
+        for optimizer, expected in cases:
+            with self.subTest(optimizer=optimizer):
+                result = _build_optimizer_config(optimizer, "fsdp2", 100)
+                self.assertEqual(result["override_optimizer_config"], expected)
+
+    def test_megatron_ignores_torch_optimizer_backend_options(self):
+        optimizer = OptimizerConfig(fused=True, foreach=False)
+
+        result = _build_optimizer_config(optimizer, "megatron", 100)
+
+        self.assertIsNone(result["override_optimizer_config"])
 
     def test_chat_template_path(self):
         config = get_template_config()
