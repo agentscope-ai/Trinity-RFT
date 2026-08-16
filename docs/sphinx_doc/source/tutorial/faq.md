@@ -222,26 +222,28 @@ for exp in exp_list:
 
 **A:** Currently, two loading methods are supported:
 
+Checkpoint paths follow `${checkpoint_root_dir}/${project}/${group}/${name}`; when `group` is empty, that path segment is omitted.
+
 1. **Recommended approach**: Use the `trinity convert` command to convert the original checkpoint into the standard Hugging Face format.
    After conversion, you can load and use it directly just like any ordinary Hugging Face model.
 
    Convert a single checkpoint (pointing at a `global_step_*` directory or any of its subdirectories):
 
    ```bash
-   trinity convert -c /path/to/checkpoint_root/project/name/global_step_100
+   trinity convert -c ${checkpoint_root_dir}/${project}/${group}/${name}/global_step_100
    ```
 
    Batch-convert specific steps (comma-separated step numbers):
 
    ```bash
-   trinity convert -c /path/to/checkpoint_root/project/name -s 100,200,300
+   trinity convert -c ${checkpoint_root_dir}/${project}/${group}/${name} -s 100,200,300
    ```
 
    If a step directory does not exist or conversion fails, the command will skip it and continue with the remaining steps, then print a summary report of successes and failures.
 
    > **Special case**: If `config.json` is missing from `global_step_*/actor/huggingface/` (typically because the configuration wasn't fully saved during training), use `--base-model-dir` to specify the path to your base model:
    > ```bash
-   > trinity convert -c /path/to/checkpoint_root/project/name -b /path/to/your/base/model
+   > trinity convert -c ${checkpoint_root_dir}/${project}/${group}/${name} -b /path/to/your/base/model
    > ```
 
 2. **Direct loading (for actor checkpoints trained with FSDP)**:
@@ -253,9 +255,9 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from trinity.common.models.utils import load_fsdp_state_dict_from_verl_checkpoint
 
 # Assume we need the checkpoint at step 780;
-# model_path, checkpoint_root_dir, project, and name are already defined
+# model_path, checkpoint_root_dir, project, group, and name are already defined
 model = AutoModelForCausalLM.from_pretrained(model_path)
-ckp_path = os.path.join(checkpoint_root_dir, project, name, "global_step_780", "actor")
+ckp_path = os.path.join(checkpoint_root_dir, project, group, name, "global_step_780", "actor")
 model.load_state_dict(load_fsdp_state_dict_from_verl_checkpoint(ckp_path))
 ```
 
