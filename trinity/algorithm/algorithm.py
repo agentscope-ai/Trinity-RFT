@@ -139,6 +139,31 @@ class GRPOAlgorithm(AlgorithmType):
         }
 
 
+class M2POAlgorithm(AlgorithmType):
+    """M2PO for stable off-policy RFT with stale rollout data.
+
+    See https://openreview.net/forum?id=IIgl5MWelz.
+    """
+
+    use_critic: bool = False
+    use_reference: bool = False
+    compute_advantage_in_trainer: bool = False
+    can_balance_batch: bool = True
+    schema: str = "experience"
+
+    @classmethod
+    def default_config(cls) -> Dict:
+        return {
+            "repeat_times": 8,
+            "advantage_fn": "grpo",
+            "sample_strategy": "default",
+            "policy_loss_fn": "m2po",
+            "kl_penalty_fn": "none",
+            "kl_loss_fn": "none",
+            "entropy_loss_fn": "default",
+        }
+
+
 class DAPOAlgorithm(AlgorithmType):
     """DAPO (Decoupled Clip and Dynamic sAmpling Policy Optimization).
 
