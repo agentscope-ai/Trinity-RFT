@@ -9,6 +9,7 @@ decoupled Explorer/Buffer/Trainer architecture).
 Only the training-step mechanics are used: compute_log_prob, update_actor,
 update_critic, update_weights.
 """
+
 import asyncio
 import os
 import sys
@@ -55,6 +56,12 @@ from verl.workers.utils.losses import value_loss
 from verl.workers.utils.padding import no_padding_2_padding
 
 from trinity.algorithm import ADVANTAGE_FN, ALGORITHM_TYPE, KL_FN
+from trinity.algorithm.policy_loss_fn.m2po_policy_loss import (
+    compute_m2po_mask,
+    find_active_stochastic_modules,
+    find_active_stochastic_settings,
+    find_r2_router_replay_settings,
+)
 from trinity.algorithm.utils import prefix_metrics
 from trinity.common.config import Config
 from trinity.common.constants import SaveStrategy
@@ -559,6 +566,9 @@ class VERLTrainer(TrainEngineWrapper):
 
             # Update actor
             if self.global_config.trainer.critic_warmup <= self.global_steps:
+                if self.algorithm_config.policy_loss_fn == "m2po":
+                    with marked_timer("m2po_mask", timing_raw, color="blue"):
+                        batch = self._prepare_m2po_mask(batch, metrics)
                 with marked_timer("update_actor", timing_raw, color="red"):
                     batch = self._update_actor(batch, metrics)
 
@@ -778,6 +788,101 @@ class VERLTrainer(TrainEngineWrapper):
 
             metrics.update(calculate_debug_metrics(batch))
 
+        return batch
+
+    def _prepare_m2po_mask(self, batch: DataProto, metrics: Dict) -> DataProto:
+        """Precompute Algorithm 1 over the complete global optimizer batch.
+
+        veRL splits one optimizer mini-batch into dynamic micro-batches before
+        calling the policy-loss callback. M2PO's sort-and-mask operation is
+        nonlinear in that split, so the current-policy log probabilities and
+        mask must be computed once here, before any optimizer update, and then
+        carried into every micro-batch.
+        """
+        ppo_mini_batch_size = int(self.config.actor.ppo_mini_batch_size)
+        ppo_epochs = int(self.config.actor.ppo_epochs)
+        if ppo_mini_batch_size != len(batch) or ppo_epochs != 1:
+            raise ValueError(
+                "M2PO requires exactly one optimizer mini-batch and one PPO epoch "
+                "per Trinity training batch so its precomputed global mask stays "
+                "aligned with the policy parameters."
+            )
+        if self.config.actor.shuffle:
+            raise ValueError(
+                "M2PO requires actor.shuffle=false so its log-probability prepass "
+                "and optimizer pass preserve the same batch grouping."
+            )
+
+        r2_router_replay_settings = find_r2_router_replay_settings(self.config.actor)
+        if r2_router_replay_settings:
+            raise ValueError(
+                "M2PO does not support R2 router replay because its forward-only "
+                "prepass records routes that are not attached to the optimizer batch. "
+                "Use router replay R3 or disabled; active settings: "
+                + ", ".join(r2_router_replay_settings)
+            )
+
+        stochastic_settings = []
+        for config_name, model_config in (
+            ("hf_config", self.empty_model.config),
+            ("model_config", self.config.model),
+            ("actor_config", self.config.actor),
+        ):
+            stochastic_settings.extend(
+                f"{config_name}.{setting}"
+                for setting in find_active_stochastic_settings(model_config)
+            )
+        if stochastic_settings:
+            raise ValueError(
+                "M2PO requires deterministic train/eval log-probabilities for its "
+                "two-pass global mask. Disable dropout, stochastic depth, router "
+                "jitter, training noise, and QAT; active settings: "
+                + ", ".join(stochastic_settings)
+            )
+
+        stochastic_modules = find_active_stochastic_modules(self.empty_model)
+        if stochastic_modules:
+            raise ValueError(
+                "M2PO's two-pass global mask does not support modules with known "
+                "train/eval-dependent outputs; active modules: " + ", ".join(stochastic_modules)
+            )
+
+        if self.config.model.lora_adapter_path:
+            raise ValueError(
+                "M2PO does not support loading a pre-existing LoRA adapter because "
+                "its adapter_config may enable train-time lora_dropout outside the "
+                "controller's model config. Start from a new LoRA adapter or merge "
+                "the adapter into the base model first."
+            )
+
+        required_keys = {"old_log_probs", "response_mask", "advantages"}
+        missing_keys = sorted(required_keys.difference(batch.batch.keys()))
+        if missing_keys:
+            raise ValueError(
+                "M2PO requires behavior log-probabilities, response masks, and "
+                f"advantages before actor update; missing {missing_keys}."
+            )
+
+        batch_td = left_right_2_no_padding(batch.to_tensordict())
+        tu.assign_non_tensor(
+            batch_td,
+            calculate_entropy=False,
+            compute_loss=False,
+            temperature=batch.meta_info.get("temperature", self.global_config.model.temperature),
+        )
+        output = self.actor_rollout_wg.compute_log_prob(batch_td)
+        current_log_probs = no_padding_2_padding(tu.get(output, "log_probs"), batch_td).float()
+
+        m2_threshold = self.algorithm_config.policy_loss_fn_args.get("m2_threshold", 0.04)
+        mask, mask_metrics = compute_m2po_mask(
+            logprob=current_log_probs,
+            old_logprob=batch.batch["old_log_probs"],
+            action_mask=batch.batch["response_mask"],
+            advantages=batch.batch["advantages"],
+            m2_threshold=m2_threshold,
+        )
+        batch.batch["m2po_mask"] = mask
+        metrics.update({f"actor/m2po/{name}": value for name, value in mask_metrics.items()})
         return batch
 
     def _compute_values(self, batch: DataProto) -> DataProto:
