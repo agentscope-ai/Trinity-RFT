@@ -10,6 +10,10 @@ from enum import Enum
 
 import torch
 
+from trinity.utils.log import get_logger
+
+logger = get_logger(__name__)
+
 
 class DeviceType(str, Enum):
     """Device type enum. Inherits str so it can be passed directly to APIs that
@@ -18,6 +22,39 @@ class DeviceType(str, Enum):
     NPU = "npu"
     CUDA = "cuda"
     CPU = "cpu"
+
+
+# ---------- Private helpers ----------
+
+
+def _normalize_ascend_visible_devices() -> None:
+    raw = os.environ.get("ASCEND_RT_VISIBLE_DEVICES")
+    if not raw or not raw.strip():
+        return
+
+    parts = [p.strip() for p in raw.split(",") if p.strip() != ""]
+    if len(parts) <= 1:
+        return
+
+    try:
+        ids = [int(p) for p in parts]
+    except ValueError:
+        # Non-integer values (e.g. UUIDs in some CANN versions); skip normalization
+        return
+
+    if ids == sorted(ids):
+        return
+
+    normalized = ",".join(str(i) for i in sorted(ids))
+    os.environ["ASCEND_RT_VISIBLE_DEVICES"] = normalized
+    logger.warning(
+        "ASCEND_RT_VISIBLE_DEVICES was non-ascending (%r); normalized to %r. "
+        "Non-ascending values cause torch.npu.is_available() to return False, "
+        "leading to incorrect device detection. Please fix the upstream "
+        "configuration (e.g. Ray actor env vars or launch script).",
+        raw,
+        normalized,
+    )
 
 
 # ---------- Core detection API ----------
@@ -30,6 +67,7 @@ def get_device_type() -> DeviceType:
     Returns:
         DeviceType.NPU / DeviceType.CUDA / DeviceType.CPU
     """
+    _normalize_ascend_visible_devices()
     env_override = os.environ.get("TRINITY_DEVICE", "").lower()
     if env_override in ("npu", "cuda", "cpu"):
         return DeviceType(env_override)
