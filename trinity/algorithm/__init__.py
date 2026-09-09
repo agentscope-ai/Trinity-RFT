@@ -13,6 +13,7 @@ ALGORITHM_TYPE: Registry = Registry(
         "sft": "trinity.algorithm.algorithm.SFTAlgorithm",
         "ppo": "trinity.algorithm.algorithm.PPOAlgorithm",
         "grpo": "trinity.algorithm.algorithm.GRPOAlgorithm",
+        "m2po": "trinity.algorithm.algorithm.M2POAlgorithm",
         "dapo": "trinity.algorithm.algorithm.DAPOAlgorithm",
         "reinforceplusplus": "trinity.algorithm.algorithm.ReinforcePlusPlusAlgorithm",
         "rloo": "trinity.algorithm.algorithm.RLOOAlgorithm",

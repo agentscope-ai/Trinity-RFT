@@ -1,9 +1,11 @@
 import unittest
 from unittest import mock
 
+import pytest
 import torch
 
 from trinity.common.experience import EID, Experience
+from trinity.trainer.verl.utils import to_data_proto as engine_to_data_proto
 from trinity.trainer.verl_legacy.utils import to_data_proto
 
 
@@ -69,3 +71,47 @@ class TestToDataProtoRoutedExperts(unittest.TestCase):
         )
         self.assertTrue(torch.equal(routed_experts[0], expected_exp1))
         self.assertTrue(torch.equal(routed_experts[1], expected_exp2))
+
+
+@pytest.mark.parametrize("logprob_count", [None, 0, 1], ids=["missing", "empty", "partial"])
+def test_to_data_proto_rejects_incomplete_rollout_logprobs(logprob_count):
+    """Missing behavior logprobs must not be silently padded into a valid training batch."""
+    logprobs = None if logprob_count is None else torch.zeros(logprob_count)
+    experience = Experience(
+        tokens=torch.tensor([10, 11, 12], dtype=torch.int32),
+        prompt_length=1,
+        reward=1.0,
+        logprobs=logprobs,
+    )
+
+    with pytest.raises(ValueError, match="rollout logprobs|one value"):
+        engine_to_data_proto([experience], pad_token_id=0, model=object(), logger=mock.Mock())
+
+
+def test_to_data_proto_only_pads_between_complete_experiences():
+    """Batch padding remains valid after each experience passes the behavior-logprob invariant."""
+    experiences = [
+        Experience(
+            tokens=torch.tensor([10, 11, 12], dtype=torch.int32),
+            prompt_length=1,
+            reward=1.0,
+            logprobs=torch.tensor([-0.1, -0.2]),
+        ),
+        Experience(
+            tokens=torch.tensor([20, 21, 22], dtype=torch.int32),
+            prompt_length=2,
+            reward=0.0,
+            logprobs=torch.tensor([-0.3]),
+        ),
+    ]
+
+    batch = engine_to_data_proto(experiences, pad_token_id=0, model=object(), logger=mock.Mock())
+
+    assert torch.allclose(
+        batch.batch["rollout_log_probs"],
+        torch.tensor([[-0.1, -0.2], [-0.3, 0.0]]),
+    )
+    assert torch.equal(
+        batch.batch["response_mask"],
+        torch.tensor([[True, True], [True, False]]),
+    )

@@ -1,4 +1,5 @@
 """Utils for compatibility issues with verl."""
+
 from logging import Logger
 from typing import List
 
@@ -84,7 +85,15 @@ def to_data_proto(  # noqa: C901
     have_reward = all(exp.reward is not None for exp in experiences)
     have_token_level_reward = all(exp.token_level_reward is not None for exp in experiences)
     if have_reward or have_token_level_reward:
-        assert all(exp.logprobs is not None for exp in experiences), "No logprobs provided."
+        for exp in experiences:
+            if exp.logprobs is None:
+                raise ValueError("Every rewarded experience must include rollout logprobs.")
+            response_length = len(exp.tokens) - exp.prompt_length  # type: ignore[arg-type]
+            if len(exp.logprobs) != response_length:
+                raise ValueError(
+                    "Rollout logprobs must contain exactly one value per response token; "
+                    f"got {len(exp.logprobs)} values for {response_length} tokens."
+                )
         if have_token_level_reward:
             if have_reward:
                 logger.warning(
