@@ -387,7 +387,11 @@ def run(
             from trinity.trainer import get_latest_hf_checkpoint_path
 
             state_manager = StateManager(path=cfg.get_checkpoint_job_dir())
-            latest_stage = state_manager.load_stage().get("latest_stage", 0)
+            latest_stage = (
+                state_manager.load_stage().get("latest_stage", 0)
+                if cfg.continue_from_checkpoint
+                else 0
+            )
             prev_stage_checkpoint = None
             for i, stage_config in enumerate(cfg):
                 if i < latest_stage:
