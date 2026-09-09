@@ -123,7 +123,7 @@ class TasksetScheduler(TasksetSchedulerBase):
         self.read_batch_size = config.buffer.batch_size
         taskset_configs = config.buffer.explorer_input.tasksets
 
-        from trinity.buffer.reader.file_reader import FileReader
+        from trinity.buffer.buffer_reader import BufferReader
 
         taskset_states = explorer_state.get(
             "taskset_states", [{"current_index": 0}] * len(taskset_configs)
@@ -132,10 +132,10 @@ class TasksetScheduler(TasksetSchedulerBase):
         for taskset_config, taskset_state in zip(taskset_configs, taskset_states):
             assert not taskset_config.is_eval  # assume drop last
             taskset = get_buffer_reader(taskset_config)
-            if not isinstance(taskset, FileReader):
+            if not isinstance(taskset, BufferReader):
                 raise TypeError(
                     f"Taskset '{taskset_config.name}' has an unsupported type '{type(taskset).__name__}'."
-                    f"Currently, only 'FileReader' is supported by TasksetScheduler."
+                    "TasksetScheduler requires a BufferReader implementation."
                 )
             taskset.load_state_dict(taskset_state)  # Restore any prior state
             self.tasksets.append(taskset)
