@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1038,7 +1040,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">_SyncViewerStorage</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Thin sync wrapper around async SQLExperienceStorage for Streamlit.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Thin sync wrapper around async SQLExperienceStorage for Streamlit."""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">StorageConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">new_event_loop</span><span class="p">()</span>
@@ -1057,7 +1059,7 @@ window.runMermaid = runMermaid;</script>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_submit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coro</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_closed</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Viewer storage has been closed.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Viewer storage has been closed."</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">run_coroutine_threadsafe</span><span class="p">(</span><span class="n">coro</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coro</span><span class="p">):</span>
@@ -1068,7 +1070,7 @@ window.runMermaid = runMermaid;</script>
             <span class="k">return</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_async&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_async</span><span class="p">,</span> <span class="s2">&quot;engine&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_async"</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_async</span><span class="p">,</span> <span class="s2">"engine"</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_run</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_async</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">dispose</span><span class="p">())</span>
         <span class="k">finally</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="o">.</span><span class="n">is_closed</span><span class="p">():</span>
@@ -1119,7 +1121,7 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="nf">run_viewer</span><span class="p">(</span>
         <span class="n">model_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">db_url</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">table_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">schema_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">port</span><span class="p">:</span> <span class="nb">int</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Start the Streamlit viewer.</span>
+<span class="w">        </span><span class="sd">"""Start the Streamlit viewer.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            model_path (str): Path to the tokenizer/model directory.</span>
@@ -1127,27 +1129,27 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            table_name (str): Name of the experience table in the database.</span>
 <span class="sd">            schema_type (str): Schema type of the experience table.</span>
 <span class="sd">            port (int): Port number to run the Streamlit app on.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="kn">from</span><span class="w"> </span><span class="nn">streamlit.web</span><span class="w"> </span><span class="kn">import</span> <span class="n">cli</span>
 
         <span class="n">viewer_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span>
         <span class="n">sys</span><span class="o">.</span><span class="n">argv</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="s2">&quot;streamlit&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;run&quot;</span><span class="p">,</span>
+            <span class="s2">"streamlit"</span><span class="p">,</span>
+            <span class="s2">"run"</span><span class="p">,</span>
             <span class="nb">str</span><span class="p">(</span><span class="n">viewer_path</span><span class="o">.</span><span class="n">resolve</span><span class="p">()),</span>
-            <span class="s2">&quot;--server.port&quot;</span><span class="p">,</span>
+            <span class="s2">"--server.port"</span><span class="p">,</span>
             <span class="nb">str</span><span class="p">(</span><span class="n">port</span><span class="p">),</span>
-            <span class="s2">&quot;--server.fileWatcherType&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;none&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;--&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;--db-url&quot;</span><span class="p">,</span>
+            <span class="s2">"--server.fileWatcherType"</span><span class="p">,</span>
+            <span class="s2">"none"</span><span class="p">,</span>
+            <span class="s2">"--"</span><span class="p">,</span>
+            <span class="s2">"--db-url"</span><span class="p">,</span>
             <span class="n">db_url</span><span class="p">,</span>
-            <span class="s2">&quot;--table&quot;</span><span class="p">,</span>
+            <span class="s2">"--table"</span><span class="p">,</span>
             <span class="n">table_name</span><span class="p">,</span>
-            <span class="s2">&quot;--schema&quot;</span><span class="p">,</span>
+            <span class="s2">"--schema"</span><span class="p">,</span>
             <span class="n">schema_type</span><span class="p">,</span>
-            <span class="s2">&quot;--tokenizer&quot;</span><span class="p">,</span>
+            <span class="s2">"--tokenizer"</span><span class="p">,</span>
             <span class="n">model_path</span><span class="p">,</span>
         <span class="p">]</span>
         <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="n">cli</span><span class="o">.</span><span class="n">main</span><span class="p">())</span></div>
@@ -1155,16 +1157,16 @@ window.runMermaid = runMermaid;</script>
 
 
 
-<span class="n">st</span><span class="o">.</span><span class="n">set_page_config</span><span class="p">(</span><span class="n">page_title</span><span class="o">=</span><span class="s2">&quot;Trinity-RFT Experience Visualizer&quot;</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="s2">&quot;wide&quot;</span><span class="p">)</span>
+<span class="n">st</span><span class="o">.</span><span class="n">set_page_config</span><span class="p">(</span><span class="n">page_title</span><span class="o">=</span><span class="s2">"Trinity-RFT Experience Visualizer"</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="s2">"wide"</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="get_color_for_action_mask">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.viewer.html#trinity.buffer.viewer.get_color_for_action_mask">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_color_for_action_mask</span><span class="p">(</span><span class="n">action_mask_value</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">action_mask_value</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s2">&quot;#c8e6c9&quot;</span>
+        <span class="k">return</span> <span class="s2">"#c8e6c9"</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s2">&quot;#ffcdd2&quot;</span></div>
+        <span class="k">return</span> <span class="s2">"#ffcdd2"</span></div>
 
 
 
@@ -1178,47 +1180,47 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="render_experience">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.viewer.html#trinity.buffer.viewer.render_experience">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">render_experience</span><span class="p">(</span><span class="n">exp</span><span class="p">:</span> <span class="n">Experience</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Render a single experience in Streamlit.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Render a single experience in Streamlit."""</span>
     <span class="n">token_view</span> <span class="o">=</span> <span class="n">build_experience_token_view</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">html_escape</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">(</span>
-            <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&amp;&quot;</span><span class="p">,</span> <span class="s2">&quot;&amp;amp;&quot;</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&lt;&quot;</span><span class="p">,</span> <span class="s2">&quot;&amp;lt;&quot;</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&gt;&quot;</span><span class="p">,</span> <span class="s2">&quot;&amp;gt;&quot;</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;&quot;&#39;</span><span class="p">,</span> <span class="s2">&quot;&amp;quot;&quot;</span><span class="p">)</span>
-            <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&amp;#39;&quot;</span><span class="p">)</span>
+            <span class="n">text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"&amp;"</span><span class="p">,</span> <span class="s2">"&amp;amp;"</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"&lt;"</span><span class="p">,</span> <span class="s2">"&amp;lt;"</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"&gt;"</span><span class="p">,</span> <span class="s2">"&amp;gt;"</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'"'</span><span class="p">,</span> <span class="s2">"&amp;quot;"</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"'"</span><span class="p">,</span> <span class="s2">"&amp;#39;"</span><span class="p">)</span>
         <span class="p">)</span>
 
-    <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">"---"</span><span class="p">)</span>
 
     <span class="c1"># Header with EID</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">subheader</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Experience [</span><span class="si">{</span><span class="n">exp</span><span class="o">.</span><span class="n">eid</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">subheader</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Experience [</span><span class="si">{</span><span class="n">exp</span><span class="o">.</span><span class="n">eid</span><span class="si">}</span><span class="s2">]"</span><span class="p">)</span>
 
     <span class="c1"># Reward and metadata first (before prompt/response)</span>
     <span class="n">col_reward</span><span class="p">,</span> <span class="n">col_metrics</span><span class="p">,</span> <span class="n">col_info</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">columns</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
     <span class="k">with</span> <span class="n">col_reward</span><span class="p">:</span>
         <span class="n">reward_val</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">reward</span> <span class="k">if</span> <span class="n">exp</span><span class="o">.</span><span class="n">reward</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mf">0.0</span>
-        <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**Reward**&quot;</span><span class="p">)</span>
-        <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">reward_val</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">`&quot;</span><span class="p">)</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">"**Reward**"</span><span class="p">)</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="sa">f</span><span class="s2">"`</span><span class="si">{</span><span class="n">reward_val</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">`"</span><span class="p">)</span>
     <span class="k">with</span> <span class="n">col_metrics</span><span class="p">:</span>
-        <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**Metrics**&quot;</span><span class="p">)</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">"**Metrics**"</span><span class="p">)</span>
         <span class="n">st</span><span class="o">.</span><span class="n">json</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">metrics</span> <span class="ow">or</span> <span class="p">{},</span> <span class="n">expanded</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">with</span> <span class="n">col_info</span><span class="p">:</span>
-        <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**Info**&quot;</span><span class="p">)</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">"**Info**"</span><span class="p">)</span>
         <span class="n">st</span><span class="o">.</span><span class="n">json</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">info</span> <span class="ow">or</span> <span class="p">{},</span> <span class="n">expanded</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="c1"># Prompt (collapsed by default)</span>
-    <span class="k">with</span> <span class="n">st</span><span class="o">.</span><span class="n">expander</span><span class="p">(</span><span class="s2">&quot;Prompt&quot;</span><span class="p">,</span> <span class="n">expanded</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">st</span><span class="o">.</span><span class="n">expander</span><span class="p">(</span><span class="s2">"Prompt"</span><span class="p">,</span> <span class="n">expanded</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="n">st</span><span class="o">.</span><span class="n">code</span><span class="p">(</span><span class="n">token_view</span><span class="o">.</span><span class="n">prompt_text</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wrap_lines</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">line_numbers</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1"># Response (collapsed by default)</span>
-    <span class="k">with</span> <span class="n">st</span><span class="o">.</span><span class="n">expander</span><span class="p">(</span><span class="s2">&quot;Response&quot;</span><span class="p">,</span> <span class="n">expanded</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="k">with</span> <span class="n">st</span><span class="o">.</span><span class="n">expander</span><span class="p">(</span><span class="s2">"Response"</span><span class="p">,</span> <span class="n">expanded</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="n">st</span><span class="o">.</span><span class="n">code</span><span class="p">(</span><span class="n">token_view</span><span class="o">.</span><span class="n">response_text</span><span class="p">,</span> <span class="n">language</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">wrap_lines</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">line_numbers</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="c1"># Response Tokens Detail (collapsed by default)</span>
-    <span class="k">with</span> <span class="n">st</span><span class="o">.</span><span class="n">expander</span><span class="p">(</span><span class="s2">&quot;Response Tokens Detail&quot;</span><span class="p">,</span> <span class="n">expanded</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-        <span class="n">html</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="n">st</span><span class="o">.</span><span class="n">expander</span><span class="p">(</span><span class="s2">"Response Tokens Detail"</span><span class="p">,</span> <span class="n">expanded</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">html</span> <span class="o">=</span> <span class="s2">"""</span>
 <span class="s2">        &lt;style&gt;</span>
 <span class="s2">            .token-detail-root * {</span>
 <span class="s2">                margin: 0;</span>
@@ -1226,7 +1228,7 @@ window.runMermaid = runMermaid;</script>
 <span class="s2">                box-sizing: border-box;</span>
 <span class="s2">            }</span>
 <span class="s2">            .token-detail-root {</span>
-<span class="s2">                font-family: -apple-system, BlinkMacSystemFont, &#39;Segoe UI&#39;, &#39;Roboto&#39;, sans-serif;</span>
+<span class="s2">                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;</span>
 <span class="s2">                padding: 10px;</span>
 <span class="s2">            }</span>
 <span class="s2">            .token-detail-root .token-container {</span>
@@ -1253,7 +1255,7 @@ window.runMermaid = runMermaid;</script>
 <span class="s2">                z-index: 10;</span>
 <span class="s2">            }</span>
 <span class="s2">            .token-detail-root .token-text {</span>
-<span class="s2">                font-family: &#39;Courier New&#39;, monospace;</span>
+<span class="s2">                font-family: 'Courier New', monospace;</span>
 <span class="s2">                font-size: 13px;</span>
 <span class="s2">                font-weight: 600;</span>
 <span class="s2">                margin-bottom: 3px;</span>
@@ -1264,30 +1266,30 @@ window.runMermaid = runMermaid;</script>
 <span class="s2">            .token-detail-root .token-logprob {</span>
 <span class="s2">                font-size: 10px;</span>
 <span class="s2">                color: #666;</span>
-<span class="s2">                font-family: &#39;Courier New&#39;, monospace;</span>
+<span class="s2">                font-family: 'Courier New', monospace;</span>
 <span class="s2">                text-align: center;</span>
 <span class="s2">            }</span>
 <span class="s2">        &lt;/style&gt;</span>
-<span class="s2">        &lt;div class=&quot;token-detail-root&quot;&gt;</span>
-<span class="s2">            &lt;div class=&quot;token-container&quot;&gt;</span>
-<span class="s2">        &quot;&quot;&quot;</span>
+<span class="s2">        &lt;div class="token-detail-root"&gt;</span>
+<span class="s2">            &lt;div class="token-container"&gt;</span>
+<span class="s2">        """</span>
 
         <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">token_view</span><span class="o">.</span><span class="n">response_tokens</span><span class="p">:</span>
             <span class="n">bg_color</span> <span class="o">=</span> <span class="n">get_color_for_action_mask</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">token</span><span class="o">.</span><span class="n">is_action</span><span class="p">))</span>
-            <span class="n">token_display</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">token_text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;␣&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;↵&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;⇥&quot;</span><span class="p">)</span>
+            <span class="n">token_display</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">token_text</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">" "</span><span class="p">,</span> <span class="s2">"␣"</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"↵"</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"</span><span class="se">\t</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"⇥"</span><span class="p">)</span>
             <span class="n">token_display</span> <span class="o">=</span> <span class="n">html_escape</span><span class="p">(</span><span class="n">token_display</span><span class="p">)</span>
-            <span class="n">logprob_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">token</span><span class="o">.</span><span class="n">logprob</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">logprob</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;N/A&quot;</span>
+            <span class="n">logprob_text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">token</span><span class="o">.</span><span class="n">logprob</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">logprob</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">"N/A"</span>
 
-            <span class="n">html</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">                    &lt;div class=&quot;token-box&quot; style=&quot;background-color: </span><span class="si">{</span><span class="n">bg_color</span><span class="si">}</span><span class="s2">;&quot;&gt;</span>
-<span class="s2">                        &lt;div class=&quot;token-text&quot;&gt;</span><span class="si">{</span><span class="n">token_display</span><span class="si">}</span><span class="s2">&lt;/div&gt;</span>
-<span class="s2">                        &lt;div class=&quot;token-logprob&quot;&gt;</span><span class="si">{</span><span class="n">logprob_text</span><span class="si">}</span><span class="s2">&lt;/div&gt;</span>
+            <span class="n">html</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"""</span>
+<span class="s2">                    &lt;div class="token-box" style="background-color: </span><span class="si">{</span><span class="n">bg_color</span><span class="si">}</span><span class="s2">;"&gt;</span>
+<span class="s2">                        &lt;div class="token-text"&gt;</span><span class="si">{</span><span class="n">token_display</span><span class="si">}</span><span class="s2">&lt;/div&gt;</span>
+<span class="s2">                        &lt;div class="token-logprob"&gt;</span><span class="si">{</span><span class="n">logprob_text</span><span class="si">}</span><span class="s2">&lt;/div&gt;</span>
 <span class="s2">                    &lt;/div&gt;</span>
-<span class="s2">            &quot;&quot;&quot;</span>
-        <span class="n">html</span> <span class="o">+=</span> <span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">            """</span>
+        <span class="n">html</span> <span class="o">+=</span> <span class="s2">"""</span>
 <span class="s2">            &lt;/div&gt;</span>
 <span class="s2">        &lt;/div&gt;</span>
-<span class="s2">        &quot;&quot;&quot;</span>
+<span class="s2">        """</span>
         <span class="n">render_token_detail_html</span><span class="p">(</span><span class="n">html</span><span class="p">)</span></div>
 
 
@@ -1295,17 +1297,17 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="parse_args">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.viewer.html#trinity.buffer.viewer.parse_args">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">parse_args</span><span class="p">():</span>
-    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Experience Visualizer&quot;</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--db-url&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to the experience database.&quot;</span><span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--table&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Name of the experience table.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">"Experience Visualizer"</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--db-url"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Path to the experience database."</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--table"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Name of the experience table."</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
-        <span class="s2">&quot;--schema&quot;</span><span class="p">,</span>
+        <span class="s2">"--schema"</span><span class="p">,</span>
         <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-        <span class="n">default</span><span class="o">=</span><span class="s2">&quot;experience&quot;</span><span class="p">,</span>
-        <span class="n">choices</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;experience&quot;</span><span class="p">,</span> <span class="s2">&quot;sft&quot;</span><span class="p">),</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Schema type of the experience table.&quot;</span><span class="p">,</span>
+        <span class="n">default</span><span class="o">=</span><span class="s2">"experience"</span><span class="p">,</span>
+        <span class="n">choices</span><span class="o">=</span><span class="p">(</span><span class="s2">"experience"</span><span class="p">,</span> <span class="s2">"sft"</span><span class="p">),</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Schema type of the experience table."</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--tokenizer&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path to the tokenizer.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">"--tokenizer"</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">"Path to the tokenizer."</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span></div>
 
 
@@ -1318,7 +1320,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">config</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">table_name</span>
     <span class="n">config</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">db_url</span>
     <span class="n">config</span><span class="o">.</span><span class="n">schema_type</span> <span class="o">=</span> <span class="n">schema_type</span>
-    <span class="n">config</span><span class="o">.</span><span class="n">storage_type</span> <span class="o">=</span> <span class="s2">&quot;sql&quot;</span>
+    <span class="n">config</span><span class="o">.</span><span class="n">storage_type</span> <span class="o">=</span> <span class="s2">"sql"</span>
     <span class="n">config</span><span class="o">.</span><span class="n">wrap_in_ray</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="k">return</span> <span class="n">SQLExperienceViewer</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></div>
 
@@ -1331,10 +1333,10 @@ window.runMermaid = runMermaid;</script>
 
     <span class="n">viewer</span> <span class="o">=</span> <span class="n">get_viewer</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">db_url</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">table</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">schema</span><span class="p">)</span>
 
-    <span class="n">st</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Trinity-RFT Experience Visualizer&quot;</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">"Trinity-RFT Experience Visualizer"</span><span class="p">)</span>
 
     <span class="c1"># Initialize session state</span>
-    <span class="k">if</span> <span class="s2">&quot;page&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s2">"page"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">:</span>
         <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">=</span> <span class="mi">1</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_set_page</span><span class="p">(</span><span class="n">page</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -1345,57 +1347,57 @@ window.runMermaid = runMermaid;</script>
         <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page_input</span>
 
     <span class="c1"># === Sidebar: Filters ===</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">header</span><span class="p">(</span><span class="s2">&quot;Filters&quot;</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">header</span><span class="p">(</span><span class="s2">"Filters"</span><span class="p">)</span>
 
     <span class="c1"># Reward range filter</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**Reward Range**&quot;</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">"**Reward Range**"</span><span class="p">)</span>
     <span class="n">col_rmin</span><span class="p">,</span> <span class="n">col_rmax</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">columns</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
     <span class="k">with</span> <span class="n">col_rmin</span><span class="p">:</span>
-        <span class="n">reward_min_str</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;Min&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;reward_min&quot;</span><span class="p">)</span>
+        <span class="n">reward_min_str</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">"Min"</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">"reward_min"</span><span class="p">)</span>
     <span class="k">with</span> <span class="n">col_rmax</span><span class="p">:</span>
-        <span class="n">reward_max_str</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;Max&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;reward_max&quot;</span><span class="p">)</span>
+        <span class="n">reward_max_str</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">"Max"</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">"reward_max"</span><span class="p">)</span>
     <span class="n">reward_min</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">reward_min_str</span><span class="p">)</span> <span class="k">if</span> <span class="n">reward_min_str</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">else</span> <span class="kc">None</span>
     <span class="n">reward_max</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">reward_max_str</span><span class="p">)</span> <span class="k">if</span> <span class="n">reward_max_str</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">else</span> <span class="kc">None</span>
 
     <span class="c1"># Model version range filter</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**Model Version Range**&quot;</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">"**Model Version Range**"</span><span class="p">)</span>
     <span class="n">col_vmin</span><span class="p">,</span> <span class="n">col_vmax</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">columns</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
     <span class="k">with</span> <span class="n">col_vmin</span><span class="p">:</span>
-        <span class="n">mv_min_str</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;Min&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;mv_min&quot;</span><span class="p">)</span>
+        <span class="n">mv_min_str</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">"Min"</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">"mv_min"</span><span class="p">)</span>
     <span class="k">with</span> <span class="n">col_vmax</span><span class="p">:</span>
-        <span class="n">mv_max_str</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;Max&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;mv_max&quot;</span><span class="p">)</span>
+        <span class="n">mv_max_str</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">"Max"</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">"mv_max"</span><span class="p">)</span>
     <span class="n">model_version_min</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">mv_min_str</span><span class="p">)</span> <span class="k">if</span> <span class="n">mv_min_str</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">else</span> <span class="kc">None</span>
     <span class="n">model_version_max</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">mv_max_str</span><span class="p">)</span> <span class="k">if</span> <span class="n">mv_max_str</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">else</span> <span class="kc">None</span>
 
     <span class="c1"># Task ID exact match filter</span>
-    <span class="n">task_id_filter</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;Task ID (exact match)&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;task_id&quot;</span><span class="p">)</span>
+    <span class="n">task_id_filter</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">"Task ID (exact match)"</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">"task_id"</span><span class="p">)</span>
 
     <span class="c1"># Apply filters button</span>
-    <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="s2">&quot;Apply Filters&quot;</span><span class="p">,</span> <span class="n">use_container_width</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">button</span><span class="p">(</span><span class="s2">"Apply Filters"</span><span class="p">,</span> <span class="n">use_container_width</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="n">new_filters</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="n">reward_min</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">new_filters</span><span class="p">[</span><span class="s2">&quot;reward_min&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reward_min</span>
+            <span class="n">new_filters</span><span class="p">[</span><span class="s2">"reward_min"</span><span class="p">]</span> <span class="o">=</span> <span class="n">reward_min</span>
         <span class="k">if</span> <span class="n">reward_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">new_filters</span><span class="p">[</span><span class="s2">&quot;reward_max&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reward_max</span>
+            <span class="n">new_filters</span><span class="p">[</span><span class="s2">"reward_max"</span><span class="p">]</span> <span class="o">=</span> <span class="n">reward_max</span>
         <span class="k">if</span> <span class="n">model_version_min</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">new_filters</span><span class="p">[</span><span class="s2">&quot;model_version_min&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">model_version_min</span><span class="p">)</span>
+            <span class="n">new_filters</span><span class="p">[</span><span class="s2">"model_version_min"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">model_version_min</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">model_version_max</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">new_filters</span><span class="p">[</span><span class="s2">&quot;model_version_max&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">model_version_max</span><span class="p">)</span>
+            <span class="n">new_filters</span><span class="p">[</span><span class="s2">"model_version_max"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">model_version_max</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">task_id_filter</span><span class="p">:</span>
-            <span class="n">new_filters</span><span class="p">[</span><span class="s2">&quot;task_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">task_id_filter</span>
+            <span class="n">new_filters</span><span class="p">[</span><span class="s2">"task_id"</span><span class="p">]</span> <span class="o">=</span> <span class="n">task_id_filter</span>
         <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">active_filters</span> <span class="o">=</span> <span class="n">new_filters</span>
         <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">=</span> <span class="mi">1</span>
         <span class="n">st</span><span class="o">.</span><span class="n">rerun</span><span class="p">()</span>
 
     <span class="c1"># Use committed filters from session state</span>
-    <span class="k">if</span> <span class="s2">&quot;active_filters&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s2">"active_filters"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">:</span>
         <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">active_filters</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">filters</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">active_filters</span>
 
     <span class="c1"># Sidebar bottom: per-page setting (low-profile)</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">"---"</span><span class="p">)</span>
     <span class="n">experiences_per_page</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span>
-        <span class="s2">&quot;Per page&quot;</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;per_page&quot;</span>
+        <span class="s2">"Per page"</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_value</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">"per_page"</span>
     <span class="p">)</span>
 
     <span class="c1"># Query total with filters</span>
@@ -1406,7 +1408,7 @@ window.runMermaid = runMermaid;</script>
     <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">&gt;</span> <span class="n">total_pages</span><span class="p">:</span>
         <span class="n">_set_page</span><span class="p">(</span><span class="n">total_pages</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="s2">&quot;page_input&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s2">"page_input"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">:</span>
         <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page_input</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span>
     <span class="k">elif</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page_input</span> <span class="o">!=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span><span class="p">:</span>
         <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page_input</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span>
@@ -1419,70 +1421,70 @@ window.runMermaid = runMermaid;</script>
 
     <span class="c1"># Sidebar: table of contents</span>
     <span class="k">if</span> <span class="n">experiences</span><span class="p">:</span>
-        <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
-        <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;**Contents**&quot;</span><span class="p">)</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">"---"</span><span class="p">)</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">"**Contents**"</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">experiences</span><span class="p">:</span>
             <span class="n">eid_str</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">eid</span><span class="p">)</span>
-            <span class="n">reward_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">exp</span><span class="o">.</span><span class="n">reward</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">exp</span><span class="o">.</span><span class="n">reward</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;N/A&quot;</span>
+            <span class="n">reward_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">exp</span><span class="o">.</span><span class="n">reward</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">exp</span><span class="o">.</span><span class="n">reward</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">"N/A"</span>
             <span class="n">st</span><span class="o">.</span><span class="n">sidebar</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;- [</span><span class="si">{</span><span class="n">eid_str</span><span class="si">}</span><span class="s2">](#experience-</span><span class="si">{</span><span class="n">eid_str</span><span class="si">}</span><span class="s2">) (r=</span><span class="si">{</span><span class="n">reward_str</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">"- [</span><span class="si">{</span><span class="n">eid_str</span><span class="si">}</span><span class="s2">](#experience-</span><span class="si">{</span><span class="n">eid_str</span><span class="si">}</span><span class="s2">) (r=</span><span class="si">{</span><span class="n">reward_str</span><span class="si">}</span><span class="s2">)"</span><span class="p">,</span>
                 <span class="n">unsafe_allow_html</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="p">)</span>
 
     <span class="c1"># Render experiences</span>
     <span class="k">if</span> <span class="n">experiences</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">experiences</span><span class="p">:</span>
-            <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&lt;a name=&quot;experience-</span><span class="si">{</span><span class="n">exp</span><span class="o">.</span><span class="n">eid</span><span class="si">}</span><span class="s1">&quot;&gt;&lt;/a&gt;&#39;</span><span class="p">,</span> <span class="n">unsafe_allow_html</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="sa">f</span><span class="s1">'&lt;a name="experience-</span><span class="si">{</span><span class="n">exp</span><span class="o">.</span><span class="n">eid</span><span class="si">}</span><span class="s1">"&gt;&lt;/a&gt;'</span><span class="p">,</span> <span class="n">unsafe_allow_html</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">render_experience</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">st</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;No experiences found matching the current filters.&quot;</span><span class="p">)</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"No experiences found matching the current filters."</span><span class="p">)</span>
 
     <span class="c1"># === Bottom: Pagination ===</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">&quot;---&quot;</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span><span class="s2">"---"</span><span class="p">)</span>
 
     <span class="c1"># Row 1: Previous | [current_page] / total_pages | Next</span>
     <span class="n">col_prev</span><span class="p">,</span> <span class="n">col_page_input</span><span class="p">,</span> <span class="n">col_slash</span><span class="p">,</span> <span class="n">col_total</span><span class="p">,</span> <span class="n">col_next</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">columns</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
     <span class="k">with</span> <span class="n">col_prev</span><span class="p">:</span>
         <span class="n">st</span><span class="o">.</span><span class="n">button</span><span class="p">(</span>
-            <span class="s2">&quot;Previous&quot;</span><span class="p">,</span>
+            <span class="s2">"Previous"</span><span class="p">,</span>
             <span class="n">disabled</span><span class="o">=</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">),</span>
             <span class="n">on_click</span><span class="o">=</span><span class="n">_set_page</span><span class="p">,</span>
             <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,),</span>
         <span class="p">)</span>
     <span class="k">with</span> <span class="n">col_page_input</span><span class="p">:</span>
         <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span>
-            <span class="s2">&quot;page&quot;</span><span class="p">,</span>
+            <span class="s2">"page"</span><span class="p">,</span>
             <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
             <span class="n">max_value</span><span class="o">=</span><span class="n">total_pages</span><span class="p">,</span>
             <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-            <span class="n">label_visibility</span><span class="o">=</span><span class="s2">&quot;collapsed&quot;</span><span class="p">,</span>
-            <span class="n">key</span><span class="o">=</span><span class="s2">&quot;page_input&quot;</span><span class="p">,</span>
+            <span class="n">label_visibility</span><span class="o">=</span><span class="s2">"collapsed"</span><span class="p">,</span>
+            <span class="n">key</span><span class="o">=</span><span class="s2">"page_input"</span><span class="p">,</span>
             <span class="n">on_change</span><span class="o">=</span><span class="n">_sync_page_from_input</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">with</span> <span class="n">col_slash</span><span class="p">:</span>
         <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span>
-            <span class="s2">&quot;&lt;div style=&#39;text-align:center;line-height:38px;&#39;&gt;/&lt;/div&gt;&quot;</span><span class="p">,</span>
+            <span class="s2">"&lt;div style='text-align:center;line-height:38px;'&gt;/&lt;/div&gt;"</span><span class="p">,</span>
             <span class="n">unsafe_allow_html</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">with</span> <span class="n">col_total</span><span class="p">:</span>
         <span class="n">st</span><span class="o">.</span><span class="n">markdown</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;&lt;div style=&#39;line-height:38px;&#39;&gt;</span><span class="si">{</span><span class="n">total_pages</span><span class="si">}</span><span class="s2">&lt;/div&gt;&quot;</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"&lt;div style='line-height:38px;'&gt;</span><span class="si">{</span><span class="n">total_pages</span><span class="si">}</span><span class="s2">&lt;/div&gt;"</span><span class="p">,</span>
             <span class="n">unsafe_allow_html</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">with</span> <span class="n">col_next</span><span class="p">:</span>
         <span class="n">st</span><span class="o">.</span><span class="n">button</span><span class="p">(</span>
-            <span class="s2">&quot;Next&quot;</span><span class="p">,</span>
+            <span class="s2">"Next"</span><span class="p">,</span>
             <span class="n">disabled</span><span class="o">=</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">&gt;=</span> <span class="n">total_pages</span><span class="p">),</span>
             <span class="n">on_click</span><span class="o">=</span><span class="n">_set_page</span><span class="p">,</span>
             <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="o">.</span><span class="n">page</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,),</span>
         <span class="p">)</span>
 
     <span class="c1"># Row 2: total count</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">caption</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">total_seq_num</span><span class="si">}</span><span class="s2"> experiences in total&quot;</span><span class="p">)</span></div>
+    <span class="n">st</span><span class="o">.</span><span class="n">caption</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">total_seq_num</span><span class="si">}</span><span class="s2"> experiences in total"</span><span class="p">)</span></div>
 
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
     <span class="n">main</span><span class="p">()</span>
 </pre></div>
 

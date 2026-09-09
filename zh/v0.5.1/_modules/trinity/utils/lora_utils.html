@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1009,33 +1011,33 @@ window.runMermaid = runMermaid;</script>
     <span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoConfig</span><span class="p">,</span> <span class="n">AutoModelForCausalLM</span>
 
     <span class="n">config</span> <span class="o">=</span> <span class="n">AutoConfig</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">model_path</span><span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;vocab_size&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">"vocab_size"</span><span class="p">):</span>
         <span class="c1"># for Qwen3.5, vocab_size  is not stored in the top-level config</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;get_text_config&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">"get_text_config"</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Model config loaded from </span><span class="si">{</span><span class="n">model_path</span><span class="si">!r}</span><span class="s2"> has neither &#39;vocab_size&#39; &quot;</span>
-                <span class="s2">&quot;nor &#39;get_text_config()&#39;, so a text config cannot be derived.&quot;</span>
+                <span class="sa">f</span><span class="s2">"Model config loaded from </span><span class="si">{</span><span class="n">model_path</span><span class="si">!r}</span><span class="s2"> has neither 'vocab_size' "</span>
+                <span class="s2">"nor 'get_text_config()', so a text config cannot be derived."</span>
             <span class="p">)</span>
         <span class="c1"># For some models, vocab_size may only be available on the text sub-config.</span>
         <span class="n">config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get_text_config</span><span class="p">()</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;vocab_size&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">"vocab_size"</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Text config derived from </span><span class="si">{</span><span class="n">model_path</span><span class="si">!r}</span><span class="s2"> does not define &#39;vocab_size&#39;.&quot;</span>
+                <span class="sa">f</span><span class="s2">"Text config derived from </span><span class="si">{</span><span class="n">model_path</span><span class="si">!r}</span><span class="s2"> does not define 'vocab_size'."</span>
             <span class="p">)</span>
     <span class="n">model</span> <span class="o">=</span> <span class="n">AutoModelForCausalLM</span><span class="o">.</span><span class="n">from_config</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
     <span class="n">lora_config</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;task_type&quot;</span><span class="p">:</span> <span class="n">TaskType</span><span class="o">.</span><span class="n">CAUSAL_LM</span><span class="p">,</span>
-        <span class="s2">&quot;r&quot;</span><span class="p">:</span> <span class="n">lora_rank</span><span class="p">,</span>
-        <span class="s2">&quot;lora_alpha&quot;</span><span class="p">:</span> <span class="n">lora_alpha</span><span class="p">,</span>
-        <span class="s2">&quot;target_modules&quot;</span><span class="p">:</span> <span class="n">target_modules</span><span class="p">,</span>
-        <span class="s2">&quot;exclude_modules&quot;</span><span class="p">:</span> <span class="n">exclude_modules</span><span class="p">,</span>
-        <span class="s2">&quot;bias&quot;</span><span class="p">:</span> <span class="s2">&quot;none&quot;</span><span class="p">,</span>
+        <span class="s2">"task_type"</span><span class="p">:</span> <span class="n">TaskType</span><span class="o">.</span><span class="n">CAUSAL_LM</span><span class="p">,</span>
+        <span class="s2">"r"</span><span class="p">:</span> <span class="n">lora_rank</span><span class="p">,</span>
+        <span class="s2">"lora_alpha"</span><span class="p">:</span> <span class="n">lora_alpha</span><span class="p">,</span>
+        <span class="s2">"target_modules"</span><span class="p">:</span> <span class="n">target_modules</span><span class="p">,</span>
+        <span class="s2">"exclude_modules"</span><span class="p">:</span> <span class="n">exclude_modules</span><span class="p">,</span>
+        <span class="s2">"bias"</span><span class="p">:</span> <span class="s2">"none"</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="n">peft_model</span> <span class="o">=</span> <span class="n">get_peft_model</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">LoraConfig</span><span class="p">(</span><span class="o">**</span><span class="n">lora_config</span><span class="p">))</span>
-    <span class="n">peft_model</span><span class="o">.</span><span class="n">save_pretrained</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">checkpoint_job_dir</span><span class="si">}</span><span class="s2">/dummy_lora&quot;</span><span class="p">)</span>
+    <span class="n">peft_model</span><span class="o">.</span><span class="n">save_pretrained</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">checkpoint_job_dir</span><span class="si">}</span><span class="s2">/dummy_lora"</span><span class="p">)</span>
     <span class="k">del</span> <span class="n">model</span><span class="p">,</span> <span class="n">peft_model</span>
     <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">empty_cache</span><span class="p">()</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">checkpoint_job_dir</span><span class="si">}</span><span class="s2">/dummy_lora&quot;</span></div>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">checkpoint_job_dir</span><span class="si">}</span><span class="s2">/dummy_lora"</span></div>
 
 </pre></div>
 

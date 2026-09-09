@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1021,10 +1023,10 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>trinity.algorithm.policy_loss_fn.gspo_policy_loss 源代码</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;GSPO-token policy loss function.</span>
+<span></span><span class="sd">"""GSPO-token policy loss function.</span>
 
 <span class="sd">Implemented from https://arxiv.org/pdf/2507.18071</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
@@ -1041,31 +1043,31 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.policy_loss_fn.gspo_policy_loss.html#trinity.algorithm.policy_loss_fn.gspo_policy_loss.GSPOLossFn.__init__">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;verl&quot;</span><span class="p">,</span>
+        <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"verl"</span><span class="p">,</span>
         <span class="n">clip_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">clip_range_low</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">clip_range_high</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">loss_agg_mode</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;seq-mean-token-mean&quot;</span><span class="p">,</span>
+        <span class="n">loss_agg_mode</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"seq-mean-token-mean"</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">)</span>
         <span class="n">_clip_range_low</span> <span class="o">=</span> <span class="n">clip_range_low</span> <span class="k">if</span> <span class="n">clip_range_low</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">clip_range</span>
         <span class="k">if</span> <span class="n">_clip_range_low</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Either clip_range or clip_range_low must be specified.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Either clip_range or clip_range_low must be specified."</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">clip_range_low</span> <span class="o">=</span> <span class="n">_clip_range_low</span>
 
         <span class="n">_clip_range_high</span> <span class="o">=</span> <span class="n">clip_range_high</span> <span class="k">if</span> <span class="n">clip_range_high</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">clip_range</span>
         <span class="k">if</span> <span class="n">_clip_range_high</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Either clip_range or clip_range_high must be specified.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Either clip_range or clip_range_high must be specified."</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">clip_range_high</span> <span class="o">=</span> <span class="n">_clip_range_high</span>
 
-        <span class="k">if</span> <span class="n">loss_agg_mode</span> <span class="o">!=</span> <span class="s2">&quot;seq-mean-token-mean&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">loss_agg_mode</span> <span class="o">!=</span> <span class="s2">"seq-mean-token-mean"</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.utils.log</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_logger</span>
 
             <span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;The original GSPO paper requires loss_agg_mode to be &#39;seq-mean-token-mean&#39;, but the current setting is &#39;</span><span class="si">{</span><span class="n">loss_agg_mode</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+                <span class="sa">f</span><span class="s2">"The original GSPO paper requires loss_agg_mode to be 'seq-mean-token-mean', but the current setting is '</span><span class="si">{</span><span class="n">loss_agg_mode</span><span class="si">}</span><span class="s2">'."</span>
             <span class="p">)</span>
-            <span class="c1"># loss_agg_mode = &quot;seq-mean-token-mean&quot;</span>
+            <span class="c1"># loss_agg_mode = "seq-mean-token-mean"</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">loss_agg_mode</span> <span class="o">=</span> <span class="n">loss_agg_mode</span></div>
 
 
@@ -1099,10 +1101,10 @@ window.runMermaid = runMermaid;</script>
         <span class="n">ppo_kl</span> <span class="o">=</span> <span class="n">masked_mean</span><span class="p">(</span><span class="o">-</span><span class="n">negative_approx_kl</span><span class="p">,</span> <span class="n">action_mask</span><span class="p">)</span>
         <span class="n">ppo_kl_seq</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="o">-</span><span class="n">negative_approx_kl_seq</span><span class="p">)</span>
         <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;pg_clipfrac&quot;</span><span class="p">:</span> <span class="n">pg_clipfrac</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
-            <span class="s2">&quot;ppo_kl&quot;</span><span class="p">:</span> <span class="n">ppo_kl</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
-            <span class="s2">&quot;pg_loss&quot;</span><span class="p">:</span> <span class="n">pg_loss</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
-            <span class="s2">&quot;ppo_kl_seq&quot;</span><span class="p">:</span> <span class="n">ppo_kl_seq</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+            <span class="s2">"pg_clipfrac"</span><span class="p">:</span> <span class="n">pg_clipfrac</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+            <span class="s2">"ppo_kl"</span><span class="p">:</span> <span class="n">ppo_kl</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+            <span class="s2">"pg_loss"</span><span class="p">:</span> <span class="n">pg_loss</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+            <span class="s2">"ppo_kl_seq"</span><span class="p">:</span> <span class="n">ppo_kl_seq</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
         <span class="p">}</span>
         <span class="k">return</span> <span class="n">pg_loss</span><span class="p">,</span> <span class="n">metrics</span>
 
@@ -1112,9 +1114,9 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="nf">default_args</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
         <span class="c1"># See discussion in https://github.com/volcengine/verl/pull/2775#issuecomment-3130065984</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;clip_range_low&quot;</span><span class="p">:</span> <span class="mf">0.0003</span><span class="p">,</span>
-            <span class="s2">&quot;clip_range_high&quot;</span><span class="p">:</span> <span class="mf">0.0004</span><span class="p">,</span>
-            <span class="s2">&quot;loss_agg_mode&quot;</span><span class="p">:</span> <span class="s2">&quot;seq-mean-token-mean&quot;</span><span class="p">,</span>
+            <span class="s2">"clip_range_low"</span><span class="p">:</span> <span class="mf">0.0003</span><span class="p">,</span>
+            <span class="s2">"clip_range_high"</span><span class="p">:</span> <span class="mf">0.0004</span><span class="p">,</span>
+            <span class="s2">"loss_agg_mode"</span><span class="p">:</span> <span class="s2">"seq-mean-token-mean"</span><span class="p">,</span>
         <span class="p">}</span></div>
 </div>
 

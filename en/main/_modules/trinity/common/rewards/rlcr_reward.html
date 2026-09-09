@@ -46,6 +46,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1015,7 +1017,7 @@ window.runMermaid = runMermaid;</script>
                   
   <h1>Source code for trinity.common.rewards.rlcr_reward</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="sd">&quot;&quot;&quot;A safe port of the five-component RLCR reward for math tasks.&quot;&quot;&quot;</span>
+<span class="sd">"""A safe port of the five-component RLCR reward for math tasks."""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_math</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">_re</span>
@@ -1033,33 +1035,33 @@ window.runMermaid = runMermaid;</script>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.rewards.reward_fn</span><span class="w"> </span><span class="kn">import</span> <span class="n">RewardFn</span> <span class="k">as</span> <span class="n">_RewardFn</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;RLCRRewardFn&quot;</span><span class="p">]</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"RLCRRewardFn"</span><span class="p">]</span>
 
 <span class="n">_COMPONENTS</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s2">&quot;format&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;accuracy&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;brier&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;mean_confidence&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;confidence_one_or_zero&quot;</span><span class="p">,</span>
+    <span class="s2">"format"</span><span class="p">,</span>
+    <span class="s2">"accuracy"</span><span class="p">,</span>
+    <span class="s2">"brier"</span><span class="p">,</span>
+    <span class="s2">"mean_confidence"</span><span class="p">,</span>
+    <span class="s2">"confidence_one_or_zero"</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="n">_DEFAULT_WEIGHTS</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;format&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
-    <span class="s2">&quot;accuracy&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
-    <span class="s2">&quot;brier&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
-    <span class="s2">&quot;mean_confidence&quot;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
-    <span class="s2">&quot;confidence_one_or_zero&quot;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
+    <span class="s2">"format"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="s2">"accuracy"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="s2">"brier"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+    <span class="s2">"mean_confidence"</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
+    <span class="s2">"confidence_one_or_zero"</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
 <span class="p">}</span>
-<span class="n">_RESERVED_TAG_RE</span> <span class="o">=</span> <span class="n">_re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;&lt;/?(?:think|answer|analysis|confidence)&gt;&quot;</span><span class="p">)</span>
-<span class="n">_CONFIDENCE_TAG_RE</span> <span class="o">=</span> <span class="n">_re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;&lt;/?confidence&gt;&quot;</span><span class="p">)</span>
+<span class="n">_RESERVED_TAG_RE</span> <span class="o">=</span> <span class="n">_re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"&lt;/?(?:think|answer|analysis|confidence)&gt;"</span><span class="p">)</span>
+<span class="n">_CONFIDENCE_TAG_RE</span> <span class="o">=</span> <span class="n">_re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"&lt;/?confidence&gt;"</span><span class="p">)</span>
 <span class="n">_TERMINAL_TAGS</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s2">&quot;&lt;think&gt;&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;&lt;/think&gt;&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;&lt;answer&gt;&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;&lt;/answer&gt;&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;&lt;analysis&gt;&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;&lt;/analysis&gt;&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;&lt;confidence&gt;&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;&lt;/confidence&gt;&quot;</span><span class="p">,</span>
+    <span class="s2">"&lt;think&gt;"</span><span class="p">,</span>
+    <span class="s2">"&lt;/think&gt;"</span><span class="p">,</span>
+    <span class="s2">"&lt;answer&gt;"</span><span class="p">,</span>
+    <span class="s2">"&lt;/answer&gt;"</span><span class="p">,</span>
+    <span class="s2">"&lt;analysis&gt;"</span><span class="p">,</span>
+    <span class="s2">"&lt;/analysis&gt;"</span><span class="p">,</span>
+    <span class="s2">"&lt;confidence&gt;"</span><span class="p">,</span>
+    <span class="s2">"&lt;/confidence&gt;"</span><span class="p">,</span>
 <span class="p">)</span>
 
 
@@ -1084,84 +1086,84 @@ window.runMermaid = runMermaid;</script>
 <span class="k">def</span><span class="w"> </span><span class="nf">_parse_finite_confidence</span><span class="p">(</span><span class="n">payload</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_ConfidenceParseResult</span><span class="p">:</span>
     <span class="n">payload</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">payload</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">_ConfidenceParseResult</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;confidence_empty&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_ConfidenceParseResult</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">"confidence_empty"</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">confidence</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
     <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="ne">OverflowError</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_ConfidenceParseResult</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;confidence_non_numeric&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_ConfidenceParseResult</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">"confidence_non_numeric"</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">_math</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">confidence</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_ConfidenceParseResult</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;confidence_non_finite&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_ConfidenceParseResult</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">"confidence_non_finite"</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">confidence</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">_ConfidenceParseResult</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;confidence_out_of_range&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_ConfidenceParseResult</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">"confidence_out_of_range"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">_ConfidenceParseResult</span><span class="p">(</span><span class="n">confidence</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_scan_confidence</span><span class="p">(</span><span class="n">response</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_ConfidenceParseResult</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return the last q only when every confidence tag is balanced and unnested.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Return the last q only when every confidence tag is balanced and unnested."""</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_ConfidenceParseResult</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;response_not_string&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_ConfidenceParseResult</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">"response_not_string"</span><span class="p">)</span>
 
     <span class="n">open_tag</span><span class="p">:</span> <span class="n">_re</span><span class="o">.</span><span class="n">Match</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">last_payload</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">_CONFIDENCE_TAG_RE</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">response</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">tag</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;&lt;confidence&gt;&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">tag</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"&lt;confidence&gt;"</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">open_tag</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">_ConfidenceParseResult</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;nested_tags&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">_ConfidenceParseResult</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">"nested_tags"</span><span class="p">)</span>
             <span class="n">open_tag</span> <span class="o">=</span> <span class="n">tag</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">open_tag</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">_ConfidenceParseResult</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;unbalanced_tags&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">_ConfidenceParseResult</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">"unbalanced_tags"</span><span class="p">)</span>
             <span class="n">last_payload</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="n">open_tag</span><span class="o">.</span><span class="n">end</span><span class="p">()</span> <span class="p">:</span> <span class="n">tag</span><span class="o">.</span><span class="n">start</span><span class="p">()]</span>
             <span class="n">open_tag</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">if</span> <span class="n">open_tag</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">_ConfidenceParseResult</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;unbalanced_tags&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_ConfidenceParseResult</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">"unbalanced_tags"</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">last_payload</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">_ConfidenceParseResult</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;missing_tag&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_ConfidenceParseResult</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">"missing_tag"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">_parse_finite_confidence</span><span class="p">(</span><span class="n">last_payload</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_parse_safe_confidence</span><span class="p">(</span><span class="n">response</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse the final closed confidence even if the full terminal chain is invalid.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Parse the final closed confidence even if the full terminal chain is invalid."""</span>
     <span class="k">return</span> <span class="n">_scan_confidence</span><span class="p">(</span><span class="n">response</span><span class="p">)</span><span class="o">.</span><span class="n">confidence</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_parse_terminal</span><span class="p">(</span><span class="n">response</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_TerminalParseResult</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate the strict terminal tag chain and return its answer and confidence.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Validate the strict terminal tag chain and return its answer and confidence."""</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_terminal_failure</span><span class="p">(</span><span class="s2">&quot;response_not_string&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_terminal_failure</span><span class="p">(</span><span class="s2">"response_not_string"</span><span class="p">)</span>
 
     <span class="n">tags</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">_RESERVED_TAG_RE</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">response</span><span class="p">))</span>
     <span class="n">open_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">:</span>
         <span class="n">token</span> <span class="o">=</span> <span class="n">tag</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">is_close</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;&lt;/&quot;</span><span class="p">)</span>
+        <span class="n">is_close</span> <span class="o">=</span> <span class="n">token</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"&lt;/"</span><span class="p">)</span>
         <span class="n">name</span> <span class="o">=</span> <span class="n">token</span><span class="p">[</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">is_close</span> <span class="k">else</span> <span class="n">token</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">is_close</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">open_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">_terminal_failure</span><span class="p">(</span><span class="s2">&quot;unbalanced_tags&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">_terminal_failure</span><span class="p">(</span><span class="s2">"unbalanced_tags"</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">open_name</span> <span class="o">!=</span> <span class="n">name</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">_terminal_failure</span><span class="p">(</span><span class="s2">&quot;crossed_tags&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">_terminal_failure</span><span class="p">(</span><span class="s2">"crossed_tags"</span><span class="p">)</span>
             <span class="n">open_name</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">open_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">_terminal_failure</span><span class="p">(</span><span class="s2">&quot;nested_tags&quot;</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">_terminal_failure</span><span class="p">(</span><span class="s2">"nested_tags"</span><span class="p">)</span>
             <span class="n">open_name</span> <span class="o">=</span> <span class="n">name</span>
     <span class="k">if</span> <span class="n">open_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">_terminal_failure</span><span class="p">(</span><span class="s2">&quot;unbalanced_tags&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_terminal_failure</span><span class="p">(</span><span class="s2">"unbalanced_tags"</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">_TERMINAL_TAGS</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_terminal_failure</span><span class="p">(</span><span class="s2">&quot;missing_tag&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_terminal_failure</span><span class="p">(</span><span class="s2">"missing_tag"</span><span class="p">)</span>
 
     <span class="n">terminal</span> <span class="o">=</span> <span class="n">tags</span><span class="p">[</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">_TERMINAL_TAGS</span><span class="p">)</span> <span class="p">:]</span>
     <span class="k">if</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">tag</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">terminal</span><span class="p">)</span> <span class="o">!=</span> <span class="n">_TERMINAL_TAGS</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">_terminal_failure</span><span class="p">(</span><span class="s2">&quot;wrong_order&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_terminal_failure</span><span class="p">(</span><span class="s2">"wrong_order"</span><span class="p">)</span>
 
     <span class="k">for</span> <span class="n">close_index</span><span class="p">,</span> <span class="n">next_open_index</span> <span class="ow">in</span> <span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">)):</span>
         <span class="n">between</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="n">terminal</span><span class="p">[</span><span class="n">close_index</span><span class="p">]</span><span class="o">.</span><span class="n">end</span><span class="p">()</span> <span class="p">:</span> <span class="n">terminal</span><span class="p">[</span><span class="n">next_open_index</span><span class="p">]</span><span class="o">.</span><span class="n">start</span><span class="p">()]</span>
         <span class="k">if</span> <span class="n">between</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-            <span class="k">return</span> <span class="n">_terminal_failure</span><span class="p">(</span><span class="s2">&quot;inter_tag_junk&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">_terminal_failure</span><span class="p">(</span><span class="s2">"inter_tag_junk"</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">response</span><span class="p">[</span><span class="n">terminal</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">end</span><span class="p">()</span> <span class="p">:]</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
-        <span class="k">return</span> <span class="n">_terminal_failure</span><span class="p">(</span><span class="s2">&quot;trailing_junk&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_terminal_failure</span><span class="p">(</span><span class="s2">"trailing_junk"</span><span class="p">)</span>
 
     <span class="n">answer</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="n">terminal</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">end</span><span class="p">()</span> <span class="p">:</span> <span class="n">terminal</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">start</span><span class="p">()]</span>
     <span class="n">confidence_payload</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="n">terminal</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">end</span><span class="p">()</span> <span class="p">:</span> <span class="n">terminal</span><span class="p">[</span><span class="mi">7</span><span class="p">]</span><span class="o">.</span><span class="n">start</span><span class="p">()]</span>
@@ -1175,7 +1177,7 @@ window.runMermaid = runMermaid;</script>
     <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">_DEFAULT_WEIGHTS</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">_Mapping</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;weights must be a named mapping&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"weights must be a named mapping"</span><span class="p">)</span>
 
     <span class="n">provided</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
     <span class="n">expected</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">_COMPONENTS</span><span class="p">)</span>
@@ -1184,19 +1186,19 @@ window.runMermaid = runMermaid;</script>
     <span class="k">if</span> <span class="n">missing</span> <span class="ow">or</span> <span class="n">unknown</span><span class="p">:</span>
         <span class="n">details</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
-            <span class="n">details</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;missing keys: </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">details</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"missing keys: </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">unknown</span><span class="p">:</span>
-            <span class="n">details</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;unknown keys: </span><span class="si">{</span><span class="n">unknown</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;invalid weights mapping; &quot;</span> <span class="o">+</span> <span class="s2">&quot;; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">details</span><span class="p">))</span>
+            <span class="n">details</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"unknown keys: </span><span class="si">{</span><span class="n">unknown</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"invalid weights mapping; "</span> <span class="o">+</span> <span class="s2">"; "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">details</span><span class="p">))</span>
 
     <span class="n">validated</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">_COMPONENTS</span><span class="p">:</span>
         <span class="n">value</span> <span class="o">=</span> <span class="n">weights</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">_Real</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;weight &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; must be numeric&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"weight '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">' must be numeric"</span><span class="p">)</span>
         <span class="n">numeric</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">_math</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">numeric</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;weight &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; must be finite&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"weight '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">' must be finite"</span><span class="p">)</span>
         <span class="n">validated</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">numeric</span>
     <span class="k">return</span> <span class="n">validated</span>
 
@@ -1204,7 +1206,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="RLCRRewardFn">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.rlcr_reward.html#trinity.common.rewards.rlcr_reward.RLCRRewardFn">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">RLCRRewardFn</span><span class="p">(</span><span class="n">_RewardFn</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return already weighted RLCR format, accuracy, and calibration components.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Return already weighted RLCR format, accuracy, and calibration components."""</span>
 
 <div class="viewcode-block" id="RLCRRewardFn.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.rlcr_reward.html#trinity.common.rewards.rlcr_reward.RLCRRewardFn.__init__">[docs]</a>
@@ -1215,9 +1217,9 @@ window.runMermaid = runMermaid;</script>
         <span class="n">verifier</span><span class="p">:</span> <span class="n">_Callable</span><span class="p">[[</span><span class="n">_Any</span><span class="p">,</span> <span class="n">_Any</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="n">_verify_with_timeout</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">answer_parser</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;answer_parser must be callable&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"answer_parser must be callable"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">callable</span><span class="p">(</span><span class="n">verifier</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;verifier must be callable&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">"verifier must be callable"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="n">_validate_weights</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_answer_parser</span> <span class="o">=</span> <span class="n">answer_parser</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_verifier</span> <span class="o">=</span> <span class="n">verifier</span></div>
@@ -1245,7 +1247,7 @@ window.runMermaid = runMermaid;</script>
         <span class="k">if</span> <span class="n">terminal</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">terminal</span><span class="o">.</span><span class="n">answer</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">terminal</span><span class="o">.</span><span class="n">confidence</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">truth</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;answer, confidence, and truth are required for verification&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"answer, confidence, and truth are required for verification"</span><span class="p">)</span>
                 <span class="n">parsed_answer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_answer_parser</span><span class="p">(</span><span class="n">terminal</span><span class="o">.</span><span class="n">answer</span><span class="p">)</span>
                 <span class="n">parsed_truth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_answer_parser</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">truth</span><span class="p">))</span>
                 <span class="n">accuracy_score</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_verifier</span><span class="p">(</span><span class="n">parsed_answer</span><span class="p">,</span> <span class="n">parsed_truth</span><span class="p">)))</span>
@@ -1256,12 +1258,12 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">brier_score</span> <span class="o">=</span> <span class="mf">0.0</span>
 
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;format&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">[</span><span class="s2">&quot;format&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">format_score</span><span class="p">),</span>
-            <span class="s2">&quot;accuracy&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">[</span><span class="s2">&quot;accuracy&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">accuracy_score</span><span class="p">),</span>
-            <span class="s2">&quot;brier&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">[</span><span class="s2">&quot;brier&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">brier_score</span><span class="p">),</span>
-            <span class="s2">&quot;mean_confidence&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">[</span><span class="s2">&quot;mean_confidence&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">mean_confidence</span><span class="p">),</span>
-            <span class="s2">&quot;confidence_one_or_zero&quot;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">[</span><span class="s2">&quot;confidence_one_or_zero&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">confidence_one_or_zero</span>
+            <span class="s2">"format"</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">[</span><span class="s2">"format"</span><span class="p">]</span> <span class="o">*</span> <span class="n">format_score</span><span class="p">),</span>
+            <span class="s2">"accuracy"</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">[</span><span class="s2">"accuracy"</span><span class="p">]</span> <span class="o">*</span> <span class="n">accuracy_score</span><span class="p">),</span>
+            <span class="s2">"brier"</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">[</span><span class="s2">"brier"</span><span class="p">]</span> <span class="o">*</span> <span class="n">brier_score</span><span class="p">),</span>
+            <span class="s2">"mean_confidence"</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">[</span><span class="s2">"mean_confidence"</span><span class="p">]</span> <span class="o">*</span> <span class="n">mean_confidence</span><span class="p">),</span>
+            <span class="s2">"confidence_one_or_zero"</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">[</span><span class="s2">"confidence_one_or_zero"</span><span class="p">]</span> <span class="o">*</span> <span class="n">confidence_one_or_zero</span>
             <span class="p">),</span>
         <span class="p">}</span></div>
 

@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -997,12 +999,12 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>trinity.algorithm.policy_loss_fn.sapo_policy_loss 源代码</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;SAPO policy loss function.</span>
+<span></span><span class="sd">"""SAPO policy loss function.</span>
 <span class="sd">Soft Adaptive Policy Optimization (SAPO) is a reinforcement learning algorithm</span>
 <span class="sd">that uses a smooth, temperature-controlled soft gate instead of hard clipping.</span>
 
 <span class="sd">Refer to the SAPO paper for details. https://arxiv.org/abs/2511.20347</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span>
 
@@ -1019,19 +1021,19 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.policy_loss_fn.sapo_policy_loss.html#trinity.algorithm.policy_loss_fn.sapo_policy_loss.SAPOPolicyLossFn.__init__">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;verl&quot;</span><span class="p">,</span>
+        <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"verl"</span><span class="p">,</span>
         <span class="n">tau_pos</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
         <span class="n">tau_neg</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.05</span><span class="p">,</span>
-        <span class="n">loss_agg_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;token-mean&quot;</span><span class="p">,</span>
+        <span class="n">loss_agg_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"token-mean"</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize SAPO policy loss function.</span>
+<span class="w">        </span><span class="sd">"""Initialize SAPO policy loss function.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            backend: The training framework/backend to use (e.g., &quot;verl&quot;)</span>
+<span class="sd">            backend: The training framework/backend to use (e.g., "verl")</span>
 <span class="sd">            tau_pos: Temperature for positive advantages (τ_pos), default 1.0</span>
 <span class="sd">            tau_neg: Temperature for negative advantages (τ_neg), default 1.05, should be &gt;= tau_pos</span>
 <span class="sd">            loss_agg_mode: Mode for aggregating loss across tokens</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tau_pos</span> <span class="o">=</span> <span class="n">tau_pos</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tau_neg</span> <span class="o">=</span> <span class="n">tau_neg</span>
@@ -1039,15 +1041,15 @@ window.runMermaid = runMermaid;</script>
 
         <span class="c1"># Validate that tau_neg &gt; tau_pos for stability</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">tau_neg</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tau_pos</span><span class="p">,</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;tau_neg (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">tau_neg</span><span class="si">}</span><span class="s2">) should be &gt;= tau_pos (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">tau_pos</span><span class="si">}</span><span class="s2">) &quot;</span>
-            <span class="s2">&quot;for better training stability&quot;</span>
+            <span class="sa">f</span><span class="s2">"tau_neg (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">tau_neg</span><span class="si">}</span><span class="s2">) should be &gt;= tau_pos (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">tau_pos</span><span class="si">}</span><span class="s2">) "</span>
+            <span class="s2">"for better training stability"</span>
         <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SAPOPolicyLossFn.soft_gate_function">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.policy_loss_fn.sapo_policy_loss.html#trinity.algorithm.policy_loss_fn.sapo_policy_loss.SAPOPolicyLossFn.soft_gate_function">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">soft_gate_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ratio</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">advantages</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute the soft gate function f_{i,t}(x).</span>
+<span class="w">        </span><span class="sd">"""Compute the soft gate function f_{i,t}(x).</span>
 
 <span class="sd">        The soft gate function is defined as:</span>
 <span class="sd">            f_{i,t}(x) = σ(τ_{i,t} * (x - 1)) * 4 / τ_{i,t}</span>
@@ -1063,7 +1065,7 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The soft gate values for each token</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Select temperature based on advantage sign</span>
         <span class="c1"># tau_i,t = tau_pos if A_i &gt; 0, else tau_neg</span>
         <span class="n">tau</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
@@ -1090,7 +1092,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">advantages</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute SAPO policy loss.</span>
+<span class="w">        </span><span class="sd">"""Compute SAPO policy loss.</span>
 
 <span class="sd">        The SAPO objective function is:</span>
 <span class="sd">            J(θ) = E[1/G Σ 1/|y_i| Σ f_{i,t}(r_{i,t}(θ)) * Â_i]</span>
@@ -1106,7 +1108,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Returns:</span>
 <span class="sd">            loss: The computed policy loss (negative of objective)</span>
 <span class="sd">            metrics: Dictionary of metrics for logging</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Compute token-level importance sampling ratio</span>
         <span class="c1"># r_{i,t}(θ) = π_θ(y_{i,t}|q, y_{i,&lt;t}) / π_{θ_old}(y_{i,t}|q, y_{i,&lt;t})</span>
         <span class="n">negative_approx_kl</span> <span class="o">=</span> <span class="n">logprob</span> <span class="o">-</span> <span class="n">old_logprob</span>
@@ -1134,11 +1136,11 @@ window.runMermaid = runMermaid;</script>
         <span class="n">pos_adv_frac</span> <span class="o">=</span> <span class="n">masked_mean</span><span class="p">((</span><span class="n">advantages</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">(),</span> <span class="n">action_mask</span><span class="p">)</span>
 
         <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;sapo_loss&quot;</span><span class="p">:</span> <span class="n">loss</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
-            <span class="s2">&quot;ppo_kl&quot;</span><span class="p">:</span> <span class="n">ppo_kl</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
-            <span class="s2">&quot;avg_soft_gate&quot;</span><span class="p">:</span> <span class="n">avg_soft_gate</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
-            <span class="s2">&quot;avg_ratio&quot;</span><span class="p">:</span> <span class="n">avg_ratio</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
-            <span class="s2">&quot;pos_adv_frac&quot;</span><span class="p">:</span> <span class="n">pos_adv_frac</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+            <span class="s2">"sapo_loss"</span><span class="p">:</span> <span class="n">loss</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+            <span class="s2">"ppo_kl"</span><span class="p">:</span> <span class="n">ppo_kl</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+            <span class="s2">"avg_soft_gate"</span><span class="p">:</span> <span class="n">avg_soft_gate</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+            <span class="s2">"avg_ratio"</span><span class="p">:</span> <span class="n">avg_ratio</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+            <span class="s2">"pos_adv_frac"</span><span class="p">:</span> <span class="n">pos_adv_frac</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
         <span class="p">}</span>
 
         <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="n">metrics</span>
@@ -1147,23 +1149,23 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.policy_loss_fn.sapo_policy_loss.html#trinity.algorithm.policy_loss_fn.sapo_policy_loss.SAPOPolicyLossFn.default_args">[文档]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">default_args</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get default initialization arguments for SAPO.</span>
+<span class="w">        </span><span class="sd">"""Get default initialization arguments for SAPO.</span>
 
 <span class="sd">        Default configuration (from the SAPO paper):</span>
 <span class="sd">            - tau_pos: 1.0 (temperature for positive advantages)</span>
 <span class="sd">            - tau_neg: 1.05 (temperature for negative advantages)</span>
-<span class="sd">            - loss_agg_mode: &quot;token-mean&quot; (average over tokens)</span>
+<span class="sd">            - loss_agg_mode: "token-mean" (average over tokens)</span>
 
 <span class="sd">        The asymmetric temperatures (tau_neg &gt; tau_pos) help stabilize training</span>
 <span class="sd">        by more aggressively suppressing updates from tokens with negative advantages.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Dictionary of default arguments</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;tau_pos&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
-            <span class="s2">&quot;tau_neg&quot;</span><span class="p">:</span> <span class="mf">1.05</span><span class="p">,</span>
-            <span class="s2">&quot;loss_agg_mode&quot;</span><span class="p">:</span> <span class="s2">&quot;token-mean&quot;</span><span class="p">,</span>
+            <span class="s2">"tau_pos"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+            <span class="s2">"tau_neg"</span><span class="p">:</span> <span class="mf">1.05</span><span class="p">,</span>
+            <span class="s2">"loss_agg_mode"</span><span class="p">:</span> <span class="s2">"token-mean"</span><span class="p">,</span>
         <span class="p">}</span></div>
 </div>
 

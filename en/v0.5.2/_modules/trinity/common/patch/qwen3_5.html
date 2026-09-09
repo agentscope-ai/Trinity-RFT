@@ -46,6 +46,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1039,9 +1041,9 @@ window.runMermaid = runMermaid;</script>
         <span class="n">dim_size</span> <span class="o">=</span> <span class="n">global_tensor</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">dim_size</span> <span class="o">%</span> <span class="n">sp_world_size</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Cannot evenly slice tensor of size </span><span class="si">{</span><span class="n">dim_size</span><span class="si">}</span><span class="s2"> along dim </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2"> &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;across </span><span class="si">{</span><span class="n">sp_world_size</span><span class="si">}</span><span class="s2"> ranks. This would truncate data. &quot;</span>
-                <span class="s2">&quot;Ensure the dimension size is divisible by the SP world size.&quot;</span>
+                <span class="sa">f</span><span class="s2">"Cannot evenly slice tensor of size </span><span class="si">{</span><span class="n">dim_size</span><span class="si">}</span><span class="s2"> along dim </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2"> "</span>
+                <span class="sa">f</span><span class="s2">"across </span><span class="si">{</span><span class="n">sp_world_size</span><span class="si">}</span><span class="s2"> ranks. This would truncate data. "</span>
+                <span class="s2">"Ensure the dimension size is divisible by the SP world size."</span>
             <span class="p">)</span>
         <span class="n">parts</span> <span class="o">=</span> <span class="n">dim_size</span> <span class="o">//</span> <span class="n">sp_world_size</span>
         <span class="n">slc</span> <span class="o">=</span> <span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">global_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
@@ -1075,7 +1077,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="ulysses_gate_delta_net_decorator">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.patch.qwen3_5.html#trinity.common.patch.qwen3_5.ulysses_gate_delta_net_decorator">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">ulysses_gate_delta_net_decorator</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">ulysses_sp_size</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorator to enable Ulysses Sequence Parallel for Qwen3.5 GateDeltaNet linear attention.</span>
+<span class="w">    </span><span class="sd">"""Decorator to enable Ulysses Sequence Parallel for Qwen3.5 GateDeltaNet linear attention.</span>
 
 <span class="sd">    This decorator patches the GateDeltaNet module to support sequence parallelism using the Ulysses</span>
 <span class="sd">    strategy. It intercepts various operations (forward pass, projections, convolutions, and attention)</span>
@@ -1089,8 +1091,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        - This function patches the module in-place and sets a `_is_patched` flag to avoid double-patching.</span>
 <span class="sd">        - The sequence parallel operations are controlled via a global `_in_gate_delta_net_with_sp` flag.</span>
 <span class="sd">        - The patching includes modifications to forward, in_proj_qkv, conv1d, torch.split, and chunk_gated_delta_rule.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="s2">&quot;_is_patched&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="s2">"_is_patched"</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
         <span class="k">return</span>
 
     <span class="n">net</span><span class="o">.</span><span class="n">_is_patched</span> <span class="o">=</span> <span class="kc">True</span>
@@ -1118,9 +1120,9 @@ window.runMermaid = runMermaid;</script>
         <span class="c1"># Under Ulysses SP, hidden_states is already scattered (seq_len / sp_size),</span>
         <span class="c1"># but attention_mask is still at full sequence length, causing a shape mismatch</span>
         <span class="c1"># in apply_mask_to_padding_states.</span>
-        <span class="n">attention_mask</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;attention_mask&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">attention_mask</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"attention_mask"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">attention_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;attention_mask&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">slice_input_tensor</span><span class="p">(</span><span class="n">attention_mask</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s2">"attention_mask"</span><span class="p">]</span> <span class="o">=</span> <span class="n">slice_input_tensor</span><span class="p">(</span><span class="n">attention_mask</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="n">output</span> <span class="o">=</span> <span class="n">original_net_forward</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="n">_in_gate_delta_net_with_sp</span> <span class="o">=</span> <span class="kc">False</span>
@@ -1149,20 +1151,20 @@ window.runMermaid = runMermaid;</script>
         <span class="k">global</span> <span class="n">_in_gate_delta_net_with_sp</span>
         <span class="n">attr</span> <span class="o">=</span> <span class="n">original_conv1d_getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
         <span class="c1"># bias is None in Qwen3.5, so no need to patch for bias</span>
-        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">and</span> <span class="n">_in_gate_delta_net_with_sp</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">"weight"</span> <span class="ow">and</span> <span class="n">_in_gate_delta_net_with_sp</span><span class="p">:</span>
             <span class="n">group</span> <span class="o">=</span> <span class="n">get_ulysses_sequence_parallel_group</span><span class="p">()</span>
             <span class="k">return</span> <span class="n">Slice</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">attr</span>
 
     <span class="n">new_conv1d_class</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;UlyssesGated</span><span class="si">{</span><span class="n">original_conv1d_class</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">"UlyssesGated</span><span class="si">{</span><span class="n">original_conv1d_class</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
         <span class="p">(</span><span class="n">original_conv1d_class</span><span class="p">,),</span>
-        <span class="p">{</span><span class="s2">&quot;__getattr__&quot;</span><span class="p">:</span> <span class="n">new_conv1d_getattr</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">"__getattr__"</span><span class="p">:</span> <span class="n">new_conv1d_getattr</span><span class="p">},</span>
     <span class="p">)</span>
     <span class="n">net</span><span class="o">.</span><span class="n">conv1d</span><span class="o">.</span><span class="vm">__class__</span> <span class="o">=</span> <span class="n">new_conv1d_class</span>
 
     <span class="c1"># Patch torch.split</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;_is_patched_by_ulysses_gate_delta_net&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">split</span><span class="p">,</span> <span class="s2">"_is_patched_by_ulysses_gate_delta_net"</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
         <span class="n">original_split</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">split</span>
 
         <span class="nd">@wraps</span><span class="p">(</span><span class="n">original_split</span><span class="p">)</span>
@@ -1213,10 +1215,10 @@ window.runMermaid = runMermaid;</script>
     <span class="n">mm_token_type_ids</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">IntTensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Unpack</span><span class="p">[</span><span class="n">TransformersKwargs</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span> <span class="o">|</span> <span class="n">Qwen3_5ModelOutputWithPast</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Qwen3.5 model forward pass with multimodal support and gradient synchronization across ranks.</span>
+<span class="w">    </span><span class="sd">"""Qwen3.5 model forward pass with multimodal support and gradient synchronization across ranks.</span>
 
 <span class="sd">    This forward function handles multimodal training (images and/or videos) across multiple GPU ranks</span>
-<span class="sd">    with proper synchronization. When a rank doesn&#39;t have image/video inputs but other ranks do (common in</span>
+<span class="sd">    with proper synchronization. When a rank doesn't have image/video inputs but other ranks do (common in</span>
 <span class="sd">    distributed training with different data samples), it creates dummy images/videos to maintain consistency</span>
 <span class="sd">    and avoid hanging in collective operations.</span>
 
@@ -1239,15 +1241,15 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Note:</span>
 <span class="sd">        - Dummy images/videos are created with shape based on spatial_merge_size when needed for gradient synchronization.</span>
 <span class="sd">        - Uses distributed communication (dist.all_reduce) to synchronize multimodal input availability across ranks.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    """</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">    image_grid_thw (`torch.LongTensor` of shape `(num_images, 3)`, *optional*):</span>
 <span class="sd">        The temporal, height and width of feature shape of each image in LLM.</span>
 <span class="sd">    video_grid_thw (`torch.LongTensor` of shape `(num_videos, 3)`, *optional*):</span>
 <span class="sd">        The temporal, height and width of feature shape of each video in LLM.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">input_ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">^</span> <span class="p">(</span><span class="n">inputs_embeds</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;You must specify exactly one of input_ids or inputs_embeds&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"You must specify exactly one of input_ids or inputs_embeds"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">inputs_embeds</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">inputs_embeds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_input_embeddings</span><span class="p">()(</span><span class="n">input_ids</span><span class="p">)</span>
@@ -1360,10 +1362,10 @@ window.runMermaid = runMermaid;</script>
     <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span> <span class="o">|</span> <span class="n">Qwen3_5CausalLMOutputForPPO</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute log probabilities and entropy for reinforcement learning using PyTorch backend.</span>
+<span class="w">    </span><span class="sd">"""Compute log probabilities and entropy for reinforcement learning using PyTorch backend.</span>
 
-<span class="sd">    This function computes per-token log probabilities and entropy from the language model&#39;s hidden</span>
-<span class="sd">    states using a fused PyTorch-based linear projection. It&#39;s designed for PPO and other RL algorithms</span>
+<span class="sd">    This function computes per-token log probabilities and entropy from the language model's hidden</span>
+<span class="sd">    states using a fused PyTorch-based linear projection. It's designed for PPO and other RL algorithms</span>
 <span class="sd">    that require per-token probability distributions over the vocabulary.</span>
 
 <span class="sd">    Args:</span>
@@ -1384,7 +1386,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Note:</span>
 <span class="sd">        - Uses FusedLinearForPPO for efficient torch-based computation.</span>
 <span class="sd">        - The log probability target is computed by rolling labels (or input_ids) by -1 to create next-token prediction targets.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.experimental.torch_functional</span><span class="w"> </span><span class="kn">import</span> <span class="n">FusedLinearForPPO</span>
 
     <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">input_ids</span><span class="o">=</span><span class="n">input_ids</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -1397,7 +1399,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">rolled_labels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">input_ids</span><span class="p">,</span> <span class="n">shifts</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dims</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-            <span class="s2">&quot;To use forward_with_torch_backend, either labels or input_ids must be provided.&quot;</span>
+            <span class="s2">"To use forward_with_torch_backend, either labels or input_ids must be provided."</span>
         <span class="p">)</span>
 
     <span class="n">fused_linear_for_ppo</span> <span class="o">=</span> <span class="n">FusedLinearForPPO</span><span class="p">()</span>
@@ -1424,9 +1426,9 @@ window.runMermaid = runMermaid;</script>
     <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span> <span class="o">|</span> <span class="n">Qwen3_5CausalLMOutputForPPO</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute log probabilities and entropy for reinforcement learning using Triton kernel backend.</span>
+<span class="w">    </span><span class="sd">"""Compute log probabilities and entropy for reinforcement learning using Triton kernel backend.</span>
 
-<span class="sd">    This function computes per-token log probabilities and entropy from the language model&#39;s hidden</span>
+<span class="sd">    This function computes per-token log probabilities and entropy from the language model's hidden</span>
 <span class="sd">    states using an optimized Triton kernel (linear_cross_entropy). It provides better performance</span>
 <span class="sd">    compared to the PyTorch backend for large vocabularies, suitable for PPO and other RL algorithms.</span>
 
@@ -1449,7 +1451,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        - Uses the linear_cross_entropy Triton kernel from verl for highly optimized computation.</span>
 <span class="sd">        - The log probability target is computed by rolling labels (or input_ids) by -1 to create next-token prediction targets.</span>
 <span class="sd">        - Generally faster than forward_with_torch_backend for large vocabulary sizes.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.kernel.linear_cross_entropy</span><span class="w"> </span><span class="kn">import</span> <span class="n">linear_cross_entropy</span>
 
     <span class="n">outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">input_ids</span><span class="o">=</span><span class="n">input_ids</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -1462,7 +1464,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">rolled_labels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">input_ids</span><span class="p">,</span> <span class="n">shifts</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dims</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-            <span class="s2">&quot;To use forward_with_triton_backend, either labels or input_ids must be provided.&quot;</span>
+            <span class="s2">"To use forward_with_triton_backend, either labels or input_ids must be provided."</span>
         <span class="p">)</span>
 
     <span class="n">log_probs</span><span class="p">,</span> <span class="n">entropy</span> <span class="o">=</span> <span class="n">linear_cross_entropy</span><span class="p">(</span>
@@ -1470,7 +1472,7 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">lm_head</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span>
         <span class="n">rolled_labels</span><span class="p">,</span>
         <span class="n">temperature</span><span class="p">,</span>
-        <span class="s2">&quot;none&quot;</span><span class="p">,</span>
+        <span class="s2">"none"</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">Qwen3_5CausalLMOutputForPPO</span><span class="p">(</span>
         <span class="n">log_probs</span><span class="o">=</span><span class="n">log_probs</span><span class="p">,</span>

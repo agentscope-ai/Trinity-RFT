@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -991,7 +993,7 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>trinity.buffer.selector.selector 源代码</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Data selectors.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""Data selectors."""</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
@@ -1008,7 +1010,7 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.BaseSelector">[文档]</a>
 <span class="nd">@Experimental</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">BaseSelector</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Abstract base class defining the interface for custom data selection strategies.</span>
 
 <span class="sd">    A selector determines which samples (by index) are selected from the dataset</span>
@@ -1020,7 +1022,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        - get_indices: returns list of indices for next batch</span>
 <span class="sd">        - update: updates internal state using feedback (e.g., loss values, mean rewards, etc.)</span>
 <span class="sd">        - state_dict / load_state_dict: for saving/loading selector state (checkpointing)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="BaseSelector.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.BaseSelector.__init__">[文档]</a>
@@ -1032,7 +1034,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="BaseSelector.get_indices">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.BaseSelector.get_indices">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">return_extra_info</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Select a batch of sample indices from the dataset.</span>
 
 <span class="sd">        Args:</span>
@@ -1041,14 +1043,14 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[int]: Selected indices into the dataset</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
 <div class="viewcode-block" id="BaseSelector.feedback">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.BaseSelector.feedback">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">feedback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">values</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Update internal state based on feedback (e.g., model loss, accuracy).</span>
 
 <span class="sd">        This allows adaptive selectors (like hard example mining) to learn over time.</span>
@@ -1056,31 +1058,31 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Args:</span>
 <span class="sd">            indices (List[int]): Previously selected indices</span>
 <span class="sd">            values (List[float]): Feedback values corresponding to those indices</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
 <div class="viewcode-block" id="BaseSelector.state_dict">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.BaseSelector.state_dict">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Return serializable state of the selector for checkpointing.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Dict: State information (e.g., current position, etc.)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
 <div class="viewcode-block" id="BaseSelector.load_state_dict">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.BaseSelector.load_state_dict">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Restore selector state from a saved dictionary.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            state_dict (Dict): Output from state_dict()</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 </div>
 
@@ -1089,11 +1091,11 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="SequentialSelector">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.SequentialSelector">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SequentialSelector</span><span class="p">(</span><span class="n">BaseSelector</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Selects data sequentially in fixed order across epochs.</span>
 
 <span class="sd">    Example: [0,1,2,...,B-1], then [B,B+1,...,2B-1], etc.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="SequentialSelector.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.SequentialSelector.__init__">[文档]</a>
@@ -1117,7 +1119,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="SequentialSelector.feedback">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.SequentialSelector.feedback">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">feedback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">values</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="c1"># No-op: sequential selection doesn&#39;t adapt based on feedback</span>
+        <span class="c1"># No-op: sequential selection doesn't adapt based on feedback</span>
         <span class="k">pass</span></div>
 
 
@@ -1125,14 +1127,14 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.SequentialSelector.state_dict">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;current_index&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">,</span>
+            <span class="s2">"current_index"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">,</span>
         <span class="p">}</span></div>
 
 
 <div class="viewcode-block" id="SequentialSelector.load_state_dict">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.SequentialSelector.load_state_dict">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">=</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;current_index&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">=</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"current_index"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
 </div>
 
 
@@ -1140,13 +1142,13 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="ShuffleSelector">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.ShuffleSelector">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ShuffleSelector</span><span class="p">(</span><span class="n">BaseSelector</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Shuffles dataset once per epoch and iterates through it sequentially.</span>
 
 <span class="sd">    Each epoch uses a different permutation of a subset of the full dataset.</span>
 <span class="sd">    When one epoch ends, a new shuffle is triggered.</span>
 <span class="sd">    Mimics standard PyTorch DataLoader with shuffle=True.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="ShuffleSelector.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.ShuffleSelector.__init__">[文档]</a>
@@ -1159,12 +1161,12 @@ window.runMermaid = runMermaid;</script>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_get_orders</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Generate a new shuffled order for the current epoch.</span>
 
-<span class="sd">        Uses NumPy&#39;s PCG64 random generator seeded by epoch number for reproducibility.</span>
+<span class="sd">        Uses NumPy's PCG64 random generator seeded by epoch number for reproducibility.</span>
 <span class="sd">        Ensures different shuffle per epoch while being deterministic if seed is fixed.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset_size</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">rng</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset_size</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
 
@@ -1198,14 +1200,14 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.ShuffleSelector.state_dict">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;current_index&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">,</span>
+            <span class="s2">"current_index"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">,</span>
         <span class="p">}</span></div>
 
 
 <div class="viewcode-block" id="ShuffleSelector.load_state_dict">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.ShuffleSelector.load_state_dict">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">=</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;current_index&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">=</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"current_index"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">orders</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_orders</span><span class="p">()</span></div>
 </div>
 
@@ -1214,12 +1216,12 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="RandomSelector">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.RandomSelector">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">RandomSelector</span><span class="p">(</span><span class="n">BaseSelector</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Uniformly samples batches randomly with replacement *per batch*.</span>
 
 <span class="sd">    Unlike ShuffleSelector, there is no concept of an epoch — every batch is independently sampled.</span>
 <span class="sd">    Can result in repeated samples within an epoch. Suitable for online or stochastic training regimes.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="RandomSelector.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.RandomSelector.__init__">[文档]</a>
@@ -1246,7 +1248,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="RandomSelector.feedback">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.RandomSelector.feedback">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">feedback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">values</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="c1"># No-op: basic random selection doesn&#39;t adapt</span>
+        <span class="c1"># No-op: basic random selection doesn't adapt</span>
         <span class="k">pass</span></div>
 
 
@@ -1254,14 +1256,14 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.RandomSelector.state_dict">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;current_index&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">,</span>
+            <span class="s2">"current_index"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">,</span>
         <span class="p">}</span></div>
 
 
 <div class="viewcode-block" id="RandomSelector.load_state_dict">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.RandomSelector.load_state_dict">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">=</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;current_index&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">=</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"current_index"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
 </div>
 
 
@@ -1269,8 +1271,8 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="OfflineEasy2HardSelector">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.OfflineEasy2HardSelector">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">OfflineEasy2HardSelector</span><span class="p">(</span><span class="n">BaseSelector</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Selects samples in an &#39;easy-to-hard&#39; curriculum based on pre-defined difficulty features.</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Selects samples in an 'easy-to-hard' curriculum based on pre-defined difficulty features.</span>
 
 <span class="sd">    This selector assumes that higher feature values indicate easier examples.</span>
 <span class="sd">    It sorts all data once at initialization by descending feature value(s), then sequentially</span>
@@ -1279,15 +1281,15 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    Useful for curriculum learning where sample difficulty is estimated ahead of time</span>
 <span class="sd">    (e.g., via teacher model confidence, length, BLEU score, etc.).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="OfflineEasy2HardSelector.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.OfflineEasy2HardSelector.__init__">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_source</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">DataSelectorConfig</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data_source</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="s2">&quot;offline_easy2hard_selector&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="s2">"offline_easy2hard_selector"</span><span class="p">)</span>
 
-        <span class="c1"># Extract specified feature columns (e.g., &#39;loss&#39;, &#39;confidence&#39;) used to estimate difficulty</span>
+        <span class="c1"># Extract specified feature columns (e.g., 'loss', 'confidence') used to estimate difficulty</span>
         <span class="n">feature_keys</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">feature_keys</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
             <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">data_source</span><span class="o">.</span><span class="n">dataset</span><span class="p">[</span><span class="n">k</span><span class="p">]))[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">feature_keys</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
@@ -1299,7 +1301,7 @@ window.runMermaid = runMermaid;</script>
 
         <span class="c1"># Sort by feature values in descending order → highest (easiest) first</span>
         <span class="n">features_with_index</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">features_with_index</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;OfflineEasy2HardSelector, sorted </span><span class="si">{</span><span class="n">features_with_index</span><span class="p">[:</span><span class="mi">20</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"OfflineEasy2HardSelector, sorted </span><span class="si">{</span><span class="n">features_with_index</span><span class="p">[:</span><span class="mi">20</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="c1"># Store the sorted order of indices (from easiest to hardest)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sorted_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">i</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">features_with_index</span><span class="p">])</span>
@@ -1319,12 +1321,12 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="OfflineEasy2HardSelector.get_indices">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.OfflineEasy2HardSelector.get_indices">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">return_extra_info</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Returns next batch of indices in curriculum order (easy → hard).</span>
 
 <span class="sd">        Batches are taken sequentially from the pre-sorted list. When epoch ends,</span>
 <span class="sd">        it wraps around to the beginning (i.e., restarts curriculum).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset_size</span>
         <span class="n">end</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">batch_size</span>
         <span class="k">if</span> <span class="n">end</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset_size</span><span class="p">:</span>
@@ -1338,9 +1340,9 @@ window.runMermaid = runMermaid;</script>
             <span class="k">return</span> <span class="n">selected_indices</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">extra_info</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;indices&quot;</span><span class="p">:</span> <span class="n">selected_indices</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
-                <span class="s2">&quot;feat1&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">[</span><span class="n">selected_indices</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
-                <span class="s2">&quot;feat2&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">[</span><span class="n">selected_indices</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                <span class="s2">"indices"</span><span class="p">:</span> <span class="n">selected_indices</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                <span class="s2">"feat1"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">[</span><span class="n">selected_indices</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                <span class="s2">"feat2"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">features</span><span class="p">[</span><span class="n">selected_indices</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
             <span class="p">}</span>
             <span class="k">return</span> <span class="n">selected_indices</span><span class="p">,</span> <span class="n">extra_info</span></div>
 
@@ -1348,22 +1350,22 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="OfflineEasy2HardSelector.state_dict">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.OfflineEasy2HardSelector.state_dict">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Save current position in the curriculum for checkpointing.</span>
 <span class="sd">        Allows resuming from same point in the easy→hard progression.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;current_index&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">,</span>
+            <span class="s2">"current_index"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">,</span>
         <span class="p">}</span></div>
 
 
 <div class="viewcode-block" id="OfflineEasy2HardSelector.load_state_dict">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.OfflineEasy2HardSelector.load_state_dict">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Restore progress through the curriculum from saved state.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">=</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;current_index&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">=</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"current_index"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
 </div>
 
 
@@ -1371,22 +1373,22 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="DifficultyBasedSelector">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.DifficultyBasedSelector">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DifficultyBasedSelector</span><span class="p">(</span><span class="n">BaseSelector</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Adaptive difficulty-based selector using probabilistic modeling of sample difficulty.</span>
 
-<span class="sd">    Uses `InterpolationBetaPREstimator` to model each sample&#39;s probability of success (PR),</span>
+<span class="sd">    Uses `InterpolationBetaPREstimator` to model each sample's probability of success (PR),</span>
 <span class="sd">    updated with observed feedback (e.g., loss, accuracy). Then selects samples close to</span>
 <span class="sd">    a target reward (e.g., 1.0 for perfect performance), implementing a form of</span>
 <span class="sd">    *targeted difficulty sampling* — focusing on items near the edge of model capability.</span>
 
 <span class="sd">    Supports both greedy selection (`tau=0`) and stochastic sampling (`tau&gt;0`).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="DifficultyBasedSelector.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.DifficultyBasedSelector.__init__">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_source</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">DataSelectorConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">data_source</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="s2">&quot;difficulty_based_selector&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="s2">"difficulty_based_selector"</span><span class="p">)</span>
 
         <span class="c1"># Initialize difficulty estimator using two features (assumed: e.g., correctness &amp; uncertainty)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">diff_estimator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_diff_estimator</span><span class="p">(</span>
@@ -1396,37 +1398,37 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">seed</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">do_sample</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-            <span class="s2">&quot;do_sample&quot;</span><span class="p">,</span> <span class="kc">False</span>
+            <span class="s2">"do_sample"</span><span class="p">,</span> <span class="kc">False</span>
         <span class="p">)</span>  <span class="c1"># Whether to sample PR during estimation</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">target_reward</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;target_reward&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>  <span class="c1"># Desired performance level</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tau</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tau&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>  <span class="c1"># Temperature for sampling distribution</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">target_reward</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"target_reward"</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>  <span class="c1"># Desired performance level</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tau</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"tau"</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>  <span class="c1"># Temperature for sampling distribution</span></div>
 
 
 <div class="viewcode-block" id="DifficultyBasedSelector.build_diff_estimator">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.DifficultyBasedSelector.build_diff_estimator">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">build_diff_estimator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">feature_keys</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Constructs a Beta-distribution-based difficulty estimator from features.</span>
 
-<span class="sd">        Expects exactly two feature keys (e.g., [&#39;correct&#39;, &#39;uncertainty&#39;]), which are concatenated</span>
+<span class="sd">        Expects exactly two feature keys (e.g., ['correct', 'uncertainty']), which are concatenated</span>
 <span class="sd">        into a feature matrix and passed to InterpolationBetaPREstimator for modeling P(success).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">config</span><span class="si">=}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">config</span><span class="si">=}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">feature_keys</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;DifficultyBasedSelector requires exactly 2 feature keys, but got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">feature_keys</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="sa">f</span><span class="s2">"DifficultyBasedSelector requires exactly 2 feature keys, but got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">feature_keys</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
             <span class="p">)</span>
         <span class="n">features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
             <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">dataset</span><span class="p">[</span><span class="n">k</span><span class="p">]))[:,</span> <span class="kc">None</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">feature_keys</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">features</span><span class="o">.</span><span class="n">shape</span><span class="si">=}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">features</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span><span class="si">=}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">adaptive_rho</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;adaptive_rho&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">features</span><span class="o">.</span><span class="n">shape</span><span class="si">=}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">features</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span><span class="si">=}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">adaptive_rho</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"adaptive_rho"</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">InterpolationBetaPREstimator</span><span class="p">(</span>
             <span class="n">features</span><span class="o">=</span><span class="n">features</span><span class="p">,</span>
-            <span class="n">m</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;m&quot;</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span>
-            <span class="n">lamb</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;lamb&quot;</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">),</span>
-            <span class="n">rho</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rho&quot;</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">),</span>
+            <span class="n">m</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"m"</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span>
+            <span class="n">lamb</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"lamb"</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">),</span>
+            <span class="n">rho</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"rho"</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">),</span>
             <span class="n">adaptive_rho</span><span class="o">=</span><span class="n">adaptive_rho</span><span class="p">,</span>
         <span class="p">)</span></div>
 
@@ -1434,25 +1436,25 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="DifficultyBasedSelector.feedback">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.DifficultyBasedSelector.feedback">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">feedback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">values</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Updates the difficulty estimator with observed performance on selected samples.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            indices (List[int]): Previously selected sample indices</span>
 <span class="sd">            values (List[float]): Observed rewards/scores (e.g., accuracy, BLEU) for those samples</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">diff_estimator</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="DifficultyBasedSelector.get_scores">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.DifficultyBasedSelector.get_scores">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_scores</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Computes selection scores: negative distance between predicted PR and target reward.</span>
 
 <span class="sd">        Samples whose predicted performance is closest to `target_reward` receive highest scores.</span>
-<span class="sd">        Encourages selection of &quot;just right&quot; difficulty samples (neither too easy nor too hard).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        Encourages selection of "just right" difficulty samples (neither too easy nor too hard).</span>
+<span class="sd">        """</span>
         <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">seed</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">)</span>
         <span class="n">predicted_pr</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">diff_estimator</span><span class="o">.</span><span class="n">predict_pr</span><span class="p">(</span><span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span> <span class="n">do_sample</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">do_sample</span><span class="p">)</span>
         <span class="n">scores</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target_reward</span> <span class="o">-</span> <span class="n">predicted_pr</span><span class="p">)</span>
@@ -1462,12 +1464,12 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="DifficultyBasedSelector.get_indices">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.DifficultyBasedSelector.get_indices">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">return_extra_info</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Selects batch of indices based on difficulty proximity to target.</span>
 
 <span class="sd">        If tau == 0: take top-k highest scoring samples (greedy).</span>
 <span class="sd">        Else: sample stochastically using softmax(logits / tau).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">sampling_scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_scores</span><span class="p">()</span>
         <span class="n">sampling_scores</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">sampling_scores</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tau</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -1484,9 +1486,9 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">replacement</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                 <span class="n">generator</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
             <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">selected_indices</span><span class="si">=}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sampling_scores</span><span class="si">=}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">sampling_scores</span><span class="p">[</span><span class="n">selected_indices</span><span class="p">]</span><span class="si">=}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">selected_indices</span><span class="si">=}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">sampling_scores</span><span class="si">=}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">sampling_scores</span><span class="p">[</span><span class="n">selected_indices</span><span class="p">]</span><span class="si">=}</span><span class="s2">"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">+=</span> <span class="n">batch_size</span>
 
         <span class="k">if</span> <span class="n">return_extra_info</span><span class="p">:</span>
@@ -1495,11 +1497,11 @@ window.runMermaid = runMermaid;</script>
             <span class="n">betas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">diff_estimator</span><span class="o">.</span><span class="n">betas</span><span class="p">[</span><span class="n">selected_indices_list</span><span class="p">]</span>
             <span class="n">point_est</span> <span class="o">=</span> <span class="n">alphas</span> <span class="o">/</span> <span class="p">(</span><span class="n">alphas</span> <span class="o">+</span> <span class="n">betas</span><span class="p">)</span>
             <span class="n">extra_info</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;indices&quot;</span><span class="p">:</span> <span class="n">selected_indices_list</span><span class="p">,</span>
-                <span class="s2">&quot;scores&quot;</span><span class="p">:</span> <span class="n">sampling_scores</span><span class="p">[</span><span class="n">selected_indices</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
-                <span class="s2">&quot;alphas&quot;</span><span class="p">:</span> <span class="n">alphas</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
-                <span class="s2">&quot;betas&quot;</span><span class="p">:</span> <span class="n">betas</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
-                <span class="s2">&quot;point&quot;</span><span class="p">:</span> <span class="n">point_est</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                <span class="s2">"indices"</span><span class="p">:</span> <span class="n">selected_indices_list</span><span class="p">,</span>
+                <span class="s2">"scores"</span><span class="p">:</span> <span class="n">sampling_scores</span><span class="p">[</span><span class="n">selected_indices</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                <span class="s2">"alphas"</span><span class="p">:</span> <span class="n">alphas</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                <span class="s2">"betas"</span><span class="p">:</span> <span class="n">betas</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+                <span class="s2">"point"</span><span class="p">:</span> <span class="n">point_est</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
             <span class="p">}</span>
             <span class="k">return</span> <span class="n">selected_indices</span><span class="p">,</span> <span class="n">extra_info</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1509,22 +1511,22 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="DifficultyBasedSelector.state_dict">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.DifficultyBasedSelector.state_dict">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Save current state for checkpointing.</span>
 <span class="sd">        Only tracks sampling progress; actual difficulty estimates are in diff_estimator.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;current_index&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">,</span>
+            <span class="s2">"current_index"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span><span class="p">,</span>
         <span class="p">}</span></div>
 
 
 <div class="viewcode-block" id="DifficultyBasedSelector.load_state_dict">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.selector.selector.html#trinity.buffer.selector.DifficultyBasedSelector.load_state_dict">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Restore selector state from checkpoint.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">=</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;current_index&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_index</span> <span class="o">=</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"current_index"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span></div>
 </div>
 
 </pre></div>

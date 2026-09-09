@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1022,10 +1024,10 @@ window.runMermaid = runMermaid;</script>
                   
   <h1>trinity.trainer.verl.megatron_engine 源代码</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="sd">&quot;&quot;&quot;Megatron-specific checkpoint and weight sync helpers for Trinity.</span>
+<span class="sd">"""Megatron-specific checkpoint and weight sync helpers for Trinity.</span>
 
 <span class="sd">These helper functions are called by `TrinityActorRolloutRefWorker` to</span>
-<span class="sd">perform Megatron-specific operations that veRL 0.8&#39;s engine does not</span>
+<span class="sd">perform Megatron-specific operations that veRL 0.8's engine does not</span>
 <span class="sd">provide natively:</span>
 
 <span class="sd">- megatron_save_state_dict:    Save state dict for checkpoint sync</span>
@@ -1037,7 +1039,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">  - engine.module: the Megatron model</span>
 <span class="sd">  - engine.get_per_tensor_param(): generator of (name, tensor) pairs</span>
 <span class="sd">  - engine.save_checkpoint() / engine.load_checkpoint()</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">ray</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.device</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_device_name</span>
@@ -1055,19 +1057,19 @@ window.runMermaid = runMermaid;</script>
     <span class="n">coordinator</span><span class="p">:</span> <span class="n">CheckpointCoordinator</span><span class="p">,</span>
     <span class="n">logger</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save Megatron actor model state dict for checkpoint-based weight sync.</span>
+<span class="w">    </span><span class="sd">"""Save Megatron actor model state dict for checkpoint-based weight sync.</span>
 
-<span class="sd">    Delegates to the engine&#39;s built-in ``save_checkpoint`` for proper</span>
+<span class="sd">    Delegates to the engine's built-in ``save_checkpoint`` for proper</span>
 <span class="sd">    distributed checkpoint handling, but temporarily restricts the</span>
-<span class="sd">    checkpoint manager&#39;s ``checkpoint_save_contents`` to ``[&quot;model&quot;]`` so</span>
+<span class="sd">    checkpoint manager's ``checkpoint_save_contents`` to ``["model"]`` so</span>
 <span class="sd">    that only the actor model parameters are written to disk -- optimizer</span>
 <span class="sd">    and extra (rng / scheduler) states are skipped, since this path is</span>
 <span class="sd">    used only for weight-sync to the rollout side, not for training</span>
 <span class="sd">    resume. The save is wrapped with CheckpointMonitor notifications via</span>
 <span class="sd">    the coordinator.</span>
 
-<span class="sd">    Note: Megatron&#39;s save_checkpoint involves distributed barriers internally,</span>
-<span class="sd">    so it runs synchronously. The coordinator&#39;s ``save_sync`` is used to add</span>
+<span class="sd">    Note: Megatron's save_checkpoint involves distributed barriers internally,</span>
+<span class="sd">    so it runs synchronously. The coordinator's ``save_sync`` is used to add</span>
 <span class="sd">    Monitor notifications without background threading.</span>
 
 <span class="sd">    Args:</span>
@@ -1076,23 +1078,23 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        global_step: Current training step.</span>
 <span class="sd">        coordinator: CheckpointCoordinator for Monitor integration.</span>
 <span class="sd">        logger: Logger instance from the calling worker.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">local_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span>
 
     <span class="c1"># Temporarily restrict checkpoint contents to model-only. The veRL</span>
     <span class="c1"># Megatron engine attribute is ``checkpoint_mananager`` (sic, upstream typo).</span>
-    <span class="n">ckpt_mgr</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="s2">&quot;checkpoint_mananager&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span>
-        <span class="n">engine</span><span class="p">,</span> <span class="s2">&quot;checkpoint_manager&quot;</span><span class="p">,</span> <span class="kc">None</span>
+    <span class="n">ckpt_mgr</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="s2">"checkpoint_mananager"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span>
+        <span class="n">engine</span><span class="p">,</span> <span class="s2">"checkpoint_manager"</span><span class="p">,</span> <span class="kc">None</span>
     <span class="p">)</span>
     <span class="n">original_save_contents</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="k">if</span> <span class="n">ckpt_mgr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ckpt_mgr</span><span class="p">,</span> <span class="s2">&quot;checkpoint_save_contents&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">ckpt_mgr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ckpt_mgr</span><span class="p">,</span> <span class="s2">"checkpoint_save_contents"</span><span class="p">):</span>
         <span class="n">original_save_contents</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">ckpt_mgr</span><span class="o">.</span><span class="n">checkpoint_save_contents</span><span class="p">)</span>
         <span class="c1"># Preserve hf_model export if it was originally enabled, but drop</span>
-        <span class="c1"># optimizer / extra so we don&#39;t pay their cost on every weight sync.</span>
-        <span class="n">new_contents</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="s2">&quot;hf_model&quot;</span> <span class="ow">in</span> <span class="n">original_save_contents</span><span class="p">:</span>
-            <span class="n">new_contents</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;hf_model&quot;</span><span class="p">)</span>
+        <span class="c1"># optimizer / extra so we don't pay their cost on every weight sync.</span>
+        <span class="n">new_contents</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"model"</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">"hf_model"</span> <span class="ow">in</span> <span class="n">original_save_contents</span><span class="p">:</span>
+            <span class="n">new_contents</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"hf_model"</span><span class="p">)</span>
         <span class="n">ckpt_mgr</span><span class="o">.</span><span class="n">checkpoint_save_contents</span> <span class="o">=</span> <span class="n">new_contents</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_do_save</span><span class="p">():</span>
@@ -1109,8 +1111,8 @@ window.runMermaid = runMermaid;</script>
 
     <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;[Megatron] actor state_dict saved: path=</span><span class="si">{</span><span class="n">local_path</span><span class="si">}</span><span class="s2">, step=</span><span class="si">{</span><span class="n">global_step</span><span class="si">}</span><span class="s2"> &quot;</span>
-        <span class="sa">f</span><span class="s2">&quot;(optimizer/extra skipped)&quot;</span>
+        <span class="sa">f</span><span class="s2">"[Megatron] actor state_dict saved: path=</span><span class="si">{</span><span class="n">local_path</span><span class="si">}</span><span class="s2">, step=</span><span class="si">{</span><span class="n">global_step</span><span class="si">}</span><span class="s2"> "</span>
+        <span class="sa">f</span><span class="s2">"(optimizer/extra skipped)"</span>
     <span class="p">)</span></div>
 
 
@@ -1118,7 +1120,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="megatron_upload_state_dict">
 <a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.megatron_engine.html#trinity.trainer.verl.megatron_engine.megatron_upload_state_dict">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">megatron_upload_state_dict</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">synchronizer</span><span class="p">,</span> <span class="n">global_step</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">logger</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Upload Megatron model state dict to Synchronizer for memory-based weight sync.</span>
+<span class="w">    </span><span class="sd">"""Upload Megatron model state dict to Synchronizer for memory-based weight sync.</span>
 
 <span class="sd">    Iterates over per-tensor parameters and collects them on rank 0,</span>
 <span class="sd">    then sends the full state dict to the Synchronizer actor.</span>
@@ -1127,7 +1129,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        engine: The McoreEngine instance (engine.actor.engine).</span>
 <span class="sd">        synchronizer: The Synchronizer Ray actor handle.</span>
 <span class="sd">        global_step: Current training step (used as version key).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">global_step</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span>
 
@@ -1145,22 +1147,22 @@ window.runMermaid = runMermaid;</script>
 
     <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span>
     <span class="nb">getattr</span><span class="p">(</span><span class="n">torch</span><span class="p">,</span> <span class="n">get_device_name</span><span class="p">())</span><span class="o">.</span><span class="n">empty_cache</span><span class="p">()</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[Megatron] state_dict uploaded to Synchronizer: step=</span><span class="si">{</span><span class="n">global_step</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[Megatron] state_dict uploaded to Synchronizer: step=</span><span class="si">{</span><span class="n">global_step</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="megatron_sync_weight_nccl">
 <a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.megatron_engine.html#trinity.trainer.verl.megatron_engine.megatron_sync_weight_nccl">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">megatron_sync_weight_nccl</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">model_update_group</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Broadcast Megatron model parameters via NCCL.</span>
+<span class="w">    </span><span class="sd">"""Broadcast Megatron model parameters via NCCL.</span>
 
-<span class="sd">    Uses the engine&#39;s get_per_tensor_param() to iterate over parameters</span>
+<span class="sd">    Uses the engine's get_per_tensor_param() to iterate over parameters</span>
 <span class="sd">    and broadcasts each from rank 0.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        engine: The McoreEngine instance (engine.actor.engine).</span>
 <span class="sd">        model_update_group: The NCCL process group for weight broadcast.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">per_tensor_param</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">get_per_tensor_param</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">per_tensor_param</span><span class="p">:</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">broadcast</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">src</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">group</span><span class="o">=</span><span class="n">model_update_group</span><span class="p">)</span>

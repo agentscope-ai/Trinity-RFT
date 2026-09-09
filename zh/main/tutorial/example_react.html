@@ -777,13 +777,13 @@
         <span class="n">openai_client</span><span class="p">:</span> <span class="n">openai</span><span class="o">.</span><span class="n">AsyncOpenAI</span><span class="p">,</span>  <span class="c1"># provided by Trinity-RFT</span>
         <span class="c1"># some other params</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the AgentScope ReAct agent with specified tools and model.</span>
+<span class="w">        </span><span class="sd">"""Initialize the AgentScope ReAct agent with specified tools and model.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            openai_client (openai.AsyncOpenAI): An instance of AsyncOpenAI client.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">agent_model</span> <span class="o">=</span> <span class="n">OpenAIChatModel</span><span class="p">(</span>
-            <span class="n">api_key</span><span class="o">=</span><span class="s2">&quot;EMPTY&quot;</span><span class="p">,</span>
+            <span class="n">api_key</span><span class="o">=</span><span class="s2">"EMPTY"</span><span class="p">,</span>
             <span class="n">model_name</span><span class="o">=</span><span class="n">model_name</span><span class="p">,</span>
             <span class="n">generate_kwargs</span><span class="o">=</span><span class="n">generate_kwargs</span><span class="p">,</span>
             <span class="n">stream</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
@@ -791,15 +791,15 @@
         <span class="c1"># patch the OpenAIChatModel to use the openai_client provided by Trinity-RFT</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">agent_model</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">openai_client</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">agent</span> <span class="o">=</span> <span class="n">ReActAgent</span><span class="p">(</span>
-            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;react_agent&quot;</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">"react_agent"</span><span class="p">,</span>
             <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">agent_model</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">reply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate a response based on the query.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Generate a response based on the query."""</span>
         <span class="c1"># no need to modify your agent logic</span>
         <span class="k">return</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">agent</span><span class="o">.</span><span class="n">reply</span><span class="p">(</span>
-            <span class="n">Msg</span><span class="p">(</span><span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="s2">&quot;user&quot;</span><span class="p">)</span>
+            <span class="n">Msg</span><span class="p">(</span><span class="s2">"user"</span><span class="p">,</span> <span class="n">query</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="s2">"user"</span><span class="p">)</span>
         <span class="p">)</span>
 </pre></div>
 </div>
@@ -835,7 +835,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">query</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">task</span><span class="o">.</span><span class="n">format_args</span><span class="o">.</span><span class="n">prompt_key</span><span class="p">)</span>  <span class="c1"># type: ignore [index]</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">run_async</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the workflow asynchronously.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Run the workflow asynchronously."""</span>
         <span class="c1"># Step 1: call the ReAct agent to solve the task</span>
         <span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">agent</span><span class="o">.</span><span class="n">reply</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">)</span>
         <span class="c1"># Step 2: calculate the reward based on the response</span>
@@ -844,15 +844,15 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">construct_experiences</span><span class="p">(</span><span class="n">reward</span><span class="p">)</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">calculate_reward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate the reward based on the response.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Calculate the reward based on the response."""</span>
         <span class="c1"># your reward logic</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">construct_experiences</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reward</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Construct experiences from the agent&#39;s interaction history.</span>
+<span class="w">        </span><span class="sd">"""Construct experiences from the agent's interaction history.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List: A list of Experience objects.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Extract all interaction history generated by this task</span>
         <span class="n">exps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">extract_experience_from_history</span><span class="p">()</span>
         <span class="c1"># update the reward for each experience</span>

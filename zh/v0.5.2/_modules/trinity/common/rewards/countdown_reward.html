@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -997,7 +999,7 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>trinity.common.rewards.countdown_reward 源代码</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Base Reward Function Class.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""Base Reward Function Class."""</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
 
@@ -1012,9 +1014,9 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="CountDownRewardFn">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.countdown_reward.html#trinity.common.rewards.countdown_reward.CountDownRewardFn">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CountDownRewardFn</span><span class="p">(</span><span class="n">RewardFn</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A reward function that rewards for countdown task.</span>
+<span class="w">    </span><span class="sd">"""A reward function that rewards for countdown task.</span>
 <span class="sd">    Ref: Jiayi-Pan/TinyZero verl/utils/reward_score/countdown.py</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="CountDownRewardFn.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.countdown_reward.html#trinity.common.rewards.countdown_reward.CountDownRewardFn.__init__">[文档]</a>
@@ -1029,8 +1031,8 @@ window.runMermaid = runMermaid;</script>
         <span class="n">truth</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
         <span class="n">truth</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">truth</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
-        <span class="n">target</span> <span class="o">=</span> <span class="n">truth</span><span class="p">[</span><span class="s2">&quot;target&quot;</span><span class="p">]</span>  <span class="c1"># type: ignore</span>
-        <span class="n">numbers</span> <span class="o">=</span> <span class="n">truth</span><span class="p">[</span><span class="s2">&quot;numbers&quot;</span><span class="p">]</span>  <span class="c1"># type: ignore</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">truth</span><span class="p">[</span><span class="s2">"target"</span><span class="p">]</span>  <span class="c1"># type: ignore</span>
+        <span class="n">numbers</span> <span class="o">=</span> <span class="n">truth</span><span class="p">[</span><span class="s2">"numbers"</span><span class="p">]</span>  <span class="c1"># type: ignore</span>
 
         <span class="n">solution_str</span> <span class="o">=</span> <span class="n">response</span>
         <span class="n">equation</span> <span class="o">=</span> <span class="n">extract_solution</span><span class="p">(</span><span class="n">solution_str</span><span class="o">=</span><span class="n">solution_str</span><span class="p">)</span>
@@ -1038,24 +1040,24 @@ window.runMermaid = runMermaid;</script>
         <span class="n">score</span> <span class="o">=</span> <span class="mf">1.0</span>
 
         <span class="k">if</span> <span class="n">equation</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">"score"</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
 
         <span class="c1"># Validate equation uses correct numbers</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">validate_equation</span><span class="p">(</span><span class="n">equation</span><span class="p">,</span> <span class="n">numbers</span><span class="p">):</span>
-            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">format_score</span><span class="p">}</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">"score"</span><span class="p">:</span> <span class="n">format_score</span><span class="p">}</span>
 
         <span class="c1"># Evaluate equation</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">result</span> <span class="o">=</span> <span class="n">evaluate_equation</span><span class="p">(</span><span class="n">equation</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">format_score</span><span class="p">}</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s2">"score"</span><span class="p">:</span> <span class="n">format_score</span><span class="p">}</span>
 
             <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">result</span> <span class="o">-</span> <span class="n">target</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mf">1e-5</span><span class="p">:</span>  <span class="c1"># Account for floating point precision</span>
-                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">score</span><span class="p">}</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s2">"score"</span><span class="p">:</span> <span class="n">score</span><span class="p">}</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">format_score</span><span class="p">}</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s2">"score"</span><span class="p">:</span> <span class="n">format_score</span><span class="p">}</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># noqa: F841</span>
-            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">format_score</span><span class="p">}</span></div>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">"score"</span><span class="p">:</span> <span class="n">format_score</span><span class="p">}</span></div>
 
 </pre></div>
 

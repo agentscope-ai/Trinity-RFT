@@ -46,6 +46,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1012,10 +1014,10 @@ window.runMermaid = runMermaid;</script>
                   
   <h1>Source code for trinity.trainer.verl.fsdp_engine</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="sd">&quot;&quot;&quot;FSDP-specific checkpoint and weight sync helpers for Trinity.</span>
+<span class="sd">"""FSDP-specific checkpoint and weight sync helpers for Trinity.</span>
 
 <span class="sd">These helper functions are called by `TrinityActorRolloutRefWorker` to</span>
-<span class="sd">perform FSDP/FSDP2-specific operations that veRL 0.8&#39;s engine does not</span>
+<span class="sd">perform FSDP/FSDP2-specific operations that veRL 0.8's engine does not</span>
 <span class="sd">provide natively:</span>
 
 <span class="sd">- fsdp_save_state_dict:    Save sharded state dict for checkpoint sync</span>
@@ -1027,7 +1029,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">  - engine.module: the FSDP-wrapped model</span>
 <span class="sd">  - engine.get_per_tensor_param(): generator of (name, tensor) pairs</span>
 <span class="sd">  - engine.save_checkpoint() / engine.load_checkpoint()</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 
@@ -1046,7 +1048,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_save_checkpoint_metadata</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">local_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">logger</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save HF model config and tokenizer to ``{local_path}/huggingface/``.</span>
+<span class="w">    </span><span class="sd">"""Save HF model config and tokenizer to ``{local_path}/huggingface/``.</span>
 
 <span class="sd">    ``FSDPModelMerger`` (used by Synchronizer to load sharded checkpoints)</span>
 <span class="sd">    requires ``config.json`` to understand the model structure.  This is</span>
@@ -1054,29 +1056,29 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    ``fsdp_config.json`` is NOT saved here — the loading side infers</span>
 <span class="sd">    ``world_size`` from shard filenames instead.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.fsdp_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">fsdp_version</span>
 
     <span class="n">model</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">module</span>
     <span class="k">if</span> <span class="n">fsdp_version</span><span class="p">(</span><span class="n">model</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">unwrapped</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;_fsdp_wrapped_module&quot;</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+        <span class="n">unwrapped</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">"_fsdp_wrapped_module"</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">unwrapped</span> <span class="o">=</span> <span class="n">model</span>
 
-    <span class="n">hf_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">local_path</span><span class="p">,</span> <span class="s2">&quot;huggingface&quot;</span><span class="p">)</span>
+    <span class="n">hf_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">local_path</span><span class="p">,</span> <span class="s2">"huggingface"</span><span class="p">)</span>
     <span class="n">local_mkdir_safe</span><span class="p">(</span><span class="n">hf_path</span><span class="p">)</span>
 
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">unwrapped</span><span class="o">.</span><span class="n">config</span>
-    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">model_config</span><span class="p">,</span> <span class="s2">&quot;auto_map&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="kc">None</span> <span class="ow">in</span> <span class="n">model_config</span><span class="o">.</span><span class="n">auto_map</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">model_config</span><span class="p">,</span> <span class="s2">"auto_map"</span><span class="p">)</span> <span class="ow">and</span> <span class="kc">None</span> <span class="ow">in</span> <span class="n">model_config</span><span class="o">.</span><span class="n">auto_map</span><span class="p">:</span>
         <span class="n">model_config</span><span class="o">.</span><span class="n">auto_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">model_config</span><span class="o">.</span><span class="n">auto_map</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}</span>
     <span class="n">model_config</span><span class="o">.</span><span class="n">save_pretrained</span><span class="p">(</span><span class="n">hf_path</span><span class="p">)</span>
 
-    <span class="c1"># Save tokenizer / processor if the engine&#39;s checkpoint_manager has one.</span>
-    <span class="n">ckpt_mgr</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="s2">&quot;checkpoint_manager&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">ckpt_mgr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ckpt_mgr</span><span class="p">,</span> <span class="s2">&quot;processing_class&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="c1"># Save tokenizer / processor if the engine's checkpoint_manager has one.</span>
+    <span class="n">ckpt_mgr</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="s2">"checkpoint_manager"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ckpt_mgr</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ckpt_mgr</span><span class="p">,</span> <span class="s2">"processing_class"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">ckpt_mgr</span><span class="o">.</span><span class="n">processing_class</span><span class="o">.</span><span class="n">save_pretrained</span><span class="p">(</span><span class="n">hf_path</span><span class="p">)</span>
 
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Saved HF config/tokenizer to </span><span class="si">{</span><span class="n">hf_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Saved HF config/tokenizer to </span><span class="si">{</span><span class="n">hf_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="fsdp_save_state_dict">
@@ -1088,7 +1090,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">coordinator</span><span class="p">:</span> <span class="n">CheckpointCoordinator</span><span class="p">,</span>
     <span class="n">logger</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save FSDP model state dict (sharded) for checkpoint-based weight sync.</span>
+<span class="w">    </span><span class="sd">"""Save FSDP model state dict (sharded) for checkpoint-based weight sync.</span>
 
 <span class="sd">    Collects the sharded state dict on the main thread (requires FSDP context),</span>
 <span class="sd">    then offloads ``torch.save`` to a background thread via ``coordinator`` so</span>
@@ -1108,7 +1110,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        global_step: Current training step.</span>
 <span class="sd">        coordinator: CheckpointCoordinator for background save + Monitor integration.</span>
 <span class="sd">        logger: Logger instance from the calling worker.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">local_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span>
 
@@ -1120,7 +1122,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">state_dict_cfg</span> <span class="o">=</span> <span class="n">ShardedStateDictConfig</span><span class="p">(</span><span class="n">offload_to_cpu</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">is_cuda_available</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
     <span class="n">optim_cfg</span> <span class="o">=</span> <span class="n">ShardedOptimStateDictConfig</span><span class="p">(</span><span class="n">offload_to_cpu</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">is_cuda_available</span> <span class="k">else</span> <span class="kc">False</span><span class="p">)</span>
     <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">"ignore"</span><span class="p">)</span>
         <span class="k">with</span> <span class="n">get_fsdp_state_ctx</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">StateDictType</span><span class="o">.</span><span class="n">SHARDED_STATE_DICT</span><span class="p">,</span> <span class="n">state_dict_cfg</span><span class="p">,</span> <span class="n">optim_cfg</span><span class="p">):</span>
             <span class="n">state_dict</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span>
 
@@ -1129,11 +1131,11 @@ window.runMermaid = runMermaid;</script>
     <span class="k">if</span> <span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">_save_checkpoint_metadata</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">local_path</span><span class="p">,</span> <span class="n">logger</span><span class="p">)</span>
 
-    <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">local_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;model_world_size_</span><span class="si">{</span><span class="n">world_size</span><span class="si">}</span><span class="s2">_rank_</span><span class="si">{</span><span class="n">rank</span><span class="si">}</span><span class="s2">.pt&quot;</span><span class="p">)</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">local_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"model_world_size_</span><span class="si">{</span><span class="n">world_size</span><span class="si">}</span><span class="s2">_rank_</span><span class="si">{</span><span class="n">rank</span><span class="si">}</span><span class="s2">.pt"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">coordinator</span><span class="o">.</span><span class="n">save_async</span><span class="p">(</span>
-            <span class="s2">&quot;model_state_dict&quot;</span><span class="p">,</span>
+            <span class="s2">"model_state_dict"</span><span class="p">,</span>
             <span class="k">lambda</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">state_dict</span><span class="p">,</span> <span class="n">path</span><span class="p">),</span>
             <span class="n">global_step</span><span class="p">,</span>
             <span class="n">is_state_dict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -1141,14 +1143,14 @@ window.runMermaid = runMermaid;</script>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">state_dict</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
 
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[FSDP] actor state_dict save initiated: path=</span><span class="si">{</span><span class="n">local_path</span><span class="si">}</span><span class="s2">, step=</span><span class="si">{</span><span class="n">global_step</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[FSDP] actor state_dict save initiated: path=</span><span class="si">{</span><span class="n">local_path</span><span class="si">}</span><span class="s2">, step=</span><span class="si">{</span><span class="n">global_step</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="fsdp_upload_state_dict">
 <a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.fsdp_engine.html#trinity.trainer.verl.fsdp_engine.fsdp_upload_state_dict">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">fsdp_upload_state_dict</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">synchronizer</span><span class="p">,</span> <span class="n">global_step</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">logger</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Upload full FSDP model state dict to Synchronizer for memory-based weight sync.</span>
+<span class="w">    </span><span class="sd">"""Upload full FSDP model state dict to Synchronizer for memory-based weight sync.</span>
 
 <span class="sd">    Gathers the full state dict on rank 0 and sends it to the Synchronizer</span>
 <span class="sd">    actor, which makes it available for the Explorer to load.</span>
@@ -1157,7 +1159,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        engine: The FSDPEngine instance (engine.actor.engine).</span>
 <span class="sd">        synchronizer: The Synchronizer Ray actor handle.</span>
 <span class="sd">        global_step: Current training step (used as version key).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">global_step</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span>
 
@@ -1168,14 +1170,14 @@ window.runMermaid = runMermaid;</script>
         <span class="n">ray</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">synchronizer</span><span class="o">.</span><span class="n">set_model_state_dict</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">state_dict</span><span class="p">,</span> <span class="n">global_step</span><span class="p">))</span>
 
     <span class="n">torch</span><span class="o">.</span><span class="n">distributed</span><span class="o">.</span><span class="n">barrier</span><span class="p">()</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[FSDP] state_dict uploaded to Synchronizer: step=</span><span class="si">{</span><span class="n">global_step</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[FSDP] state_dict uploaded to Synchronizer: step=</span><span class="si">{</span><span class="n">global_step</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="fsdp_sync_weight_nccl">
 <a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.fsdp_engine.html#trinity.trainer.verl.fsdp_engine.fsdp_sync_weight_nccl">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">fsdp_sync_weight_nccl</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="n">model_update_group</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Broadcast full model parameters via NCCL for FSDP/FSDP2.</span>
+<span class="w">    </span><span class="sd">"""Broadcast full model parameters via NCCL for FSDP/FSDP2.</span>
 
 <span class="sd">    For FSDP1: Uses FSDP.summon_full_params to gather full parameters before broadcast.</span>
 <span class="sd">    For FSDP2: Uses param.full_tensor() to get the full parameter.</span>
@@ -1183,12 +1185,12 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Args:</span>
 <span class="sd">        engine: The FSDPEngine instance (engine.actor.engine).</span>
 <span class="sd">        model_update_group: The NCCL process group for weight broadcast.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">torch.distributed.fsdp</span><span class="w"> </span><span class="kn">import</span> <span class="n">FullyShardedDataParallel</span> <span class="k">as</span> <span class="n">FSDP</span>
 
-    <span class="n">strategy</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="s2">&quot;_strategy&quot;</span><span class="p">,</span> <span class="s2">&quot;fsdp&quot;</span><span class="p">)</span>
+    <span class="n">strategy</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">engine</span><span class="p">,</span> <span class="s2">"_strategy"</span><span class="p">,</span> <span class="s2">"fsdp"</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">strategy</span> <span class="o">==</span> <span class="s2">&quot;fsdp&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">strategy</span> <span class="o">==</span> <span class="s2">"fsdp"</span><span class="p">:</span>
         <span class="c1"># FSDP1 path: summon full params for each FSDP module</span>
         <span class="k">for</span> <span class="n">name_prefix</span><span class="p">,</span> <span class="n">module</span> <span class="ow">in</span> <span class="n">engine</span><span class="o">.</span><span class="n">module</span><span class="o">.</span><span class="n">named_modules</span><span class="p">():</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">FSDP</span><span class="p">):</span>
@@ -1200,7 +1202,7 @@ window.runMermaid = runMermaid;</script>
         <span class="c1"># FSDP2 path: use full_tensor()</span>
         <span class="n">per_tensor_param</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">engine</span><span class="o">.</span><span class="n">get_per_tensor_param</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">per_tensor_param</span><span class="p">:</span>
-            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="s2">&quot;full_tensor&quot;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="s2">"full_tensor"</span><span class="p">):</span>
                 <span class="n">full_param</span> <span class="o">=</span> <span class="n">param</span><span class="o">.</span><span class="n">full_tensor</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">full_param</span> <span class="o">=</span> <span class="n">param</span>

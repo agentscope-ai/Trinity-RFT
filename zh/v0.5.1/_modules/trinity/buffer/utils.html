@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1003,13 +1005,13 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="to_async_url">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.utils.html#trinity.buffer.utils.to_async_url">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">to_async_url</span><span class="p">(</span><span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a synchronous DB URL to its async dialect equivalent.&quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;sqlite:///&quot;</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">url</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;sqlite:///&quot;</span><span class="p">,</span> <span class="s2">&quot;sqlite+aiosqlite:///&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;postgresql://&quot;</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">url</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;postgresql://&quot;</span><span class="p">,</span> <span class="s2">&quot;postgresql+asyncpg://&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;mysql://&quot;</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">url</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;mysql://&quot;</span><span class="p">,</span> <span class="s2">&quot;mysql+aiomysql://&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">"""Convert a synchronous DB URL to its async dialect equivalent."""</span>
+    <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"sqlite:///"</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">url</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"sqlite:///"</span><span class="p">,</span> <span class="s2">"sqlite+aiosqlite:///"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"postgresql://"</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">url</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"postgresql://"</span><span class="p">,</span> <span class="s2">"postgresql+asyncpg://"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">url</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"mysql://"</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">url</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"mysql://"</span><span class="p">,</span> <span class="s2">"mysql+aiomysql://"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">url</span></div>
 
 
@@ -1022,7 +1024,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">max_retry_times</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
     <span class="n">max_retry_interval</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run an async database operation with session retry.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Run an async database operation with session retry."""</span>
     <span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
     <span class="n">max_retry_times</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_retry_times</span><span class="p">)</span>
 
@@ -1036,18 +1038,18 @@ window.runMermaid = runMermaid;</script>
                 <span class="k">raise</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
                 <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="s2">&quot;Async attempt </span><span class="si">%s</span><span class="s2"> failed, retrying in </span><span class="si">%s</span><span class="s2"> seconds...&quot;</span><span class="p">,</span>
+                    <span class="s2">"Async attempt </span><span class="si">%s</span><span class="s2"> failed, retrying in </span><span class="si">%s</span><span class="s2"> seconds..."</span><span class="p">,</span>
                     <span class="n">attempt</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
                     <span class="n">max_retry_interval</span><span class="p">,</span>
                 <span class="p">)</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;trace = </span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"trace = </span><span class="si">%s</span><span class="s2">"</span><span class="p">,</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span>
                 <span class="k">if</span> <span class="n">attempt</span> <span class="o">&lt;</span> <span class="n">max_retry_times</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
                     <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">max_retry_interval</span><span class="p">)</span>
                     <span class="k">continue</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;Max retry attempts reached, raising exception.&quot;</span><span class="p">)</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"Max retry attempts reached, raising exception."</span><span class="p">)</span>
                 <span class="k">raise</span> <span class="n">exc</span>
 
-    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;async_run_with_retry_session exhausted without raising&quot;</span><span class="p">)</span></div>
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"async_run_with_retry_session exhausted without raising"</span><span class="p">)</span></div>
 
 </pre></div>
 

@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -958,11 +960,11 @@ window.runMermaid = runMermaid;</script>
                   
   <h1>trinity.common.workflows.customized_toolcall_workflows 源代码</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">We include the customized toolcall workflows in this file.</span>
 <span class="sd">Code adapted from https://github.com/NVlabs/Tool-N1</span>
 <span class="sd">Reference Paper https://arxiv.org/pdf/2505.00024 for further details.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
@@ -973,7 +975,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.workflows.workflow</span><span class="w"> </span><span class="kn">import</span> <span class="n">SimpleWorkflow</span><span class="p">,</span> <span class="n">Task</span>
 
 <span class="c1"># Adapted from https://github.com/NVlabs/Tool-N1</span>
-<span class="n">qwen_tool_prompts</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;# Tool</span>
+<span class="n">qwen_tool_prompts</span> <span class="o">=</span> <span class="s2">"""# Tool</span>
 
 <span class="s2">&lt;tools&gt;</span>
 <span class="si">{tools}</span>
@@ -981,10 +983,10 @@ window.runMermaid = runMermaid;</script>
 
 <span class="s2">In each action step, you MUST:</span>
 <span class="s2">1. Think about the reasoning process in the mind and enclosed your reasoning within &lt;think&gt; &lt;/think&gt; XML tags.</span>
-<span class="s2">2. Then, provide a json object with function names and arguments within &lt;tool_call&gt;&lt;/tool_call&gt; XML tags. i.e., &lt;tool_call&gt;[{{&quot;name&quot;: &lt;function-name&gt;, &quot;arguments&quot;: &lt;args-json-object&gt;}}, {{&quot;name&quot;: &lt;function-name2&gt;, &quot;arguments&quot;: &lt;args-json-object2&gt;}}, ...]&lt;/tool_call&gt;</span>
+<span class="s2">2. Then, provide a json object with function names and arguments within &lt;tool_call&gt;&lt;/tool_call&gt; XML tags. i.e., &lt;tool_call&gt;[{{"name": &lt;function-name&gt;, "arguments": &lt;args-json-object&gt;}}, {{"name": &lt;function-name2&gt;, "arguments": &lt;args-json-object2&gt;}}, ...]&lt;/tool_call&gt;</span>
 <span class="s2">3. Make sure both the reasoning and the tool call steps are included together in one single reply.</span>
-<span class="s2">A complete reply example is: &lt;think&gt;To address the query, I need to send the email to Bob and then buy the banana through walmart. &lt;/think&gt; &lt;tool_call&gt; [{{&quot;name&quot;: &quot;email&quot;, &quot;arguments&quot;: {{&quot;receiver&quot;: &quot;Bob&quot;, &quot;content&quot;: &quot;I will bug banana through walmart&quot;}}}}, {{&quot;name&quot;: &quot;walmart&quot;, &quot;arguments&quot;: {{&quot;input&quot;: &quot;banana&quot;}}}}]&lt;/tool_call&gt;. Please make sure the type of the arguments is correct.</span>
-<span class="s2">&quot;&quot;&quot;</span>
+<span class="s2">A complete reply example is: &lt;think&gt;To address the query, I need to send the email to Bob and then buy the banana through walmart. &lt;/think&gt; &lt;tool_call&gt; [{{"name": "email", "arguments": {{"receiver": "Bob", "content": "I will bug banana through walmart"}}}}, {{"name": "walmart", "arguments": {{"input": "banana"}}}}]&lt;/tool_call&gt;. Please make sure the type of the arguments is correct.</span>
+<span class="s2">"""</span>
 
 
 <span class="c1"># Adapted from https://github.com/NVlabs/Tool-N1</span>
@@ -993,28 +995,28 @@ window.runMermaid = runMermaid;</script>
 <span class="k">def</span><span class="w"> </span><span class="nf">construct_prompt</span><span class="p">(</span><span class="n">dp</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">format_tools</span><span class="p">(</span><span class="n">tools</span><span class="p">):</span>
         <span class="n">tools</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">tools</span><span class="p">)</span>
-        <span class="n">string</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="s2">""</span>
         <span class="k">for</span> <span class="n">tool</span> <span class="ow">in</span> <span class="n">tools</span><span class="p">:</span>
-            <span class="n">string</span> <span class="o">+=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;function&quot;</span><span class="p">,</span> <span class="s2">&quot;function&quot;</span><span class="p">:</span> <span class="n">tool</span><span class="p">})</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
-        <span class="k">if</span> <span class="n">string</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">:</span>
+            <span class="n">string</span> <span class="o">+=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">({</span><span class="s2">"type"</span><span class="p">:</span> <span class="s2">"function"</span><span class="p">,</span> <span class="s2">"function"</span><span class="p">:</span> <span class="n">tool</span><span class="p">})</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="k">if</span> <span class="n">string</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">:</span>
             <span class="n">string</span> <span class="o">=</span> <span class="n">string</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">string</span>
 
-    <span class="n">tools</span> <span class="o">=</span> <span class="n">format_tools</span><span class="p">(</span><span class="n">dp</span><span class="p">[</span><span class="s2">&quot;tools&quot;</span><span class="p">])</span>
+    <span class="n">tools</span> <span class="o">=</span> <span class="n">format_tools</span><span class="p">(</span><span class="n">dp</span><span class="p">[</span><span class="s2">"tools"</span><span class="p">])</span>
     <span class="n">tool_prompt</span> <span class="o">=</span> <span class="n">qwen_tool_prompts</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tools</span><span class="o">=</span><span class="n">tools</span><span class="p">)</span>
-    <span class="n">system</span> <span class="o">=</span> <span class="n">dp</span><span class="p">[</span><span class="s2">&quot;raw_system&quot;</span><span class="p">]</span>
-    <span class="n">conversations</span> <span class="o">=</span> <span class="n">dp</span><span class="p">[</span><span class="s2">&quot;conversations&quot;</span><span class="p">]</span>
+    <span class="n">system</span> <span class="o">=</span> <span class="n">dp</span><span class="p">[</span><span class="s2">"raw_system"</span><span class="p">]</span>
+    <span class="n">conversations</span> <span class="o">=</span> <span class="n">dp</span><span class="p">[</span><span class="s2">"conversations"</span><span class="p">]</span>
     <span class="n">prompt</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">prompt</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">system</span> <span class="o">+</span> <span class="n">tool_prompt</span><span class="p">})</span>
+    <span class="n">prompt</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"system"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">system</span> <span class="o">+</span> <span class="n">tool_prompt</span><span class="p">})</span>
     <span class="k">for</span> <span class="n">tem</span> <span class="ow">in</span> <span class="n">conversations</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">tem</span><span class="p">[</span><span class="s2">&quot;from&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;human&quot;</span> <span class="ow">or</span> <span class="n">tem</span><span class="p">[</span><span class="s2">&quot;from&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;user&quot;</span><span class="p">:</span>
-            <span class="n">prompt</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">tem</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]})</span>
-        <span class="k">elif</span> <span class="n">tem</span><span class="p">[</span><span class="s2">&quot;from&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;gpt&quot;</span> <span class="ow">or</span> <span class="n">tem</span><span class="p">[</span><span class="s2">&quot;from&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;assistant&quot;</span><span class="p">:</span>
-            <span class="n">prompt</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">tem</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]})</span>
-        <span class="k">elif</span> <span class="n">tem</span><span class="p">[</span><span class="s2">&quot;from&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;observation&quot;</span> <span class="ow">or</span> <span class="n">tem</span><span class="p">[</span><span class="s2">&quot;from&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;tool&quot;</span><span class="p">:</span>
-            <span class="n">prompt</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;tool&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">tem</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]})</span>
-        <span class="k">elif</span> <span class="n">tem</span><span class="p">[</span><span class="s2">&quot;from&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;function_call&quot;</span><span class="p">:</span>
-            <span class="n">prompt</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">tem</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">])})</span>
+        <span class="k">if</span> <span class="n">tem</span><span class="p">[</span><span class="s2">"from"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"human"</span> <span class="ow">or</span> <span class="n">tem</span><span class="p">[</span><span class="s2">"from"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"user"</span><span class="p">:</span>
+            <span class="n">prompt</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">tem</span><span class="p">[</span><span class="s2">"value"</span><span class="p">]})</span>
+        <span class="k">elif</span> <span class="n">tem</span><span class="p">[</span><span class="s2">"from"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"gpt"</span> <span class="ow">or</span> <span class="n">tem</span><span class="p">[</span><span class="s2">"from"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"assistant"</span><span class="p">:</span>
+            <span class="n">prompt</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"assistant"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">tem</span><span class="p">[</span><span class="s2">"value"</span><span class="p">]})</span>
+        <span class="k">elif</span> <span class="n">tem</span><span class="p">[</span><span class="s2">"from"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"observation"</span> <span class="ow">or</span> <span class="n">tem</span><span class="p">[</span><span class="s2">"from"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"tool"</span><span class="p">:</span>
+            <span class="n">prompt</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"tool"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">tem</span><span class="p">[</span><span class="s2">"value"</span><span class="p">]})</span>
+        <span class="k">elif</span> <span class="n">tem</span><span class="p">[</span><span class="s2">"from"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"function_call"</span><span class="p">:</span>
+            <span class="n">prompt</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"assistant"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">tem</span><span class="p">[</span><span class="s2">"value"</span><span class="p">])})</span>
     <span class="k">return</span> <span class="n">prompt</span></div>
 
 
@@ -1031,18 +1033,18 @@ window.runMermaid = runMermaid;</script>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">counter1_full</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span>
-                <span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;arguments&quot;</span><span class="p">],</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">result</span>
+                <span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">"name"</span><span class="p">],</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">"arguments"</span><span class="p">],</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">result</span>
             <span class="p">)</span>
             <span class="n">counter2_full</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span>
-                <span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;arguments&quot;</span><span class="p">],</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">answer</span>
+                <span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">"name"</span><span class="p">],</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">"arguments"</span><span class="p">],</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">answer</span>
             <span class="p">)</span>
         <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
             <span class="k">return</span> <span class="mi">0</span>
         <span class="k">if</span> <span class="n">counter1_full</span> <span class="o">==</span> <span class="n">counter2_full</span><span class="p">:</span>
             <span class="k">return</span> <span class="mi">2</span>
 
-        <span class="n">counter1_name</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">result</span><span class="p">)</span>
-        <span class="n">counter2_name</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">answer</span><span class="p">)</span>
+        <span class="n">counter1_name</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">result</span><span class="p">)</span>
+        <span class="n">counter2_name</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">item</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">answer</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">counter1_name</span> <span class="o">==</span> <span class="n">counter2_name</span><span class="p">:</span>
             <span class="k">return</span> <span class="mi">1</span>
@@ -1059,7 +1061,7 @@ window.runMermaid = runMermaid;</script>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="k">return</span> <span class="mi">0</span>
     <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">tool_call_list</span><span class="p">:</span>
-        <span class="k">if</span> <span class="s2">&quot;name&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">or</span> <span class="s2">&quot;arguments&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="s2">"name"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="ow">or</span> <span class="s2">"arguments"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="k">return</span> <span class="mi">0</span>
     <span class="k">return</span> <span class="mi">1</span></div>
 
@@ -1071,7 +1073,7 @@ window.runMermaid = runMermaid;</script>
 <span class="k">def</span><span class="w"> </span><span class="nf">extract_solution_v0_toolN1</span><span class="p">(</span><span class="n">tool_call_str</span><span class="p">):</span>
     <span class="n">output_string</span> <span class="o">=</span> <span class="n">tool_call_str</span>
 
-    <span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;&lt;tool_call&gt;(.*?)&lt;/tool_call&gt;&quot;</span>
+    <span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">"&lt;tool_call&gt;(.*?)&lt;/tool_call&gt;"</span>
     <span class="n">matches</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">tool_call_str</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">DOTALL</span><span class="p">))</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">matches</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">output_string</span>
@@ -1110,62 +1112,62 @@ window.runMermaid = runMermaid;</script>
         <span class="n">answer</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">answer</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">do_print</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;************solution_str************&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"************solution_str************"</span><span class="p">)</span>
         <span class="nb">print</span><span class="p">(</span><span class="n">solution_str</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Extracted result: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Solution string: </span><span class="si">{</span><span class="n">answer</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Extracted result: </span><span class="si">{</span><span class="n">result</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Solution string: </span><span class="si">{</span><span class="n">answer</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="s2">&quot;&lt;think&gt;&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">output_string</span> <span class="ow">or</span> <span class="s2">&quot;&lt;/think&gt;&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">output_string</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">"&lt;think&gt;"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">output_string</span> <span class="ow">or</span> <span class="s2">"&lt;/think&gt;"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">output_string</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">do_print</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--------&quot;</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;not thinking:&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">"--------"</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n\n</span><span class="s2">"</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">"not thinking:"</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
 
     <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">do_print</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--------&quot;</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;result is None:&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"--------"</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n\n</span><span class="s2">"</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"result is None:"</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="mi">0</span>
 
     <span class="c1"># added rule1</span>
-    <span class="k">if</span> <span class="n">solution_str</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;&lt;think&gt;&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">solution_str</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot;&lt;/think&gt;&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">solution_str</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">"&lt;think&gt;"</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">solution_str</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">"&lt;/think&gt;"</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">do_print</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--------&quot;</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"--------"</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n\n</span><span class="s2">"</span><span class="p">)</span>
             <span class="nb">print</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Fail, think tag appear not once: &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;&lt;think&gt; appear </span><span class="si">{</span><span class="n">solution_str</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39;&lt;think&gt;&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> times, &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;&lt;/think&gt; appear </span><span class="si">{</span><span class="n">solution_str</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39;&lt;/think&gt;&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> times&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">"Fail, think tag appear not once: "</span>
+                <span class="sa">f</span><span class="s2">"&lt;think&gt; appear </span><span class="si">{</span><span class="n">solution_str</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">'&lt;think&gt;'</span><span class="p">)</span><span class="si">}</span><span class="s2"> times, "</span>
+                <span class="sa">f</span><span class="s2">"&lt;/think&gt; appear </span><span class="si">{</span><span class="n">solution_str</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">'&lt;/think&gt;'</span><span class="p">)</span><span class="si">}</span><span class="s2"> times"</span><span class="p">,</span>
                 <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="mi">0</span>
 
     <span class="c1"># added rule2</span>
-    <span class="n">think_end_pos</span> <span class="o">=</span> <span class="n">solution_str</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;&lt;/think&gt;&quot;</span><span class="p">)</span>
-    <span class="n">tool_call_start_pos</span> <span class="o">=</span> <span class="n">solution_str</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;&lt;tool_call&gt;&quot;</span><span class="p">)</span>
+    <span class="n">think_end_pos</span> <span class="o">=</span> <span class="n">solution_str</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">"&lt;/think&gt;"</span><span class="p">)</span>
+    <span class="n">tool_call_start_pos</span> <span class="o">=</span> <span class="n">solution_str</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">"&lt;tool_call&gt;"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">tool_call_start_pos</span> <span class="o">!=</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">think_end_pos</span> <span class="o">&gt;</span> <span class="n">tool_call_start_pos</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">do_print</span><span class="p">:</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--------&quot;</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Fail: &lt;think&gt; tag must before &lt;tool_call&gt; tag&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">"--------"</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n\n</span><span class="s2">"</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">"Fail: &lt;think&gt; tag must before &lt;tool_call&gt; tag"</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">validate_format</span><span class="p">(</span><span class="n">result</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">do_print</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--------&quot;</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;result wrong formate:&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"--------"</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n\n</span><span class="s2">"</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"result wrong formate:"</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="mi">0</span>
 
     <span class="k">if</span> <span class="n">validate_result</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">answer</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">do_print</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--------&quot;</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;get full core:&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"--------"</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n\n</span><span class="s2">"</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"get full core:"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="mi">1</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">do_print</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;--------&quot;</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">&quot;</span><span class="p">)</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;wrong answer&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"--------"</span> <span class="o">*</span> <span class="mi">5</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n\n</span><span class="s2">"</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"wrong answer"</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="mi">0</span></div>
 
 
@@ -1187,12 +1189,12 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="ToolCallWorkflow">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.workflows.customized_toolcall_workflows.html#trinity.common.workflows.customized_toolcall_workflows.ToolCallWorkflow">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ToolCallWorkflow</span><span class="p">(</span><span class="n">SimpleWorkflow</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    A workflow for toolcall tasks.</span>
 <span class="sd">    Prompt construction and reward function from https://github.com/NVlabs/Tool-N1</span>
 
 <span class="sd">    Only support qwen model for now. You can change the prompt construction and reward calculation by yourself for other models.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">is_async</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
 
@@ -1224,14 +1226,14 @@ window.runMermaid = runMermaid;</script>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">run_async</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
         <span class="n">messages</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">format_prompt</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;start chat&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">"start chat"</span><span class="p">)</span>
         <span class="n">responses</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">chat_async</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">rollout_args</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">response</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">responses</span><span class="p">):</span>
             <span class="n">reward</span> <span class="o">=</span> <span class="mf">0.0</span>
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_task</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">ground_truth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;answer&quot;</span><span class="p">)</span>
+                <span class="n">ground_truth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">raw_task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"answer"</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">ground_truth</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">reward</span> <span class="o">=</span> <span class="n">compute_toolcall_reward</span><span class="p">(</span>
                         <span class="n">solution_str</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">response_text</span><span class="p">,</span>
@@ -1239,12 +1241,12 @@ window.runMermaid = runMermaid;</script>
                     <span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                        <span class="s2">&quot;Key &#39;answer&#39; not found in self.raw_task. Assigning default reward.&quot;</span>
+                        <span class="s2">"Key 'answer' not found in self.raw_task. Assigning default reward."</span>
                     <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;self.raw_task is None. Assigning default reward.&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"self.raw_task is None. Assigning default reward."</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;self.task_desc: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task_desc</span><span class="si">}</span><span class="s2">, messages: </span><span class="si">{</span><span class="n">messages</span><span class="si">}</span><span class="s2">, response: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">response_text</span><span class="si">}</span><span class="s2">, reward: </span><span class="si">{</span><span class="n">reward</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"self.task_desc: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task_desc</span><span class="si">}</span><span class="s2">, messages: </span><span class="si">{</span><span class="n">messages</span><span class="si">}</span><span class="s2">, response: </span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">response_text</span><span class="si">}</span><span class="s2">, reward: </span><span class="si">{</span><span class="n">reward</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
             <span class="n">response</span><span class="o">.</span><span class="n">reward</span> <span class="o">=</span> <span class="n">reward</span>
             <span class="n">response</span><span class="o">.</span><span class="n">eid</span><span class="o">.</span><span class="n">run</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_id_base</span>

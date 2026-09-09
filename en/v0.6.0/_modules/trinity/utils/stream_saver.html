@@ -46,6 +46,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1012,7 +1014,7 @@ window.runMermaid = runMermaid;</script>
                   
   <h1>Source code for trinity.utils.stream_saver</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="sd">&quot;&quot;&quot;Streaming safetensors saver — saves one tensor at a time to avoid OOM.</span>
+<span class="sd">"""Streaming safetensors saver — saves one tensor at a time to avoid OOM.</span>
 
 <span class="sd">Standard ``safetensors.torch.save_file`` requires the entire state dict in</span>
 <span class="sd">memory.  For 70B+ models this can exceed available CPU RAM.  This module</span>
@@ -1033,7 +1035,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">Writes go through the OS page cache, so the function returns quickly after</span>
 <span class="sd">the last tensor is written.  Callers can hand off ``fsync`` + ``rename`` to</span>
 <span class="sd">a background thread for minimal main-thread blocking.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -1053,15 +1055,15 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="TensorMeta">
 <a class="viewcode-back" href="../../../build_api/trinity.utils.stream_saver.html#trinity.utils.stream_saver.TensorMeta">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TensorMeta</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Metadata for a single tensor, sufficient to compute its safetensors header entry.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Metadata for a single tensor, sufficient to compute its safetensors header entry."""</span>
 
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># safetensors dtype string, e.g. &quot;BF16&quot;</span>
+    <span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># safetensors dtype string, e.g. "BF16"</span>
     <span class="n">shape</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span></div>
 
 
 
-<span class="c1"># A full state-dict&#39;s worth of tensor metadata.</span>
+<span class="c1"># A full state-dict's worth of tensor metadata.</span>
 <span class="n">StateDictMeta</span> <span class="o">=</span> <span class="nb">list</span><span class="p">[</span><span class="n">TensorMeta</span><span class="p">]</span>
 <span class="n">StateDictMetaItem</span> <span class="o">=</span> <span class="n">TensorMeta</span> <span class="o">|</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span>
 
@@ -1070,38 +1072,38 @@ window.runMermaid = runMermaid;</script>
 <span class="c1"># ---------------------------------------------------------------------------</span>
 
 <span class="n">DTYPE_TO_SAFETENSORS</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="n">torch</span><span class="o">.</span><span class="n">float16</span><span class="p">:</span> <span class="s2">&quot;F16&quot;</span><span class="p">,</span>
-    <span class="n">torch</span><span class="o">.</span><span class="n">bfloat16</span><span class="p">:</span> <span class="s2">&quot;BF16&quot;</span><span class="p">,</span>
-    <span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">:</span> <span class="s2">&quot;F32&quot;</span><span class="p">,</span>
-    <span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span> <span class="s2">&quot;F64&quot;</span><span class="p">,</span>
-    <span class="n">torch</span><span class="o">.</span><span class="n">int8</span><span class="p">:</span> <span class="s2">&quot;I8&quot;</span><span class="p">,</span>
-    <span class="n">torch</span><span class="o">.</span><span class="n">int16</span><span class="p">:</span> <span class="s2">&quot;I16&quot;</span><span class="p">,</span>
-    <span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">:</span> <span class="s2">&quot;I32&quot;</span><span class="p">,</span>
-    <span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">:</span> <span class="s2">&quot;I64&quot;</span><span class="p">,</span>
-    <span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">:</span> <span class="s2">&quot;U8&quot;</span><span class="p">,</span>
-    <span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">:</span> <span class="s2">&quot;BOOL&quot;</span><span class="p">,</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">float16</span><span class="p">:</span> <span class="s2">"F16"</span><span class="p">,</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">bfloat16</span><span class="p">:</span> <span class="s2">"BF16"</span><span class="p">,</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">:</span> <span class="s2">"F32"</span><span class="p">,</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">:</span> <span class="s2">"F64"</span><span class="p">,</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">int8</span><span class="p">:</span> <span class="s2">"I8"</span><span class="p">,</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">int16</span><span class="p">:</span> <span class="s2">"I16"</span><span class="p">,</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">:</span> <span class="s2">"I32"</span><span class="p">,</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">:</span> <span class="s2">"I64"</span><span class="p">,</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">uint8</span><span class="p">:</span> <span class="s2">"U8"</span><span class="p">,</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">:</span> <span class="s2">"BOOL"</span><span class="p">,</span>
 <span class="p">}</span>
 
 <span class="n">DTYPE_ELEMENT_SIZE</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;F16&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-    <span class="s2">&quot;BF16&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-    <span class="s2">&quot;F32&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
-    <span class="s2">&quot;F64&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
-    <span class="s2">&quot;I8&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-    <span class="s2">&quot;I16&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-    <span class="s2">&quot;I32&quot;</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
-    <span class="s2">&quot;I64&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
-    <span class="s2">&quot;U8&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-    <span class="s2">&quot;BOOL&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">"F16"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="s2">"BF16"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="s2">"F32"</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="s2">"F64"</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+    <span class="s2">"I8"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">"I16"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="s2">"I32"</span><span class="p">:</span> <span class="mi">4</span><span class="p">,</span>
+    <span class="s2">"I64"</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+    <span class="s2">"U8"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="s2">"BOOL"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
 <span class="p">}</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_normalize_meta_dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert supported dtype representations to safetensors dtype strings.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Convert supported dtype representations to safetensors dtype strings."""</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">):</span>
         <span class="n">dtype_str</span> <span class="o">=</span> <span class="n">DTYPE_TO_SAFETENSORS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">dtype_str</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported dtype </span><span class="si">{</span><span class="n">dtype</span><span class="si">}</span><span class="s2"> in state_dict_meta.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unsupported dtype </span><span class="si">{</span><span class="n">dtype</span><span class="si">}</span><span class="s2"> in state_dict_meta."</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">dtype_str</span>
 
     <span class="k">if</span> <span class="n">dtype</span> <span class="ow">in</span> <span class="n">DTYPE_ELEMENT_SIZE</span><span class="p">:</span>
@@ -1111,18 +1113,18 @@ window.runMermaid = runMermaid;</script>
     <span class="k">if</span> <span class="n">upper_dtype</span> <span class="ow">in</span> <span class="n">DTYPE_ELEMENT_SIZE</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">upper_dtype</span>
 
-    <span class="n">torch_dtype</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">torch</span><span class="p">,</span> <span class="n">dtype</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">torch_dtype</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">torch</span><span class="p">,</span> <span class="n">dtype</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"."</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="kc">None</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">torch_dtype</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">):</span>
         <span class="n">dtype_str</span> <span class="o">=</span> <span class="n">DTYPE_TO_SAFETENSORS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">torch_dtype</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">dtype_str</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported dtype </span><span class="si">{</span><span class="n">dtype</span><span class="si">}</span><span class="s2"> in state_dict_meta.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unsupported dtype </span><span class="si">{</span><span class="n">dtype</span><span class="si">}</span><span class="s2"> in state_dict_meta."</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">dtype_str</span>
 
-    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported dtype </span><span class="si">{</span><span class="n">dtype</span><span class="si">}</span><span class="s2"> in state_dict_meta.&quot;</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unsupported dtype </span><span class="si">{</span><span class="n">dtype</span><span class="si">}</span><span class="s2"> in state_dict_meta."</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_normalize_state_dict_meta</span><span class="p">(</span><span class="n">meta</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">StateDictMetaItem</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">StateDictMeta</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalize external metadata tuples to the internal TensorMeta format.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Normalize external metadata tuples to the internal TensorMeta format."""</span>
     <span class="n">normalized_meta</span><span class="p">:</span> <span class="n">StateDictMeta</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">dtype</span><span class="p">,</span> <span class="n">shape</span> <span class="ow">in</span> <span class="n">meta</span><span class="p">:</span>
         <span class="n">normalized_meta</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
@@ -1136,10 +1138,10 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_tensor_to_bytes</span><span class="p">(</span><span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a CPU tensor to its raw bytes in C-contiguous order.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Convert a CPU tensor to its raw bytes in C-contiguous order."""</span>
     <span class="n">t</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
     <span class="c1"># numpy() handles the dtype↔raw mapping correctly for all types,</span>
-    <span class="c1"># including bfloat16 (via numpy ≥ 1.24 or torch&#39;s internal conversion).</span>
+    <span class="c1"># including bfloat16 (via numpy ≥ 1.24 or torch's internal conversion).</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">t</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span>
     <span class="k">except</span> <span class="p">(</span><span class="ne">RuntimeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
@@ -1149,12 +1151,12 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_compute_exact_header_size</span><span class="p">(</span><span class="n">meta</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">StateDictMetaItem</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the exact safetensors header JSON size from pre-collected metadata.</span>
+<span class="w">    </span><span class="sd">"""Compute the exact safetensors header JSON size from pre-collected metadata.</span>
 
 <span class="sd">    Builds a full header dict (with placeholder data_offsets) just to measure</span>
 <span class="sd">    the serialised JSON length, then aligns to 8 bytes as required by the</span>
 <span class="sd">    safetensors format.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">normalized_meta</span> <span class="o">=</span> <span class="n">_normalize_state_dict_meta</span><span class="p">(</span><span class="n">meta</span><span class="p">)</span>
     <span class="n">header</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">data_offset</span> <span class="o">=</span> <span class="mi">0</span>
@@ -1165,12 +1167,12 @@ window.runMermaid = runMermaid;</script>
             <span class="n">nbytes</span> <span class="o">*=</span> <span class="n">s</span>
         <span class="n">nbytes</span> <span class="o">*=</span> <span class="n">element_size</span>
         <span class="n">header</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;dtype&quot;</span><span class="p">:</span> <span class="n">dtype_str</span><span class="p">,</span>
-            <span class="s2">&quot;shape&quot;</span><span class="p">:</span> <span class="n">shape</span><span class="p">,</span>
-            <span class="s2">&quot;data_offsets&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">data_offset</span><span class="p">,</span> <span class="n">data_offset</span> <span class="o">+</span> <span class="n">nbytes</span><span class="p">],</span>
+            <span class="s2">"dtype"</span><span class="p">:</span> <span class="n">dtype_str</span><span class="p">,</span>
+            <span class="s2">"shape"</span><span class="p">:</span> <span class="n">shape</span><span class="p">,</span>
+            <span class="s2">"data_offsets"</span><span class="p">:</span> <span class="p">[</span><span class="n">data_offset</span><span class="p">,</span> <span class="n">data_offset</span> <span class="o">+</span> <span class="n">nbytes</span><span class="p">],</span>
         <span class="p">}</span>
         <span class="n">data_offset</span> <span class="o">+=</span> <span class="n">nbytes</span>
-    <span class="n">header_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="n">separators</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="s2">&quot;:&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+    <span class="n">header_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="n">separators</span><span class="o">=</span><span class="p">(</span><span class="s2">","</span><span class="p">,</span> <span class="s2">":"</span><span class="p">))</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">"utf-8"</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">header_json</span><span class="p">)</span> <span class="o">+</span> <span class="mi">7</span><span class="p">)</span> <span class="o">//</span> <span class="mi">8</span><span class="p">)</span> <span class="o">*</span> <span class="mi">8</span>
 
 
@@ -1183,20 +1185,20 @@ window.runMermaid = runMermaid;</script>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">rename</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stream-write a safetensors file, holding only one tensor in memory.</span>
+<span class="w">    </span><span class="sd">"""Stream-write a safetensors file, holding only one tensor in memory.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        tensor_iter: Yields ``(name, tensor)`` pairs.  Each tensor must</span>
-<span class="sd">            already reside on CPU.  After the tensor&#39;s bytes are written it</span>
+<span class="sd">            already reside on CPU.  After the tensor's bytes are written it</span>
 <span class="sd">            is no longer referenced — the caller should ``del`` the tensor</span>
 <span class="sd">            from their side as well.</span>
 <span class="sd">        filepath: Destination path.  Data is first written to</span>
-<span class="sd">            ``filepath + &quot;.tmp&quot;``; if *rename* is ``True`` the temp file is</span>
+<span class="sd">            ``filepath + ".tmp"``; if *rename* is ``True`` the temp file is</span>
 <span class="sd">            atomically renamed to *filepath* before returning.</span>
 <span class="sd">        state_dict_meta: Pre-collected ``(name, dtype, shape)`` metadata for</span>
 <span class="sd">            every tensor that *tensor_iter* will yield. Supports both the</span>
 <span class="sd">            internal :class:`TensorMeta` format and plain tuples such as</span>
-<span class="sd">            ``(name, &quot;bfloat16&quot;, (hidden, hidden))``. The header space is</span>
+<span class="sd">            ``(name, "bfloat16", (hidden, hidden))``. The header space is</span>
 <span class="sd">            computed **exactly** from this metadata, so the header will</span>
 <span class="sd">            always fit the reserved space without any rewrite.</span>
 <span class="sd">            Callers should collect this once during initialization via</span>
@@ -1208,10 +1210,10 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        The path actually written: *filepath* when ``rename=True``,</span>
-<span class="sd">        otherwise ``str(filepath) + &quot;.tmp&quot;``.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        otherwise ``str(filepath) + ".tmp"``.</span>
+<span class="sd">    """</span>
     <span class="n">filepath</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
-    <span class="n">tmp_path</span> <span class="o">=</span> <span class="n">filepath</span> <span class="o">+</span> <span class="s2">&quot;.tmp&quot;</span>
+    <span class="n">tmp_path</span> <span class="o">=</span> <span class="n">filepath</span> <span class="o">+</span> <span class="s2">".tmp"</span>
     <span class="n">normalized_state_dict_meta</span> <span class="o">=</span> <span class="n">_normalize_state_dict_meta</span><span class="p">(</span><span class="n">state_dict_meta</span><span class="p">)</span>
 
     <span class="c1"># --- Exact header sizing from pre-collected metadata ---</span>
@@ -1222,26 +1224,26 @@ window.runMermaid = runMermaid;</script>
     <span class="n">header</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">data_offset</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="s2">&quot;w+b&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">tmp_path</span><span class="p">,</span> <span class="s2">"w+b"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="c1"># Phase 1: Reserve space for header_size (8B) + header JSON.</span>
-        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;</span><span class="se">\x00</span><span class="s2">&quot;</span> <span class="o">*</span> <span class="p">(</span><span class="mi">8</span> <span class="o">+</span> <span class="n">max_header_size</span><span class="p">))</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">b</span><span class="s2">"</span><span class="se">\x00</span><span class="s2">"</span> <span class="o">*</span> <span class="p">(</span><span class="mi">8</span> <span class="o">+</span> <span class="n">max_header_size</span><span class="p">))</span>
 
         <span class="c1"># Phase 2: Stream tensor data.</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">tensor</span> <span class="ow">in</span> <span class="n">tensor_iter</span><span class="p">:</span>
             <span class="n">dtype_str</span> <span class="o">=</span> <span class="n">DTYPE_TO_SAFETENSORS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">dtype_str</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Unsupported dtype </span><span class="si">{</span><span class="n">tensor</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2"> for tensor &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;. &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;Supported: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">DTYPE_TO_SAFETENSORS</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">"Unsupported dtype </span><span class="si">{</span><span class="n">tensor</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2"> for tensor '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">'. "</span>
+                    <span class="sa">f</span><span class="s2">"Supported: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">DTYPE_TO_SAFETENSORS</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">"</span>
                 <span class="p">)</span>
 
             <span class="n">raw</span> <span class="o">=</span> <span class="n">_tensor_to_bytes</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
             <span class="n">nbytes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
 
             <span class="n">header</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;dtype&quot;</span><span class="p">:</span> <span class="n">dtype_str</span><span class="p">,</span>
-                <span class="s2">&quot;shape&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span>
-                <span class="s2">&quot;data_offsets&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">data_offset</span><span class="p">,</span> <span class="n">data_offset</span> <span class="o">+</span> <span class="n">nbytes</span><span class="p">],</span>
+                <span class="s2">"dtype"</span><span class="p">:</span> <span class="n">dtype_str</span><span class="p">,</span>
+                <span class="s2">"shape"</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span>
+                <span class="s2">"data_offsets"</span><span class="p">:</span> <span class="p">[</span><span class="n">data_offset</span><span class="p">,</span> <span class="n">data_offset</span> <span class="o">+</span> <span class="n">nbytes</span><span class="p">],</span>
             <span class="p">}</span>
 
             <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
@@ -1250,13 +1252,13 @@ window.runMermaid = runMermaid;</script>
             <span class="k">del</span> <span class="n">raw</span><span class="p">,</span> <span class="n">tensor</span>
 
         <span class="c1"># Phase 3: Build header JSON and write it back at the start.</span>
-        <span class="n">header_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="n">separators</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="s2">&quot;:&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="n">header_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">header</span><span class="p">,</span> <span class="n">separators</span><span class="o">=</span><span class="p">(</span><span class="s2">","</span><span class="p">,</span> <span class="s2">":"</span><span class="p">))</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">"utf-8"</span><span class="p">)</span>
 
         <span class="c1"># Header always fits — it was sized exactly from state_dict_meta.</span>
         <span class="c1"># Pad with spaces to fill exactly max_header_size bytes.</span>
-        <span class="n">padded</span> <span class="o">=</span> <span class="n">header_json</span> <span class="o">+</span> <span class="sa">b</span><span class="s2">&quot; &quot;</span> <span class="o">*</span> <span class="p">(</span><span class="n">max_header_size</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">header_json</span><span class="p">))</span>
+        <span class="n">padded</span> <span class="o">=</span> <span class="n">header_json</span> <span class="o">+</span> <span class="sa">b</span><span class="s2">" "</span> <span class="o">*</span> <span class="p">(</span><span class="n">max_header_size</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">header_json</span><span class="p">))</span>
         <span class="n">f</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&lt;Q&quot;</span><span class="p">,</span> <span class="n">max_header_size</span><span class="p">))</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">"&lt;Q"</span><span class="p">,</span> <span class="n">max_header_size</span><span class="p">))</span>
         <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">padded</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">rename</span><span class="p">:</span>

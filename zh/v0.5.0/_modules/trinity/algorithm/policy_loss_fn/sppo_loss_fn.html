@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -985,9 +987,9 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>trinity.algorithm.policy_loss_fn.sppo_loss_fn 源代码</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;sPPO-token policy loss function.</span>
+<span></span><span class="sd">"""sPPO-token policy loss function.</span>
 <span class="sd">Relevant paper: https://arxiv.org/abs/2108.05828.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span>
 
@@ -1004,9 +1006,9 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.policy_loss_fn.sppo_loss_fn.html#trinity.algorithm.policy_loss_fn.sppo_loss_fn.sPPOPolicyLossFn.__init__">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;verl&quot;</span><span class="p">,</span>
+        <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"verl"</span><span class="p">,</span>
         <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.3</span><span class="p">,</span>
-        <span class="n">loss_agg_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;token-mean&quot;</span><span class="p">,</span>
+        <span class="n">loss_agg_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"token-mean"</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">epsilon</span> <span class="o">=</span> <span class="n">epsilon</span>
@@ -1021,11 +1023,11 @@ window.runMermaid = runMermaid;</script>
         <span class="n">advantages</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># [batch_size, seq_len]</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate sPPO loss.</span>
+<span class="w">        </span><span class="sd">"""Calculate sPPO loss.</span>
 <span class="sd">        The formula is as follows:</span>
 <span class="sd">        advantages*log(clip(ratio, 1/(1+epsilon), 1+epsilon))</span>
 <span class="sd">        ratio = exp(logprob - old_logprob)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1">#</span>
         <span class="c1"># token-wise</span>
         <span class="n">ratio</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">logprob</span> <span class="o">-</span> <span class="n">old_logprob</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
@@ -1035,8 +1037,8 @@ window.runMermaid = runMermaid;</script>
         <span class="n">pg_loss</span> <span class="o">=</span> <span class="n">aggregate_loss</span><span class="p">(</span><span class="n">pg_losses</span><span class="p">,</span> <span class="n">action_mask</span><span class="p">,</span> <span class="n">loss_agg_mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">loss_agg_mode</span><span class="p">)</span>
         <span class="n">pg_clipfrac</span> <span class="o">=</span> <span class="n">masked_mean</span><span class="p">(</span><span class="n">is_clipped_mask</span><span class="o">.</span><span class="n">float</span><span class="p">(),</span> <span class="n">action_mask</span><span class="p">)</span>
         <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;pg_clipfrac&quot;</span><span class="p">:</span> <span class="n">pg_clipfrac</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
-            <span class="s2">&quot;pg_loss&quot;</span><span class="p">:</span> <span class="n">pg_loss</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+            <span class="s2">"pg_clipfrac"</span><span class="p">:</span> <span class="n">pg_clipfrac</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+            <span class="s2">"pg_loss"</span><span class="p">:</span> <span class="n">pg_loss</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
         <span class="p">}</span>
         <span class="k">return</span> <span class="n">pg_loss</span><span class="p">,</span> <span class="n">metrics</span>
 
@@ -1045,8 +1047,8 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">default_args</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;epsilon&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">,</span>
-            <span class="s2">&quot;loss_agg_mode&quot;</span><span class="p">:</span> <span class="s2">&quot;token-mean&quot;</span><span class="p">,</span>
+            <span class="s2">"epsilon"</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">,</span>
+            <span class="s2">"loss_agg_mode"</span><span class="p">:</span> <span class="s2">"token-mean"</span><span class="p">,</span>
         <span class="p">}</span></div>
 </div>
 

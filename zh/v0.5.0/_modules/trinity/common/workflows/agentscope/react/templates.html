@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -994,14 +996,14 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.rewards.math_reward</span><span class="w"> </span><span class="kn">import</span> <span class="n">MathBoxedRewardFn</span>
 
 <span class="c1"># For GSM8K task</span>
-<span class="n">GSM8KSystemPrompt</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;You are an agent specialized in solving math problems with tools. Please solve the math problem given to you. You can write and execute Python code to perform calculation or verify your answer. You should return your final answer within </span><span class="se">\\</span><span class="s2">boxed{{}}.&quot;&quot;&quot;</span>
+<span class="n">GSM8KSystemPrompt</span> <span class="o">=</span> <span class="s2">"""You are an agent specialized in solving math problems with tools. Please solve the math problem given to you. You can write and execute Python code to perform calculation or verify your answer. You should return your final answer within </span><span class="se">\\</span><span class="s2">boxed{{}}."""</span>
 
 
 <div class="viewcode-block" id="GSM8KResponseStructure">
 <a class="viewcode-back" href="../../../../../../build_api/trinity.common.workflows.agentscope.react.templates.html#trinity.common.workflows.agentscope.react.templates.GSM8KResponseStructure">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">GSM8KResponseStructure</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">result</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Your solution of the given math problem. Put your final answer in boxed format, e.g., </span><span class="se">\\</span><span class="s2">boxed</span><span class="si">{42}</span><span class="s2">&quot;</span>
+        <span class="n">description</span><span class="o">=</span><span class="s2">"Your solution of the given math problem. Put your final answer in boxed format, e.g., </span><span class="se">\\</span><span class="s2">boxed</span><span class="si">{42}</span><span class="s2">"</span>
     <span class="p">)</span></div>
 
 
@@ -1017,12 +1019,12 @@ window.runMermaid = runMermaid;</script>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
         <span class="c1"># parse GSM8K truth</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">truth</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;####&quot;</span> <span class="ow">in</span> <span class="n">truth</span><span class="p">:</span>
-            <span class="n">truth</span> <span class="o">=</span> <span class="n">truth</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;####&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">truth</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">"####"</span> <span class="ow">in</span> <span class="n">truth</span><span class="p">:</span>
+            <span class="n">truth</span> <span class="o">=</span> <span class="n">truth</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"####"</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">truth</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">truth</span><span class="p">)</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__call__</span><span class="p">(</span>
-            <span class="n">response</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;result&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
+            <span class="n">response</span><span class="o">=</span><span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"result"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
             <span class="n">truth</span><span class="o">=</span><span class="n">truth</span><span class="p">,</span>
             <span class="n">with_think</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
             <span class="n">format_score_coef</span><span class="o">=</span><span class="n">format_score_coef</span><span class="p">,</span>
@@ -1038,7 +1040,7 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../../../build_api/trinity.common.workflows.agentscope.react.templates.html#trinity.common.workflows.agentscope.react.templates.Template">[文档]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Template</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A template for different task types, including system prompt and response structure.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""A template for different task types, including system prompt and response structure."""</span>
 
     <span class="n">system_prompt</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">response_structure</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseModel</span><span class="p">]</span>
@@ -1047,7 +1049,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="n">TEMPLATE_MAP</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Template</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;gsm8k&quot;</span><span class="p">:</span> <span class="n">Template</span><span class="p">(</span>
+    <span class="s2">"gsm8k"</span><span class="p">:</span> <span class="n">Template</span><span class="p">(</span>
         <span class="n">system_prompt</span><span class="o">=</span><span class="n">GSM8KSystemPrompt</span><span class="p">,</span>
         <span class="n">response_structure</span><span class="o">=</span><span class="n">GSM8KResponseStructure</span><span class="p">,</span>
         <span class="n">reward_fn_cls</span><span class="o">=</span><span class="n">GSM8KRewardFn</span><span class="p">,</span>

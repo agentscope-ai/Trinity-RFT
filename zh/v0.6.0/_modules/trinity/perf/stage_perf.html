@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1057,9 +1059,9 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="validate_explorer_perf_config">
 <a class="viewcode-back" href="../../../build_api/trinity.perf.stage_perf.html#trinity.perf.validate_explorer_perf_config">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">validate_explorer_perf_config</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate perf-specific config constraints.&quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">!=</span> <span class="s2">&quot;explore&quot;</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Explorer perf requires mode &#39;explore&#39;, got &#39;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span></div>
+<span class="w">    </span><span class="sd">"""Validate perf-specific config constraints."""</span>
+    <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">mode</span> <span class="o">!=</span> <span class="s2">"explore"</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Explorer perf requires mode 'explore', got '</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span></div>
 
 
 
@@ -1077,24 +1079,24 @@ window.runMermaid = runMermaid;</script>
     <span class="n">success</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
     <span class="n">error</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Assemble the final JSON payload.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Assemble the final JSON payload."""</span>
     <span class="n">artifacts</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">explorer_name</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">explorer_name</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span>
         <span class="n">artifacts</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;checkpoint_job_dir&quot;</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">checkpoint_job_dir</span><span class="p">,</span>
-            <span class="s2">&quot;tensorboard_dir&quot;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-                <span class="n">config</span><span class="o">.</span><span class="n">monitor</span><span class="o">.</span><span class="n">cache_dir</span><span class="p">,</span> <span class="s2">&quot;tensorboard&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span>
+            <span class="s2">"checkpoint_job_dir"</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">checkpoint_job_dir</span><span class="p">,</span>
+            <span class="s2">"tensorboard_dir"</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">config</span><span class="o">.</span><span class="n">monitor</span><span class="o">.</span><span class="n">cache_dir</span><span class="p">,</span> <span class="s2">"tensorboard"</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span>
             <span class="p">),</span>
-            <span class="s2">&quot;log_dir&quot;</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">save_dir</span><span class="p">,</span>
-            <span class="s2">&quot;output_json&quot;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">output_path</span><span class="p">,</span>
+            <span class="s2">"log_dir"</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">save_dir</span><span class="p">,</span>
+            <span class="s2">"output_json"</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">output_path</span><span class="p">,</span>
         <span class="p">}</span>
 
     <span class="n">timing</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;startup_time_sec&quot;</span><span class="p">:</span> <span class="n">startup_time_sec</span><span class="p">,</span>
-        <span class="s2">&quot;execution_time_sec&quot;</span><span class="p">:</span> <span class="n">execution_time_sec</span><span class="p">,</span>
-        <span class="s2">&quot;total_time_sec&quot;</span><span class="p">:</span> <span class="n">total_time_sec</span><span class="p">,</span>
+        <span class="s2">"startup_time_sec"</span><span class="p">:</span> <span class="n">startup_time_sec</span><span class="p">,</span>
+        <span class="s2">"execution_time_sec"</span><span class="p">:</span> <span class="n">execution_time_sec</span><span class="p">,</span>
+        <span class="s2">"total_time_sec"</span><span class="p">:</span> <span class="n">total_time_sec</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="n">timing</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
         <span class="n">compute_global_token_throughput_metrics</span><span class="p">(</span>
@@ -1104,24 +1106,24 @@ window.runMermaid = runMermaid;</script>
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;run_meta&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;module&quot;</span><span class="p">:</span> <span class="s2">&quot;explorer&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;config_path&quot;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">config_path</span><span class="p">,</span>
-            <span class="s2">&quot;explorer_name&quot;</span><span class="p">:</span> <span class="n">explorer_name</span><span class="p">,</span>
-            <span class="s2">&quot;monitor_interval_sec&quot;</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">monitor_interval</span><span class="p">,</span>
-            <span class="s2">&quot;hostname&quot;</span><span class="p">:</span> <span class="n">socket</span><span class="o">.</span><span class="n">gethostname</span><span class="p">(),</span>
-            <span class="s2">&quot;pid&quot;</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">(),</span>
-            <span class="s2">&quot;generated_at&quot;</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
+        <span class="s2">"run_meta"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">"module"</span><span class="p">:</span> <span class="s2">"explorer"</span><span class="p">,</span>
+            <span class="s2">"config_path"</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">config_path</span><span class="p">,</span>
+            <span class="s2">"explorer_name"</span><span class="p">:</span> <span class="n">explorer_name</span><span class="p">,</span>
+            <span class="s2">"monitor_interval_sec"</span><span class="p">:</span> <span class="n">options</span><span class="o">.</span><span class="n">monitor_interval</span><span class="p">,</span>
+            <span class="s2">"hostname"</span><span class="p">:</span> <span class="n">socket</span><span class="o">.</span><span class="n">gethostname</span><span class="p">(),</span>
+            <span class="s2">"pid"</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">(),</span>
+            <span class="s2">"generated_at"</span><span class="p">:</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
         <span class="p">},</span>
-        <span class="s2">&quot;timing&quot;</span><span class="p">:</span> <span class="n">timing</span><span class="p">,</span>
+        <span class="s2">"timing"</span><span class="p">:</span> <span class="n">timing</span><span class="p">,</span>
         <span class="o">**</span><span class="n">resource_payload</span><span class="p">,</span>
-        <span class="s2">&quot;step_metrics&quot;</span><span class="p">:</span> <span class="n">step_metrics</span><span class="p">,</span>
-        <span class="s2">&quot;artifacts&quot;</span><span class="p">:</span> <span class="n">artifacts</span><span class="p">,</span>
-        <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;success&quot;</span><span class="p">:</span> <span class="n">success</span><span class="p">,</span>
-            <span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="n">error</span><span class="p">,</span>
-            <span class="s2">&quot;gpu_metrics_available&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">resource_payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;resource_timeline&quot;</span><span class="p">)),</span>
-            <span class="s2">&quot;tensorboard_metrics_available&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">step_metrics</span><span class="p">),</span>
+        <span class="s2">"step_metrics"</span><span class="p">:</span> <span class="n">step_metrics</span><span class="p">,</span>
+        <span class="s2">"artifacts"</span><span class="p">:</span> <span class="n">artifacts</span><span class="p">,</span>
+        <span class="s2">"status"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">"success"</span><span class="p">:</span> <span class="n">success</span><span class="p">,</span>
+            <span class="s2">"error"</span><span class="p">:</span> <span class="n">error</span><span class="p">,</span>
+            <span class="s2">"gpu_metrics_available"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">resource_payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"resource_timeline"</span><span class="p">)),</span>
+            <span class="s2">"tensorboard_metrics_available"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">step_metrics</span><span class="p">),</span>
         <span class="p">},</span>
     <span class="p">}</span></div>
 
@@ -1130,17 +1132,17 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="write_explorer_perf_output">
 <a class="viewcode-back" href="../../../build_api/trinity.perf.stage_perf.html#trinity.perf.write_explorer_perf_output">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">write_explorer_perf_output</span><span class="p">(</span><span class="n">output_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">payload</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Write the final payload to disk.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Write the final payload to disk."""</span>
     <span class="n">output_file</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">output_path</span><span class="p">)</span>
     <span class="n">output_file</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">output_file</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span></div>
+    <span class="n">output_file</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">ensure_ascii</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="run_explorer_perf">
 <a class="viewcode-back" href="../../../build_api/trinity.perf.stage_perf.html#trinity.perf.run_explorer_perf">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">run_explorer_perf</span><span class="p">(</span><span class="n">options</span><span class="p">:</span> <span class="n">ExplorerPerfOptions</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run Explorer perf collection and return the result payload.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Run Explorer perf collection and return the result payload."""</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.cli.launcher</span><span class="w"> </span><span class="kn">import</span> <span class="n">explore</span>
 
     <span class="n">load_plugins</span><span class="p">()</span>
@@ -1150,13 +1152,13 @@ window.runMermaid = runMermaid;</script>
     <span class="n">startup_time_sec</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">execution_time_sec</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">total_time_sec</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">resource_payload</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;resource_timeline&quot;</span><span class="p">:</span> <span class="p">[]}</span>
+    <span class="n">resource_payload</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"resource_timeline"</span><span class="p">:</span> <span class="p">[]}</span>
     <span class="n">step_metrics</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="k">try</span><span class="p">:</span>
         <span class="n">config</span> <span class="o">=</span> <span class="n">load_config</span><span class="p">(</span><span class="n">options</span><span class="o">.</span><span class="n">config_path</span><span class="p">)</span>
         <span class="n">config</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">total_steps</span> <span class="o">=</span> <span class="n">options</span><span class="o">.</span><span class="n">total_steps</span>
-        <span class="n">config</span><span class="o">.</span><span class="n">monitor</span><span class="o">.</span><span class="n">monitor_type</span> <span class="o">=</span> <span class="s2">&quot;tensorboard&quot;</span>
+        <span class="n">config</span><span class="o">.</span><span class="n">monitor</span><span class="o">.</span><span class="n">monitor_type</span> <span class="o">=</span> <span class="s2">"tensorboard"</span>
         <span class="n">config</span><span class="o">.</span><span class="n">continue_from_checkpoint</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># ensure we start fresh for perf testing</span>
         <span class="n">validate_explorer_perf_config</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
         <span class="n">config</span><span class="o">.</span><span class="n">check_and_update</span><span class="p">()</span>
@@ -1165,7 +1167,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">address</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">ray_address</span><span class="p">,</span>
             <span class="n">ignore_reinit_error</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
             <span class="n">namespace</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">ray_namespace</span><span class="p">,</span>
-            <span class="n">runtime_env</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;env_vars&quot;</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">get_envs</span><span class="p">()},</span>
+            <span class="n">runtime_env</span><span class="o">=</span><span class="p">{</span><span class="s2">"env_vars"</span><span class="p">:</span> <span class="n">config</span><span class="o">.</span><span class="n">get_envs</span><span class="p">()},</span>
         <span class="p">)</span>
         <span class="n">check_and_run_task_pipeline</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
 
@@ -1180,15 +1182,15 @@ window.runMermaid = runMermaid;</script>
             <span class="n">error</span> <span class="o">=</span> <span class="n">stage_status</span><span class="o">.</span><span class="n">error</span><span class="o">.</span><span class="n">traceback_text</span>
     <span class="k">except</span> <span class="p">(</span><span class="ne">RuntimeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
         <span class="n">error</span> <span class="o">=</span> <span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">()</span>
-        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Explorer perf failed with error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Explorer perf failed with error: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">raise</span> <span class="n">e</span>
     <span class="k">finally</span><span class="p">:</span>
         <span class="n">collected_samples</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span> <span class="k">if</span> <span class="n">sampler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[]</span>
-        <span class="n">resource_payload</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;resource_timeline&quot;</span><span class="p">:</span> <span class="p">[</span><span class="n">sample</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">collected_samples</span><span class="p">]}</span>
+        <span class="n">resource_payload</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"resource_timeline"</span><span class="p">:</span> <span class="p">[</span><span class="n">sample</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">collected_samples</span><span class="p">]}</span>
 
         <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">tensorboard_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-                <span class="n">config</span><span class="o">.</span><span class="n">monitor</span><span class="o">.</span><span class="n">cache_dir</span><span class="p">,</span> <span class="s2">&quot;tensorboard&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span>
+                <span class="n">config</span><span class="o">.</span><span class="n">monitor</span><span class="o">.</span><span class="n">cache_dir</span><span class="p">,</span> <span class="s2">"tensorboard"</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">explorer</span><span class="o">.</span><span class="n">name</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">tensorboard_dir</span><span class="p">):</span>
                 <span class="n">scalar_reader</span> <span class="o">=</span> <span class="n">TensorBoardScalarReader</span><span class="p">(</span><span class="n">tensorboard_dir</span><span class="p">)</span>

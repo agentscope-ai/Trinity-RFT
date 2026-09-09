@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -967,7 +969,7 @@ window.runMermaid = runMermaid;</script>
                   
   <h1>trinity.common.rewards.dapo_reward 源代码</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="sd">&quot;&quot;&quot;Reward Function with Overlong Reward Shaping described in DAPO (https://arxiv.org/pdf/2503.14476)&quot;&quot;&quot;</span>
+<span class="sd">"""Reward Function with Overlong Reward Shaping described in DAPO (https://arxiv.org/pdf/2503.14476)"""</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
@@ -979,7 +981,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="MathDAPORewardFn">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.dapo_reward.html#trinity.common.rewards.dapo_reward.MathDAPORewardFn">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MathDAPORewardFn</span><span class="p">(</span><span class="n">RewardFn</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A reward function that follows the definition in DAPO for math task.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""A reward function that follows the definition in DAPO for math task."""</span>
 
 <div class="viewcode-block" id="MathDAPORewardFn.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.dapo_reward.html#trinity.common.rewards.dapo_reward.MathDAPORewardFn.__init__">[文档]</a>
@@ -990,14 +992,14 @@ window.runMermaid = runMermaid;</script>
         <span class="n">max_response_length</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">cache_length</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize DAPO math reward settings.</span>
+<span class="w">        </span><span class="sd">"""Initialize DAPO math reward settings.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            enable_overlong_penalty: Whether to apply overlong response shaping.</span>
 <span class="sd">            penalty_factor: Magnitude for overlong penalties.</span>
 <span class="sd">            max_response_length: Maximum allowed response length in tokens.</span>
 <span class="sd">            cache_length: Soft-penalty transition window in tokens.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">enable_overlong_penalty</span> <span class="o">=</span> <span class="n">enable_overlong_penalty</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">penalty_factor</span> <span class="o">=</span> <span class="n">penalty_factor</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_response_length</span> <span class="o">=</span> <span class="n">max_response_length</span>
@@ -1011,7 +1013,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">truth</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute DAPO reward components for one response.</span>
+<span class="w">        </span><span class="sd">"""Compute DAPO reward components for one response.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            response: Model-generated response text.</span>
@@ -1021,7 +1023,7 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            dict[str, float]: Reward components containing accuracy and format_score.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">score</span><span class="p">,</span> <span class="n">extracted_answer</span> <span class="o">=</span> <span class="n">compute_score</span><span class="p">(</span><span class="n">response</span><span class="p">,</span> <span class="n">truth</span><span class="p">)</span>
         <span class="c1"># DAPO paper (Sec. 2.4): +1 / -1 rule-based outcome reward</span>
         <span class="n">accuracy_score</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="k">if</span> <span class="n">score</span> <span class="o">&gt;=</span> <span class="mf">0.5</span> <span class="k">else</span> <span class="o">-</span><span class="mf">1.0</span>
@@ -1031,35 +1033,35 @@ window.runMermaid = runMermaid;</script>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_overlong_penalty</span><span class="p">:</span>
             <span class="n">format_score</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_overlong_penalty</span><span class="p">(</span><span class="n">response_token</span><span class="p">)</span>
 
-        <span class="n">info</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;info&quot;</span><span class="p">)</span>
+        <span class="n">info</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"info"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">info</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">info</span><span class="p">[</span><span class="s2">&quot;ground_truth&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">truth</span>
-            <span class="n">info</span><span class="p">[</span><span class="s2">&quot;extracted_answer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">extracted_answer</span>
+            <span class="n">info</span><span class="p">[</span><span class="s2">"ground_truth"</span><span class="p">]</span> <span class="o">=</span> <span class="n">truth</span>
+            <span class="n">info</span><span class="p">[</span><span class="s2">"extracted_answer"</span><span class="p">]</span> <span class="o">=</span> <span class="n">extracted_answer</span>
 
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;accuracy&quot;</span><span class="p">:</span> <span class="n">accuracy_score</span><span class="p">,</span>
-            <span class="s2">&quot;format_score&quot;</span><span class="p">:</span> <span class="n">format_score</span><span class="p">,</span>
+            <span class="s2">"accuracy"</span><span class="p">:</span> <span class="n">accuracy_score</span><span class="p">,</span>
+            <span class="s2">"format_score"</span><span class="p">:</span> <span class="n">format_score</span><span class="p">,</span>
         <span class="p">}</span>
 
 <div class="viewcode-block" id="MathDAPORewardFn.compute_overlong_penalty">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.dapo_reward.html#trinity.common.rewards.dapo_reward.MathDAPORewardFn.compute_overlong_penalty">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_overlong_penalty</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response_token</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute soft/hard penalty for long responses.</span>
+<span class="w">        </span><span class="sd">"""Compute soft/hard penalty for long responses.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            response_token: Response token ids.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            float: Length-based shaping value, where negative values penalize overlong outputs.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">assert</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">max_response_length</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
             <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_length</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
             <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">penalty_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-        <span class="p">),</span> <span class="s2">&quot;When enable_overlong_penalty = true, max_response_length, penalty_factor, cache_length must be set&quot;</span>
+        <span class="p">),</span> <span class="s2">"When enable_overlong_penalty = true, max_response_length, penalty_factor, cache_length must be set"</span>
         <span class="k">assert</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">max_response_length</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_length</span>
-        <span class="p">),</span> <span class="s2">&quot;max_response_length must be greater than cache_length&quot;</span>
+        <span class="p">),</span> <span class="s2">"max_response_length must be greater than cache_length"</span>
 
         <span class="n">response_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">response_token</span><span class="p">)</span>
         <span class="n">expected_len</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_response_length</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache_length</span>

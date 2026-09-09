@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1002,14 +1004,14 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="MixSampleStrategy">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.sample_strategy.mix_sample_strategy.html#trinity.algorithm.sample_strategy.mix_sample_strategy.MixSampleStrategy">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MixSampleStrategy</span><span class="p">(</span><span class="n">SampleStrategy</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The default sample strategy.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""The default sample strategy."""</span>
 
 <div class="viewcode-block" id="MixSampleStrategy.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.sample_strategy.mix_sample_strategy.html#trinity.algorithm.sample_strategy.mix_sample_strategy.MixSampleStrategy.__init__">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buffer_config</span><span class="p">:</span> <span class="n">BufferConfig</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">buffer_config</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">expert_data_ratio</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;expert_data_ratio&quot;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sft_dataset_name</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sft_dataset_name&quot;</span><span class="p">,</span> <span class="s2">&quot;sft_dataset&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expert_data_ratio</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"expert_data_ratio"</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sft_dataset_name</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sft_dataset_name"</span><span class="p">,</span> <span class="s2">"sft_dataset"</span><span class="p">)</span>
         <span class="n">tot_batch_size</span> <span class="o">=</span> <span class="n">buffer_config</span><span class="o">.</span><span class="n">train_batch_size</span>
         <span class="n">expert_batch_size</span> <span class="o">=</span> <span class="n">ceil</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">expert_data_ratio</span> <span class="o">*</span> <span class="n">tot_batch_size</span><span class="p">)</span>
 
@@ -1020,20 +1022,20 @@ window.runMermaid = runMermaid;</script>
 
         <span class="k">if</span> <span class="n">buffer_config</span><span class="o">.</span><span class="n">trainer_input</span><span class="o">.</span><span class="n">auxiliary_buffers</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;`buffer_config.trainer_input.auxiliary_buffers` is required in MIX algorithm&quot;</span>
+                <span class="s2">"`buffer_config.trainer_input.auxiliary_buffers` is required in MIX algorithm"</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">buffer_config</span><span class="o">.</span><span class="n">trainer_input</span><span class="o">.</span><span class="n">auxiliary_buffers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sft_dataset_name</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sft_dataset_name</span><span class="si">}</span><span class="s2">` is not found in `buffer_config.trainer_input.auxiliary_buffers`&quot;</span>
+                <span class="sa">f</span><span class="s2">"`</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sft_dataset_name</span><span class="si">}</span><span class="s2">` is not found in `buffer_config.trainer_input.auxiliary_buffers`"</span>
             <span class="p">)</span>
         <span class="n">expert_storage_config</span> <span class="o">=</span> <span class="n">buffer_config</span><span class="o">.</span><span class="n">trainer_input</span><span class="o">.</span><span class="n">auxiliary_buffers</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">sft_dataset_name</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="n">expert_storage_config</span><span class="o">.</span><span class="n">schema_type</span> <span class="o">!=</span> <span class="s2">&quot;sft&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">expert_storage_config</span><span class="o">.</span><span class="n">schema_type</span> <span class="o">!=</span> <span class="s2">"sft"</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;schema_type of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sft_dataset_name</span><span class="si">}</span><span class="s2"> is not `sft`, set it to `sft`&quot;</span>
+                <span class="sa">f</span><span class="s2">"schema_type of </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sft_dataset_name</span><span class="si">}</span><span class="s2"> is not `sft`, set it to `sft`"</span>
             <span class="p">)</span>
-            <span class="n">expert_storage_config</span><span class="o">.</span><span class="n">schema_type</span> <span class="o">=</span> <span class="s2">&quot;sft&quot;</span>
+            <span class="n">expert_storage_config</span><span class="o">.</span><span class="n">schema_type</span> <span class="o">=</span> <span class="s2">"sft"</span>
 
         <span class="c1"># expert experience buffer</span>
         <span class="n">expert_buffer_config</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span>
@@ -1049,13 +1051,13 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.sample_strategy.mix_sample_strategy.html#trinity.algorithm.sample_strategy.mix_sample_strategy.MixSampleStrategy.sample">[文档]</a>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">],</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">]:</span>
         <span class="n">metrics</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">with</span> <span class="n">Timer</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="s2">&quot;time/read_experience&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">Timer</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="s2">"time/read_experience"</span><span class="p">):</span>
             <span class="n">usual_exp_list</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">usual_exp_buffer</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">usual_exp_list</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">exp</span><span class="o">.</span><span class="n">info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">exp</span><span class="o">.</span><span class="n">info</span> <span class="o">=</span> <span class="p">{}</span>
-                <span class="n">exp</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;is_expert&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-                <span class="n">exp</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">step</span>
+                <span class="n">exp</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s2">"is_expert"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="n">exp</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s2">"step"</span><span class="p">]</span> <span class="o">=</span> <span class="n">step</span>
 
             <span class="n">expert_exp_list</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">expert_exp_buffer</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">expert_exp_list</span><span class="p">:</span>
@@ -1069,8 +1071,8 @@ window.runMermaid = runMermaid;</script>
                 <span class="p">)</span>
                 <span class="k">if</span> <span class="n">exp</span><span class="o">.</span><span class="n">info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">exp</span><span class="o">.</span><span class="n">info</span> <span class="o">=</span> <span class="p">{}</span>
-                <span class="n">exp</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;is_expert&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-                <span class="n">exp</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">step</span>
+                <span class="n">exp</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s2">"is_expert"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">exp</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s2">"step"</span><span class="p">]</span> <span class="o">=</span> <span class="n">step</span>
 
             <span class="n">exp_list</span> <span class="o">=</span> <span class="n">usual_exp_list</span> <span class="o">+</span> <span class="n">expert_exp_list</span>
             <span class="n">repr_samples</span> <span class="o">=</span> <span class="n">representative_sample</span><span class="p">(</span><span class="n">exp_list</span><span class="p">)</span>
@@ -1078,13 +1080,13 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">set_model_version_metric</span><span class="p">(</span><span class="n">exp_list</span><span class="p">,</span> <span class="n">metrics</span><span class="p">)</span>
         <span class="n">custom_fields</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">CustomField</span><span class="p">(</span>
-                <span class="n">source_field</span><span class="o">=</span><span class="s2">&quot;is_expert&quot;</span><span class="p">,</span>
-                <span class="n">destination_field</span><span class="o">=</span><span class="s2">&quot;expert_mask&quot;</span><span class="p">,</span>
+                <span class="n">source_field</span><span class="o">=</span><span class="s2">"is_expert"</span><span class="p">,</span>
+                <span class="n">destination_field</span><span class="o">=</span><span class="s2">"expert_mask"</span><span class="p">,</span>
                 <span class="n">data_type</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span>
             <span class="p">),</span>
             <span class="n">CustomField</span><span class="p">(</span>
-                <span class="n">source_field</span><span class="o">=</span><span class="s2">&quot;step&quot;</span><span class="p">,</span>
-                <span class="n">destination_field</span><span class="o">=</span><span class="s2">&quot;step&quot;</span><span class="p">,</span>
+                <span class="n">source_field</span><span class="o">=</span><span class="s2">"step"</span><span class="p">,</span>
+                <span class="n">destination_field</span><span class="o">=</span><span class="s2">"step"</span><span class="p">,</span>
                 <span class="n">data_type</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span>
             <span class="p">),</span>
         <span class="p">]</span>
@@ -1098,8 +1100,8 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">default_args</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;expert_data_ratio&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
-            <span class="s2">&quot;sft_dataset_name&quot;</span><span class="p">:</span> <span class="s2">&quot;sft_dataset&quot;</span><span class="p">,</span>
+            <span class="s2">"expert_data_ratio"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+            <span class="s2">"sft_dataset_name"</span><span class="p">:</span> <span class="s2">"sft_dataset"</span><span class="p">,</span>
         <span class="p">}</span></div>
 
 
@@ -1107,18 +1109,18 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.sample_strategy.mix_sample_strategy.html#trinity.algorithm.sample_strategy.mix_sample_strategy.MixSampleStrategy.state_dict">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;usual_buffer&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">usual_exp_buffer</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
-            <span class="s2">&quot;expert_buffer&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">expert_exp_buffer</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
+            <span class="s2">"usual_buffer"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">usual_exp_buffer</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
+            <span class="s2">"expert_buffer"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">expert_exp_buffer</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span>
         <span class="p">}</span></div>
 
 
 <div class="viewcode-block" id="MixSampleStrategy.load_state_dict">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.sample_strategy.mix_sample_strategy.html#trinity.algorithm.sample_strategy.mix_sample_strategy.MixSampleStrategy.load_state_dict">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;usual_buffer&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">usual_exp_buffer</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">[</span><span class="s2">&quot;usual_buffer&quot;</span><span class="p">])</span>
-        <span class="k">if</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;expert_buffer&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">expert_exp_buffer</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">[</span><span class="s2">&quot;expert_buffer&quot;</span><span class="p">])</span></div>
+        <span class="k">if</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"usual_buffer"</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">usual_exp_buffer</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">[</span><span class="s2">"usual_buffer"</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"expert_buffer"</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expert_exp_buffer</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">[</span><span class="s2">"expert_buffer"</span><span class="p">])</span></div>
 </div>
 
 </pre></div>

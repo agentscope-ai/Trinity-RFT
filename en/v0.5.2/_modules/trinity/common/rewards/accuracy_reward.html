@@ -46,6 +46,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -991,7 +993,7 @@ window.runMermaid = runMermaid;</script>
                   
   <h1>Source code for trinity.common.rewards.accuracy_reward</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="sd">&quot;&quot;&quot;Accuracy Reward Function Class.&quot;&quot;&quot;</span>
+<span class="sd">"""Accuracy Reward Function Class."""</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">latex2sympy2_extended</span><span class="w"> </span><span class="kn">import</span> <span class="n">NormalizationConfig</span>
@@ -1005,9 +1007,9 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="AccuracyReward">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.accuracy_reward.html#trinity.common.rewards.accuracy_reward.AccuracyReward">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">AccuracyReward</span><span class="p">(</span><span class="n">RewardFn</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A reward function that rewards correct answers.</span>
+<span class="w">    </span><span class="sd">"""A reward function that rewards correct answers.</span>
 <span class="sd">    Ref: https://github.com/huggingface/open-r1/blob/main/src/open_r1/rewards.py</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="AccuracyReward.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.accuracy_reward.html#trinity.common.rewards.accuracy_reward.AccuracyReward.__init__">[docs]</a>
@@ -1029,7 +1031,7 @@ window.runMermaid = runMermaid;</script>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">truth_parsed</span> <span class="o">=</span> <span class="n">parse_with_timeout</span><span class="p">(</span>
                 <span class="n">pred</span><span class="o">=</span><span class="n">truth</span><span class="p">,</span>  <span class="c1"># type: ignore [arg-type]</span>
-                <span class="n">extraction_mode</span><span class="o">=</span><span class="s2">&quot;first_match&quot;</span><span class="p">,</span>
+                <span class="n">extraction_mode</span><span class="o">=</span><span class="s2">"first_match"</span><span class="p">,</span>
                 <span class="n">extraction_config</span><span class="o">=</span><span class="p">[</span><span class="n">LatexExtractionConfig</span><span class="p">()],</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">truth_parsed</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
@@ -1044,7 +1046,7 @@ window.runMermaid = runMermaid;</script>
                             <span class="n">malformed_operators</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                             <span class="n">basic_latex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                             <span class="n">equations</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-                            <span class="n">boxed</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">,</span>
+                            <span class="n">boxed</span><span class="o">=</span><span class="s2">"all"</span><span class="p">,</span>
                             <span class="n">units</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                         <span class="p">),</span>
                         <span class="c1"># Ensures that boxed is tried first</span>
@@ -1052,16 +1054,16 @@ window.runMermaid = runMermaid;</script>
                         <span class="n">try_extract_without_anchor</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                     <span class="p">)</span>
                 <span class="p">],</span>
-                <span class="n">extraction_mode</span><span class="o">=</span><span class="s2">&quot;first_match&quot;</span><span class="p">,</span>
+                <span class="n">extraction_mode</span><span class="o">=</span><span class="s2">"first_match"</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="c1"># Reward 1 if the content is the same as the ground truth, 0 otherwise</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">reward</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">verify_with_timeout</span><span class="p">(</span><span class="n">answer_parsed</span><span class="p">,</span> <span class="n">truth_parsed</span><span class="p">))</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;verify failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">, answer: </span><span class="si">{</span><span class="n">answer_parsed</span><span class="si">}</span><span class="s2">, gold: </span><span class="si">{</span><span class="n">truth_parsed</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"verify failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">, answer: </span><span class="si">{</span><span class="n">answer_parsed</span><span class="si">}</span><span class="s2">, gold: </span><span class="si">{</span><span class="n">truth_parsed</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="n">reward</span> <span class="o">=</span> <span class="mf">0.0</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;accuracy&quot;</span><span class="p">:</span> <span class="n">reward</span><span class="p">}</span></div>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"accuracy"</span><span class="p">:</span> <span class="n">reward</span><span class="p">}</span></div>
 
 </pre></div>
 

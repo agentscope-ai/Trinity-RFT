@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1019,13 +1021,13 @@ window.runMermaid = runMermaid;</script>
                   
   <h1>trinity.trainer.verl.losses 源代码</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="sd">&quot;&quot;&quot;Trinity policy loss function for veRL&#39;s engine-based training API.</span>
-<span class="sd">This module provides a loss function compatible with veRL&#39;s</span>
+<span class="sd">"""Trinity policy loss function for veRL's engine-based training API.</span>
+<span class="sd">This module provides a loss function compatible with veRL's</span>
 <span class="sd">BaseEngine.forward_backward_batch() interface, replacing the old</span>
 <span class="sd">DataParallelPPOActor.update_policy() approach.</span>
-<span class="sd">The loss function signature expected by veRL&#39;s engine:</span>
+<span class="sd">The loss function signature expected by veRL's engine:</span>
 <span class="sd">    def loss_fn(model_output, data: TensorDict, dp_group=None) -&gt; (loss, metrics)</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">tensordict</span><span class="w"> </span><span class="kn">import</span> <span class="n">TensorDict</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">verl.workers.utils.padding</span><span class="w"> </span><span class="kn">import</span> <span class="n">no_padding_2_padding</span>
@@ -1039,23 +1041,23 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="TrinityPolicyLoss">
 <a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.losses.html#trinity.trainer.verl.losses.TrinityPolicyLoss">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TrinityPolicyLoss</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Picklable policy loss callable for veRL&#39;s engine API.</span>
-<span class="sd">    Wraps Trinity&#39;s POLICY_LOSS_FN, KL_FN, and ENTROPY_LOSS_FN registries</span>
+<span class="w">    </span><span class="sd">"""Picklable policy loss callable for veRL's engine API.</span>
+<span class="sd">    Wraps Trinity's POLICY_LOSS_FN, KL_FN, and ENTROPY_LOSS_FN registries</span>
 <span class="sd">    into a single callable that can be serialized by Ray and sent to remote</span>
 <span class="sd">    workers via set_loss_fn().</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="TrinityPolicyLoss.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.losses.html#trinity.trainer.verl.losses.TrinityPolicyLoss.__init__">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">algo_config</span><span class="p">:</span> <span class="n">AlgorithmConfig</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">policy_loss_fn</span> <span class="o">=</span> <span class="n">POLICY_LOSS_FN</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">algo_config</span><span class="o">.</span><span class="n">policy_loss_fn</span><span class="p">)(</span>
-            <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;verl&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">algo_config</span><span class="o">.</span><span class="n">policy_loss_fn_args</span>
+            <span class="n">backend</span><span class="o">=</span><span class="s2">"verl"</span><span class="p">,</span> <span class="o">**</span><span class="n">algo_config</span><span class="o">.</span><span class="n">policy_loss_fn_args</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">kl_loss_fn</span> <span class="o">=</span> <span class="n">KL_FN</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">algo_config</span><span class="o">.</span><span class="n">kl_loss_fn</span><span class="p">)(</span><span class="o">**</span><span class="n">algo_config</span><span class="o">.</span><span class="n">kl_loss_fn_args</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">entropy_loss_fn</span> <span class="o">=</span> <span class="n">ENTROPY_LOSS_FN</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">algo_config</span><span class="o">.</span><span class="n">entropy_loss_fn</span><span class="p">)(</span>
             <span class="o">**</span><span class="n">algo_config</span><span class="o">.</span><span class="n">entropy_loss_fn_args</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">calculate_entropy</span> <span class="o">=</span> <span class="n">algo_config</span><span class="o">.</span><span class="n">entropy_loss_fn</span> <span class="o">!=</span> <span class="s2">&quot;none&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calculate_entropy</span> <span class="o">=</span> <span class="n">algo_config</span><span class="o">.</span><span class="n">entropy_loss_fn</span> <span class="o">!=</span> <span class="s2">"none"</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">loss_agg_mode</span> <span class="o">=</span> <span class="n">algo_config</span><span class="o">.</span><span class="n">loss_agg_mode</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">use_kl_loss</span> <span class="o">=</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kl_loss_fn</span><span class="p">,</span> <span class="n">DummyKLFn</span><span class="p">)</span></div>
 
@@ -1066,24 +1068,24 @@ window.runMermaid = runMermaid;</script>
         <span class="n">data</span><span class="p">:</span> <span class="n">TensorDict</span><span class="p">,</span>
         <span class="n">dp_group</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
-        <span class="n">log_prob</span> <span class="o">=</span> <span class="n">no_padding_2_padding</span><span class="p">(</span><span class="n">model_output</span><span class="p">[</span><span class="s2">&quot;log_probs&quot;</span><span class="p">],</span> <span class="n">data</span><span class="p">)</span>
-        <span class="n">entropy</span> <span class="o">=</span> <span class="n">model_output</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;entropy&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">log_prob</span> <span class="o">=</span> <span class="n">no_padding_2_padding</span><span class="p">(</span><span class="n">model_output</span><span class="p">[</span><span class="s2">"log_probs"</span><span class="p">],</span> <span class="n">data</span><span class="p">)</span>
+        <span class="n">entropy</span> <span class="o">=</span> <span class="n">model_output</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"entropy"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">entropy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">entropy</span> <span class="o">=</span> <span class="n">no_padding_2_padding</span><span class="p">(</span><span class="n">entropy</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
 
-        <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;response_mask&quot;</span><span class="p">]</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"response_mask"</span><span class="p">]</span>
         <span class="n">fields</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">policy_loss_fn</span><span class="o">.</span><span class="n">select_keys</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_kl_loss</span><span class="p">:</span>
-            <span class="n">fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;ref_log_prob&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="s2">&quot;old_log_probs&quot;</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="n">fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;old_log_probs&quot;</span><span class="p">)</span>
+            <span class="n">fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"ref_log_prob"</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s2">"old_log_probs"</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"old_log_probs"</span><span class="p">)</span>
         <span class="n">fields</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">fields</span><span class="p">))</span>
         <span class="n">padded_data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="o">*</span><span class="n">fields</span><span class="p">)</span><span class="o">.</span><span class="n">to_padded_tensor</span><span class="p">()</span>
 
-        <span class="n">response_mask</span> <span class="o">=</span> <span class="n">padded_data</span><span class="p">[</span><span class="s2">&quot;response_mask&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
-        <span class="n">model_inputs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;response_mask&quot;</span><span class="p">:</span> <span class="n">response_mask</span><span class="p">}</span>
+        <span class="n">response_mask</span> <span class="o">=</span> <span class="n">padded_data</span><span class="p">[</span><span class="s2">"response_mask"</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="n">model_inputs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"response_mask"</span><span class="p">:</span> <span class="n">response_mask</span><span class="p">}</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;response_mask&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"response_mask"</span><span class="p">:</span>
                 <span class="k">continue</span>
             <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">padded_data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">model_inputs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">padded_data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
@@ -1091,7 +1093,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">metrics</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="n">pg_loss</span><span class="p">,</span> <span class="n">pg_loss_metrics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">policy_loss_fn</span><span class="p">(</span><span class="n">logprob</span><span class="o">=</span><span class="n">log_prob</span><span class="p">,</span> <span class="o">**</span><span class="n">model_inputs</span><span class="p">)</span>
-        <span class="n">prefix_metrics</span><span class="p">(</span><span class="n">src_metrics</span><span class="o">=</span><span class="n">pg_loss_metrics</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;actor&quot;</span><span class="p">,</span> <span class="n">dst_metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">)</span>
+        <span class="n">prefix_metrics</span><span class="p">(</span><span class="n">src_metrics</span><span class="o">=</span><span class="n">pg_loss_metrics</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">"actor"</span><span class="p">,</span> <span class="n">dst_metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">)</span>
         <span class="n">policy_loss</span> <span class="o">=</span> <span class="n">pg_loss</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_entropy</span> <span class="ow">and</span> <span class="n">entropy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1101,33 +1103,33 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">loss_agg_mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">loss_agg_mode</span><span class="p">,</span>
                 <span class="o">**</span><span class="n">model_inputs</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="n">prefix_metrics</span><span class="p">(</span><span class="n">src_metrics</span><span class="o">=</span><span class="n">entropy_loss_metrics</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;actor&quot;</span><span class="p">,</span> <span class="n">dst_metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">)</span>
+            <span class="n">prefix_metrics</span><span class="p">(</span><span class="n">src_metrics</span><span class="o">=</span><span class="n">entropy_loss_metrics</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">"actor"</span><span class="p">,</span> <span class="n">dst_metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">)</span>
             <span class="n">policy_loss</span> <span class="o">=</span> <span class="n">policy_loss</span> <span class="o">-</span> <span class="n">entropy_loss</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_kl_loss</span><span class="p">:</span>
             <span class="n">kl_loss</span><span class="p">,</span> <span class="n">kl_loss_metrics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kl_loss_fn</span><span class="o">.</span><span class="n">calculate_kl_loss</span><span class="p">(</span>
                 <span class="n">logprob</span><span class="o">=</span><span class="n">log_prob</span><span class="p">,</span>
-                <span class="n">ref_logprob</span><span class="o">=</span><span class="n">model_inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ref_log_prob&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                <span class="n">ref_logprob</span><span class="o">=</span><span class="n">model_inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ref_log_prob"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
                 <span class="n">response_mask</span><span class="o">=</span><span class="n">response_mask</span><span class="p">,</span>
                 <span class="n">loss_agg_mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">loss_agg_mode</span><span class="p">,</span>
-                <span class="n">old_logprob</span><span class="o">=</span><span class="n">model_inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;old_log_probs&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                <span class="n">old_logprob</span><span class="o">=</span><span class="n">model_inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"old_log_probs"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
             <span class="p">)</span>
-            <span class="n">prefix_metrics</span><span class="p">(</span><span class="n">src_metrics</span><span class="o">=</span><span class="n">kl_loss_metrics</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">&quot;actor&quot;</span><span class="p">,</span> <span class="n">dst_metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">)</span>
+            <span class="n">prefix_metrics</span><span class="p">(</span><span class="n">src_metrics</span><span class="o">=</span><span class="n">kl_loss_metrics</span><span class="p">,</span> <span class="n">prefix</span><span class="o">=</span><span class="s2">"actor"</span><span class="p">,</span> <span class="n">dst_metrics</span><span class="o">=</span><span class="n">metrics</span><span class="p">)</span>
             <span class="n">policy_loss</span> <span class="o">=</span> <span class="n">policy_loss</span> <span class="o">+</span> <span class="n">kl_loss</span>
 
         <span class="c1"># final_loss: the unscaled combined loss (pg - entropy + kl), aligned</span>
-        <span class="c1"># with the old dp_actor&#39;s actor/final_loss metric.  veRL&#39;s engine also</span>
-        <span class="c1"># reports &quot;loss&quot; (sum across micro-batches, DP-averaged), but that has</span>
+        <span class="c1"># with the old dp_actor's actor/final_loss metric.  veRL's engine also</span>
+        <span class="c1"># reports "loss" (sum across micro-batches, DP-averaged), but that has</span>
         <span class="c1"># different scaling semantics.</span>
-        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;final_loss&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">policy_loss</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s2">"final_loss"</span><span class="p">]</span> <span class="o">=</span> <span class="n">policy_loss</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="n">policy_loss</span><span class="p">,</span> <span class="n">metrics</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;TrinityPolicyLoss(policy=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">policy_loss_fn</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;kl=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kl_loss_fn</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;entropy=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">entropy_loss_fn</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="sa">f</span><span class="s2">"TrinityPolicyLoss(policy=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">policy_loss_fn</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, "</span>
+            <span class="sa">f</span><span class="s2">"kl=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kl_loss_fn</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, "</span>
+            <span class="sa">f</span><span class="s2">"entropy=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">entropy_loss_fn</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">)"</span>
         <span class="p">)</span></div>
 
 
@@ -1135,7 +1137,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="build_trinity_loss">
 <a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.losses.html#trinity.trainer.verl.losses.build_trinity_loss">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">build_trinity_loss</span><span class="p">(</span><span class="n">algo_config</span><span class="p">:</span> <span class="n">AlgorithmConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TrinityPolicyLoss</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a TrinityPolicyLoss instance for veRL&#39;s engine API.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Build a TrinityPolicyLoss instance for veRL's engine API."""</span>
     <span class="k">return</span> <span class="n">TrinityPolicyLoss</span><span class="p">(</span><span class="n">algo_config</span><span class="p">)</span></div>
 
 </pre></div>

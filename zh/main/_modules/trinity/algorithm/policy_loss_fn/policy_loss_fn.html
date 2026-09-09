@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1033,12 +1035,12 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="PolicyLossFnMeta">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.policy_loss_fn.policy_loss_fn.html#trinity.algorithm.PolicyLossFnMeta">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PolicyLossFnMeta</span><span class="p">(</span><span class="n">ABCMeta</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Metaclass for policy loss functions that handles parameter name mapping and filtering.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Metaclass for policy loss functions that handles parameter name mapping and filtering."""</span>
 
-    <span class="n">ignore_keys</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;self&quot;</span><span class="p">,</span> <span class="s2">&quot;kwargs&quot;</span><span class="p">,</span> <span class="s2">&quot;logprob&quot;</span><span class="p">}</span>  <span class="c1"># Keys to exclude from parameter selection</span>
+    <span class="n">ignore_keys</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"self"</span><span class="p">,</span> <span class="s2">"kwargs"</span><span class="p">,</span> <span class="s2">"logprob"</span><span class="p">}</span>  <span class="c1"># Keys to exclude from parameter selection</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">dct</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Metaclass constructor that automatically generates parameter handling logic.</span>
 
 <span class="sd">        For example with `PPOPolicyLossFn` class:</span>
@@ -1055,39 +1057,39 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">                ) -&gt; Tuple[torch.Tensor, Dict]:</span>
 <span class="sd">                    ...</span>
 
-<span class="sd">        This metaclass analyzes the __call__ method&#39;s parameters to:</span>
+<span class="sd">        This metaclass analyzes the __call__ method's parameters to:</span>
 <span class="sd">        1. Generate _select_keys containing all non-ignored parameters</span>
 <span class="sd">        2. Create select_keys property that maps parameters to trainer-specific names</span>
 <span class="sd">        3. Apply decorator to automatically convert input parameter names using the mapper</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">signature</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">dct</span><span class="p">[</span><span class="s2">&quot;__call__&quot;</span><span class="p">])</span>
+<span class="sd">        """</span>
+        <span class="n">signature</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">dct</span><span class="p">[</span><span class="s2">"__call__"</span><span class="p">])</span>
         <span class="n">param_names</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">signature</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">PolicyLossFnMeta</span><span class="o">.</span><span class="n">ignore_keys</span>
         <span class="p">]</span>
-        <span class="n">dct</span><span class="p">[</span><span class="s2">&quot;_select_keys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">param_names</span>
+        <span class="n">dct</span><span class="p">[</span><span class="s2">"_select_keys"</span><span class="p">]</span> <span class="o">=</span> <span class="n">param_names</span>
 
         <span class="c1"># Property to return trainer-specific parameter names</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">select_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">            </span><span class="sd">&quot;&quot;&quot;Returns parameter keys mapped to the specific training framework&#39;s naming convention.&quot;&quot;&quot;</span>
+<span class="w">            </span><span class="sd">"""Returns parameter keys mapped to the specific training framework's naming convention."""</span>
             <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">mapper</span><span class="o">.</span><span class="n">from_trinity</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_select_keys</span><span class="p">]</span>
             <span class="k">return</span> <span class="n">keys</span>
 
         <span class="c1"># Decorator to handle parameter name conversion before calling __call__</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
             <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">                </span><span class="sd">&quot;&quot;&quot;Filters and converts parameter names according to the training framework&#39;s convention.&quot;&quot;&quot;</span>
+<span class="w">                </span><span class="sd">"""Filters and converts parameter names according to the training framework's convention."""</span>
                 <span class="n">new_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
                 <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                     <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mapper</span><span class="o">.</span><span class="n">to_trinity</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;logprob&quot;</span> <span class="ow">or</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_select_keys</span><span class="p">:</span>  <span class="c1"># remove unused keys</span>
+                    <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"logprob"</span> <span class="ow">or</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_select_keys</span><span class="p">:</span>  <span class="c1"># remove unused keys</span>
                         <span class="n">new_kwargs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
                 <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">new_kwargs</span><span class="p">)</span>
 
             <span class="k">return</span> <span class="n">wrapper</span>
 
         <span class="c1"># Add the property and decorated method to the class</span>
-        <span class="n">dct</span><span class="p">[</span><span class="s2">&quot;select_keys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">select_keys</span><span class="p">)</span>
-        <span class="n">dct</span><span class="p">[</span><span class="s2">&quot;__call__&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">decorator</span><span class="p">(</span><span class="n">dct</span><span class="p">[</span><span class="s2">&quot;__call__&quot;</span><span class="p">])</span>
+        <span class="n">dct</span><span class="p">[</span><span class="s2">"select_keys"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">select_keys</span><span class="p">)</span>
+        <span class="n">dct</span><span class="p">[</span><span class="s2">"__call__"</span><span class="p">]</span> <span class="o">=</span> <span class="n">decorator</span><span class="p">(</span><span class="n">dct</span><span class="p">[</span><span class="s2">"__call__"</span><span class="p">])</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">dct</span><span class="p">)</span></div>
 
 
@@ -1095,22 +1097,22 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="PolicyLossFn">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.policy_loss_fn.policy_loss_fn.html#trinity.algorithm.PolicyLossFn">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">PolicyLossFn</span><span class="p">(</span><span class="n">ABC</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">PolicyLossFnMeta</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Abstract base class for policy loss functions.</span>
 
 <span class="sd">    This class provides the interface for implementing different policy gradient loss functions</span>
 <span class="sd">    while handling parameter name mapping between different training frameworks.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="PolicyLossFn.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.policy_loss_fn.policy_loss_fn.html#trinity.algorithm.PolicyLossFn.__init__">[文档]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;verl&quot;</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"verl"</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize the policy loss function.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            backend: The training framework/backend to use (e.g., &quot;verl&quot;)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            backend: The training framework/backend to use (e.g., "verl")</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="n">backend</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mapper</span> <span class="o">=</span> <span class="n">ALL_MAPPERS</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="p">]</span></div>
 
@@ -1121,7 +1123,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">logprob</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Calculate the policy loss.</span>
 
 <span class="sd">        Args:</span>
@@ -1136,19 +1138,19 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        Returns:</span>
 <span class="sd">            `torch.Tensor`: Policy loss</span>
 <span class="sd">            `Dict`: The metrics for logging.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
 <div class="viewcode-block" id="PolicyLossFn.default_args">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.policy_loss_fn.policy_loss_fn.html#trinity.algorithm.PolicyLossFn.default_args">[文档]</a>
     <span class="nd">@classmethod</span>
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">default_args</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Get default initialization arguments for this loss function.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            `Dict`: The default init arguments for the policy loss function.</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 </div>
 
 </pre></div>

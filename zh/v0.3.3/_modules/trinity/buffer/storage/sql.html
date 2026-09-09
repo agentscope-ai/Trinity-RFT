@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -966,14 +968,14 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>trinity.buffer.storage.sql 源代码</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;SQL database storage for experience and task buffers.</span>
+<span></span><span class="sd">"""SQL database storage for experience and task buffers.</span>
 
 <span class="sd">Primary classes (async, used by Ray actors and production hot paths):</span>
 <span class="sd">    SQLExperienceStorage, SQLTaskStorage</span>
 
 <span class="sd">Factory:</span>
 <span class="sd">    SQLStorage.get_wrapper(config) — returns Ray actor handle.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">asyncio</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
@@ -1003,12 +1005,12 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="SQLExperienceStorage">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLExperienceStorage">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SQLExperienceStorage</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Primary async SQL storage for experiences. Used directly as Ray actor.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Primary async SQL storage for experiences. Used directly as Ray actor."""</span>
 
 <div class="viewcode-block" id="SQLExperienceStorage.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLExperienceStorage.__init__">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">StorageConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sql_</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">"sql_</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_timeout</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">max_read_timeout</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">batch_size</span>
@@ -1021,7 +1023,7 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">offset</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">index</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialized</span> <span class="o">=</span> <span class="kc">False</span>
 
-        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">schema_type</span> <span class="o">==</span> <span class="s2">&quot;experience&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">schema_type</span> <span class="o">==</span> <span class="s2">"experience"</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_read_method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_priority</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_read_method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_fifo</span></div>
@@ -1030,7 +1032,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="SQLExperienceStorage.prepare">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLExperienceStorage.prepare">[文档]</a>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize async engine and create tables.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Initialize async engine and create tables."""</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialized</span><span class="p">:</span>
             <span class="k">return</span>
         <span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">init_async_engine</span><span class="p">(</span>
@@ -1039,7 +1041,7 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">blob_model_cls</span> <span class="o">=</span> <span class="n">result</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">=</span> <span class="n">async_sessionmaker</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span> <span class="n">expire_on_commit</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialized</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SQL storage initialized at </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"SQL storage initialized at </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SQLExperienceStorage.write">
@@ -1056,8 +1058,8 @@ window.runMermaid = runMermaid;</script>
                     <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp_bytes</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_experience_bytes</span>
                 <span class="p">):</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Experience size </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exp_bytes</span><span class="p">)</span><span class="si">}</span><span class="s2"> bytes exceeds &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;max_experience_bytes </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_experience_bytes</span><span class="si">}</span><span class="s2">, skipping.&quot;</span>
+                        <span class="sa">f</span><span class="s2">"Experience size </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exp_bytes</span><span class="p">)</span><span class="si">}</span><span class="s2"> bytes exceeds "</span>
+                        <span class="sa">f</span><span class="s2">"max_experience_bytes </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_experience_bytes</span><span class="si">}</span><span class="s2">, skipping."</span>
                     <span class="p">)</span>
                     <span class="k">continue</span>
                 <span class="n">meta_row</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">from_experience</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span>
@@ -1069,7 +1071,7 @@ window.runMermaid = runMermaid;</script>
         <span class="k">await</span> <span class="n">async_run_with_retry_session</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">session</span><span class="p">,</span> <span class="n">operation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_times</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_retry_interval</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Write </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2"> experiences to SQL storage.&quot;</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Write </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2"> experiences to SQL storage."</span><span class="p">)</span></div>
 
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_fetch_blobs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">session</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">,</span> <span class="n">ids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">]:</span>
@@ -1083,7 +1085,7 @@ window.runMermaid = runMermaid;</script>
         <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">meta_rows</span><span class="p">:</span>
             <span class="n">blob_bytes</span> <span class="o">=</span> <span class="n">blob_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">blob_bytes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Missing blob for experience id=</span><span class="si">{</span><span class="n">row</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">, skipping.&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Missing blob for experience id=</span><span class="si">{</span><span class="n">row</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">, skipping."</span><span class="p">)</span>
                 <span class="k">continue</span>
             <span class="n">experiences</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">to_experience</span><span class="p">(</span><span class="n">blob_bytes</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">experiences</span>
@@ -1096,8 +1098,8 @@ window.runMermaid = runMermaid;</script>
                 <span class="k">raise</span> <span class="ne">StopAsyncIteration</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_timeout</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Max read timeout reached (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_timeout</span><span class="si">}</span><span class="s2"> s), &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;only got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exp_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> experiences, stopping...&quot;</span>
+                    <span class="sa">f</span><span class="s2">"Max read timeout reached (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_timeout</span><span class="si">}</span><span class="s2"> s), "</span>
+                    <span class="sa">f</span><span class="s2">"only got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exp_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> experiences, stopping..."</span>
                 <span class="p">)</span>
                 <span class="k">raise</span> <span class="ne">StopAsyncIteration</span><span class="p">()</span>
 
@@ -1130,7 +1132,7 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
             <span class="n">exp_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">experiences</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp_list</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">batch_size</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Waiting for </span><span class="si">{</span><span class="n">batch_size</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">exp_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> more experiences...&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Waiting for </span><span class="si">{</span><span class="n">batch_size</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">exp_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> more experiences..."</span><span class="p">)</span>
                 <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">exp_list</span>
 
@@ -1143,14 +1145,14 @@ window.runMermaid = runMermaid;</script>
                 <span class="k">raise</span> <span class="ne">StopAsyncIteration</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_timeout</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Max read timeout reached (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_timeout</span><span class="si">}</span><span class="s2"> s), &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;only got </span><span class="si">{</span><span class="n">latest_size</span><span class="si">}</span><span class="s2"> experiences, stopping...&quot;</span>
+                    <span class="sa">f</span><span class="s2">"Max read timeout reached (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_timeout</span><span class="si">}</span><span class="s2"> s), "</span>
+                    <span class="sa">f</span><span class="s2">"only got </span><span class="si">{</span><span class="n">latest_size</span><span class="si">}</span><span class="s2"> experiences, stopping..."</span>
                 <span class="p">)</span>
                 <span class="k">raise</span> <span class="ne">StopAsyncIteration</span><span class="p">()</span>
 
             <span class="n">enable_replay</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_replay</span>
             <span class="n">table_cls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span>
-            <span class="n">is_sqlite</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">dialect</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;sqlite&quot;</span>
+            <span class="n">is_sqlite</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">dialect</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">"sqlite"</span>
 
             <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">operation</span><span class="p">(</span><span class="n">session</span><span class="p">:</span> <span class="n">AsyncSession</span><span class="p">):</span>
                 <span class="n">stmt</span> <span class="o">=</span> <span class="n">select</span><span class="p">(</span><span class="n">table_cls</span><span class="p">)</span>
@@ -1195,7 +1197,7 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">exp_list</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">experiences</span><span class="p">)</span>
                 <span class="k">break</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Waiting for </span><span class="si">{</span><span class="n">batch_size</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">exp_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> more experiences...&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Waiting for </span><span class="si">{</span><span class="n">batch_size</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">exp_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> more experiences..."</span><span class="p">)</span>
             <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">exp_list</span>
 
@@ -1213,16 +1215,16 @@ window.runMermaid = runMermaid;</script>
         <span class="n">conditions</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">filters</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">conditions</span>
-        <span class="k">if</span> <span class="n">filters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reward_min&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">conditions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">reward</span> <span class="o">&gt;=</span> <span class="n">filters</span><span class="p">[</span><span class="s2">&quot;reward_min&quot;</span><span class="p">])</span>
-        <span class="k">if</span> <span class="n">filters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reward_max&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">conditions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">reward</span> <span class="o">&lt;=</span> <span class="n">filters</span><span class="p">[</span><span class="s2">&quot;reward_max&quot;</span><span class="p">])</span>
-        <span class="k">if</span> <span class="n">filters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;model_version_min&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">conditions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">model_version</span> <span class="o">&gt;=</span> <span class="n">filters</span><span class="p">[</span><span class="s2">&quot;model_version_min&quot;</span><span class="p">])</span>
-        <span class="k">if</span> <span class="n">filters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;model_version_max&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">conditions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">model_version</span> <span class="o">&lt;=</span> <span class="n">filters</span><span class="p">[</span><span class="s2">&quot;model_version_max&quot;</span><span class="p">])</span>
-        <span class="k">if</span> <span class="n">filters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;task_id&quot;</span><span class="p">):</span>
-            <span class="n">conditions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">task_id</span> <span class="o">==</span> <span class="n">filters</span><span class="p">[</span><span class="s2">&quot;task_id&quot;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">filters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"reward_min"</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">conditions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">reward</span> <span class="o">&gt;=</span> <span class="n">filters</span><span class="p">[</span><span class="s2">"reward_min"</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">filters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"reward_max"</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">conditions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">reward</span> <span class="o">&lt;=</span> <span class="n">filters</span><span class="p">[</span><span class="s2">"reward_max"</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">filters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"model_version_min"</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">conditions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">model_version</span> <span class="o">&gt;=</span> <span class="n">filters</span><span class="p">[</span><span class="s2">"model_version_min"</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">filters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"model_version_max"</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">conditions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">model_version</span> <span class="o">&lt;=</span> <span class="n">filters</span><span class="p">[</span><span class="s2">"model_version_max"</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">filters</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"task_id"</span><span class="p">):</span>
+            <span class="n">conditions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">table_model_cls</span><span class="o">.</span><span class="n">task_id</span> <span class="o">==</span> <span class="n">filters</span><span class="p">[</span><span class="s2">"task_id"</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">conditions</span>
 
 <div class="viewcode-block" id="SQLExperienceStorage.count">
@@ -1274,7 +1276,7 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@classmethod</span>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">load_from_dataset</span><span class="p">(</span>
         <span class="bp">cls</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">Dataset</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">StorageConfig</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;SQLExperienceStorage&quot;</span><span class="p">:</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"SQLExperienceStorage"</span><span class="p">:</span>
         <span class="n">storage</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
         <span class="k">await</span> <span class="n">storage</span><span class="o">.</span><span class="n">prepare</span><span class="p">()</span>
         <span class="n">formatter</span> <span class="o">=</span> <span class="n">FORMATTER</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">schema_type</span><span class="p">)(</span>
@@ -1313,12 +1315,12 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="SQLTaskStorage">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLTaskStorage">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SQLTaskStorage</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Primary async SQL storage for tasks. Used directly as Ray actor.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Primary async SQL storage for tasks. Used directly as Ray actor."""</span>
 
 <div class="viewcode-block" id="SQLTaskStorage.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLTaskStorage.__init__">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">StorageConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sql_</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="sa">f</span><span class="s2">"sql_</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">batch_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_eval</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">is_eval</span>
@@ -1332,13 +1334,13 @@ window.runMermaid = runMermaid;</script>
         <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">total_steps</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">total_samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">*</span> <span class="n">config</span><span class="o">.</span><span class="n">total_steps</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">total_samples</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">total_samples</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"inf"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SQLTaskStorage.prepare">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLTaskStorage.prepare">[文档]</a>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">prepare</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize async engine and create tables.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Initialize async engine and create tables."""</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_initialized</span><span class="p">:</span>
             <span class="k">return</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.schema.formatter</span><span class="w"> </span><span class="kn">import</span> <span class="n">TaskFormatter</span>
@@ -1352,7 +1354,7 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">default_reward_fn_cls</span> <span class="o">=</span> <span class="n">REWARD_FUNCTIONS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">default_reward_fn_type</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">formatter</span> <span class="o">=</span> <span class="n">TaskFormatter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialized</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;SQL task storage initialized at </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"SQL task storage initialized at </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="SQLTaskStorage.write">
@@ -1405,7 +1407,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="SQLTaskStorage.load_from_dataset">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLTaskStorage.load_from_dataset">[文档]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">load_from_dataset</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">Dataset</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">StorageConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;SQLTaskStorage&quot;</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">load_from_dataset</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">Dataset</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">StorageConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"SQLTaskStorage"</span><span class="p">:</span>
         <span class="n">storage</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
         <span class="k">await</span> <span class="n">storage</span><span class="o">.</span><span class="n">prepare</span><span class="p">()</span>
         <span class="n">batch_size</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">batch_size</span>
@@ -1446,7 +1448,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="SQLStorage">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLStorage">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SQLStorage</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Factory for creating SQL storage Ray actors.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Factory for creating SQL storage Ray actors."""</span>
 
 <div class="viewcode-block" id="SQLStorage.get_wrapper">
 <a class="viewcode-back" href="../../../../build_api/trinity.buffer.storage.sql.html#trinity.buffer.storage.sql.SQLStorage.get_wrapper">[文档]</a>
@@ -1459,7 +1461,7 @@ window.runMermaid = runMermaid;</script>
         <span class="k">return</span> <span class="p">(</span>
             <span class="n">ray</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">async_cls</span><span class="p">)</span>
             <span class="o">.</span><span class="n">options</span><span class="p">(</span>
-                <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;sql-</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">"sql-</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
                 <span class="n">namespace</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">ray_namespace</span> <span class="ow">or</span> <span class="n">ray</span><span class="o">.</span><span class="n">get_runtime_context</span><span class="p">()</span><span class="o">.</span><span class="n">namespace</span><span class="p">,</span>
                 <span class="n">get_if_exists</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                 <span class="n">max_concurrency</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>

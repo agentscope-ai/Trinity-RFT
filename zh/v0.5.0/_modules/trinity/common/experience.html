@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -986,7 +988,7 @@ window.runMermaid = runMermaid;</script>
                   
   <h1>trinity.common.experience 源代码</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="sd">&quot;&quot;&quot;Experience Class.&quot;&quot;&quot;</span>
+<span class="sd">"""Experience Class."""</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
@@ -1010,18 +1012,18 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../build_api/trinity.common.experience.html#trinity.common.experience.EID">[文档]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">EID</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Experience ID class to uniquely identify an experience.</span>
+<span class="w">    </span><span class="sd">"""Experience ID class to uniquely identify an experience.</span>
 
 <span class="sd">    To enable the full functionality of the experience grouping, user should manually set the `run` and `step` fields in custom workflows.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># TODO: do we need to add project/name here to make it unique across different projects?</span>
     <span class="c1"># Batch number, e.g., the explorer step num</span>
     <span class="c1"># Automatically set by the workflow runner</span>
-    <span class="n">batch</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">batch</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">""</span>
     <span class="c1"># Task number, e.g., the task sequence in the batch, the first task in the batch has task=0</span>
     <span class="c1"># Automatically set by the workflow runner</span>
-    <span class="n">task</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">task</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">""</span>
     <span class="c1"># Run id, e.g., the first run in the task has run=0</span>
     <span class="c1"># User should set this field in custom workflows when creating experiences</span>
     <span class="n">run</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span>
@@ -1034,49 +1036,49 @@ window.runMermaid = runMermaid;</script>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">uid</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;An unique identifier for the experience.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">batch</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">suffix</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="w">        </span><span class="sd">"""An unique identifier for the experience."""</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">batch</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">suffix</span><span class="si">}</span><span class="s2">"</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">sid</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Step ID of the experience.</span>
+<span class="w">        </span><span class="sd">"""Step ID of the experience.</span>
 
 <span class="sd">        For example, experiences generated by all runs of a same task at the same step will have the same sid.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">batch</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">batch</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="si">}</span><span class="s2">"</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">rid</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run ID of the experience.</span>
+<span class="w">        </span><span class="sd">"""Run ID of the experience.</span>
 
 <span class="sd">        For example, experiences generated by one run of a task at all steps will have the same run_id.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">batch</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">batch</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="si">}</span><span class="s2">"</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">tid</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Task ID for the experience.</span>
+<span class="w">        </span><span class="sd">"""Task ID for the experience.</span>
 
 <span class="sd">        For example, experiences generated by a all run of a same task in GRPO-like algorithms will have the same tid.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">batch</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="si">}</span><span class="s2">&quot;</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">batch</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="si">}</span><span class="s2">"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">uid</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;EID(batch=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">batch</span><span class="si">}</span><span class="s2">, task=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="si">}</span><span class="s2">, run=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="si">}</span><span class="s2">, step=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="si">}</span><span class="s2">, uuid=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">suffix</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"EID(batch=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">batch</span><span class="si">}</span><span class="s2">, task=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="si">}</span><span class="s2">, run=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="si">}</span><span class="s2">, step=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="si">}</span><span class="s2">, uuid=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">suffix</span><span class="si">}</span><span class="s2">)"</span>
 
 <div class="viewcode-block" id="EID.to_dict">
 <a class="viewcode-back" href="../../../build_api/trinity.common.experience.html#trinity.common.experience.EID.to_dict">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert the EID to a dictionary.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Convert the EID to a dictionary."""</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;batch&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch</span><span class="p">,</span>
-            <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">,</span>
-            <span class="s2">&quot;run&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">,</span>
-            <span class="s2">&quot;step&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">,</span>
-            <span class="s2">&quot;suffix&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">suffix</span><span class="p">,</span>
+            <span class="s2">"batch"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch</span><span class="p">,</span>
+            <span class="s2">"task"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">,</span>
+            <span class="s2">"run"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">,</span>
+            <span class="s2">"step"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span><span class="p">,</span>
+            <span class="s2">"suffix"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">suffix</span><span class="p">,</span>
         <span class="p">}</span></div>
 </div>
 
@@ -1086,10 +1088,10 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../build_api/trinity.common.experience.html#trinity.common.experience.CustomField">[文档]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">CustomField</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Custom field for Experiences.</span>
+<span class="w">    </span><span class="sd">"""Custom field for Experiences.</span>
 
 <span class="sd">    This is used to store additional information into the Experiences class.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">source_field</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># The source field name in the Experience.info</span>
     <span class="n">destination_field</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># The destination field name in the Experiences class</span>
@@ -1101,33 +1103,33 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../build_api/trinity.common.experience.html#trinity.common.experience.Experience">[文档]</a>
 <span class="nd">@dataclass</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Experience</span><span class="p">:</span>
-    <span class="n">_SER_MAGIC</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">&quot;TRXP&quot;</span>
+    <span class="n">_SER_MAGIC</span> <span class="o">=</span> <span class="sa">b</span><span class="s2">"TRXP"</span>
     <span class="n">_SER_VERSION</span> <span class="o">=</span> <span class="mi">1</span>
     <span class="n">_TENSOR_FIELDS</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="s2">&quot;tokens&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;logprobs&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;token_level_reward&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;advantages&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;returns&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;action_mask&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;chosen&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;rejected&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;teacher_logprobs&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;routed_experts&quot;</span><span class="p">,</span>
+        <span class="s2">"tokens"</span><span class="p">,</span>
+        <span class="s2">"logprobs"</span><span class="p">,</span>
+        <span class="s2">"token_level_reward"</span><span class="p">,</span>
+        <span class="s2">"advantages"</span><span class="p">,</span>
+        <span class="s2">"returns"</span><span class="p">,</span>
+        <span class="s2">"action_mask"</span><span class="p">,</span>
+        <span class="s2">"chosen"</span><span class="p">,</span>
+        <span class="s2">"rejected"</span><span class="p">,</span>
+        <span class="s2">"teacher_logprobs"</span><span class="p">,</span>
+        <span class="s2">"routed_experts"</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">_META_FIELDS</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="s2">&quot;eid&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;reward&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;truncate_status&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;info&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;metrics&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;prompt_length&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;response_text&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;prompt_text&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;messages&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;tools&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;chosen_messages&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;rejected_messages&quot;</span><span class="p">,</span>
+        <span class="s2">"eid"</span><span class="p">,</span>
+        <span class="s2">"reward"</span><span class="p">,</span>
+        <span class="s2">"truncate_status"</span><span class="p">,</span>
+        <span class="s2">"info"</span><span class="p">,</span>
+        <span class="s2">"metrics"</span><span class="p">,</span>
+        <span class="s2">"prompt_length"</span><span class="p">,</span>
+        <span class="s2">"response_text"</span><span class="p">,</span>
+        <span class="s2">"prompt_text"</span><span class="p">,</span>
+        <span class="s2">"messages"</span><span class="p">,</span>
+        <span class="s2">"tools"</span><span class="p">,</span>
+        <span class="s2">"chosen_messages"</span><span class="p">,</span>
+        <span class="s2">"rejected_messages"</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">eid</span><span class="p">:</span> <span class="n">EID</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">EID</span><span class="p">)</span>  <span class="c1"># Unique identifier for the experience</span>
@@ -1140,7 +1142,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">returns</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># [resp_length]</span>
     <span class="n">truncate_status</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
         <span class="nb">str</span>
-    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># The status of truncation, e.g., &quot;prompt_truncated&quot;, &quot;response_truncated&quot;; Not working for openai api</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># The status of truncation, e.g., "prompt_truncated", "response_truncated"; Not working for openai api</span>
     <span class="n">info</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span>
         <span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span>
     <span class="p">)</span>  <span class="c1"># Additional information about the experience, can also be used to store custom fields</span>
@@ -1206,24 +1208,24 @@ window.runMermaid = runMermaid;</script>
         <span class="n">custom_fields</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="k">if</span> <span class="n">action_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">experience_type</span> <span class="o">=</span> <span class="s2">&quot;multi_turn&quot;</span>
+            <span class="n">experience_type</span> <span class="o">=</span> <span class="s2">"multi_turn"</span>
         <span class="k">elif</span> <span class="n">chosen</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">rejected</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">experience_type</span> <span class="o">=</span> <span class="s2">&quot;dpo&quot;</span>
+            <span class="n">experience_type</span> <span class="o">=</span> <span class="s2">"dpo"</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">experience_type</span> <span class="o">=</span> <span class="s2">&quot;single_turn&quot;</span>
+            <span class="n">experience_type</span> <span class="o">=</span> <span class="s2">"single_turn"</span>
 
-        <span class="k">if</span> <span class="n">experience_type</span> <span class="o">==</span> <span class="s2">&quot;single_turn&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">experience_type</span> <span class="o">==</span> <span class="s2">"single_turn"</span><span class="p">:</span>
             <span class="k">assert</span> <span class="p">(</span>
                 <span class="n">prompt_length</span> <span class="o">&gt;</span> <span class="mi">0</span>
-            <span class="p">),</span> <span class="s2">&quot;Prompt length must be greater than 0 for single-turn experiences.&quot;</span>
-            <span class="k">if</span> <span class="n">truncate_status</span> <span class="o">!=</span> <span class="s2">&quot;prompt_truncated&quot;</span><span class="p">:</span>
+            <span class="p">),</span> <span class="s2">"Prompt length must be greater than 0 for single-turn experiences."</span>
+            <span class="k">if</span> <span class="n">truncate_status</span> <span class="o">!=</span> <span class="s2">"prompt_truncated"</span><span class="p">:</span>
                 <span class="k">assert</span> <span class="p">(</span>
                     <span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">prompt_length</span>
-                <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Token ids must be larger than the prompt length. Got len(tokens)=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span><span class="si">}</span><span class="s2">, prompt_length=</span><span class="si">{</span><span class="n">prompt_length</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="p">),</span> <span class="sa">f</span><span class="s2">"Token ids must be larger than the prompt length. Got len(tokens)=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span><span class="si">}</span><span class="s2">, prompt_length=</span><span class="si">{</span><span class="n">prompt_length</span><span class="si">}</span><span class="s2">."</span>
                 <span class="n">action_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span> <span class="o">-</span> <span class="n">prompt_length</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">action_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">logprobs</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">experience_type</span> <span class="o">==</span> <span class="s2">&quot;dpo&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">experience_type</span> <span class="o">==</span> <span class="s2">"dpo"</span><span class="p">:</span>
             <span class="n">prompt_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">eid</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">eid</span> <span class="o">=</span> <span class="n">EID</span><span class="p">()</span>
@@ -1302,7 +1304,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="Experience.serialize">
 <a class="viewcode-back" href="../../../build_api/trinity.common.experience.html#trinity.common.experience.Experience.serialize">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">serialize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize the experience to bytes.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Serialize the experience to bytes."""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">serialize_many</span><span class="p">([</span><span class="bp">self</span><span class="p">])</span></div>
 
 
@@ -1313,8 +1315,8 @@ window.runMermaid = runMermaid;</script>
         <span class="n">experiences</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">deserialize_many</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">experiences</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Expected a single Experience payload, got batch size </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">experiences</span><span class="p">)</span><span class="si">}</span><span class="s2">. &quot;</span>
-                <span class="s2">&quot;Use Experience.deserialize_many for batched payloads.&quot;</span>
+                <span class="sa">f</span><span class="s2">"Expected a single Experience payload, got batch size </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">experiences</span><span class="p">)</span><span class="si">}</span><span class="s2">. "</span>
+                <span class="s2">"Use Experience.deserialize_many for batched payloads."</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">experiences</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
 
@@ -1325,9 +1327,9 @@ window.runMermaid = runMermaid;</script>
             <span class="k">return</span> <span class="p">[]</span>
         <span class="k">return</span> <span class="p">[</span>
             <span class="p">{</span>
-                <span class="s2">&quot;source_field&quot;</span><span class="p">:</span> <span class="n">field</span><span class="o">.</span><span class="n">source_field</span><span class="p">,</span>
-                <span class="s2">&quot;destination_field&quot;</span><span class="p">:</span> <span class="n">field</span><span class="o">.</span><span class="n">destination_field</span><span class="p">,</span>
-                <span class="s2">&quot;data_type&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">field</span><span class="o">.</span><span class="n">data_type</span><span class="p">),</span>
+                <span class="s2">"source_field"</span><span class="p">:</span> <span class="n">field</span><span class="o">.</span><span class="n">source_field</span><span class="p">,</span>
+                <span class="s2">"destination_field"</span><span class="p">:</span> <span class="n">field</span><span class="o">.</span><span class="n">destination_field</span><span class="p">,</span>
+                <span class="s2">"data_type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">field</span><span class="o">.</span><span class="n">data_type</span><span class="p">),</span>
             <span class="p">}</span>
             <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">custom_fields</span>
         <span class="p">]</span>
@@ -1338,12 +1340,12 @@ window.runMermaid = runMermaid;</script>
             <span class="k">return</span> <span class="p">[]</span>
         <span class="n">custom_fields</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">field_dict</span> <span class="ow">in</span> <span class="n">serialized_fields</span><span class="p">:</span>
-            <span class="n">dtype_name</span> <span class="o">=</span> <span class="n">field_dict</span><span class="p">[</span><span class="s2">&quot;data_type&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;torch.&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+            <span class="n">dtype_name</span> <span class="o">=</span> <span class="n">field_dict</span><span class="p">[</span><span class="s2">"data_type"</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"torch."</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
             <span class="n">dtype</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">torch</span><span class="p">,</span> <span class="n">dtype_name</span><span class="p">)</span>
             <span class="n">custom_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="n">CustomField</span><span class="p">(</span>
-                    <span class="n">source_field</span><span class="o">=</span><span class="n">field_dict</span><span class="p">[</span><span class="s2">&quot;source_field&quot;</span><span class="p">],</span>
-                    <span class="n">destination_field</span><span class="o">=</span><span class="n">field_dict</span><span class="p">[</span><span class="s2">&quot;destination_field&quot;</span><span class="p">],</span>
+                    <span class="n">source_field</span><span class="o">=</span><span class="n">field_dict</span><span class="p">[</span><span class="s2">"source_field"</span><span class="p">],</span>
+                    <span class="n">destination_field</span><span class="o">=</span><span class="n">field_dict</span><span class="p">[</span><span class="s2">"destination_field"</span><span class="p">],</span>
                     <span class="n">data_type</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="p">)</span>
@@ -1353,12 +1355,12 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../build_api/trinity.common.experience.html#trinity.common.experience.Experience.serialize_many">[文档]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">serialize_many</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">experiences</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize a list of experiences into a compact bytes payload.</span>
+<span class="w">        </span><span class="sd">"""Serialize a list of experiences into a compact bytes payload.</span>
 
 <span class="sd">        Tensor fields are packed with safetensors while non-tensor fields are packed</span>
 <span class="sd">        as metadata via pickle.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;version&quot;</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_SER_VERSION</span><span class="p">,</span> <span class="s2">&quot;num_items&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">experiences</span><span class="p">),</span> <span class="s2">&quot;items&quot;</span><span class="p">:</span> <span class="p">[]}</span>
+<span class="sd">        """</span>
+        <span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"version"</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_SER_VERSION</span><span class="p">,</span> <span class="s2">"num_items"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">experiences</span><span class="p">),</span> <span class="s2">"items"</span><span class="p">:</span> <span class="p">[]}</span>
         <span class="n">tensor_data</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">seen_storages</span><span class="p">:</span> <span class="nb">set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
 
@@ -1366,12 +1368,12 @@ window.runMermaid = runMermaid;</script>
             <span class="n">item_meta</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_META_FIELDS</span><span class="p">:</span>
                 <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
-                <span class="k">if</span> <span class="n">field_name</span> <span class="o">==</span> <span class="s2">&quot;eid&quot;</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">field_name</span> <span class="o">==</span> <span class="s2">"eid"</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">item_meta</span><span class="p">[</span><span class="n">field_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">EID</span><span class="p">)</span> <span class="k">else</span> <span class="n">value</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">item_meta</span><span class="p">[</span><span class="n">field_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
-            <span class="n">item_meta</span><span class="p">[</span><span class="s2">&quot;custom_fields&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_serialize_custom_fields</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">custom_fields</span><span class="p">)</span>
+            <span class="n">item_meta</span><span class="p">[</span><span class="s2">"custom_fields"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_serialize_custom_fields</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">custom_fields</span><span class="p">)</span>
 
             <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_TENSOR_FIELDS</span><span class="p">:</span>
                 <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">exp</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
@@ -1382,13 +1384,13 @@ window.runMermaid = runMermaid;</script>
                 <span class="k">if</span> <span class="n">storage_ptr</span> <span class="ow">in</span> <span class="n">seen_storages</span><span class="p">:</span>
                     <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
                 <span class="n">seen_storages</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">storage_ptr</span><span class="p">)</span>
-                <span class="n">tensor_data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
+                <span class="n">tensor_data</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
 
             <span class="k">if</span> <span class="n">exp</span><span class="o">.</span><span class="n">multi_modal_inputs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">item_meta</span><span class="p">[</span><span class="s2">&quot;multi_modal_input_keys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">item_meta</span><span class="p">[</span><span class="s2">"multi_modal_input_keys"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">mm_keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">multi_modal_inputs</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-                <span class="n">item_meta</span><span class="p">[</span><span class="s2">&quot;multi_modal_input_keys&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">mm_keys</span>
+                <span class="n">item_meta</span><span class="p">[</span><span class="s2">"multi_modal_input_keys"</span><span class="p">]</span> <span class="o">=</span> <span class="n">mm_keys</span>
                 <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">mm_keys</span><span class="p">:</span>
                     <span class="n">value</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">multi_modal_inputs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
                     <span class="n">t</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
@@ -1396,17 +1398,17 @@ window.runMermaid = runMermaid;</script>
                     <span class="k">if</span> <span class="n">storage_ptr</span> <span class="ow">in</span> <span class="n">seen_storages</span><span class="p">:</span>
                         <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
                     <span class="n">seen_storages</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">storage_ptr</span><span class="p">)</span>
-                    <span class="n">tensor_data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">:multi_modal_inputs:</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
+                    <span class="n">tensor_data</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">:multi_modal_inputs:</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span>
 
-            <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;items&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item_meta</span><span class="p">)</span>
+            <span class="n">metadata</span><span class="p">[</span><span class="s2">"items"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">item_meta</span><span class="p">)</span>
 
         <span class="n">metadata_bytes</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">protocol</span><span class="o">=</span><span class="n">pickle</span><span class="o">.</span><span class="n">HIGHEST_PROTOCOL</span><span class="p">)</span>
         <span class="n">tensor_bytes</span> <span class="o">=</span> <span class="n">st_save</span><span class="p">(</span><span class="n">tensor_data</span><span class="p">)</span>
         <span class="n">header</span> <span class="o">=</span> <span class="p">(</span>
             <span class="bp">cls</span><span class="o">.</span><span class="n">_SER_MAGIC</span>
-            <span class="o">+</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&lt;B&quot;</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_SER_VERSION</span><span class="p">)</span>
-            <span class="o">+</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&lt;Q&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">metadata_bytes</span><span class="p">))</span>
-            <span class="o">+</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">&quot;&lt;Q&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tensor_bytes</span><span class="p">))</span>
+            <span class="o">+</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">"&lt;B"</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_SER_VERSION</span><span class="p">)</span>
+            <span class="o">+</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">"&lt;Q"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">metadata_bytes</span><span class="p">))</span>
+            <span class="o">+</span> <span class="n">struct</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="s2">"&lt;Q"</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">tensor_bytes</span><span class="p">))</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">header</span> <span class="o">+</span> <span class="n">metadata_bytes</span> <span class="o">+</span> <span class="n">tensor_bytes</span></div>
 
@@ -1415,10 +1417,10 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../build_api/trinity.common.experience.html#trinity.common.experience.Experience.deserialize_many">[文档]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">deserialize_many</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deserialize bytes into a list of experiences.</span>
+<span class="w">        </span><span class="sd">"""Deserialize bytes into a list of experiences.</span>
 
 <span class="sd">        Supports both new batched payloads and legacy single-experience pickle payloads.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">data</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_SER_MAGIC</span><span class="p">):</span>
             <span class="n">legacy</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">legacy</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
@@ -1426,16 +1428,16 @@ window.runMermaid = runMermaid;</script>
             <span class="k">return</span> <span class="p">[</span><span class="n">legacy</span><span class="p">]</span>
 
         <span class="n">offset</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">_SER_MAGIC</span><span class="p">)</span>
-        <span class="n">version</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&lt;B&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="n">offset</span> <span class="p">:</span> <span class="n">offset</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">version</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">"&lt;B"</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="n">offset</span> <span class="p">:</span> <span class="n">offset</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">offset</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">if</span> <span class="n">version</span> <span class="o">!=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_SER_VERSION</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Unsupported Experience serialization version: </span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">, expected </span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">_SER_VERSION</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="sa">f</span><span class="s2">"Unsupported Experience serialization version: </span><span class="si">{</span><span class="n">version</span><span class="si">}</span><span class="s2">, expected </span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="n">_SER_VERSION</span><span class="si">}</span><span class="s2">."</span>
             <span class="p">)</span>
 
-        <span class="n">metadata_len</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&lt;Q&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="n">offset</span> <span class="p">:</span> <span class="n">offset</span> <span class="o">+</span> <span class="mi">8</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">metadata_len</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">"&lt;Q"</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="n">offset</span> <span class="p">:</span> <span class="n">offset</span> <span class="o">+</span> <span class="mi">8</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">offset</span> <span class="o">+=</span> <span class="mi">8</span>
-        <span class="n">tensor_len</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">&quot;&lt;Q&quot;</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="n">offset</span> <span class="p">:</span> <span class="n">offset</span> <span class="o">+</span> <span class="mi">8</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">tensor_len</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s2">"&lt;Q"</span><span class="p">,</span> <span class="n">data</span><span class="p">[</span><span class="n">offset</span> <span class="p">:</span> <span class="n">offset</span> <span class="o">+</span> <span class="mi">8</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">offset</span> <span class="o">+=</span> <span class="mi">8</span>
 
         <span class="n">metadata_bytes</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">offset</span> <span class="p">:</span> <span class="n">offset</span> <span class="o">+</span> <span class="n">metadata_len</span><span class="p">]</span>
@@ -1446,34 +1448,34 @@ window.runMermaid = runMermaid;</script>
         <span class="n">tensor_data</span> <span class="o">=</span> <span class="n">st_load</span><span class="p">(</span><span class="n">tensor_bytes</span><span class="p">)</span>
 
         <span class="n">experiences</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">item_meta</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;items&quot;</span><span class="p">]):</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">item_meta</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s2">"items"</span><span class="p">]):</span>
             <span class="n">init_kwargs</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;eid&quot;</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;eid&quot;</span><span class="p">),</span>
-                <span class="s2">&quot;reward&quot;</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;reward&quot;</span><span class="p">),</span>
-                <span class="s2">&quot;truncate_status&quot;</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;truncate_status&quot;</span><span class="p">),</span>
-                <span class="s2">&quot;info&quot;</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;info&quot;</span><span class="p">),</span>
-                <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;metrics&quot;</span><span class="p">),</span>
-                <span class="s2">&quot;prompt_length&quot;</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prompt_length&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-                <span class="s2">&quot;response_text&quot;</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;response_text&quot;</span><span class="p">),</span>
-                <span class="s2">&quot;prompt_text&quot;</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prompt_text&quot;</span><span class="p">),</span>
-                <span class="s2">&quot;messages&quot;</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;messages&quot;</span><span class="p">),</span>
-                <span class="s2">&quot;tools&quot;</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tools&quot;</span><span class="p">),</span>
-                <span class="s2">&quot;chosen_messages&quot;</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;chosen_messages&quot;</span><span class="p">),</span>
-                <span class="s2">&quot;rejected_messages&quot;</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rejected_messages&quot;</span><span class="p">),</span>
-                <span class="s2">&quot;custom_fields&quot;</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_deserialize_custom_fields</span><span class="p">(</span><span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;custom_fields&quot;</span><span class="p">)),</span>
+                <span class="s2">"eid"</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"eid"</span><span class="p">),</span>
+                <span class="s2">"reward"</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"reward"</span><span class="p">),</span>
+                <span class="s2">"truncate_status"</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"truncate_status"</span><span class="p">),</span>
+                <span class="s2">"info"</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"info"</span><span class="p">),</span>
+                <span class="s2">"metrics"</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"metrics"</span><span class="p">),</span>
+                <span class="s2">"prompt_length"</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"prompt_length"</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                <span class="s2">"response_text"</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"response_text"</span><span class="p">),</span>
+                <span class="s2">"prompt_text"</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"prompt_text"</span><span class="p">),</span>
+                <span class="s2">"messages"</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"messages"</span><span class="p">),</span>
+                <span class="s2">"tools"</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"tools"</span><span class="p">),</span>
+                <span class="s2">"chosen_messages"</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"chosen_messages"</span><span class="p">),</span>
+                <span class="s2">"rejected_messages"</span><span class="p">:</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"rejected_messages"</span><span class="p">),</span>
+                <span class="s2">"custom_fields"</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_deserialize_custom_fields</span><span class="p">(</span><span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"custom_fields"</span><span class="p">)),</span>
             <span class="p">}</span>
 
             <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_TENSOR_FIELDS</span><span class="p">:</span>
-                <span class="n">tensor_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">tensor_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">"</span>
                 <span class="n">init_kwargs</span><span class="p">[</span><span class="n">field_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">tensor_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">tensor_key</span><span class="p">)</span>
 
-            <span class="n">mm_keys</span> <span class="o">=</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;multi_modal_input_keys&quot;</span><span class="p">,</span> <span class="p">[])</span>
+            <span class="n">mm_keys</span> <span class="o">=</span> <span class="n">item_meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"multi_modal_input_keys"</span><span class="p">,</span> <span class="p">[])</span>
             <span class="k">if</span> <span class="n">mm_keys</span><span class="p">:</span>
-                <span class="n">init_kwargs</span><span class="p">[</span><span class="s2">&quot;multi_modal_inputs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                    <span class="n">key</span><span class="p">:</span> <span class="n">tensor_data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">:multi_modal_inputs:</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">mm_keys</span>
+                <span class="n">init_kwargs</span><span class="p">[</span><span class="s2">"multi_modal_inputs"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="n">key</span><span class="p">:</span> <span class="n">tensor_data</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">:multi_modal_inputs:</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">mm_keys</span>
                 <span class="p">}</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">init_kwargs</span><span class="p">[</span><span class="s2">&quot;multi_modal_inputs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">init_kwargs</span><span class="p">[</span><span class="s2">"multi_modal_inputs"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
             <span class="n">experiences</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">init_kwargs</span><span class="p">))</span>
 
@@ -1483,31 +1485,31 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="Experience.to_dict">
 <a class="viewcode-back" href="../../../build_api/trinity.common.experience.html#trinity.common.experience.Experience.to_dict">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert the experience to a dictionary.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Convert the experience to a dictionary."""</span>
         <span class="n">res</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;eid&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">eid</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
-            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">experience_type</span><span class="p">,</span>
-            <span class="s2">&quot;prompt_length&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">prompt_length</span><span class="p">,</span>
-            <span class="s2">&quot;response_length&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokens</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">prompt_length</span><span class="p">,</span>  <span class="c1"># type: ignore [arg-type]</span>
-            <span class="s2">&quot;info&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">,</span>
+            <span class="s2">"eid"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">eid</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+            <span class="s2">"type"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">experience_type</span><span class="p">,</span>
+            <span class="s2">"prompt_length"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">prompt_length</span><span class="p">,</span>
+            <span class="s2">"response_length"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokens</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">prompt_length</span><span class="p">,</span>  <span class="c1"># type: ignore [arg-type]</span>
+            <span class="s2">"info"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="p">,</span>
+            <span class="s2">"metrics"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prompt_text</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">res</span><span class="p">[</span><span class="s2">&quot;prompt_text&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prompt_text</span>
+            <span class="n">res</span><span class="p">[</span><span class="s2">"prompt_text"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prompt_text</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">response_text</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">res</span><span class="p">[</span><span class="s2">&quot;response_text&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">response_text</span>
+            <span class="n">res</span><span class="p">[</span><span class="s2">"response_text"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">response_text</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">messages</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">res</span><span class="p">[</span><span class="s2">&quot;messages&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">messages</span>
+            <span class="n">res</span><span class="p">[</span><span class="s2">"messages"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">messages</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tools</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">res</span><span class="p">[</span><span class="s2">&quot;tools&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tools</span>
+            <span class="n">res</span><span class="p">[</span><span class="s2">"tools"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tools</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">chosen_messages</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">res</span><span class="p">[</span><span class="s2">&quot;chosen_messages&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chosen_messages</span>
+            <span class="n">res</span><span class="p">[</span><span class="s2">"chosen_messages"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chosen_messages</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">rejected_messages</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">res</span><span class="p">[</span><span class="s2">&quot;rejected_messages&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rejected_messages</span>
+            <span class="n">res</span><span class="p">[</span><span class="s2">"rejected_messages"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rejected_messages</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">reward</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">res</span><span class="p">[</span><span class="s2">&quot;reward&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reward</span><span class="p">)</span>
+            <span class="n">res</span><span class="p">[</span><span class="s2">"reward"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reward</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">truncate_status</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">res</span><span class="p">[</span><span class="s2">&quot;truncate_status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">truncate_status</span>
+            <span class="n">res</span><span class="p">[</span><span class="s2">"truncate_status"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">truncate_status</span>
         <span class="k">return</span> <span class="n">res</span></div>
 </div>
 
@@ -1658,17 +1660,17 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="group_by">
 <a class="viewcode-back" href="../../../build_api/trinity.common.experience.html#trinity.common.experience.group_by">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">group_by</span><span class="p">(</span>
-    <span class="n">experiences</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">],</span> <span class="n">id_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;task&quot;</span><span class="p">,</span> <span class="s2">&quot;run&quot;</span><span class="p">,</span> <span class="s2">&quot;step&quot;</span><span class="p">]</span>
+    <span class="n">experiences</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">],</span> <span class="n">id_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"task"</span><span class="p">,</span> <span class="s2">"run"</span><span class="p">,</span> <span class="s2">"step"</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Group experiences by ID.&quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">id_type</span> <span class="o">==</span> <span class="s2">&quot;task&quot;</span><span class="p">:</span>
-        <span class="n">id_type</span> <span class="o">=</span> <span class="s2">&quot;tid&quot;</span>
-    <span class="k">elif</span> <span class="n">id_type</span> <span class="o">==</span> <span class="s2">&quot;run&quot;</span><span class="p">:</span>
-        <span class="n">id_type</span> <span class="o">=</span> <span class="s2">&quot;rid&quot;</span>
-    <span class="k">elif</span> <span class="n">id_type</span> <span class="o">==</span> <span class="s2">&quot;step&quot;</span><span class="p">:</span>
-        <span class="n">id_type</span> <span class="o">=</span> <span class="s2">&quot;sid&quot;</span>
+<span class="w">    </span><span class="sd">"""Group experiences by ID."""</span>
+    <span class="k">if</span> <span class="n">id_type</span> <span class="o">==</span> <span class="s2">"task"</span><span class="p">:</span>
+        <span class="n">id_type</span> <span class="o">=</span> <span class="s2">"tid"</span>
+    <span class="k">elif</span> <span class="n">id_type</span> <span class="o">==</span> <span class="s2">"run"</span><span class="p">:</span>
+        <span class="n">id_type</span> <span class="o">=</span> <span class="s2">"rid"</span>
+    <span class="k">elif</span> <span class="n">id_type</span> <span class="o">==</span> <span class="s2">"step"</span><span class="p">:</span>
+        <span class="n">id_type</span> <span class="o">=</span> <span class="s2">"sid"</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown id_type: </span><span class="si">{</span><span class="n">id_type</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown id_type: </span><span class="si">{</span><span class="n">id_type</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">grouped</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">experiences</span><span class="p">:</span>
         <span class="n">group_id</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">eid</span><span class="p">,</span> <span class="n">id_type</span><span class="p">)</span>
@@ -1681,11 +1683,11 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="to_hf_datasets">
 <a class="viewcode-back" href="../../../build_api/trinity.common.experience.html#trinity.common.experience.to_hf_datasets">[文档]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">to_hf_datasets</span><span class="p">(</span><span class="n">experiences</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Experience</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">&quot;Dataset&quot;</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">to_hf_datasets</span><span class="p">(</span><span class="n">experiences</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Experience</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="s2">"Dataset"</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Convert a list of Experience objects to a HuggingFace Dataset,</span>
 <span class="sd">    preserving all fields.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">datasets</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dataset</span>
 
     <span class="k">return</span> <span class="n">Dataset</span><span class="o">.</span><span class="n">from_list</span><span class="p">([</span><span class="n">asdict</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span> <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">experiences</span><span class="p">])</span></div>
@@ -1694,10 +1696,10 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="from_hf_datasets">
 <a class="viewcode-back" href="../../../build_api/trinity.common.experience.html#trinity.common.experience.from_hf_datasets">[文档]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">from_hf_datasets</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="s2">&quot;Dataset&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_hf_datasets</span><span class="p">(</span><span class="n">dataset</span><span class="p">:</span> <span class="s2">"Dataset"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Convert a HuggingFace Dataset back to a list of Experience objects.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">experiences</span> <span class="o">=</span> <span class="p">[</span><span class="n">build_dataclass_from_mapping</span><span class="p">(</span><span class="n">Experience</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">dataset</span><span class="o">.</span><span class="n">to_list</span><span class="p">()]</span>
 

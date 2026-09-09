@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1006,10 +1008,10 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exps</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">],</span> <span class="n">Dict</span><span class="p">]:</span>
         <span class="n">raw_metric</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">))</span>
         <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">exps</span><span class="p">:</span>
-            <span class="n">task_index</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;task_index&quot;</span><span class="p">]</span>
-            <span class="k">assert</span> <span class="s2">&quot;taskset_id&quot;</span> <span class="ow">in</span> <span class="n">task_index</span>
-            <span class="k">assert</span> <span class="s2">&quot;index&quot;</span> <span class="ow">in</span> <span class="n">task_index</span>
-            <span class="n">raw_metric</span><span class="p">[</span><span class="n">task_index</span><span class="p">[</span><span class="s2">&quot;taskset_id&quot;</span><span class="p">]][</span><span class="n">task_index</span><span class="p">[</span><span class="s2">&quot;index&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">reward</span><span class="p">)</span>
+            <span class="n">task_index</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s2">"task_index"</span><span class="p">]</span>
+            <span class="k">assert</span> <span class="s2">"taskset_id"</span> <span class="ow">in</span> <span class="n">task_index</span>
+            <span class="k">assert</span> <span class="s2">"index"</span> <span class="ow">in</span> <span class="n">task_index</span>
+            <span class="n">raw_metric</span><span class="p">[</span><span class="n">task_index</span><span class="p">[</span><span class="s2">"taskset_id"</span><span class="p">]][</span><span class="n">task_index</span><span class="p">[</span><span class="s2">"index"</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">reward</span><span class="p">)</span>
         <span class="n">metric</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">ref_pass_rates</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">taskset_id</span><span class="p">,</span> <span class="n">taskset_metric</span> <span class="ow">in</span> <span class="n">raw_metric</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -1019,8 +1021,8 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
                 <span class="n">reward_means</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">rewards</span><span class="p">)))</span>
             <span class="n">metric</span><span class="p">[</span><span class="n">taskset_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;indices&quot;</span><span class="p">:</span> <span class="n">indices</span><span class="p">,</span>
-                <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="n">reward_means</span><span class="p">,</span>
+                <span class="s2">"indices"</span><span class="p">:</span> <span class="n">indices</span><span class="p">,</span>
+                <span class="s2">"values"</span><span class="p">:</span> <span class="n">reward_means</span><span class="p">,</span>
             <span class="p">}</span>
             <span class="n">ref_pass_rates</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">reward_means</span><span class="p">)</span>
         <span class="n">ret_metric</span> <span class="o">=</span> <span class="p">{</span><span class="n">SELECTOR_METRIC</span><span class="p">:</span> <span class="n">metric</span><span class="p">}</span>
@@ -1039,12 +1041,12 @@ window.runMermaid = runMermaid;</script>
         <span class="p">)</span>
         <span class="n">ret_metric</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
             <span class="p">{</span>
-                <span class="s2">&quot;selection/valid_ratio&quot;</span><span class="p">:</span> <span class="n">valid_ratio</span><span class="p">,</span>
-                <span class="s2">&quot;selection/strict_valid_ratio&quot;</span><span class="p">:</span> <span class="n">strict_valid_ratio</span><span class="p">,</span>
-                <span class="s2">&quot;selection/&lt;1_ratio&quot;</span><span class="p">:</span> <span class="n">less_than_one_ratio</span><span class="p">,</span>
-                <span class="s2">&quot;selection/&gt;0_ratio&quot;</span><span class="p">:</span> <span class="n">larger_than_zero_ratio</span><span class="p">,</span>
-                <span class="s2">&quot;selection/&lt;15_16_ratio&quot;</span><span class="p">:</span> <span class="n">less_than_15_over_16_ratio</span><span class="p">,</span>
-                <span class="s2">&quot;selection/&gt;1_16_ratio&quot;</span><span class="p">:</span> <span class="n">larger_than_1_over_16_ratio</span><span class="p">,</span>
+                <span class="s2">"selection/valid_ratio"</span><span class="p">:</span> <span class="n">valid_ratio</span><span class="p">,</span>
+                <span class="s2">"selection/strict_valid_ratio"</span><span class="p">:</span> <span class="n">strict_valid_ratio</span><span class="p">,</span>
+                <span class="s2">"selection/&lt;1_ratio"</span><span class="p">:</span> <span class="n">less_than_one_ratio</span><span class="p">,</span>
+                <span class="s2">"selection/&gt;0_ratio"</span><span class="p">:</span> <span class="n">larger_than_zero_ratio</span><span class="p">,</span>
+                <span class="s2">"selection/&lt;15_16_ratio"</span><span class="p">:</span> <span class="n">less_than_15_over_16_ratio</span><span class="p">,</span>
+                <span class="s2">"selection/&gt;1_16_ratio"</span><span class="p">:</span> <span class="n">larger_than_1_over_16_ratio</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="p">)</span>
 

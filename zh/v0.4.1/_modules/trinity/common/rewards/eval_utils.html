@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -990,10 +992,10 @@ window.runMermaid = runMermaid;</script>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.common.rewards.qwen25_eval</span><span class="w"> </span><span class="kn">import</span> <span class="n">strip_string</span>
 
-<span class="n">ANS_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;#### (\-?[0-9\.\,]+)&quot;</span><span class="p">)</span>
-<span class="n">INVALID_ANS</span> <span class="o">=</span> <span class="s2">&quot;[invalid]&quot;</span>
-<span class="n">parse</span><span class="o">.</span><span class="vm">__globals__</span><span class="p">[</span><span class="s2">&quot;TIMEOUT_WARNING_SHOWN&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-<span class="n">verify</span><span class="o">.</span><span class="vm">__globals__</span><span class="p">[</span><span class="s2">&quot;TIMEOUT_WARNING_SHOWN&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">ANS_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"#### (\-?[0-9\.\,]+)"</span><span class="p">)</span>
+<span class="n">INVALID_ANS</span> <span class="o">=</span> <span class="s2">"[invalid]"</span>
+<span class="n">parse</span><span class="o">.</span><span class="vm">__globals__</span><span class="p">[</span><span class="s2">"TIMEOUT_WARNING_SHOWN"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="n">verify</span><span class="o">.</span><span class="vm">__globals__</span><span class="p">[</span><span class="s2">"TIMEOUT_WARNING_SHOWN"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
 
 
 <div class="viewcode-block" id="parse_with_timeout">
@@ -1004,7 +1006,7 @@ window.runMermaid = runMermaid;</script>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">future</span><span class="o">.</span><span class="n">result</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">parsing_timeout</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">TimeoutError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TimeoutError</span><span class="p">(</span><span class="s2">&quot;Parsing timed out&quot;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">TimeoutError</span><span class="p">(</span><span class="s2">"Parsing timed out"</span><span class="p">)</span></div>
 
 
 
@@ -1016,14 +1018,14 @@ window.runMermaid = runMermaid;</script>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">future</span><span class="o">.</span><span class="n">result</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">timeout_seconds</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">concurrent</span><span class="o">.</span><span class="n">futures</span><span class="o">.</span><span class="n">TimeoutError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TimeoutError</span><span class="p">(</span><span class="s2">&quot;Verification timed out&quot;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">TimeoutError</span><span class="p">(</span><span class="s2">"Verification timed out"</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="simple_answer_parser">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.eval_utils.html#trinity.common.rewards.eval_utils.simple_answer_parser">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">simple_answer_parser</span><span class="p">(</span><span class="n">response</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-    <span class="n">search_ans</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;&lt;answer&gt;(.*?)&lt;/answer&gt;&quot;</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span>
+    <span class="n">search_ans</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">"&lt;answer&gt;(.*?)&lt;/answer&gt;"</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">search_ans</span><span class="p">:</span>
         <span class="n">response</span> <span class="o">=</span> <span class="n">search_ans</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
 
@@ -1034,8 +1036,8 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="find_boxed_answer">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.eval_utils.html#trinity.common.rewards.eval_utils.find_boxed_answer">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">find_boxed_answer</span><span class="p">(</span><span class="n">raw_answer</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Find answers from solutions where the answers are enclosed in LaTeX&#39;s `\\boxed` tag</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Find answers from solutions where the answers are enclosed in LaTeX's `\\boxed` tag</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        raw_answer (`str`): raw answer from model</span>
@@ -1043,12 +1045,12 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        `str`: answer if found, otherwise None</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">boxed\s*(({(?:</span><span class="se">\\</span><span class="s2">.|[^</span><span class="si">{}</span><span class="s2">]|(?2))*})|(.))&quot;</span>
+<span class="sd">    """</span>
+    <span class="n">pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">"</span><span class="se">\\</span><span class="s2">boxed\s*(({(?:</span><span class="se">\\</span><span class="s2">.|[^</span><span class="si">{}</span><span class="s2">]|(?2))*})|(.))"</span>
     <span class="n">res</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">raw_answer</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">res</span><span class="p">:</span>
         <span class="n">answer</span> <span class="o">=</span> <span class="n">res</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># regard the last boxed as the answer</span>
-        <span class="k">if</span> <span class="n">answer</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;{&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">answer</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"{"</span><span class="p">):</span>
             <span class="n">answer</span> <span class="o">=</span> <span class="n">answer</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">answer</span>
     <span class="k">else</span><span class="p">:</span>
@@ -1060,10 +1062,10 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="extract_solution">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.eval_utils.html#trinity.common.rewards.eval_utils.extract_solution">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">extract_solution</span><span class="p">(</span><span class="n">solution_str</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract the equation from the solution string.&quot;&quot;&quot;</span>
-    <span class="n">solution_str</span> <span class="o">=</span> <span class="n">solution_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">"""Extract the equation from the solution string."""</span>
+    <span class="n">solution_str</span> <span class="o">=</span> <span class="n">solution_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
-    <span class="n">answer_pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;&lt;answer&gt;(.*?)&lt;/answer&gt;&quot;</span>
+    <span class="n">answer_pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">"&lt;answer&gt;(.*?)&lt;/answer&gt;"</span>
     <span class="n">match</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">answer_pattern</span><span class="p">,</span> <span class="n">solution_str</span><span class="p">)</span>
     <span class="n">matches</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">match</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">matches</span><span class="p">:</span>
@@ -1078,10 +1080,10 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="validate_equation">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.eval_utils.html#trinity.common.rewards.eval_utils.validate_equation">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">validate_equation</span><span class="p">(</span><span class="n">equation_str</span><span class="p">,</span> <span class="n">available_numbers</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate that equation only uses available numbers and each number once.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Validate that equation only uses available numbers and each number once."""</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="c1"># Extract all numbers from the equation</span>
-        <span class="n">numbers_in_eq</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\d+&quot;</span><span class="p">,</span> <span class="n">equation_str</span><span class="p">)]</span>
+        <span class="n">numbers_in_eq</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\d+"</span><span class="p">,</span> <span class="n">equation_str</span><span class="p">)]</span>
 
         <span class="c1"># Check if all numbers in equation are available</span>
         <span class="n">available_numbers</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">available_numbers</span><span class="p">)</span>
@@ -1098,15 +1100,15 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="evaluate_equation">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.eval_utils.html#trinity.common.rewards.eval_utils.evaluate_equation">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">evaluate_equation</span><span class="p">(</span><span class="n">equation_str</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Safely evaluate the arithmetic equation using eval() with precautions.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Safely evaluate the arithmetic equation using eval() with precautions."""</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="c1"># Define a regex pattern that only allows numbers, operators, parentheses, and whitespace</span>
-        <span class="n">allowed_pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;^[\d+\-*/().\s]+$&quot;</span>
+        <span class="n">allowed_pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">"^[\d+\-*/().\s]+$"</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">allowed_pattern</span><span class="p">,</span> <span class="n">equation_str</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid characters in equation.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Invalid characters in equation."</span><span class="p">)</span>
 
         <span class="c1"># Evaluate the equation with restricted globals and locals</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">equation_str</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;__builtins__&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">},</span> <span class="p">{})</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">equation_str</span><span class="p">,</span> <span class="p">{</span><span class="s2">"__builtins__"</span><span class="p">:</span> <span class="kc">None</span><span class="p">},</span> <span class="p">{})</span>
         <span class="k">return</span> <span class="n">result</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># noqa: F841</span>
         <span class="k">return</span> <span class="kc">None</span></div>
@@ -1116,9 +1118,9 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="validate_think_pattern">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.eval_utils.html#trinity.common.rewards.eval_utils.validate_think_pattern">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">validate_think_pattern</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate whether the &lt;think&gt; &lt;/think&gt; tag is properly formatted.&quot;&quot;&quot;</span>
-    <span class="n">start_tag</span> <span class="o">=</span> <span class="s2">&quot;&lt;think&gt;&quot;</span>
-    <span class="n">end_tag</span> <span class="o">=</span> <span class="s2">&quot;&lt;/think&gt;&quot;</span>
+<span class="w">    </span><span class="sd">"""Validate whether the &lt;think&gt; &lt;/think&gt; tag is properly formatted."""</span>
+    <span class="n">start_tag</span> <span class="o">=</span> <span class="s2">"&lt;think&gt;"</span>
+    <span class="n">end_tag</span> <span class="o">=</span> <span class="s2">"&lt;/think&gt;"</span>
 
     <span class="n">start_count</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">start_tag</span><span class="p">)</span>
     <span class="n">end_count</span> <span class="o">=</span> <span class="n">text</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">end_tag</span><span class="p">)</span>
@@ -1136,10 +1138,10 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="compute_score_v0">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.eval_utils.html#trinity.common.rewards.eval_utils.compute_score_v0">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">compute_score_v0</span><span class="p">(</span><span class="n">solution_str</span><span class="p">,</span> <span class="n">ground_truth</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Compute the score of the solution string against the ground truth.</span>
 <span class="sd">    This function suits easily-verifiable problems; the answer is put within `\boxed{}`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">retval</span> <span class="o">=</span> <span class="mf">0.0</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">string_in_last_boxed</span> <span class="o">=</span> <span class="n">last_boxed_only_string</span><span class="p">(</span><span class="n">solution_str</span><span class="p">)</span>
@@ -1170,7 +1172,7 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.eval_utils.html#trinity.common.rewards.eval_utils.is_equiv">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">is_equiv</span><span class="p">(</span><span class="n">str1</span><span class="p">,</span> <span class="n">str2</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">str1</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">str2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;WARNING: Both None&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"WARNING: Both None"</span><span class="p">)</span>
         <span class="k">return</span> <span class="kc">True</span>
     <span class="k">if</span> <span class="n">str1</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">str2</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">False</span>
@@ -1190,15 +1192,15 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="remove_boxed">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.eval_utils.html#trinity.common.rewards.eval_utils.remove_boxed">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">remove_boxed</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
-    <span class="k">if</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">boxed &quot;</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
-        <span class="n">left</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">boxed &quot;</span>
+    <span class="k">if</span> <span class="s2">"</span><span class="se">\\</span><span class="s2">boxed "</span> <span class="ow">in</span> <span class="n">s</span><span class="p">:</span>
+        <span class="n">left</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\\</span><span class="s2">boxed "</span>
         <span class="k">assert</span> <span class="n">s</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">left</span><span class="p">)]</span> <span class="o">==</span> <span class="n">left</span>
         <span class="k">return</span> <span class="n">s</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">left</span><span class="p">)</span> <span class="p">:]</span>
 
-    <span class="n">left</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">boxed{&quot;</span>
+    <span class="n">left</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\\</span><span class="s2">boxed{"</span>
 
     <span class="k">assert</span> <span class="n">s</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">left</span><span class="p">)]</span> <span class="o">==</span> <span class="n">left</span>
-    <span class="k">assert</span> <span class="n">s</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;}&quot;</span>
+    <span class="k">assert</span> <span class="n">s</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"}"</span>
 
     <span class="k">return</span> <span class="n">s</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">left</span><span class="p">)</span> <span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span></div>
 
@@ -1208,12 +1210,12 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="last_boxed_only_string">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.eval_utils.html#trinity.common.rewards.eval_utils.last_boxed_only_string">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">last_boxed_only_string</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extracts the last `\boxed{...}` or `\fbox{...}` substring from the input string.&quot;&quot;&quot;</span>
-    <span class="n">idx</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">boxed&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">boxed &quot;</span> <span class="ow">in</span> <span class="n">string</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">boxed &quot;</span> <span class="o">+</span> <span class="n">string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">boxed &quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;$&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">"""Extracts the last `\boxed{...}` or `\fbox{...}` substring from the input string."""</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">"</span><span class="se">\\</span><span class="s2">boxed"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">"</span><span class="se">\\</span><span class="s2">boxed "</span> <span class="ow">in</span> <span class="n">string</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">"</span><span class="se">\\</span><span class="s2">boxed "</span> <span class="o">+</span> <span class="n">string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"</span><span class="se">\\</span><span class="s2">boxed "</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"$"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">idx</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">fbox&quot;</span><span class="p">)</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">"</span><span class="se">\\</span><span class="s2">fbox"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
 
@@ -1221,9 +1223,9 @@ window.runMermaid = runMermaid;</script>
     <span class="n">right_brace_idx</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">num_left_braces_open</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">string</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;{&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">string</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"{"</span><span class="p">:</span>
             <span class="n">num_left_braces_open</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">if</span> <span class="n">string</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;}&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">string</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"}"</span><span class="p">:</span>
             <span class="n">num_left_braces_open</span> <span class="o">-=</span> <span class="mi">1</span>
             <span class="k">if</span> <span class="n">num_left_braces_open</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">right_brace_idx</span> <span class="o">=</span> <span class="n">i</span>
@@ -1240,9 +1242,9 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="remove_right_units">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.eval_utils.html#trinity.common.rewards.eval_utils.remove_right_units">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">remove_right_units</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
-    <span class="c1"># &quot;\\text{ &quot; only ever occurs (at least in the val set) when describing units</span>
-    <span class="k">if</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">text{ &quot;</span> <span class="ow">in</span> <span class="n">string</span><span class="p">:</span>
-        <span class="n">splits</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">text{ &quot;</span><span class="p">)</span>
+    <span class="c1"># "\\text{ " only ever occurs (at least in the val set) when describing units</span>
+    <span class="k">if</span> <span class="s2">"</span><span class="se">\\</span><span class="s2">text{ "</span> <span class="ow">in</span> <span class="n">string</span><span class="p">:</span>
+        <span class="n">splits</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"</span><span class="se">\\</span><span class="s2">text{ "</span><span class="p">)</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">splits</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
         <span class="k">return</span> <span class="n">splits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>

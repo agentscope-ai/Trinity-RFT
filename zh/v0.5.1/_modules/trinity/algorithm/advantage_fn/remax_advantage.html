@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -991,10 +993,10 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>trinity.algorithm.advantage_fn.remax_advantage 源代码</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;REMAX advantage computation</span>
+<span></span><span class="sd">"""REMAX advantage computation</span>
 
 <span class="sd">Ref: https://github.com/volcengine/verl/blob/main/verl/trainer/ppo/core_algos.py</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span>
 
@@ -1018,7 +1020,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">exps</span><span class="p">:</span> <span class="n">DataProto</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">DataProto</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Compute advantage for ReMax, operating only on Outcome reward</span>
 <span class="sd">        (with only one scalar reward for each response).</span>
 <span class="sd">        This implementation is based on the paper: https://arxiv.org/abs/2310.10505</span>
@@ -1033,10 +1035,10 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">                shape: (bs, response_length)</span>
 <span class="sd">            returns: `(torch.Tensor)`</span>
 <span class="sd">                shape: (bs, response_length)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">token_level_rewards</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;token_level_rewards&quot;</span><span class="p">]</span>
-        <span class="n">reward_baselines</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;reward_baselines&quot;</span><span class="p">]</span>
-        <span class="n">eos_mask</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;response_mask&quot;</span><span class="p">]</span>
+<span class="sd">        """</span>
+        <span class="n">token_level_rewards</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"token_level_rewards"</span><span class="p">]</span>
+        <span class="n">reward_baselines</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"reward_baselines"</span><span class="p">]</span>
+        <span class="n">eos_mask</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"response_mask"</span><span class="p">]</span>
 
         <span class="n">response_length</span> <span class="o">=</span> <span class="n">token_level_rewards</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">token_level_rewards</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
@@ -1049,8 +1051,8 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">returns</span> <span class="o">-</span> <span class="n">reward_baselines</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">tile</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="n">response_length</span><span class="p">])</span> <span class="o">*</span> <span class="n">eos_mask</span>
             <span class="p">)</span>
 
-        <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;advantages&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">advantages</span>
-        <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;returns&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">returns</span>
+        <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"advantages"</span><span class="p">]</span> <span class="o">=</span> <span class="n">advantages</span>
+        <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"returns"</span><span class="p">]</span> <span class="o">=</span> <span class="n">returns</span>
 
         <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span>
             <span class="c1"># TODO: add meaningful metrics</span>

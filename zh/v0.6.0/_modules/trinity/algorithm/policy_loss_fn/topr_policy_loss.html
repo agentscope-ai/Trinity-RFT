@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1018,9 +1020,9 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>trinity.algorithm.policy_loss_fn.topr_policy_loss 源代码</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;TOPR policy loss function.</span>
+<span></span><span class="sd">"""TOPR policy loss function.</span>
 <span class="sd">Refer to https://arxiv.org/pdf/2503.14286v1</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
@@ -1036,9 +1038,9 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.policy_loss_fn.topr_policy_loss.html#trinity.algorithm.policy_loss_fn.topr_policy_loss.TOPRPolicyLossFn.__init__">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;verl&quot;</span><span class="p">,</span>
+        <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"verl"</span><span class="p">,</span>
         <span class="n">advantage_threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
-        <span class="n">loss_agg_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;token-mean&quot;</span><span class="p">,</span>
+        <span class="n">loss_agg_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"token-mean"</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">advantage_threshold</span> <span class="o">=</span> <span class="n">advantage_threshold</span>
@@ -1053,13 +1055,13 @@ window.runMermaid = runMermaid;</script>
         <span class="n">advantages</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>  <span class="c1"># In TOPR, this is actually the rewards R(x,y)</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Compute TOPR policy loss.</span>
 
 <span class="sd">        In TOPR:</span>
 <span class="sd">        - α = [π(y|x)/μ(y|x)]_0^1 if R(x,y) &lt;= threshold else 1</span>
 <span class="sd">        - loss = -sg(α) * r(x,y) * log π(y|x)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># in Orginal TOPR paper, advantages are simply rewards</span>
         <span class="c1"># However, we can use advantages as rewards(Baseline Trick)</span>
         <span class="n">rewards</span> <span class="o">=</span> <span class="n">advantages</span>
@@ -1069,7 +1071,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">ratio</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_ratio</span><span class="p">)</span>
         <span class="n">ratio_clamped</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">ratio</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
 
-        <span class="c1"># Apply TOPR&#39;s conditional weighting:</span>
+        <span class="c1"># Apply TOPR's conditional weighting:</span>
         <span class="c1"># α = ratio clamp min=0 max=1 if R(x,y) &lt;= threshold else 1</span>
         <span class="n">alpha</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
             <span class="n">rewards</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">advantage_threshold</span><span class="p">,</span> <span class="n">ratio_clamped</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">ratio</span><span class="p">)</span>
@@ -1077,7 +1079,7 @@ window.runMermaid = runMermaid;</script>
 
         <span class="c1"># TOPR loss: l = -α * r(x,y) * log π(y|x)</span>
         <span class="c1"># We want to maximize α * r(x,y) * log π(y|x), so minimize the negative</span>
-        <span class="n">topr_loss</span> <span class="o">=</span> <span class="o">-</span><span class="n">alpha</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span> <span class="o">*</span> <span class="n">rewards</span> <span class="o">*</span> <span class="n">logprob</span>  <span class="c1"># detach alpha as it&#39;s used with stop-grad</span>
+        <span class="n">topr_loss</span> <span class="o">=</span> <span class="o">-</span><span class="n">alpha</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span> <span class="o">*</span> <span class="n">rewards</span> <span class="o">*</span> <span class="n">logprob</span>  <span class="c1"># detach alpha as it's used with stop-grad</span>
 
         <span class="c1"># Apply masking and compute mean</span>
         <span class="n">loss</span> <span class="o">=</span> <span class="n">aggregate_loss</span><span class="p">(</span><span class="n">topr_loss</span><span class="p">,</span> <span class="n">action_mask</span><span class="p">,</span> <span class="n">loss_agg_mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">loss_agg_mode</span><span class="p">)</span>
@@ -1086,9 +1088,9 @@ window.runMermaid = runMermaid;</script>
         <span class="n">avg_alpha</span> <span class="o">=</span> <span class="n">masked_mean</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">action_mask</span><span class="p">)</span>
 
         <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;topr_loss&quot;</span><span class="p">:</span> <span class="n">loss</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
-            <span class="s2">&quot;avg_alpha&quot;</span><span class="p">:</span> <span class="n">avg_alpha</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
-            <span class="s2">&quot;avg_ratio&quot;</span><span class="p">:</span> <span class="n">masked_mean</span><span class="p">(</span><span class="n">ratio</span><span class="p">,</span> <span class="n">action_mask</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+            <span class="s2">"topr_loss"</span><span class="p">:</span> <span class="n">loss</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+            <span class="s2">"avg_alpha"</span><span class="p">:</span> <span class="n">avg_alpha</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+            <span class="s2">"avg_ratio"</span><span class="p">:</span> <span class="n">masked_mean</span><span class="p">(</span><span class="n">ratio</span><span class="p">,</span> <span class="n">action_mask</span><span class="p">)</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
         <span class="p">}</span>
 
         <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="n">metrics</span>
@@ -1098,8 +1100,8 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">default_args</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;advantage_threshold&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
-            <span class="s2">&quot;loss_agg_mode&quot;</span><span class="p">:</span> <span class="s2">&quot;token-mean&quot;</span><span class="p">,</span>
+            <span class="s2">"advantage_threshold"</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+            <span class="s2">"loss_agg_mode"</span><span class="p">:</span> <span class="s2">"token-mean"</span><span class="p">,</span>
         <span class="p">}</span></div>
 </div>
 

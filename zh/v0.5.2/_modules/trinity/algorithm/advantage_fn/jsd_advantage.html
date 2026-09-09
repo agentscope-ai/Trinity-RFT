@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -998,12 +1000,12 @@ window.runMermaid = runMermaid;</script>
                   
   <h1>trinity.algorithm.advantage_fn.jsd_advantage 源代码</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="sd">&quot;&quot;&quot;Jensen-Shannon Divergence (JSD) advantage computation.</span>
+<span class="sd">"""Jensen-Shannon Divergence (JSD) advantage computation.</span>
 
 <span class="sd">JSD(P||Q) = beta * KL(teacher||M) + (1-beta) * KL(student||M), where M = beta*teacher + (1-beta)*student.</span>
 <span class="sd">When beta=0.5, this gives the standard symmetric JSD. All computations in log-space (no exp).</span>
 <span class="sd">Aligned with SWIFT: beta=0/1 yield pure KL; temperature and optional chunking supported.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
@@ -1016,7 +1018,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="JSDAdvantage">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.advantage_fn.jsd_advantage.html#trinity.algorithm.advantage_fn.jsd_advantage.JSDAdvantage">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">JSDAdvantage</span><span class="p">(</span><span class="n">AdvantageFn</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Advantage function using Jensen-Shannon Divergence (log-space, SWIFT-aligned).</span>
+<span class="w">    </span><span class="sd">"""Advantage function using Jensen-Shannon Divergence (log-space, SWIFT-aligned).</span>
 
 <span class="sd">    Computes JSD in log-space only:</span>
 <span class="sd">    - beta=0: JSD = KL(student || teacher)  [pure KL]</span>
@@ -1025,7 +1027,7 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    The teacher_logprobs should be stored in Experience.teacher_logprobs</span>
 <span class="sd">    by the workflow during exploration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="JSDAdvantage.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.advantage_fn.jsd_advantage.html#trinity.algorithm.advantage_fn.jsd_advantage.JSDAdvantage.__init__">[文档]</a>
@@ -1036,7 +1038,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
         <span class="n">chunk_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize JSD advantage function.</span>
+<span class="w">        </span><span class="sd">"""Initialize JSD advantage function.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            lambda_coef: Weight beta for mixture. JSD = beta*KL(teacher||M) + (1-beta)*KL(student||M).</span>
@@ -1044,7 +1046,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            kl_coef: Overall scaling coefficient for advantages.</span>
 <span class="sd">            temperature: Temperature scaling for log-probs (log_probs / temperature). 1.0 = no scaling.</span>
 <span class="sd">            chunk_size: If set, process flattened valid tokens in chunks to reduce peak memory; None = no chunking.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lambda_coef</span> <span class="o">=</span> <span class="n">lambda_coef</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">kl_coef</span> <span class="o">=</span> <span class="n">kl_coef</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span> <span class="o">=</span> <span class="n">temperature</span>
@@ -1057,12 +1059,12 @@ window.runMermaid = runMermaid;</script>
         <span class="n">teacher_logprobs</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
         <span class="n">mask</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Compute JSD per token in log-space only (no exp).</span>
 <span class="sd">        - beta=0: KL(student || teacher) = student_logprobs - teacher_logprobs</span>
 <span class="sd">        - beta=1: KL(teacher || student) = teacher_logprobs - student_logprobs</span>
 <span class="sd">        - else: mixture log_m = logsumexp([s+log(1-beta), t+log(beta)]); JSD = beta*(t-log_m) + (1-beta)*(s-log_m).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">beta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambda_coef</span>
         <span class="n">s</span> <span class="o">=</span> <span class="n">student_logprobs</span>
         <span class="n">t</span> <span class="o">=</span> <span class="n">teacher_logprobs</span>
@@ -1100,7 +1102,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">teacher_logprobs</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
         <span class="n">response_mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute JSD per token with optional chunking over valid positions (for memory).&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Compute JSD per token with optional chunking over valid positions (for memory)."""</span>
         <span class="n">flat_s</span> <span class="o">=</span> <span class="n">student_logprobs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">flat_t</span> <span class="o">=</span> <span class="n">teacher_logprobs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">flat_mask</span> <span class="o">=</span> <span class="n">response_mask</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
@@ -1141,7 +1143,7 @@ window.runMermaid = runMermaid;</script>
         <span class="k">return</span> <span class="n">out</span><span class="o">.</span><span class="n">reshape_as</span><span class="p">(</span><span class="n">response_mask</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exps</span><span class="p">:</span> <span class="n">DataProto</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">DataProto</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute advantages using JSD.</span>
+<span class="w">        </span><span class="sd">"""Compute advantages using JSD.</span>
 
 <span class="sd">        Advantages are computed directly from JSD: advantages = -kl_coef * JSD</span>
 <span class="sd">        Since we want to minimize JSD, we use negative JSD as advantage.</span>
@@ -1150,19 +1152,19 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">        Args:</span>
 <span class="sd">            exps: DataProto containing:</span>
-<span class="sd">                - old_log_probs: student&#39;s sampling logprobs [batch, seq]</span>
-<span class="sd">                - teacher_logprobs: teacher&#39;s logprobs [batch, seq]</span>
+<span class="sd">                - old_log_probs: student's sampling logprobs [batch, seq]</span>
+<span class="sd">                - teacher_logprobs: teacher's logprobs [batch, seq]</span>
 <span class="sd">                - response_mask: mask for response tokens [batch, seq]</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            exps: DataProto with advantages and returns added</span>
 <span class="sd">            metrics: Dict with jsd and advantage statistics</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">metrics</span> <span class="o">=</span> <span class="p">{}</span>
 
-        <span class="n">old_log_probs</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;old_log_probs&quot;</span><span class="p">]</span>  <span class="c1"># student sampling logprobs</span>
-        <span class="n">teacher_log_probs</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;teacher_logprobs&quot;</span><span class="p">]</span>
-        <span class="n">response_mask</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;response_mask&quot;</span><span class="p">]</span>
+        <span class="n">old_log_probs</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"old_log_probs"</span><span class="p">]</span>  <span class="c1"># student sampling logprobs</span>
+        <span class="n">teacher_log_probs</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"teacher_logprobs"</span><span class="p">]</span>
+        <span class="n">response_mask</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"response_mask"</span><span class="p">]</span>
 
         <span class="c1"># Temperature scaling (align with SWIFT: logits / T =&gt; apply to log-probs here)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">temperature</span> <span class="o">!=</span> <span class="mf">1.0</span><span class="p">:</span>
@@ -1184,15 +1186,15 @@ window.runMermaid = runMermaid;</script>
         <span class="n">advantages</span> <span class="o">=</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">kl_coef</span> <span class="o">*</span> <span class="n">jsd_per_token</span>
         <span class="n">advantages</span> <span class="o">=</span> <span class="n">advantages</span> <span class="o">*</span> <span class="n">response_mask</span>
 
-        <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;advantages&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">advantages</span>
-        <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;returns&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">advantages</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"advantages"</span><span class="p">]</span> <span class="o">=</span> <span class="n">advantages</span>
+        <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"returns"</span><span class="p">]</span> <span class="o">=</span> <span class="n">advantages</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
 
         <span class="c1"># JSD metrics (over valid tokens)</span>
         <span class="n">jsd_sum</span> <span class="o">=</span> <span class="p">(</span><span class="n">jsd_per_token</span> <span class="o">*</span> <span class="n">response_mask</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;jsd/mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">jsd_sum</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;jsd/std&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">jsd_sum</span><span class="o">.</span><span class="n">std</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">if</span> <span class="n">jsd_sum</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mf">0.0</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s2">"jsd/mean"</span><span class="p">]</span> <span class="o">=</span> <span class="n">jsd_sum</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s2">"jsd/std"</span><span class="p">]</span> <span class="o">=</span> <span class="n">jsd_sum</span><span class="o">.</span><span class="n">std</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="k">if</span> <span class="n">jsd_sum</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mf">0.0</span>
 
-        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;advantages/mean&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">advantages</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s2">"advantages/mean"</span><span class="p">]</span> <span class="o">=</span> <span class="n">advantages</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="n">exps</span><span class="p">,</span> <span class="n">metrics</span>
 
@@ -1201,10 +1203,10 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">default_args</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;lambda_coef&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
-            <span class="s2">&quot;kl_coef&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
-            <span class="s2">&quot;temperature&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
-            <span class="s2">&quot;chunk_size&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">"lambda_coef"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+            <span class="s2">"kl_coef"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+            <span class="s2">"temperature"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+            <span class="s2">"chunk_size"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
         <span class="p">}</span></div>
 </div>
 

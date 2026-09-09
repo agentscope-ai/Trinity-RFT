@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1033,8 +1035,8 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="set_total_gpu_num">
 <a class="viewcode-back" href="../../../../build_api/trinity.manager.config_registry.model_config_manager.html#trinity.manager.config_registry.model_config_manager.set_total_gpu_num">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_total_gpu_num</span><span class="p">():</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">&quot;total_gpu_num&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">&quot;gpu_per_node&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">&quot;node_num&quot;</span><span class="p">]</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">"total_gpu_num"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">"gpu_per_node"</span><span class="p">]</span> <span class="o">*</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">"node_num"</span><span class="p">]</span>
     <span class="p">)</span>
     <span class="n">set_trainer_gpu_num</span><span class="p">()</span></div>
 
@@ -1043,66 +1045,66 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="set_trainer_gpu_num">
 <a class="viewcode-back" href="../../../../build_api/trinity.manager.config_registry.model_config_manager.html#trinity.manager.config_registry.model_config_manager.set_trainer_gpu_num">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_trainer_gpu_num</span><span class="p">():</span>
-    <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">&quot;mode&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;both&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">"mode"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"both"</span><span class="p">:</span>
         <span class="n">trainer_gpu_num</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">&quot;total_gpu_num&quot;</span><span class="p">]</span>
-            <span class="o">-</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">&quot;engine_num&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">&quot;tensor_parallel_size&quot;</span><span class="p">]</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">"total_gpu_num"</span><span class="p">]</span>
+            <span class="o">-</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">"engine_num"</span><span class="p">]</span> <span class="o">*</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">"tensor_parallel_size"</span><span class="p">]</span>
         <span class="p">)</span>
-        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">&quot;_auxiliary_models_num&quot;</span><span class="p">]):</span>
-            <span class="n">engine_num</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;auxiliary_model_</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">_engine_num&quot;</span><span class="p">]</span>
-            <span class="n">tensor_parallel_size</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;auxiliary_model_</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">_tensor_parallel_size&quot;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">"_auxiliary_models_num"</span><span class="p">]):</span>
+            <span class="n">engine_num</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">"auxiliary_model_</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">_engine_num"</span><span class="p">]</span>
+            <span class="n">tensor_parallel_size</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="sa">f</span><span class="s2">"auxiliary_model_</span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">_tensor_parallel_size"</span><span class="p">]</span>
             <span class="n">trainer_gpu_num</span> <span class="o">-=</span> <span class="n">engine_num</span> <span class="o">*</span> <span class="n">tensor_parallel_size</span>
-        <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">&quot;trainer_gpu_num&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">trainer_gpu_num</span><span class="p">)</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">"trainer_gpu_num"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">trainer_gpu_num</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>  <span class="c1"># model == train</span>
-        <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">&quot;trainer_gpu_num&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">&quot;total_gpu_num&quot;</span><span class="p">])</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">"trainer_gpu_num"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">"total_gpu_num"</span><span class="p">])</span>
 
     <span class="c1"># sync number to display</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">&quot;trainer_gpu_num_display&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">&quot;trainer_gpu_num&quot;</span><span class="p">]</span></div>
+    <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">"trainer_gpu_num_display"</span><span class="p">]</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="s2">"trainer_gpu_num"</span><span class="p">]</span></div>
 
 
 
-<span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="s2">&quot;Trinity-RFT&quot;</span><span class="p">)</span>
+<span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="s2">"Trinity-RFT"</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_project</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;Project&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">"Project"</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
-<span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="s2">&quot;Example&quot;</span><span class="p">)</span>
+<span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="s2">"Example"</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_exp_name</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;Experiment Name&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">"Experiment Name"</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
-<span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_checkpoint_root_dir</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;Checkpoint Root Dir&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">"Checkpoint Root Dir"</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
 <span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_check</span><span class="p">()</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">check_checkpoint_root_dir</span><span class="p">(</span><span class="n">unfinished_fields</span><span class="p">:</span> <span class="nb">set</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>  <span class="c1"># TODO: may auto generate</span>
         <span class="n">unfinished_fields</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-        <span class="n">st</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Please input checkpoint root dir.&quot;</span><span class="p">)</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Please input checkpoint root dir."</span><span class="p">)</span>
     <span class="k">elif</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isabs</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">()):</span>
-        <span class="n">unfinished_fields</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;checkpoint_root_dir&quot;</span><span class="p">)</span>
-        <span class="n">st</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Please input an absolute path.&quot;</span><span class="p">)</span>
+        <span class="n">unfinished_fields</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">"checkpoint_root_dir"</span><span class="p">)</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Please input an absolute path."</span><span class="p">)</span>
 
 
-<span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="s2">&quot;tensorboard&quot;</span><span class="p">)</span>
+<span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="s2">"tensorboard"</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_monitor_type</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="n">candidates</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">MONITOR</span><span class="o">.</span><span class="n">modules</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
     <span class="n">st</span><span class="o">.</span><span class="n">selectbox</span><span class="p">(</span>
-        <span class="s2">&quot;Monitor Type&quot;</span><span class="p">,</span>
+        <span class="s2">"Monitor Type"</span><span class="p">,</span>
         <span class="n">options</span><span class="o">=</span><span class="n">candidates</span><span class="p">,</span>
         <span class="n">format_func</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">capitalize</span><span class="p">(),</span>
-        <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Set your API_KEY in environment variables if using `Wandb` or `MLFlow`&quot;</span><span class="p">,</span>
+        <span class="n">help</span><span class="o">=</span><span class="s2">"Set your API_KEY in environment variables if using `Wandb` or `MLFlow`"</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span>
 
 
-<span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="s2">&quot;INFO&quot;</span><span class="p">)</span>
+<span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="s2">"INFO"</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_log_level</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="n">st</span><span class="o">.</span><span class="n">selectbox</span><span class="p">(</span>
-        <span class="s2">&quot;Log Level&quot;</span><span class="p">,</span>
-        <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;DEBUG&quot;</span><span class="p">,</span> <span class="s2">&quot;INFO&quot;</span><span class="p">,</span> <span class="s2">&quot;WARNING&quot;</span><span class="p">,</span> <span class="s2">&quot;ERROR&quot;</span><span class="p">],</span>
+        <span class="s2">"Log Level"</span><span class="p">,</span>
+        <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s2">"DEBUG"</span><span class="p">,</span> <span class="s2">"INFO"</span><span class="p">,</span> <span class="s2">"WARNING"</span><span class="p">,</span> <span class="s2">"ERROR"</span><span class="p">],</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span>
 
@@ -1110,47 +1112,47 @@ window.runMermaid = runMermaid;</script>
 <span class="c1"># Model Configs</span>
 
 
-<span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+<span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_model_path</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">&quot;Model Path&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span><span class="s2">"Model Path"</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
 <span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_check</span><span class="p">()</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">check_model_path</span><span class="p">(</span><span class="n">unfinished_fields</span><span class="p">:</span> <span class="nb">set</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">st</span><span class="o">.</span><span class="n">session_state</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
         <span class="n">unfinished_fields</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-        <span class="n">st</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Please input model path.&quot;</span><span class="p">)</span>
+        <span class="n">st</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Please input model path."</span><span class="p">)</span>
 
 
 <span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span>
-    <span class="n">default_value</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+    <span class="n">default_value</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span>
     <span class="n">visible</span><span class="o">=</span><span class="n">use_critic</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_critic_model_path</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="n">st</span><span class="o">.</span><span class="n">text_input</span><span class="p">(</span>
-        <span class="s2">&quot;Critic Model Path (defaults to `model_path`)&quot;</span><span class="p">,</span>
-        <span class="n">key</span><span class="o">=</span><span class="s2">&quot;critic_model_path&quot;</span><span class="p">,</span>
+        <span class="s2">"Critic Model Path (defaults to `model_path`)"</span><span class="p">,</span>
+        <span class="n">key</span><span class="o">=</span><span class="s2">"critic_model_path"</span><span class="p">,</span>
     <span class="p">)</span>
 
 
 <span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_max_prompt_tokens</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s2">&quot;Max Prompt Length&quot;</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s2">"Max Prompt Length"</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
 <span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_min_response_tokens</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s2">&quot;Min Response Length&quot;</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s2">"Min Response Length"</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
 <span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="mi">1024</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_max_response_tokens</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s2">&quot;Max Response Length&quot;</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s2">"Max Response Length"</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
 <span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="mi">4096</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_max_model_len</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s2">&quot;Max Model Length&quot;</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s2">"Max Model Length"</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
 <span class="c1"># Cluster Config</span>
@@ -1158,15 +1160,15 @@ window.runMermaid = runMermaid;</script>
 
 <span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span><span class="n">default_value</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_node_num</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s2">&quot;Node Num&quot;</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">on_change</span><span class="o">=</span><span class="n">set_total_gpu_num</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span><span class="s2">"Node Num"</span><span class="p">,</span> <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">on_change</span><span class="o">=</span><span class="n">set_total_gpu_num</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
 <span class="nd">@CONFIG_GENERATORS</span><span class="o">.</span><span class="n">register_config</span><span class="p">(</span>
-    <span class="n">default_value</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">other_configs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;total_gpu_num&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;trainer_gpu_num&quot;</span><span class="p">:</span> <span class="mi">6</span><span class="p">}</span>
+    <span class="n">default_value</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">other_configs</span><span class="o">=</span><span class="p">{</span><span class="s2">"total_gpu_num"</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">"trainer_gpu_num"</span><span class="p">:</span> <span class="mi">6</span><span class="p">}</span>
 <span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">set_gpu_per_node</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="n">st</span><span class="o">.</span><span class="n">number_input</span><span class="p">(</span>
-        <span class="s2">&quot;GPU Per Node&quot;</span><span class="p">,</span>
+        <span class="s2">"GPU Per Node"</span><span class="p">,</span>
         <span class="n">min_value</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="n">max_value</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
         <span class="n">on_change</span><span class="o">=</span><span class="n">set_total_gpu_num</span><span class="p">,</span>

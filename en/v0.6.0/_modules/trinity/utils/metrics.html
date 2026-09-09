@@ -46,6 +46,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1011,12 +1013,12 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>Source code for trinity.utils.metrics</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Unified metrics aggregation utilities for Trinity-RFT.</span>
+<span></span><span class="sd">"""Unified metrics aggregation utilities for Trinity-RFT.</span>
 
 <span class="sd">Metric keys may carry an aggregation-type suffix in the form ``name:agg``.</span>
 <span class="sd">Supported suffixes: ``:mean``, ``:sum``, ``:max``, ``:min``, ``:last``.</span>
 <span class="sd">Keys without a suffix default to mean aggregation.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
@@ -1028,11 +1030,11 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="AggType">
 <a class="viewcode-back" href="../../../build_api/trinity.utils.metrics.html#trinity.utils.metrics.AggType">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">AggType</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
-    <span class="n">MEAN</span> <span class="o">=</span> <span class="s2">&quot;mean&quot;</span>
-    <span class="n">SUM</span> <span class="o">=</span> <span class="s2">&quot;sum&quot;</span>
-    <span class="n">MAX</span> <span class="o">=</span> <span class="s2">&quot;max&quot;</span>
-    <span class="n">MIN</span> <span class="o">=</span> <span class="s2">&quot;min&quot;</span>
-    <span class="n">LAST</span> <span class="o">=</span> <span class="s2">&quot;last&quot;</span></div>
+    <span class="n">MEAN</span> <span class="o">=</span> <span class="s2">"mean"</span>
+    <span class="n">SUM</span> <span class="o">=</span> <span class="s2">"sum"</span>
+    <span class="n">MAX</span> <span class="o">=</span> <span class="s2">"max"</span>
+    <span class="n">MIN</span> <span class="o">=</span> <span class="s2">"min"</span>
+    <span class="n">LAST</span> <span class="o">=</span> <span class="s2">"last"</span></div>
 
 
 
@@ -1052,10 +1054,10 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="n">STAT_FNS</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">generic</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;mean&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">,</span>
-    <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">,</span>
-    <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">,</span>
-    <span class="s2">&quot;std&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">,</span>
+    <span class="s2">"mean"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">,</span>
+    <span class="s2">"max"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">,</span>
+    <span class="s2">"min"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">,</span>
+    <span class="s2">"std"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">,</span>
 <span class="p">}</span>
 
 
@@ -1086,7 +1088,7 @@ window.runMermaid = runMermaid;</script>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
                 <span class="k">continue</span>
             <span class="n">name</span><span class="p">,</span> <span class="n">agg</span> <span class="o">=</span> <span class="n">parse_metric_key</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-            <span class="n">canonical_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">agg</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">agg</span> <span class="o">!=</span> <span class="n">AggType</span><span class="o">.</span><span class="n">MEAN</span> <span class="k">else</span> <span class="n">name</span>
+            <span class="n">canonical_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">agg</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">agg</span> <span class="o">!=</span> <span class="n">AggType</span><span class="o">.</span><span class="n">MEAN</span> <span class="k">else</span> <span class="n">name</span>
             <span class="k">if</span> <span class="n">canonical_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">grouped</span><span class="p">:</span>
                 <span class="n">grouped</span><span class="p">[</span><span class="n">canonical_key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">agg</span><span class="p">,</span> <span class="p">[])</span>
             <span class="n">grouped</span><span class="p">[</span><span class="n">canonical_key</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
@@ -1097,16 +1099,16 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="parse_metric_key">
 <a class="viewcode-back" href="../../../build_api/trinity.utils.metrics.html#trinity.utils.metrics.parse_metric_key">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">parse_metric_key</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">AggType</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse a metric key into (name, aggregation_type).</span>
+<span class="w">    </span><span class="sd">"""Parse a metric key into (name, aggregation_type).</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        &quot;reward&quot;               -&gt; (&quot;reward&quot;, AggType.MEAN)</span>
-<span class="sd">        &quot;experience_count:sum&quot; -&gt; (&quot;experience_count&quot;, AggType.SUM)</span>
-<span class="sd">        &quot;model_version:last&quot;   -&gt; (&quot;model_version&quot;, AggType.LAST)</span>
-<span class="sd">        &quot;some:unknown_suffix&quot;  -&gt; (&quot;some:unknown_suffix&quot;, AggType.MEAN)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="s2">&quot;:&quot;</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
-        <span class="n">name</span><span class="p">,</span> <span class="n">agg_str</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="sd">        "reward"               -&gt; ("reward", AggType.MEAN)</span>
+<span class="sd">        "experience_count:sum" -&gt; ("experience_count", AggType.SUM)</span>
+<span class="sd">        "model_version:last"   -&gt; ("model_version", AggType.LAST)</span>
+<span class="sd">        "some:unknown_suffix"  -&gt; ("some:unknown_suffix", AggType.MEAN)</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="s2">":"</span> <span class="ow">in</span> <span class="n">key</span><span class="p">:</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">agg_str</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s2">":"</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="n">AggType</span><span class="p">(</span><span class="n">agg_str</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
@@ -1119,10 +1121,10 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../build_api/trinity.utils.metrics.html#trinity.utils.metrics.aggregate_metrics">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">aggregate_metrics</span><span class="p">(</span>
     <span class="n">metric_dicts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
-    <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+    <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
     <span class="n">default_output_stats</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Aggregate a list of metric dictionaries respecting per-key aggregation types.</span>
+<span class="w">    </span><span class="sd">"""Aggregate a list of metric dictionaries respecting per-key aggregation types.</span>
 
 <span class="sd">    For keys with AggType.MEAN, outputs ``{prefix}/{name}/mean``, ``/max``, ``/min``</span>
 <span class="sd">    (controlled by *default_output_stats*).</span>
@@ -1134,21 +1136,21 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Args:</span>
 <span class="sd">        metric_dicts: List of flat metric dictionaries (values must be numeric).</span>
 <span class="sd">        prefix: Optional prefix prepended as ``{prefix}/{name}/...``.</span>
-<span class="sd">        default_output_stats: Stats to output for MEAN metrics. Defaults to [&quot;mean&quot;, &quot;max&quot;, &quot;min&quot;].</span>
+<span class="sd">        default_output_stats: Stats to output for MEAN metrics. Defaults to ["mean", "max", "min"].</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Flat dictionary of aggregated metrics ready for monitor logging.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">metric_dicts</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{}</span>
 
     <span class="k">if</span> <span class="n">default_output_stats</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">default_output_stats</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">]</span>
+        <span class="n">default_output_stats</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"mean"</span><span class="p">,</span> <span class="s2">"max"</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">]</span>
 
     <span class="n">grouped</span> <span class="o">=</span> <span class="n">group_numeric_metrics</span><span class="p">(</span><span class="n">metric_dicts</span><span class="p">)</span>
 
     <span class="n">result</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">prefix_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">/&quot;</span> <span class="k">if</span> <span class="n">prefix</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">prefix_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">/"</span> <span class="k">if</span> <span class="n">prefix</span> <span class="k">else</span> <span class="s2">""</span>
 
     <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">agg</span><span class="p">),</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">grouped</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">agg</span> <span class="o">==</span> <span class="n">AggType</span><span class="o">.</span><span class="n">MEAN</span><span class="p">:</span>
@@ -1156,12 +1158,12 @@ window.runMermaid = runMermaid;</script>
             <span class="k">for</span> <span class="n">stat</span> <span class="ow">in</span> <span class="n">default_output_stats</span><span class="p">:</span>
                 <span class="n">fn</span> <span class="o">=</span> <span class="n">STAT_FNS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">stat</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix_str</span><span class="si">}{</span><span class="n">name</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">stat</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                    <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix_str</span><span class="si">}{</span><span class="n">name</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">stat</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
             <span class="k">continue</span>
 
         <span class="n">reducer</span> <span class="o">=</span> <span class="n">AGG_REDUCERS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">agg</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">reducer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix_str</span><span class="si">}{</span><span class="n">name</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">agg</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reducer</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+            <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix_str</span><span class="si">}{</span><span class="n">name</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">agg</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">reducer</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">result</span></div>
 
@@ -1171,27 +1173,27 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../build_api/trinity.utils.metrics.html#trinity.utils.metrics.aggregate_eval_metrics">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">aggregate_eval_metrics</span><span class="p">(</span>
     <span class="n">metric_dicts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span>
-    <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
+    <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
     <span class="n">output_stats</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">detailed_stats</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Aggregate eval metrics with optional detailed statistics.</span>
+<span class="w">    </span><span class="sd">"""Aggregate eval metrics with optional detailed statistics.</span>
 
 <span class="sd">    For MEAN metrics:</span>
 <span class="sd">      - If detailed_stats=True: output mean/max/min/std per the output_stats list.</span>
 <span class="sd">      - If detailed_stats=False: output only the mean value as ``{prefix}/{name}``.</span>
 <span class="sd">    For non-MEAN metrics: same behavior as aggregate_metrics.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">metric_dicts</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{}</span>
 
     <span class="k">if</span> <span class="n">output_stats</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">output_stats</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">,</span> <span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="s2">&quot;std&quot;</span><span class="p">]</span>
+        <span class="n">output_stats</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"mean"</span><span class="p">,</span> <span class="s2">"max"</span><span class="p">,</span> <span class="s2">"min"</span><span class="p">,</span> <span class="s2">"std"</span><span class="p">]</span>
 
     <span class="n">grouped</span> <span class="o">=</span> <span class="n">group_numeric_metrics</span><span class="p">(</span><span class="n">metric_dicts</span><span class="p">)</span>
 
     <span class="n">result</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">prefix_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">/&quot;</span> <span class="k">if</span> <span class="n">prefix</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+    <span class="n">prefix_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">/"</span> <span class="k">if</span> <span class="n">prefix</span> <span class="k">else</span> <span class="s2">""</span>
 
     <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">agg</span><span class="p">),</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">grouped</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">agg</span> <span class="o">==</span> <span class="n">AggType</span><span class="o">.</span><span class="n">MEAN</span><span class="p">:</span>
@@ -1200,14 +1202,14 @@ window.runMermaid = runMermaid;</script>
                 <span class="k">for</span> <span class="n">stat</span> <span class="ow">in</span> <span class="n">output_stats</span><span class="p">:</span>
                     <span class="n">fn</span> <span class="o">=</span> <span class="n">STAT_FNS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">stat</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                        <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix_str</span><span class="si">}{</span><span class="n">name</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">stat</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                        <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix_str</span><span class="si">}{</span><span class="n">name</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">stat</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix_str</span><span class="si">}{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix_str</span><span class="si">}{</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">arr</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
             <span class="k">continue</span>
 
         <span class="n">reducer</span> <span class="o">=</span> <span class="n">AGG_REDUCERS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">agg</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">reducer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix_str</span><span class="si">}{</span><span class="n">name</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">agg</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reducer</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+            <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix_str</span><span class="si">}{</span><span class="n">name</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">agg</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">reducer</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">result</span></div>
 
@@ -1216,7 +1218,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="aggregate_run_level_metrics">
 <a class="viewcode-back" href="../../../build_api/trinity.utils.metrics.html#trinity.utils.metrics.aggregate_run_level_metrics">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">aggregate_run_level_metrics</span><span class="p">(</span><span class="n">metric_dicts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Aggregate experience-level metrics into a single run-level metric dict.</span>
+<span class="w">    </span><span class="sd">"""Aggregate experience-level metrics into a single run-level metric dict.</span>
 
 <span class="sd">    Unlike batch-level aggregation, this preserves the original key format (with ``:agg``</span>
 <span class="sd">    suffix if present) so that downstream task/batch aggregation can still see the</span>
@@ -1228,7 +1230,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">      - MAX keys: max across experiences</span>
 <span class="sd">      - MIN keys: min across experiences</span>
 <span class="sd">      - LAST keys: last value</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">metric_dicts</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{}</span>
 
@@ -1258,7 +1260,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">n_bootstrap</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
     <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">42</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Estimate metric statistics with bootstrap resampling.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Estimate metric statistics with bootstrap resampling."""</span>
     <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
 
     <span class="n">bootstrap_metric_lists</span> <span class="o">=</span> <span class="p">[[]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">reduce_fns</span><span class="p">))]</span>
@@ -1277,7 +1279,7 @@ window.runMermaid = runMermaid;</script>
 <span class="k">def</span><span class="w"> </span><span class="nf">calculate_task_level_metrics</span><span class="p">(</span>
     <span class="n">metrics</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span> <span class="n">is_eval</span><span class="p">:</span> <span class="nb">bool</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calculate task-level metrics from multiple runs of the same task.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Calculate task-level metrics from multiple runs of the same task."""</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">metrics</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{}</span>
 
@@ -1293,16 +1295,16 @@ window.runMermaid = runMermaid;</script>
         <span class="k">if</span> <span class="n">agg</span> <span class="o">!=</span> <span class="n">AggType</span><span class="o">.</span><span class="n">MEAN</span><span class="p">:</span>
             <span class="n">reducer</span> <span class="o">=</span> <span class="n">AGG_REDUCERS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">agg</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">reducer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">agg</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">reducer</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+                <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">agg</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">reducer</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
             <span class="k">continue</span>
 
-        <span class="k">if</span> <span class="s2">&quot;time/task_execution&quot;</span> <span class="ow">in</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;time/run_execution&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">"time/task_execution"</span> <span class="ow">in</span> <span class="n">name</span> <span class="ow">or</span> <span class="s2">"time/run_execution"</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
             <span class="n">result</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
             <span class="k">continue</span>
 
         <span class="n">n_values</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
-        <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">/mean@</span><span class="si">{</span><span class="n">n_values</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">values</span><span class="p">))</span>
-        <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">/std@</span><span class="si">{</span><span class="n">n_values</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">values</span><span class="p">))</span>
+        <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">/mean@</span><span class="si">{</span><span class="n">n_values</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">values</span><span class="p">))</span>
+        <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">/std@</span><span class="si">{</span><span class="n">n_values</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">values</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="n">n_values</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">continue</span>
@@ -1321,8 +1323,8 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">reduce_fns</span><span class="o">=</span><span class="p">[</span><span class="nb">max</span><span class="p">,</span> <span class="nb">min</span><span class="p">],</span>
                 <span class="n">seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
             <span class="p">)</span>
-            <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">/best@</span><span class="si">{</span><span class="n">subset_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">best_mean</span>
-            <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">/worst@</span><span class="si">{</span><span class="n">subset_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">worst_mean</span>
+            <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">/best@</span><span class="si">{</span><span class="n">subset_size</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">best_mean</span>
+            <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">/worst@</span><span class="si">{</span><span class="n">subset_size</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">worst_mean</span>
 
     <span class="k">return</span> <span class="n">result</span></div>
 

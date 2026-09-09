@@ -46,6 +46,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1011,18 +1013,18 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>Source code for trinity.common.patch.kimi</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Monkey patching for &#39;kimi_vl&#39; models.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""Monkey patching for 'kimi_vl' models."""</span>
 
 
 <div class="viewcode-block" id="kimi_vl_monkey_patch_decorator">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.patch.kimi.html#trinity.common.patch.kimi_vl_monkey_patch_decorator">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">kimi_vl_monkey_patch_decorator</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A decorator that applies temporary monkey patches for &#39;kimi_vl&#39; models before</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    A decorator that applies temporary monkey patches for 'kimi_vl' models before</span>
 <span class="sd">    the decorated function runs, and restores the original state afterward.</span>
 
 <span class="sd">    The patch is applied only if:</span>
-<span class="sd">      - The model&#39;s config.json exists and specifies &quot;model_type&quot;: &quot;kimi_vl&quot;</span>
+<span class="sd">      - The model's config.json exists and specifies "model_type": "kimi_vl"</span>
 <span class="sd">      - The installed transformers version is &gt;= 4.51.0</span>
 
 <span class="sd">    Patches include:</span>
@@ -1030,9 +1032,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">      2. Wrapping `importlib.util.spec_from_file_location` to inject DeepseekV3 classes</span>
 
 <span class="sd">    The decorator automatically extracts `model_path` and `override_model_config`</span>
-<span class="sd">    from the function&#39;s arguments using `inspect.signature`, regardless of whether</span>
+<span class="sd">    from the function's arguments using `inspect.signature`, regardless of whether</span>
 <span class="sd">    they are passed as positional or keyword arguments.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">importlib</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
@@ -1052,12 +1054,12 @@ window.runMermaid = runMermaid;</script>
         <span class="n">bound_args</span><span class="o">.</span><span class="n">apply_defaults</span><span class="p">()</span>
 
         <span class="c1"># Extract required parameters safely by name</span>
-        <span class="k">if</span> <span class="s2">&quot;model_path&quot;</span> <span class="ow">in</span> <span class="n">bound_args</span><span class="o">.</span><span class="n">arguments</span><span class="p">:</span>  <span class="c1"># actor/ref worker</span>
-            <span class="n">model_path</span> <span class="o">=</span> <span class="n">bound_args</span><span class="o">.</span><span class="n">arguments</span><span class="p">[</span><span class="s2">&quot;model_path&quot;</span><span class="p">]</span>
-        <span class="k">elif</span> <span class="s2">&quot;model_config&quot;</span> <span class="ow">in</span> <span class="n">bound_args</span><span class="o">.</span><span class="n">arguments</span><span class="p">:</span>  <span class="c1"># verl config check</span>
-            <span class="n">model_path</span> <span class="o">=</span> <span class="n">bound_args</span><span class="o">.</span><span class="n">arguments</span><span class="p">[</span><span class="s2">&quot;model_config&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">path</span>
-        <span class="k">elif</span> <span class="s2">&quot;self&quot;</span> <span class="ow">in</span> <span class="n">bound_args</span><span class="o">.</span><span class="n">arguments</span><span class="p">:</span>  <span class="c1"># critic worker</span>
-            <span class="n">model_path</span> <span class="o">=</span> <span class="n">bound_args</span><span class="o">.</span><span class="n">arguments</span><span class="p">[</span><span class="s2">&quot;self&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">path</span>
+        <span class="k">if</span> <span class="s2">"model_path"</span> <span class="ow">in</span> <span class="n">bound_args</span><span class="o">.</span><span class="n">arguments</span><span class="p">:</span>  <span class="c1"># actor/ref worker</span>
+            <span class="n">model_path</span> <span class="o">=</span> <span class="n">bound_args</span><span class="o">.</span><span class="n">arguments</span><span class="p">[</span><span class="s2">"model_path"</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="s2">"model_config"</span> <span class="ow">in</span> <span class="n">bound_args</span><span class="o">.</span><span class="n">arguments</span><span class="p">:</span>  <span class="c1"># verl config check</span>
+            <span class="n">model_path</span> <span class="o">=</span> <span class="n">bound_args</span><span class="o">.</span><span class="n">arguments</span><span class="p">[</span><span class="s2">"model_config"</span><span class="p">]</span><span class="o">.</span><span class="n">path</span>
+        <span class="k">elif</span> <span class="s2">"self"</span> <span class="ow">in</span> <span class="n">bound_args</span><span class="o">.</span><span class="n">arguments</span><span class="p">:</span>  <span class="c1"># critic worker</span>
+            <span class="n">model_path</span> <span class="o">=</span> <span class="n">bound_args</span><span class="o">.</span><span class="n">arguments</span><span class="p">[</span><span class="s2">"self"</span><span class="p">]</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">path</span>
 
         <span class="c1"># Track patch state for cleanup</span>
         <span class="n">kimi_vl_patch_applied</span> <span class="o">=</span> <span class="kc">False</span>
@@ -1065,18 +1067,18 @@ window.runMermaid = runMermaid;</script>
         <span class="n">origin_PytorchGELUTanh</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">config_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="s2">&quot;config.json&quot;</span><span class="p">)</span>
+            <span class="n">config_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model_path</span><span class="p">,</span> <span class="s2">"config.json"</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">config_path</span><span class="p">):</span>
-                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">config_path</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
                     <span class="n">json_hf_config</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 
                 <span class="c1"># Check if model requires special patching</span>
-                <span class="k">if</span> <span class="n">json_hf_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;model_type&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;kimi_vl&quot;</span> <span class="ow">and</span> <span class="n">version</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span>
+                <span class="k">if</span> <span class="n">json_hf_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"model_type"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"kimi_vl"</span> <span class="ow">and</span> <span class="n">version</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span>
                     <span class="n">transformers_version</span>
-                <span class="p">)</span> <span class="o">&gt;=</span> <span class="n">version</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">&quot;4.51.0&quot;</span><span class="p">):</span>
+                <span class="p">)</span> <span class="o">&gt;=</span> <span class="n">version</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="s2">"4.51.0"</span><span class="p">):</span>
                     <span class="c1"># Save original values for restoration</span>
                     <span class="n">origin_PytorchGELUTanh</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span>
-                        <span class="n">transformers</span><span class="o">.</span><span class="n">activations</span><span class="p">,</span> <span class="s2">&quot;PytorchGELUTanh&quot;</span><span class="p">,</span> <span class="kc">None</span>
+                        <span class="n">transformers</span><span class="o">.</span><span class="n">activations</span><span class="p">,</span> <span class="s2">"PytorchGELUTanh"</span><span class="p">,</span> <span class="kc">None</span>
                     <span class="p">)</span>
                     <span class="n">origin_spec_from_file_location</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">spec_from_file_location</span>
 
@@ -1086,27 +1088,27 @@ window.runMermaid = runMermaid;</script>
                     <span class="c1"># Patch 2: Wrap spec_from_file_location to inject DeepseekV3 classes</span>
                     <span class="k">def</span><span class="w"> </span><span class="nf">patched_spec_from_file_location</span><span class="p">(</span><span class="o">*</span><span class="n">args_spec</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs_spec</span><span class="p">):</span>
                         <span class="n">spec</span> <span class="o">=</span> <span class="n">origin_spec_from_file_location</span><span class="p">(</span><span class="o">*</span><span class="n">args_spec</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs_spec</span><span class="p">)</span>
-                        <span class="k">if</span> <span class="n">spec</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="s2">&quot;loader&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">spec</span><span class="o">.</span><span class="n">loader</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">spec</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="s2">"loader"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">spec</span><span class="o">.</span><span class="n">loader</span><span class="p">:</span>
                             <span class="n">original_exec_module</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">exec_module</span>
 
                             <span class="k">def</span><span class="w"> </span><span class="nf">patched_exec_module</span><span class="p">(</span><span class="n">module</span><span class="p">):</span>
                                 <span class="n">original_exec_module</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
                                 <span class="c1"># Inject DeepseekV3* classes from transformers into the module</span>
                                 <span class="k">for</span> <span class="n">attr_name</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">module</span><span class="p">):</span>
-                                    <span class="k">if</span> <span class="n">attr_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;DeepseekV3&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span>
+                                    <span class="k">if</span> <span class="n">attr_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"DeepseekV3"</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span>
                                         <span class="n">transformers</span><span class="p">,</span> <span class="n">attr_name</span>
                                     <span class="p">):</span>
                                         <span class="nb">setattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">transformers</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">))</span>
                                     <span class="k">elif</span> <span class="n">attr_name</span> <span class="ow">in</span> <span class="p">{</span>
-                                        <span class="s2">&quot;KimiVLPreTrainedModel&quot;</span><span class="p">,</span>
-                                        <span class="s2">&quot;KimiVLForConditionalGeneration&quot;</span><span class="p">,</span>
+                                        <span class="s2">"KimiVLPreTrainedModel"</span><span class="p">,</span>
+                                        <span class="s2">"KimiVLForConditionalGeneration"</span><span class="p">,</span>
                                     <span class="p">}:</span>
                                         <span class="nb">setattr</span><span class="p">(</span>
                                             <span class="nb">getattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">),</span>
-                                            <span class="s2">&quot;supports_gradient_checkpointing&quot;</span><span class="p">,</span>
+                                            <span class="s2">"supports_gradient_checkpointing"</span><span class="p">,</span>
                                             <span class="kc">True</span><span class="p">,</span>
                                         <span class="p">)</span>
-                                        <span class="nb">setattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">),</span> <span class="s2">&quot;_supports_sdpa&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+                                        <span class="nb">setattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">attr_name</span><span class="p">),</span> <span class="s2">"_supports_sdpa"</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
 
                             <span class="n">spec</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">exec_module</span> <span class="o">=</span> <span class="n">patched_exec_module</span>
                         <span class="k">return</span> <span class="n">spec</span>
@@ -1125,9 +1127,9 @@ window.runMermaid = runMermaid;</script>
                 <span class="k">if</span> <span class="n">origin_PytorchGELUTanh</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">transformers</span><span class="o">.</span><span class="n">activations</span><span class="o">.</span><span class="n">PytorchGELUTanh</span> <span class="o">=</span> <span class="n">origin_PytorchGELUTanh</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="c1"># Remove attribute if it didn&#39;t exist originally</span>
-                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">transformers</span><span class="o">.</span><span class="n">activations</span><span class="p">,</span> <span class="s2">&quot;PytorchGELUTanh&quot;</span><span class="p">):</span>
-                        <span class="nb">delattr</span><span class="p">(</span><span class="n">transformers</span><span class="o">.</span><span class="n">activations</span><span class="p">,</span> <span class="s2">&quot;PytorchGELUTanh&quot;</span><span class="p">)</span>
+                    <span class="c1"># Remove attribute if it didn't exist originally</span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">transformers</span><span class="o">.</span><span class="n">activations</span><span class="p">,</span> <span class="s2">"PytorchGELUTanh"</span><span class="p">):</span>
+                        <span class="nb">delattr</span><span class="p">(</span><span class="n">transformers</span><span class="o">.</span><span class="n">activations</span><span class="p">,</span> <span class="s2">"PytorchGELUTanh"</span><span class="p">)</span>
 
                 <span class="c1"># Restore spec_from_file_location</span>
                 <span class="k">if</span> <span class="n">origin_spec_from_file_location</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>

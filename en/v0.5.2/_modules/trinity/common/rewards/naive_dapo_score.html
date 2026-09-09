@@ -46,6 +46,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -990,10 +992,10 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>Source code for trinity.common.rewards.naive_dapo_score</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""</span>
 <span class="sd">This file contains the naive dapo reward function for math tasks.</span>
 <span class="sd">Adapted from https://github.com/LLM360/Reasoning360/blob/main/verl/utils/reward_score/naive_dapo.py</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">concurrent</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
@@ -1008,88 +1010,88 @@ window.runMermaid = runMermaid;</script>
 
 <span class="c1"># Constants for normalization</span>
 <span class="n">SUBSTITUTIONS</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="p">(</span><span class="s2">&quot;an &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="s2">&quot;a &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="s2">&quot;.$&quot;</span><span class="p">,</span> <span class="s2">&quot;$&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">$&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\ &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="s2">&quot;mbox&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="s2">&quot;,</span><span class="se">\\</span><span class="s2">text</span><span class="si">{and}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;,&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">text</span><span class="si">{and}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;,&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">text</span><span class="si">{m}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">text</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"an "</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"a "</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">".$"</span><span class="p">,</span> <span class="s2">"$"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"</span><span class="se">\\</span><span class="s2">$"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
+    <span class="p">(</span><span class="sa">r</span><span class="s2">"\ "</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">" "</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"mbox"</span><span class="p">,</span> <span class="s2">"text"</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">",</span><span class="se">\\</span><span class="s2">text</span><span class="si">{and}</span><span class="s2">"</span><span class="p">,</span> <span class="s2">","</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"</span><span class="se">\\</span><span class="s2">text</span><span class="si">{and}</span><span class="s2">"</span><span class="p">,</span> <span class="s2">","</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"</span><span class="se">\\</span><span class="s2">text</span><span class="si">{m}</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"</span><span class="se">\\</span><span class="s2">text</span><span class="si">{}</span><span class="s2">"</span><span class="p">),</span>
 <span class="p">]</span>
 
 <span class="n">REMOVED_EXPRESSIONS</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="s2">&quot;square&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ways&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;integers&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;dollars&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;mph&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;inches&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;hours&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;km&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;units&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">ldots&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;sue&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;points&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;feet&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;minutes&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;digits&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;cents&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;degrees&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;cm&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;gm&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;pounds&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;meters&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;meals&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;edges&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;students&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;childrentickets&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;multiples&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">text</span><span class="si">{s}</span><span class="s2">&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">text{.}&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">text{</span><span class="se">\n</span><span class="s2">s}&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">text</span><span class="si">{}</span><span class="s2">^2&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">text</span><span class="si">{}</span><span class="s2">^3&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">text{</span><span class="se">\n</span><span class="s2">}&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">text</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
-    <span class="sa">r</span><span class="s2">&quot;\mathrm</span><span class="si">{th}</span><span class="s2">&quot;</span><span class="p">,</span>
-    <span class="sa">r</span><span class="s2">&quot;^\circ&quot;</span><span class="p">,</span>
-    <span class="sa">r</span><span class="s2">&quot;^{\circ}&quot;</span><span class="p">,</span>
-    <span class="sa">r</span><span class="s2">&quot;\;&quot;</span><span class="p">,</span>
-    <span class="sa">r</span><span class="s2">&quot;,\!&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;{,}&quot;</span><span class="p">,</span>
-    <span class="s1">&#39;&quot;&#39;</span><span class="p">,</span>
-    <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">dots&quot;</span><span class="p">,</span>
+    <span class="s2">"square"</span><span class="p">,</span>
+    <span class="s2">"ways"</span><span class="p">,</span>
+    <span class="s2">"integers"</span><span class="p">,</span>
+    <span class="s2">"dollars"</span><span class="p">,</span>
+    <span class="s2">"mph"</span><span class="p">,</span>
+    <span class="s2">"inches"</span><span class="p">,</span>
+    <span class="s2">"hours"</span><span class="p">,</span>
+    <span class="s2">"km"</span><span class="p">,</span>
+    <span class="s2">"units"</span><span class="p">,</span>
+    <span class="s2">"</span><span class="se">\\</span><span class="s2">ldots"</span><span class="p">,</span>
+    <span class="s2">"sue"</span><span class="p">,</span>
+    <span class="s2">"points"</span><span class="p">,</span>
+    <span class="s2">"feet"</span><span class="p">,</span>
+    <span class="s2">"minutes"</span><span class="p">,</span>
+    <span class="s2">"digits"</span><span class="p">,</span>
+    <span class="s2">"cents"</span><span class="p">,</span>
+    <span class="s2">"degrees"</span><span class="p">,</span>
+    <span class="s2">"cm"</span><span class="p">,</span>
+    <span class="s2">"gm"</span><span class="p">,</span>
+    <span class="s2">"pounds"</span><span class="p">,</span>
+    <span class="s2">"meters"</span><span class="p">,</span>
+    <span class="s2">"meals"</span><span class="p">,</span>
+    <span class="s2">"edges"</span><span class="p">,</span>
+    <span class="s2">"students"</span><span class="p">,</span>
+    <span class="s2">"childrentickets"</span><span class="p">,</span>
+    <span class="s2">"multiples"</span><span class="p">,</span>
+    <span class="s2">"</span><span class="se">\\</span><span class="s2">text</span><span class="si">{s}</span><span class="s2">"</span><span class="p">,</span>
+    <span class="s2">"</span><span class="se">\\</span><span class="s2">text{.}"</span><span class="p">,</span>
+    <span class="s2">"</span><span class="se">\\</span><span class="s2">text{</span><span class="se">\n</span><span class="s2">s}"</span><span class="p">,</span>
+    <span class="s2">"</span><span class="se">\\</span><span class="s2">text</span><span class="si">{}</span><span class="s2">^2"</span><span class="p">,</span>
+    <span class="s2">"</span><span class="se">\\</span><span class="s2">text</span><span class="si">{}</span><span class="s2">^3"</span><span class="p">,</span>
+    <span class="s2">"</span><span class="se">\\</span><span class="s2">text{</span><span class="se">\n</span><span class="s2">}"</span><span class="p">,</span>
+    <span class="s2">"</span><span class="se">\\</span><span class="s2">text</span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">"\mathrm</span><span class="si">{th}</span><span class="s2">"</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">"^\circ"</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">"^{\circ}"</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">"\;"</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">",\!"</span><span class="p">,</span>
+    <span class="s2">"{,}"</span><span class="p">,</span>
+    <span class="s1">'"'</span><span class="p">,</span>
+    <span class="s2">"</span><span class="se">\\</span><span class="s2">dots"</span><span class="p">,</span>
 <span class="p">]</span>
 
 
 <div class="viewcode-block" id="normalize_final_answer">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.naive_dapo_score.html#trinity.common.rewards.naive_dapo_score.normalize_final_answer">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">normalize_final_answer</span><span class="p">(</span><span class="n">final_answer</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalize a final answer to a quantitative reasoning question.</span>
+<span class="w">    </span><span class="sd">"""Normalize a final answer to a quantitative reasoning question.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        final_answer: The answer string to normalize</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Normalized answer string</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">final_answer</span> <span class="o">=</span> <span class="n">final_answer</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<span class="sd">    """</span>
+    <span class="n">final_answer</span> <span class="o">=</span> <span class="n">final_answer</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"="</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
     <span class="c1"># Apply substitutions and removals</span>
     <span class="k">for</span> <span class="n">before</span><span class="p">,</span> <span class="n">after</span> <span class="ow">in</span> <span class="n">SUBSTITUTIONS</span><span class="p">:</span>
         <span class="n">final_answer</span> <span class="o">=</span> <span class="n">final_answer</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">before</span><span class="p">,</span> <span class="n">after</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">expr</span> <span class="ow">in</span> <span class="n">REMOVED_EXPRESSIONS</span><span class="p">:</span>
-        <span class="n">final_answer</span> <span class="o">=</span> <span class="n">final_answer</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">final_answer</span> <span class="o">=</span> <span class="n">final_answer</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">expr</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
 
     <span class="c1"># Extract and normalize LaTeX math</span>
-    <span class="n">final_answer</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(.*?)(\$)(.*?)(\$)(.*)&quot;</span><span class="p">,</span> <span class="s2">&quot;$</span><span class="se">\\</span><span class="s2">3$&quot;</span><span class="p">,</span> <span class="n">final_answer</span><span class="p">)</span>
-    <span class="n">final_answer</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(</span><span class="se">\\</span><span class="s2">text\{)(.*?)(\})&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">2&quot;</span><span class="p">,</span> <span class="n">final_answer</span><span class="p">)</span>
-    <span class="n">final_answer</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(</span><span class="se">\\</span><span class="s2">textbf\{)(.*?)(\})&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">2&quot;</span><span class="p">,</span> <span class="n">final_answer</span><span class="p">)</span>
-    <span class="n">final_answer</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(</span><span class="se">\\</span><span class="s2">overline\{)(.*?)(\})&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">2&quot;</span><span class="p">,</span> <span class="n">final_answer</span><span class="p">)</span>
-    <span class="n">final_answer</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(</span><span class="se">\\</span><span class="s2">boxed\{)(.*)(\})&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">2&quot;</span><span class="p">,</span> <span class="n">final_answer</span><span class="p">)</span>
+    <span class="n">final_answer</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(.*?)(\$)(.*?)(\$)(.*)"</span><span class="p">,</span> <span class="s2">"$</span><span class="se">\\</span><span class="s2">3$"</span><span class="p">,</span> <span class="n">final_answer</span><span class="p">)</span>
+    <span class="n">final_answer</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(</span><span class="se">\\</span><span class="s2">text\{)(.*?)(\})"</span><span class="p">,</span> <span class="s2">"</span><span class="se">\\</span><span class="s2">2"</span><span class="p">,</span> <span class="n">final_answer</span><span class="p">)</span>
+    <span class="n">final_answer</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(</span><span class="se">\\</span><span class="s2">textbf\{)(.*?)(\})"</span><span class="p">,</span> <span class="s2">"</span><span class="se">\\</span><span class="s2">2"</span><span class="p">,</span> <span class="n">final_answer</span><span class="p">)</span>
+    <span class="n">final_answer</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(</span><span class="se">\\</span><span class="s2">overline\{)(.*?)(\})"</span><span class="p">,</span> <span class="s2">"</span><span class="se">\\</span><span class="s2">2"</span><span class="p">,</span> <span class="n">final_answer</span><span class="p">)</span>
+    <span class="n">final_answer</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(</span><span class="se">\\</span><span class="s2">boxed\{)(.*)(\})"</span><span class="p">,</span> <span class="s2">"</span><span class="se">\\</span><span class="s2">2"</span><span class="p">,</span> <span class="n">final_answer</span><span class="p">)</span>
 
     <span class="c1"># Normalize shorthand TeX:</span>
     <span class="c1">#  \fracab -&gt; \frac{a}{b}</span>
@@ -1097,33 +1099,33 @@ window.runMermaid = runMermaid;</script>
     <span class="c1">#  \fracabc -&gt; \frac{a}{b}c</span>
     <span class="c1">#  \sqrta -&gt; \sqrt{a}</span>
     <span class="c1">#  \sqrtab -&gt; sqrt{a}b</span>
-    <span class="n">final_answer</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(frac)([^{])(.)&quot;</span><span class="p">,</span> <span class="s2">&quot;frac{</span><span class="se">\\</span><span class="s2">2}{</span><span class="se">\\</span><span class="s2">3}&quot;</span><span class="p">,</span> <span class="n">final_answer</span><span class="p">)</span>
-    <span class="n">final_answer</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(sqrt)([^{])&quot;</span><span class="p">,</span> <span class="s2">&quot;sqrt{</span><span class="se">\\</span><span class="s2">2}&quot;</span><span class="p">,</span> <span class="n">final_answer</span><span class="p">)</span>
-    <span class="n">final_answer</span> <span class="o">=</span> <span class="n">final_answer</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;$&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">final_answer</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(frac)([^{])(.)"</span><span class="p">,</span> <span class="s2">"frac{</span><span class="se">\\</span><span class="s2">2}{</span><span class="se">\\</span><span class="s2">3}"</span><span class="p">,</span> <span class="n">final_answer</span><span class="p">)</span>
+    <span class="n">final_answer</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(sqrt)([^{])"</span><span class="p">,</span> <span class="s2">"sqrt{</span><span class="se">\\</span><span class="s2">2}"</span><span class="p">,</span> <span class="n">final_answer</span><span class="p">)</span>
+    <span class="n">final_answer</span> <span class="o">=</span> <span class="n">final_answer</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"$"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
 
     <span class="c1"># Normalize numbers</span>
-    <span class="k">if</span> <span class="n">final_answer</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
-        <span class="n">final_answer</span> <span class="o">=</span> <span class="n">final_answer</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">final_answer</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">","</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+        <span class="n">final_answer</span> <span class="o">=</span> <span class="n">final_answer</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">","</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">final_answer</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span></div>
 
 
 
-<span class="c1"># sympy might hang -- we don&#39;t care about trying to be lenient in these cases</span>
-<span class="n">BAD_SUBSTRINGS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;^{&quot;</span><span class="p">,</span> <span class="s2">&quot;^(&quot;</span><span class="p">]</span>
-<span class="n">BAD_REGEXES</span> <span class="o">=</span> <span class="p">[</span><span class="sa">r</span><span class="s2">&quot;\^[0-9]+\^&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;\^[0-9][0-9]+&quot;</span><span class="p">]</span>
-<span class="n">TUPLE_CHARS</span> <span class="o">=</span> <span class="s2">&quot;()[]&quot;</span>
+<span class="c1"># sympy might hang -- we don't care about trying to be lenient in these cases</span>
+<span class="n">BAD_SUBSTRINGS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"^{"</span><span class="p">,</span> <span class="s2">"^("</span><span class="p">]</span>
+<span class="n">BAD_REGEXES</span> <span class="o">=</span> <span class="p">[</span><span class="sa">r</span><span class="s2">"\^[0-9]+\^"</span><span class="p">,</span> <span class="sa">r</span><span class="s2">"\^[0-9][0-9]+"</span><span class="p">]</span>
+<span class="n">TUPLE_CHARS</span> <span class="o">=</span> <span class="s2">"()[]"</span>
 
 
 <div class="viewcode-block" id="timeout">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.naive_dapo_score.html#trinity.common.rewards.naive_dapo_score.timeout">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">timeout</span><span class="p">(</span><span class="n">timeout_seconds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">):</span>
-    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;posix&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">"posix"</span><span class="p">:</span>
         <span class="kn">import</span><span class="w"> </span><span class="nn">signal</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">decorator</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
             <span class="k">def</span><span class="w"> </span><span class="nf">handler</span><span class="p">(</span><span class="n">signum</span><span class="p">,</span> <span class="n">frame</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">TimeoutError</span><span class="p">(</span><span class="s2">&quot;Operation timed out!&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">TimeoutError</span><span class="p">(</span><span class="s2">"Operation timed out!"</span><span class="p">)</span>
 
             <span class="k">def</span><span class="w"> </span><span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
                 <span class="n">old_handler</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">getsignal</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGALRM</span><span class="p">)</span>
@@ -1140,13 +1142,13 @@ window.runMermaid = runMermaid;</script>
 
         <span class="k">return</span> <span class="n">decorator</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported OS: </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unsupported OS: </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
 
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_sympy_parse</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parses an expression with sympy.&quot;&quot;&quot;</span>
-    <span class="n">py_expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;^&quot;</span><span class="p">,</span> <span class="s2">&quot;**&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">"""Parses an expression with sympy."""</span>
+    <span class="n">py_expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"^"</span><span class="p">,</span> <span class="s2">"**"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">sympy_parser</span><span class="o">.</span><span class="n">parse_expr</span><span class="p">(</span>
         <span class="n">py_expr</span><span class="p">,</span>
         <span class="n">transformations</span><span class="o">=</span><span class="p">(</span>
@@ -1157,19 +1159,19 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_parse_latex</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Attempts to parse latex to an expression sympy can read.&quot;&quot;&quot;</span>
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">tfrac&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">frac&quot;</span><span class="p">)</span>
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">dfrac&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">frac&quot;</span><span class="p">)</span>
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">frac&quot;</span><span class="p">,</span> <span class="s2">&quot; </span><span class="se">\\</span><span class="s2">frac&quot;</span><span class="p">)</span>  <span class="c1"># Play nice with mixed numbers.</span>
+<span class="w">    </span><span class="sd">"""Attempts to parse latex to an expression sympy can read."""</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"</span><span class="se">\\</span><span class="s2">tfrac"</span><span class="p">,</span> <span class="s2">"</span><span class="se">\\</span><span class="s2">frac"</span><span class="p">)</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"</span><span class="se">\\</span><span class="s2">dfrac"</span><span class="p">,</span> <span class="s2">"</span><span class="se">\\</span><span class="s2">frac"</span><span class="p">)</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"</span><span class="se">\\</span><span class="s2">frac"</span><span class="p">,</span> <span class="s2">" </span><span class="se">\\</span><span class="s2">frac"</span><span class="p">)</span>  <span class="c1"># Play nice with mixed numbers.</span>
     <span class="n">expr</span> <span class="o">=</span> <span class="n">latex2text</span><span class="o">.</span><span class="n">LatexNodes2Text</span><span class="p">()</span><span class="o">.</span><span class="n">latex_to_text</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
 
     <span class="c1"># Replace the specific characters that this parser uses.</span>
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;√&quot;</span><span class="p">,</span> <span class="s2">&quot;sqrt&quot;</span><span class="p">)</span>
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;π&quot;</span><span class="p">,</span> <span class="s2">&quot;pi&quot;</span><span class="p">)</span>
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;∞&quot;</span><span class="p">,</span> <span class="s2">&quot;inf&quot;</span><span class="p">)</span>
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;∪&quot;</span><span class="p">,</span> <span class="s2">&quot;U&quot;</span><span class="p">)</span>
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;·&quot;</span><span class="p">,</span> <span class="s2">&quot;*&quot;</span><span class="p">)</span>
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;×&quot;</span><span class="p">,</span> <span class="s2">&quot;*&quot;</span><span class="p">)</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"√"</span><span class="p">,</span> <span class="s2">"sqrt"</span><span class="p">)</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"π"</span><span class="p">,</span> <span class="s2">"pi"</span><span class="p">)</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"∞"</span><span class="p">,</span> <span class="s2">"inf"</span><span class="p">)</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"∪"</span><span class="p">,</span> <span class="s2">"U"</span><span class="p">)</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"·"</span><span class="p">,</span> <span class="s2">"*"</span><span class="p">)</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"×"</span><span class="p">,</span> <span class="s2">"*"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">expr</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
 
@@ -1190,7 +1192,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_is_frac</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;^-?[0-9]+.?/0*[1-9][0-9]*.?$&quot;</span><span class="p">,</span> <span class="n">expr</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">"^-?[0-9]+.?/0*[1-9][0-9]*.?$"</span><span class="p">,</span> <span class="n">expr</span><span class="p">))</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_str_is_int</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -1203,26 +1205,26 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_str_to_int</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">","</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
     <span class="n">x</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
     <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_inject_implicit_mixed_number</span><span class="p">(</span><span class="n">step</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Automatically make a mixed number evalable</span>
 <span class="sd">    e.g. 7 3/4 =&gt; 7+3/4</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">p1</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">&quot;([0-9]) +([0-9])&quot;</span><span class="p">)</span>
-    <span class="n">step</span> <span class="o">=</span> <span class="n">p1</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">1+</span><span class="se">\\</span><span class="s2">2&quot;</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>  <span class="c1"># implicit mults</span>
+<span class="sd">    """</span>
+    <span class="n">p1</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s2">"([0-9]) +([0-9])"</span><span class="p">)</span>
+    <span class="n">step</span> <span class="o">=</span> <span class="n">p1</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">"</span><span class="se">\\</span><span class="s2">1+</span><span class="se">\\</span><span class="s2">2"</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>  <span class="c1"># implicit mults</span>
     <span class="k">return</span> <span class="n">step</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_strip_properly_formatted_commas</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-    <span class="c1"># We want to be careful because we don&#39;t want to strip tuple commas</span>
-    <span class="n">p1</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(\d)(,)(\d\d\d)($|\D)&quot;</span><span class="p">)</span>
+    <span class="c1"># We want to be careful because we don't want to strip tuple commas</span>
+    <span class="n">p1</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(\d)(,)(\d\d\d)($|\D)"</span><span class="p">)</span>
     <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
-        <span class="n">next_expr</span> <span class="o">=</span> <span class="n">p1</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">1</span><span class="se">\\</span><span class="s2">3</span><span class="se">\\</span><span class="s2">4&quot;</span><span class="p">,</span> <span class="n">expr</span><span class="p">)</span>
+        <span class="n">next_expr</span> <span class="o">=</span> <span class="n">p1</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">"</span><span class="se">\\</span><span class="s2">1</span><span class="se">\\</span><span class="s2">3</span><span class="se">\\</span><span class="s2">4"</span><span class="p">,</span> <span class="n">expr</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">next_expr</span> <span class="o">==</span> <span class="n">expr</span><span class="p">:</span>
             <span class="k">break</span>
         <span class="n">expr</span> <span class="o">=</span> <span class="n">next_expr</span>
@@ -1230,66 +1232,66 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_normalize</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalize answer expressions.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Normalize answer expressions."""</span>
     <span class="k">if</span> <span class="n">expr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
 
     <span class="c1"># Remove enclosing `\text{}`.</span>
-    <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;^</span><span class="se">\\</span><span class="s2">text\{(?P&lt;text&gt;.+?)\}$&quot;</span><span class="p">,</span> <span class="n">expr</span><span class="p">)</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s2">"^</span><span class="se">\\</span><span class="s2">text\{(?P&lt;text&gt;.+?)\}$"</span><span class="p">,</span> <span class="n">expr</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">expr</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">&quot;text&quot;</span><span class="p">)</span>
+        <span class="n">expr</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="s2">"text"</span><span class="p">)</span>
 
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">%&quot;</span><span class="p">,</span> <span class="s2">&quot;%&quot;</span><span class="p">)</span>
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">$&quot;</span><span class="p">,</span> <span class="s2">&quot;$&quot;</span><span class="p">)</span>
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;$&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;%&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; or &quot;</span><span class="p">,</span> <span class="s2">&quot; , &quot;</span><span class="p">)</span>
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot; and &quot;</span><span class="p">,</span> <span class="s2">&quot; , &quot;</span><span class="p">)</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"</span><span class="se">\\</span><span class="s2">%"</span><span class="p">,</span> <span class="s2">"%"</span><span class="p">)</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"</span><span class="se">\\</span><span class="s2">$"</span><span class="p">,</span> <span class="s2">"$"</span><span class="p">)</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"$"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"%"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">" or "</span><span class="p">,</span> <span class="s2">" , "</span><span class="p">)</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">" and "</span><span class="p">,</span> <span class="s2">" , "</span><span class="p">)</span>
 
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;million&quot;</span><span class="p">,</span> <span class="s2">&quot;*10^6&quot;</span><span class="p">)</span>
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;billion&quot;</span><span class="p">,</span> <span class="s2">&quot;*10^9&quot;</span><span class="p">)</span>
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;trillion&quot;</span><span class="p">,</span> <span class="s2">&quot;*10^12&quot;</span><span class="p">)</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"million"</span><span class="p">,</span> <span class="s2">"*10^6"</span><span class="p">)</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"billion"</span><span class="p">,</span> <span class="s2">"*10^9"</span><span class="p">)</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"trillion"</span><span class="p">,</span> <span class="s2">"*10^12"</span><span class="p">)</span>
 
     <span class="k">for</span> <span class="n">unit</span> <span class="ow">in</span> <span class="p">[</span>
-        <span class="s2">&quot;degree&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;cm&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;centimeter&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;meter&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;mile&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;second&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;minute&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;hour&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;day&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;week&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;month&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;year&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;foot&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;feet&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;inch&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;yard&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;liter&quot;</span><span class="p">,</span>
+        <span class="s2">"degree"</span><span class="p">,</span>
+        <span class="s2">"cm"</span><span class="p">,</span>
+        <span class="s2">"centimeter"</span><span class="p">,</span>
+        <span class="s2">"meter"</span><span class="p">,</span>
+        <span class="s2">"mile"</span><span class="p">,</span>
+        <span class="s2">"second"</span><span class="p">,</span>
+        <span class="s2">"minute"</span><span class="p">,</span>
+        <span class="s2">"hour"</span><span class="p">,</span>
+        <span class="s2">"day"</span><span class="p">,</span>
+        <span class="s2">"week"</span><span class="p">,</span>
+        <span class="s2">"month"</span><span class="p">,</span>
+        <span class="s2">"year"</span><span class="p">,</span>
+        <span class="s2">"foot"</span><span class="p">,</span>
+        <span class="s2">"feet"</span><span class="p">,</span>
+        <span class="s2">"inch"</span><span class="p">,</span>
+        <span class="s2">"yard"</span><span class="p">,</span>
+        <span class="s2">"liter"</span><span class="p">,</span>
     <span class="p">]:</span>
-        <span class="n">expr</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">rf</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">unit</span><span class="si">}</span><span class="s2">(es)?(s)? *(\^[0-9]+)?&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">expr</span><span class="p">)</span>
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">^ *</span><span class="se">\\\\</span><span class="s2">circ&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">expr</span><span class="p">)</span>
+        <span class="n">expr</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">rf</span><span class="s2">"</span><span class="si">{</span><span class="n">unit</span><span class="si">}</span><span class="s2">(es)?(s)? *(\^[0-9]+)?"</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="n">expr</span><span class="p">)</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">"</span><span class="se">\\</span><span class="s2">^ *</span><span class="se">\\\\</span><span class="s2">circ"</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="n">expr</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">expr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;{&quot;</span> <span class="ow">and</span> <span class="n">expr</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;}&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">expr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"{"</span> <span class="ow">and</span> <span class="n">expr</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"}"</span><span class="p">:</span>
         <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot;,</span><span class="se">\\\\</span><span class="s2">! *&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">expr</span><span class="p">)</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">",</span><span class="se">\\\\</span><span class="s2">! *"</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="n">expr</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">_is_float</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_is_int</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">expr</span><span class="p">)):</span>
         <span class="n">expr</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">expr</span><span class="p">))))</span>
-    <span class="k">if</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span> <span class="ow">in</span> <span class="n">expr</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s2">"</span><span class="se">\\</span><span class="s2">"</span> <span class="ow">in</span> <span class="n">expr</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">expr</span> <span class="o">=</span> <span class="n">_parse_latex</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
             <span class="k">pass</span>
 
     <span class="c1"># edge case with mixed numbers and negative signs</span>
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">&quot;- *&quot;</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">expr</span><span class="p">)</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">"- *"</span><span class="p">,</span> <span class="s2">"-"</span><span class="p">,</span> <span class="n">expr</span><span class="p">)</span>
 
     <span class="n">expr</span> <span class="o">=</span> <span class="n">_inject_implicit_mixed_number</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
 
-    <span class="c1"># don&#39;t be case sensitive for text answers</span>
+    <span class="c1"># don't be case sensitive for text answers</span>
     <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
 
     <span class="k">if</span> <span class="n">_str_is_int</span><span class="p">(</span><span class="n">expr</span><span class="p">):</span>
@@ -1301,8 +1303,8 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="count_unknown_letters_in_expr">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.naive_dapo_score.html#trinity.common.rewards.naive_dapo_score.count_unknown_letters_in_expr">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">count_unknown_letters_in_expr</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;sqrt&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;frac&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"sqrt"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+    <span class="n">expr</span> <span class="o">=</span> <span class="n">expr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"frac"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
     <span class="n">letters_in_expr</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">expr</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">isalpha</span><span class="p">()])</span>
     <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">letters_in_expr</span><span class="p">)</span></div>
 
@@ -1311,7 +1313,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="should_allow_eval">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.naive_dapo_score.html#trinity.common.rewards.naive_dapo_score.should_allow_eval">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">should_allow_eval</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-    <span class="c1"># we don&#39;t want to try parsing unknown text or functions of more than two variables</span>
+    <span class="c1"># we don't want to try parsing unknown text or functions of more than two variables</span>
     <span class="k">if</span> <span class="n">count_unknown_letters_in_expr</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">False</span>
 
@@ -1336,7 +1338,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">memory_size</span> <span class="o">=</span> <span class="mi">1024</span><span class="o">**</span><span class="mi">3</span>
         <span class="n">resource</span><span class="o">.</span><span class="n">setrlimit</span><span class="p">(</span><span class="n">resource</span><span class="o">.</span><span class="n">RLIMIT_AS</span><span class="p">,</span> <span class="p">(</span><span class="n">memory_size</span><span class="p">,</span> <span class="n">memory_size</span><span class="p">))</span>
 
-        <span class="n">expr</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;(</span><span class="si">{</span><span class="n">ground_truth_normalized</span><span class="si">}</span><span class="s2">)-(</span><span class="si">{</span><span class="n">given_normalized</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="n">expr</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">ground_truth_normalized</span><span class="si">}</span><span class="s2">)-(</span><span class="si">{</span><span class="n">given_normalized</span><span class="si">}</span><span class="s2">)"</span>
         <span class="k">if</span> <span class="n">should_allow_eval</span><span class="p">(</span><span class="n">expr</span><span class="p">):</span>
             <span class="n">sympy_diff</span> <span class="o">=</span> <span class="n">_sympy_parse</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
             <span class="n">simplified</span> <span class="o">=</span> <span class="n">sympy</span><span class="o">.</span><span class="n">simplify</span><span class="p">(</span><span class="n">sympy_diff</span><span class="p">)</span>
@@ -1357,9 +1359,9 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="split_tuple">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.naive_dapo_score.html#trinity.common.rewards.naive_dapo_score.split_tuple">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">split_tuple</span><span class="p">(</span><span class="n">expr</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Split the elements in a tuple/interval, while handling well-formatted commas in large numbers</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">expr</span> <span class="o">=</span> <span class="n">_strip_properly_formatted_commas</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">expr</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">[]</span>
@@ -1369,7 +1371,7 @@ window.runMermaid = runMermaid;</script>
         <span class="ow">and</span> <span class="n">expr</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="n">TUPLE_CHARS</span>
         <span class="ow">and</span> <span class="nb">all</span><span class="p">([</span><span class="n">ch</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">expr</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">TUPLE_CHARS</span><span class="p">])</span>
     <span class="p">):</span>
-        <span class="n">elems</span> <span class="o">=</span> <span class="p">[</span><span class="n">elem</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">expr</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)]</span>
+        <span class="n">elems</span> <span class="o">=</span> <span class="p">[</span><span class="n">elem</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="n">expr</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">","</span><span class="p">)]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">elems</span> <span class="o">=</span> <span class="p">[</span><span class="n">expr</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">elems</span></div>
@@ -1379,12 +1381,12 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="grade_answer">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.naive_dapo_score.html#trinity.common.rewards.naive_dapo_score.grade_answer">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">grade_answer</span><span class="p">(</span><span class="n">given_answer</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ground_truth</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    The answer will be considered correct if:</span>
 <span class="sd">    (a) it normalizes to the same string as the ground truth answer</span>
 <span class="sd">    OR</span>
 <span class="sd">    (b) sympy can simplify the difference between the expressions to 0</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">given_answer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">False</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.reward_score.prime_math</span><span class="w"> </span><span class="kn">import</span> <span class="n">math_normalize</span>
@@ -1421,8 +1423,8 @@ window.runMermaid = runMermaid;</script>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">ground_truth_elem</span><span class="p">,</span> <span class="n">given_elem</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ground_truth_elems</span><span class="p">,</span> <span class="n">given_elems</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">_is_frac</span><span class="p">(</span><span class="n">ground_truth_elem</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_is_frac</span><span class="p">(</span><span class="n">given_elem</span><span class="p">):</span>
-                <span class="c1"># if fractions aren&#39;t reduced, then shouldn&#39;t be marked as correct</span>
-                <span class="c1"># so, we don&#39;t want to allow sympy.simplify in this case</span>
+                <span class="c1"># if fractions aren't reduced, then shouldn't be marked as correct</span>
+                <span class="c1"># so, we don't want to allow sympy.simplify in this case</span>
                 <span class="n">is_correct</span> <span class="o">=</span> <span class="n">ground_truth_elem</span> <span class="o">==</span> <span class="n">given_elem</span>
             <span class="k">elif</span> <span class="n">_str_is_int</span><span class="p">(</span><span class="n">ground_truth_elem</span><span class="p">)</span> <span class="o">!=</span> <span class="n">_str_is_int</span><span class="p">(</span><span class="n">given_elem</span><span class="p">):</span>
                 <span class="c1"># if the ground truth answer is an integer, we require the given answer to be a strict match (no sympy.simplify)</span>
@@ -1437,10 +1439,10 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_last_boxed_only_string</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Strictly extract content from \boxed{}.&quot;&quot;&quot;</span>
-    <span class="n">idx</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">boxed&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">"""Strictly extract content from \boxed{}."""</span>
+    <span class="n">idx</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">"</span><span class="se">\\</span><span class="s2">boxed"</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="n">idx</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">fbox&quot;</span><span class="p">)</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">string</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">"</span><span class="se">\\</span><span class="s2">fbox"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
 
@@ -1449,11 +1451,11 @@ window.runMermaid = runMermaid;</script>
     <span class="n">right_brace_idx</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">num_left_braces_open</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">while</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">string</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;{&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">string</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"{"</span><span class="p">:</span>
             <span class="n">num_left_braces_open</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="k">if</span> <span class="n">left_brace_idx</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">left_brace_idx</span> <span class="o">=</span> <span class="n">i</span>
-        <span class="k">elif</span> <span class="n">string</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;}&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">string</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"}"</span><span class="p">:</span>
             <span class="n">num_left_braces_open</span> <span class="o">-=</span> <span class="mi">1</span>
             <span class="k">if</span> <span class="n">num_left_braces_open</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">right_brace_idx</span> <span class="o">=</span> <span class="n">i</span>
@@ -1471,7 +1473,7 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.naive_dapo_score.html#trinity.common.rewards.naive_dapo_score.match_answer">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">match_answer</span><span class="p">(</span><span class="n">response</span><span class="p">):</span>
     <span class="n">is_matched</span> <span class="o">=</span> <span class="kc">False</span>
-    <span class="n">response</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;&lt;/think&gt;&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">response</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"&lt;/think&gt;"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
     <span class="c1"># Find boxed</span>
     <span class="n">ans_boxed</span> <span class="o">=</span> <span class="n">_last_boxed_only_string</span><span class="p">(</span><span class="n">response</span><span class="p">)</span>
@@ -1486,7 +1488,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="compute_score">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.rewards.naive_dapo_score.html#trinity.common.rewards.naive_dapo_score.compute_score">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">compute_score</span><span class="p">(</span><span class="n">solution_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ground_truth</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the reward score for a solution. This draws heavily from the LLM-as-judge and PRIME reward functions</span>
+<span class="w">    </span><span class="sd">"""Compute the reward score for a solution. This draws heavily from the LLM-as-judge and PRIME reward functions</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        solution_str: The solution string</span>
@@ -1495,7 +1497,7 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        Tuple[float, str]: (reward score 1.0 or 0.0, extracted_model_output)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.utils.reward_score.prime_math.grader</span><span class="w"> </span><span class="kn">import</span> <span class="n">math_equal</span>
 
     <span class="c1"># First assert intended generation and gt type</span>
@@ -1507,7 +1509,7 @@ window.runMermaid = runMermaid;</script>
 
     <span class="c1"># If not matched, truncate the output for debugging</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">is_matched</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">extracted_model_output</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">20</span><span class="p">:</span>
-        <span class="n">extracted_model_output</span> <span class="o">=</span> <span class="n">extracted_model_output</span><span class="p">[:</span><span class="mi">20</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;(... output is truncated.)&quot;</span>
+        <span class="n">extracted_model_output</span> <span class="o">=</span> <span class="n">extracted_model_output</span><span class="p">[:</span><span class="mi">20</span><span class="p">]</span> <span class="o">+</span> <span class="s2">"(... output is truncated.)"</span>
 
     <span class="c1"># TWK NOTE: WE REMOVED THE RESPONSE TRUNCATION FROM math_dapo.compute_score</span>
 
@@ -1516,7 +1518,7 @@ window.runMermaid = runMermaid;</script>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">correct</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="k">if</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">pi&quot;</span> <span class="ow">in</span> <span class="n">extracted_model_output</span> <span class="ow">or</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">pi&quot;</span> <span class="ow">in</span> <span class="n">ground_truth</span><span class="p">:</span>
+            <span class="k">if</span> <span class="s2">"</span><span class="se">\\</span><span class="s2">pi"</span> <span class="ow">in</span> <span class="n">extracted_model_output</span> <span class="ow">or</span> <span class="s2">"</span><span class="se">\\</span><span class="s2">pi"</span> <span class="ow">in</span> <span class="n">ground_truth</span><span class="p">:</span>
                 <span class="n">equivs</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="k">for</span> <span class="n">pi</span> <span class="ow">in</span> <span class="p">[</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mf">3.14</span><span class="p">]:</span>
                     <span class="n">equivs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>

@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1021,10 +1023,10 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>trinity.algorithm.advantage_fn.rloo_advantage 源代码</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;RLOO advantage computation</span>
+<span></span><span class="sd">"""RLOO advantage computation</span>
 
 <span class="sd">Ref: https://github.com/volcengine/verl/blob/main/verl/trainer/ppo/core_algos.py</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Tuple</span>
@@ -1049,7 +1051,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">exps</span><span class="p">:</span> <span class="n">DataProto</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">DataProto</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Compute advantage for RLOO based on https://arxiv.org/abs/2402.14740</span>
 
 <span class="sd">            token_level_rewards: `(torch.Tensor)`</span>
@@ -1058,10 +1060,10 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">                shape: (bs, response_length)</span>
 <span class="sd">            scores: `(torch.Tensor)`</span>
 <span class="sd">                shape: (bs, response_length)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">token_level_rewards</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;token_level_rewards&quot;</span><span class="p">]</span>
-        <span class="n">eos_mask</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;response_mask&quot;</span><span class="p">]</span>
-        <span class="n">index</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">non_tensor_batch</span><span class="p">[</span><span class="s2">&quot;uid&quot;</span><span class="p">]</span>
+<span class="sd">        """</span>
+        <span class="n">token_level_rewards</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"token_level_rewards"</span><span class="p">]</span>
+        <span class="n">eos_mask</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"response_mask"</span><span class="p">]</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">non_tensor_batch</span><span class="p">[</span><span class="s2">"uid"</span><span class="p">]</span>
 
         <span class="n">response_length</span> <span class="o">=</span> <span class="n">token_level_rewards</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">scores</span> <span class="o">=</span> <span class="n">token_level_rewards</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
@@ -1079,7 +1081,7 @@ window.runMermaid = runMermaid;</script>
                 <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">id2score</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                     <span class="n">id2mean</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">id2score</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;no score in prompt index: </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"no score in prompt index: </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">bsz</span><span class="p">):</span>
                 <span class="n">response_num</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">id2score</span><span class="p">[</span><span class="n">index</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
                 <span class="k">if</span> <span class="n">response_num</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
@@ -1088,8 +1090,8 @@ window.runMermaid = runMermaid;</script>
                     <span class="p">]</span> <span class="o">*</span> <span class="n">response_num</span> <span class="o">/</span> <span class="p">(</span><span class="n">response_num</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
             <span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">tile</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="n">response_length</span><span class="p">])</span> <span class="o">*</span> <span class="n">eos_mask</span>
 
-        <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;advantages&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scores</span>
-        <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;returns&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scores</span>
+        <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"advantages"</span><span class="p">]</span> <span class="o">=</span> <span class="n">scores</span>
+        <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"returns"</span><span class="p">]</span> <span class="o">=</span> <span class="n">scores</span>
 
         <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span>
             <span class="c1"># TODO: add meaningful metrics</span>

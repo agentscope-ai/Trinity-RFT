@@ -46,6 +46,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1011,7 +1013,7 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>Source code for trinity.perf.resource_sampler</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Threaded resource sampler for performance tooling.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""Threaded resource sampler for performance tooling."""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -1025,7 +1027,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="ResourceSampler">
 <a class="viewcode-back" href="../../../build_api/trinity.perf.resource_sampler.html#trinity.perf.ResourceSampler">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ResourceSampler</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Periodically collect system resource samples in a background thread.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Periodically collect system resource samples in a background thread."""</span>
 
 <div class="viewcode-block" id="ResourceSampler.__init__">
 <a class="viewcode-back" href="../../../build_api/trinity.perf.resource_sampler.html#trinity.perf.ResourceSampler.__init__">[docs]</a>
@@ -1035,7 +1037,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">backend</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SystemResourceBackend</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">interval_seconds</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;interval_seconds must be greater than 0.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"interval_seconds must be greater than 0."</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">interval_seconds</span> <span class="o">=</span> <span class="n">interval_seconds</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">=</span> <span class="n">backend</span> <span class="ow">or</span> <span class="n">SystemResourceBackend</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_samples</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">ResourceSample</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -1048,20 +1050,20 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="ResourceSampler.start">
 <a class="viewcode-back" href="../../../build_api/trinity.perf.resource_sampler.html#trinity.perf.ResourceSampler.start">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">start</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Start sampling in the background.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Start sampling in the background."""</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;ResourceSampler has already been started.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"ResourceSampler has already been started."</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">open</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_started</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_stop_event</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_run</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;resource-sampler&quot;</span><span class="p">,</span> <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_run</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"resource-sampler"</span><span class="p">,</span> <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span></div>
 
 
 <div class="viewcode-block" id="ResourceSampler.stop">
 <a class="viewcode-back" href="../../../build_api/trinity.perf.resource_sampler.html#trinity.perf.ResourceSampler.stop">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ResourceSample</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Stop sampling and return the collected samples.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Stop sampling and return the collected samples."""</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_started</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">samples</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_stop_event</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
@@ -1076,7 +1078,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="ResourceSampler.samples">
 <a class="viewcode-back" href="../../../build_api/trinity.perf.resource_sampler.html#trinity.perf.ResourceSampler.samples">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">samples</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">ResourceSample</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a snapshot of all collected samples.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Return a snapshot of all collected samples."""</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_samples</span><span class="p">)</span></div>
 

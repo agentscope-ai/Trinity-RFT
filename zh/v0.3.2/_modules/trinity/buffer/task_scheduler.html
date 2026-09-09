@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -965,7 +967,7 @@ window.runMermaid = runMermaid;</script>
                   
   <h1>trinity.buffer.task_scheduler 源代码</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="sd">&quot;&quot;&quot;The taskset scheduler.&quot;&quot;&quot;</span>
+<span class="sd">"""The taskset scheduler."""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counter</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
@@ -981,8 +983,8 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="get_taskset_scheduler">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.task_scheduler.html#trinity.buffer.task_scheduler.get_taskset_scheduler">[文档]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">get_taskset_scheduler</span><span class="p">(</span><span class="n">explorer_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;TasksetSchedulerBase&quot;</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get a taskset scheduler according to the config.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_taskset_scheduler</span><span class="p">(</span><span class="n">explorer_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"TasksetSchedulerBase"</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Get a taskset scheduler according to the config.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        explorer_state (Dict): Restoration state from checkpoint (may include progress info)</span>
@@ -990,9 +992,9 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        TasksetSchedulerBase: The taskset scheduler instance</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">taskset_configs</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">explorer_input</span><span class="o">.</span><span class="n">tasksets</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">taskset_configs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">taskset_configs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data_selector</span><span class="o">.</span><span class="n">selector_type</span> <span class="o">==</span> <span class="s2">&quot;sequential&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">taskset_configs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">taskset_configs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data_selector</span><span class="o">.</span><span class="n">selector_type</span> <span class="o">==</span> <span class="s2">"sequential"</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">SimpleTasksetScheduler</span><span class="p">(</span><span class="n">explorer_state</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">TasksetScheduler</span><span class="p">(</span><span class="n">explorer_state</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span></div>
@@ -1012,25 +1014,25 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="TasksetSchedulerBase.read">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.task_scheduler.html#trinity.buffer.task_scheduler.TasksetSchedulerBase.read">[文档]</a>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a batch of tasks according to the current schedule.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Read a batch of tasks according to the current schedule."""</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
 <div class="viewcode-block" id="TasksetSchedulerBase.state_dict">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.task_scheduler.html#trinity.buffer.task_scheduler.TasksetSchedulerBase.state_dict">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;return persistent state for checkpointing.</span>
+<span class="w">        </span><span class="sd">"""return persistent state for checkpointing.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Dict]: State dicts for all selectors (one per taskset)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
 <div class="viewcode-block" id="TasksetSchedulerBase.feedback">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.task_scheduler.html#trinity.buffer.task_scheduler.TasksetSchedulerBase.feedback">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">feedback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pipeline_metrics</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update selectors using feedback from the training pipeline.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Update selectors using feedback from the training pipeline."""</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 </div>
 
@@ -1039,22 +1041,22 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="SimpleTasksetScheduler">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.task_scheduler.html#trinity.buffer.task_scheduler.SimpleTasksetScheduler">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SimpleTasksetScheduler</span><span class="p">(</span><span class="n">TasksetSchedulerBase</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    A simple taskset scheduler that only reads from one taskset without task selection strategies.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="SimpleTasksetScheduler.__init__">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.task_scheduler.html#trinity.buffer.task_scheduler.SimpleTasksetScheduler.__init__">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">explorer_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">explorer_state</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
-        <span class="k">if</span> <span class="s2">&quot;latest_task_index&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">explorer_state</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">explorer_state</span><span class="p">[</span><span class="s2">&quot;taskset_states&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="k">if</span> <span class="s2">"latest_task_index"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">explorer_state</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">explorer_state</span><span class="p">[</span><span class="s2">"taskset_states"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="p">{</span>
-                    <span class="s2">&quot;current_index&quot;</span><span class="p">:</span> <span class="n">explorer_state</span><span class="p">[</span><span class="s2">&quot;latest_task_index&quot;</span><span class="p">],</span>
+                    <span class="s2">"current_index"</span><span class="p">:</span> <span class="n">explorer_state</span><span class="p">[</span><span class="s2">"latest_task_index"</span><span class="p">],</span>
                 <span class="p">}</span>
             <span class="p">]</span>
-        <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">explorer_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;taskset_states&quot;</span><span class="p">,</span> <span class="p">[{</span><span class="s2">&quot;current_index&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-            <span class="s2">&quot;current_index&quot;</span><span class="p">,</span> <span class="mi">0</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">explorer_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"taskset_states"</span><span class="p">,</span> <span class="p">[{</span><span class="s2">"current_index"</span><span class="p">:</span> <span class="mi">0</span><span class="p">}])[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s2">"current_index"</span><span class="p">,</span> <span class="mi">0</span>
         <span class="p">)</span>
         <span class="n">taskset_config</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">explorer_input</span><span class="o">.</span><span class="n">tasksets</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="n">taskset_config</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">index</span>
@@ -1087,7 +1089,7 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.task_scheduler.html#trinity.buffer.task_scheduler.TasksetScheduler">[文档]</a>
 <span class="nd">@Experimental</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">TasksetScheduler</span><span class="p">(</span><span class="n">TasksetSchedulerBase</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Coordinates multiple datasets (tasksets) with customizable task selection strategies per taskset.</span>
 
 <span class="sd">    The scheduler:</span>
@@ -1100,26 +1102,26 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    It assumes that each call to `read()` corresponds to one training step,</span>
 <span class="sd">    and batches are built by aggregating samples from different tasksets based on</span>
 <span class="sd">    a shuffled global schedule.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="TasksetScheduler.__init__">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.task_scheduler.html#trinity.buffer.task_scheduler.TasksetScheduler.__init__">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">explorer_state</span><span class="p">:</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize the scheduler from configuration and previous state (for resume support).</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            explorer_state (Dict): Restoration state from checkpoint (may include progress info)</span>
 <span class="sd">            config (Config): Full system configuration containing buffer and taskset settings</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">explorer_state</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>
 
-        <span class="c1"># Backward compatibility: old format stored &#39;latest_task_index&#39; directly</span>
-        <span class="k">if</span> <span class="s2">&quot;latest_task_index&quot;</span> <span class="ow">in</span> <span class="n">explorer_state</span><span class="p">:</span>
+        <span class="c1"># Backward compatibility: old format stored 'latest_task_index' directly</span>
+        <span class="k">if</span> <span class="s2">"latest_task_index"</span> <span class="ow">in</span> <span class="n">explorer_state</span><span class="p">:</span>
             <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">explorer_input</span><span class="o">.</span><span class="n">tasksets</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>  <span class="c1"># old format</span>
-            <span class="n">explorer_state</span><span class="p">[</span><span class="s2">&quot;taskset_states&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">explorer_state</span><span class="p">[</span><span class="s2">"taskset_states"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
                 <span class="p">{</span>
-                    <span class="s2">&quot;current_index&quot;</span><span class="p">:</span> <span class="n">explorer_state</span><span class="p">[</span><span class="s2">&quot;latest_task_index&quot;</span><span class="p">],</span>
+                    <span class="s2">"current_index"</span><span class="p">:</span> <span class="n">explorer_state</span><span class="p">[</span><span class="s2">"latest_task_index"</span><span class="p">],</span>
                 <span class="p">}</span>
             <span class="p">]</span>
 
@@ -1129,7 +1131,7 @@ window.runMermaid = runMermaid;</script>
         <span class="kn">from</span><span class="w"> </span><span class="nn">trinity.buffer.reader.file_reader</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileReader</span>
 
         <span class="n">taskset_states</span> <span class="o">=</span> <span class="n">explorer_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-            <span class="s2">&quot;taskset_states&quot;</span><span class="p">,</span> <span class="p">[{</span><span class="s2">&quot;current_index&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">taskset_configs</span><span class="p">)</span>
+            <span class="s2">"taskset_states"</span><span class="p">,</span> <span class="p">[{</span><span class="s2">"current_index"</span><span class="p">:</span> <span class="mi">0</span><span class="p">}]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">taskset_configs</span><span class="p">)</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tasksets</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">taskset_config</span><span class="p">,</span> <span class="n">taskset_state</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">taskset_configs</span><span class="p">,</span> <span class="n">taskset_states</span><span class="p">):</span>
@@ -1137,21 +1139,21 @@ window.runMermaid = runMermaid;</script>
             <span class="n">taskset</span> <span class="o">=</span> <span class="n">get_buffer_reader</span><span class="p">(</span><span class="n">taskset_config</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">taskset</span><span class="p">,</span> <span class="n">FileReader</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Taskset &#39;</span><span class="si">{</span><span class="n">taskset_config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; has an unsupported type &#39;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">taskset</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;Currently, only &#39;FileReader&#39; is supported by TasksetScheduler.&quot;</span>
+                    <span class="sa">f</span><span class="s2">"Taskset '</span><span class="si">{</span><span class="n">taskset_config</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">' has an unsupported type '</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">taskset</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">'."</span>
+                    <span class="sa">f</span><span class="s2">"Currently, only 'FileReader' is supported by TasksetScheduler."</span>
                 <span class="p">)</span>
             <span class="n">taskset</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">taskset_state</span><span class="p">)</span>  <span class="c1"># Restore any prior state</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">tasksets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">taskset</span><span class="p">)</span>
 
         <span class="c1"># Each explorer step calls read once → track step globally</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">=</span> <span class="n">explorer_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;latest_iteration&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">=</span> <span class="n">explorer_state</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"latest_iteration"</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
         <span class="c1"># Build flat list indicating how often each taskset should appear per epoch</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">base_taskset_ids</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">taskset</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tasksets</span><span class="p">):</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">base_taskset_ids</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">taskset</span><span class="p">))</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_taskset_ids</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Empty tasksets provided!&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Empty tasksets provided!"</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">epoch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_batch_size</span> <span class="o">//</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base_taskset_ids</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">orders</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_orders</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">epoch</span><span class="p">)</span>
@@ -1167,7 +1169,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="TasksetScheduler.build_orders">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.task_scheduler.html#trinity.buffer.task_scheduler.TasksetScheduler.build_orders">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">build_orders</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epoch</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Creates a shuffled sequence of taskset IDs to control sampling priority per step.</span>
 
 <span class="sd">        At the start of each epoch, all tasksets are shuffled proportionally to their size,</span>
@@ -1178,7 +1180,7 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[int]: Sequence of taskset IDs, length = steps_per_epoch * batch_size</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">taskset_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_taskset_ids</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span>
         <span class="n">rng</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">taskset_ids</span><span class="p">)</span>
@@ -1191,12 +1193,12 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="TasksetScheduler.read">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.task_scheduler.html#trinity.buffer.task_scheduler.TasksetScheduler.read">[文档]</a>
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a batch of tasks according to the current schedule.</span>
+<span class="w">        </span><span class="sd">"""Read a batch of tasks according to the current schedule.</span>
 
 <span class="sd">        For each step:</span>
 <span class="sd">          - Checks if a new epoch has started; rebuilds order if so</span>
 <span class="sd">          - Determines which tasksets contribute to this batch</span>
-<span class="sd">          - Uses each taskset&#39;s selector to pick specific samples</span>
+<span class="sd">          - Uses each taskset's selector to pick specific samples</span>
 <span class="sd">          - Annotates each task with its source taskset_id</span>
 <span class="sd">          - Returns combined list of tasks</span>
 
@@ -1205,7 +1207,7 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Task]: A batch of tasks from potentially multiple tasksets</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_should_stop</span><span class="p">():</span>
             <span class="k">raise</span> <span class="ne">StopAsyncIteration</span>
 
@@ -1229,7 +1231,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">tasks</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">tasksets</span><span class="p">[</span><span class="n">taskset_id</span><span class="p">]</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="n">count</span><span class="p">)</span>
             <span class="c1"># Annotate each task with its origin</span>
             <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">tasks</span><span class="p">:</span>
-                <span class="n">task</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="s2">&quot;taskset_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">taskset_id</span>
+                <span class="n">task</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="s2">"taskset_id"</span><span class="p">]</span> <span class="o">=</span> <span class="n">taskset_id</span>
             <span class="n">batch</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">tasks</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">step</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -1239,26 +1241,26 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="TasksetScheduler.state_dict">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.task_scheduler.html#trinity.buffer.task_scheduler.TasksetScheduler.state_dict">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Save persistent state for checkpointing.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            List[Dict]: State dicts for all tasksets</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">taskset</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">taskset</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tasksets</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="TasksetScheduler.feedback">
 <a class="viewcode-back" href="../../../build_api/trinity.buffer.task_scheduler.html#trinity.buffer.task_scheduler.TasksetScheduler.feedback">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">feedback</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pipeline_metrics</span><span class="p">:</span> <span class="n">Dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Update selectors in tasksets using feedback from the training pipeline.</span>
 
 <span class="sd">        Expected format:</span>
 <span class="sd">            pipeline_metrics = {</span>
 <span class="sd">                SELECTOR_METRIC: {</span>
-<span class="sd">                    0: {&quot;indices&quot;: [...], &quot;values&quot;: [...]},</span>
-<span class="sd">                    1: {&quot;indices&quot;: [...], &quot;values&quot;: [...]}</span>
+<span class="sd">                    0: {"indices": [...], "values": [...]},</span>
+<span class="sd">                    1: {"indices": [...], "values": [...]}</span>
 <span class="sd">                },</span>
 <span class="sd">                ...  # other metrics</span>
 <span class="sd">            }</span>
@@ -1267,7 +1269,7 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">        Args:</span>
 <span class="sd">            pipeline_metrics (Dict): Metrics dictionary passed from explorer.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">SELECTOR_METRIC</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pipeline_metrics</span><span class="p">:</span>
             <span class="k">return</span>
         <span class="n">selector_metric</span> <span class="o">=</span> <span class="n">pipeline_metrics</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">SELECTOR_METRIC</span><span class="p">,</span> <span class="p">{})</span>

@@ -46,6 +46,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -990,13 +992,13 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>Source code for trinity.algorithm.kl_fn.kl_fn</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;KL penalty and loss.</span>
+<span></span><span class="sd">"""KL penalty and loss.</span>
 
 <span class="sd">Ref:</span>
 <span class="sd">https://github.com/volcengine/verl/blob/main/verl/trainer/ppo/core_algos.py</span>
 <span class="sd">https://github.com/volcengine/verl/blob/main/verl/trainer/ppo/ray_trainer.py</span>
 <span class="sd">https://github.com/OpenRLHF/OpenRLHF/blob/main/openrlhf/models/utils.py</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
@@ -1009,9 +1011,9 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="KLFn">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.kl_fn.kl_fn.html#trinity.algorithm.KLFn">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">KLFn</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    KL penalty and loss.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="KLFn.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.kl_fn.kl_fn.html#trinity.algorithm.KLFn.__init__">[docs]</a>
@@ -1027,13 +1029,13 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">target_kl</span> <span class="o">=</span> <span class="n">target_kl</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">horizon</span> <span class="o">=</span> <span class="n">horizon</span>
         <span class="k">if</span> <span class="n">adaptive</span> <span class="ow">and</span> <span class="p">(</span><span class="n">target_kl</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">horizon</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Target KL and horizon must be provided for adaptive KL.&quot;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Target KL and horizon must be provided for adaptive KL."</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="KLFn.update_kl_coef">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.kl_fn.kl_fn.html#trinity.algorithm.KLFn.update_kl_coef">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">update_kl_coef</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">current_kl</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update kl coefficient.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Update kl coefficient."""</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">adaptive</span><span class="p">:</span>
             <span class="n">target_kl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_kl</span>
             <span class="n">proportional_error</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">current_kl</span> <span class="o">/</span> <span class="n">target_kl</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>  <span class="c1"># type: ignore</span>
@@ -1044,33 +1046,33 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="KLFn.apply_kl_penalty_to_reward">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.kl_fn.kl_fn.html#trinity.algorithm.KLFn.apply_kl_penalty_to_reward">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">apply_kl_penalty_to_reward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">experiences</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Apply KL penalty to reward. Only support DataProto input for now.&quot;&quot;&quot;</span>
-        <span class="n">responses</span> <span class="o">=</span> <span class="n">experiences</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;responses&quot;</span><span class="p">]</span>
+<span class="w">        </span><span class="sd">"""Apply KL penalty to reward. Only support DataProto input for now."""</span>
+        <span class="n">responses</span> <span class="o">=</span> <span class="n">experiences</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"responses"</span><span class="p">]</span>
         <span class="n">response_length</span> <span class="o">=</span> <span class="n">responses</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">token_level_scores</span> <span class="o">=</span> <span class="n">experiences</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;token_level_scores&quot;</span><span class="p">]</span>
+        <span class="n">token_level_scores</span> <span class="o">=</span> <span class="n">experiences</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"token_level_scores"</span><span class="p">]</span>
         <span class="n">batch_size</span> <span class="o">=</span> <span class="n">experiences</span><span class="o">.</span><span class="n">batch</span><span class="o">.</span><span class="n">batch_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">attention_mask</span> <span class="o">=</span> <span class="n">experiences</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;attention_mask&quot;</span><span class="p">]</span>
-        <span class="n">response_mask</span> <span class="o">=</span> <span class="n">experiences</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;response_mask&quot;</span><span class="p">]</span>
+        <span class="n">attention_mask</span> <span class="o">=</span> <span class="n">experiences</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"attention_mask"</span><span class="p">]</span>
+        <span class="n">response_mask</span> <span class="o">=</span> <span class="n">experiences</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"response_mask"</span><span class="p">]</span>
         <span class="k">assert</span> <span class="n">response_mask</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">attention_mask</span><span class="p">[:,</span> <span class="o">-</span><span class="n">response_length</span><span class="p">:]</span><span class="o">.</span><span class="n">shape</span>
-        <span class="n">logprob</span> <span class="o">=</span> <span class="n">experiences</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;old_log_probs&quot;</span><span class="p">]</span>
-        <span class="n">ref_logprob</span> <span class="o">=</span> <span class="n">experiences</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;ref_log_prob&quot;</span><span class="p">]</span>
+        <span class="n">logprob</span> <span class="o">=</span> <span class="n">experiences</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"old_log_probs"</span><span class="p">]</span>
+        <span class="n">ref_logprob</span> <span class="o">=</span> <span class="n">experiences</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"ref_log_prob"</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="s2">&quot;ref_log_prob&quot;</span> <span class="ow">in</span> <span class="n">experiences</span><span class="o">.</span><span class="n">batch</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="s2">"ref_log_prob"</span> <span class="ow">in</span> <span class="n">experiences</span><span class="o">.</span><span class="n">batch</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="n">kl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_kl</span><span class="p">(</span><span class="n">logprob</span><span class="p">,</span> <span class="n">ref_logprob</span><span class="p">)</span>
             <span class="n">kl</span> <span class="o">=</span> <span class="n">kl</span> <span class="o">*</span> <span class="n">response_mask</span>
             <span class="n">kl_coef</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kl_coef</span>
-            <span class="n">experiences</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;token_level_rewards&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">token_level_scores</span> <span class="o">-</span> <span class="n">kl_coef</span> <span class="o">*</span> <span class="n">kl</span>
+            <span class="n">experiences</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"token_level_rewards"</span><span class="p">]</span> <span class="o">=</span> <span class="n">token_level_scores</span> <span class="o">-</span> <span class="n">kl_coef</span> <span class="o">*</span> <span class="n">kl</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">kl_coef</span> <span class="o">=</span> <span class="mf">0.0</span>
             <span class="n">kl</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">response_mask</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-            <span class="n">experiences</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;token_level_rewards&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">token_level_scores</span>
+            <span class="n">experiences</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"token_level_rewards"</span><span class="p">]</span> <span class="o">=</span> <span class="n">token_level_scores</span>
 
         <span class="n">current_kl</span> <span class="o">=</span> <span class="n">masked_mean</span><span class="p">(</span><span class="n">kl</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">response_mask</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">update_kl_coef</span><span class="p">(</span><span class="n">current_kl</span><span class="o">=</span><span class="n">current_kl</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
 
         <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;kl&quot;</span><span class="p">:</span> <span class="n">current_kl</span><span class="p">,</span>
-            <span class="s2">&quot;kl_coef&quot;</span><span class="p">:</span> <span class="n">kl_coef</span><span class="p">,</span>
+            <span class="s2">"kl"</span><span class="p">:</span> <span class="n">current_kl</span><span class="p">,</span>
+            <span class="s2">"kl_coef"</span><span class="p">:</span> <span class="n">kl_coef</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="k">return</span> <span class="n">experiences</span><span class="p">,</span> <span class="n">metrics</span></div>
@@ -1086,7 +1088,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">loss_agg_mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">old_logprob</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute KL loss.</span>
+<span class="w">        </span><span class="sd">"""Compute KL loss.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            logprob: Log probabilities from current policy</span>
@@ -1094,12 +1096,12 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            response_mask: Mask for valid response tokens</span>
 <span class="sd">            loss_agg_mode: Loss aggregation mode</span>
 <span class="sd">            old_logprob: Log probabilities from old policy (for importance sampling)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">kl</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_kl</span><span class="p">(</span><span class="n">logprob</span><span class="p">,</span> <span class="n">ref_logprob</span><span class="p">,</span> <span class="n">old_logprob</span><span class="p">)</span>
         <span class="n">kl_loss</span> <span class="o">=</span> <span class="n">aggregate_loss</span><span class="p">(</span><span class="n">kl</span><span class="p">,</span> <span class="n">response_mask</span><span class="p">,</span> <span class="n">loss_agg_mode</span><span class="o">=</span><span class="n">loss_agg_mode</span><span class="p">)</span>
         <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;kl_loss&quot;</span><span class="p">:</span> <span class="n">kl_loss</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
-            <span class="s2">&quot;kl_coef&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">kl_coef</span><span class="p">,</span>
+            <span class="s2">"kl_loss"</span><span class="p">:</span> <span class="n">kl_loss</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+            <span class="s2">"kl_coef"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">kl_coef</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="k">return</span> <span class="n">kl_loss</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">kl_coef</span><span class="p">,</span> <span class="n">metrics</span></div>
 
@@ -1113,21 +1115,21 @@ window.runMermaid = runMermaid;</script>
         <span class="n">ref_logprob</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
         <span class="n">old_logprob</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute KL divergence between logprob and ref_logprob.</span>
+<span class="w">        </span><span class="sd">"""Compute KL divergence between logprob and ref_logprob.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            logprob: Log probabilities from current policy</span>
 <span class="sd">            ref_logprob: Log probabilities from reference policy</span>
 <span class="sd">            old_logprob: Log probabilities from old policy (for importance sampling)</span>
-<span class="sd">        &quot;&quot;&quot;</span></div>
+<span class="sd">        """</span></div>
 
 
 <div class="viewcode-block" id="KLFn.default_args">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.kl_fn.kl_fn.html#trinity.algorithm.KLFn.default_args">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">default_args</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the default initialization arguments.&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;adaptive&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;kl_coef&quot;</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">}</span></div>
+<span class="w">        </span><span class="sd">"""Get the default initialization arguments."""</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"adaptive"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"kl_coef"</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">}</span></div>
 </div>
 
 
@@ -1135,9 +1137,9 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="DummyKLFn">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.kl_fn.kl_fn.html#trinity.algorithm.DummyKLFn">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DummyKLFn</span><span class="p">(</span><span class="n">KLFn</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Dummy KL function.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="DummyKLFn.calculate_kl">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.kl_fn.kl_fn.html#trinity.algorithm.DummyKLFn.calculate_kl">[docs]</a>
@@ -1153,7 +1155,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="DummyKLFn.apply_kl_penalty_to_reward">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.kl_fn.kl_fn.html#trinity.algorithm.DummyKLFn.apply_kl_penalty_to_reward">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">apply_kl_penalty_to_reward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">experiences</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
-        <span class="n">experiences</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;token_level_rewards&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">experiences</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;token_level_scores&quot;</span><span class="p">]</span>
+        <span class="n">experiences</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"token_level_rewards"</span><span class="p">]</span> <span class="o">=</span> <span class="n">experiences</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"token_level_scores"</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">experiences</span><span class="p">,</span> <span class="p">{}</span></div>
 
 
@@ -1176,9 +1178,9 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="K1Fn">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.kl_fn.kl_fn.html#trinity.algorithm.K1Fn">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">K1Fn</span><span class="p">(</span><span class="n">KLFn</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    KL K1 function.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="K1Fn.calculate_kl">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.kl_fn.kl_fn.html#trinity.algorithm.K1Fn.calculate_kl">[docs]</a>
@@ -1196,9 +1198,9 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="K2Fn">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.kl_fn.kl_fn.html#trinity.algorithm.K2Fn">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">K2Fn</span><span class="p">(</span><span class="n">KLFn</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    KL K2 function.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="K2Fn.calculate_kl">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.kl_fn.kl_fn.html#trinity.algorithm.K2Fn.calculate_kl">[docs]</a>
@@ -1216,9 +1218,9 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="K3Fn">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.kl_fn.kl_fn.html#trinity.algorithm.K3Fn">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">K3Fn</span><span class="p">(</span><span class="n">KLFn</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    KL K3 function.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="K3Fn.calculate_kl">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.kl_fn.kl_fn.html#trinity.algorithm.K3Fn.calculate_kl">[docs]</a>
@@ -1237,9 +1239,9 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="LowVarKLFn">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.kl_fn.kl_fn.html#trinity.algorithm.LowVarKLFn">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">LowVarKLFn</span><span class="p">(</span><span class="n">KLFn</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Low Variance KL function.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="LowVarKLFn.calculate_kl">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.kl_fn.kl_fn.html#trinity.algorithm.LowVarKLFn.calculate_kl">[docs]</a>
@@ -1261,9 +1263,9 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="AbsFn">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.kl_fn.kl_fn.html#trinity.algorithm.AbsFn">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">AbsFn</span><span class="p">(</span><span class="n">KLFn</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    KL Abs function.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="AbsFn.calculate_kl">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.kl_fn.kl_fn.html#trinity.algorithm.AbsFn.calculate_kl">[docs]</a>
@@ -1281,7 +1283,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="CorrectedK3Fn">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.kl_fn.kl_fn.html#trinity.algorithm.CorrectedK3Fn">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CorrectedK3Fn</span><span class="p">(</span><span class="n">KLFn</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Corrected K3 function with importance sampling.</span>
 
 <span class="sd">    This method applies importance sampling correction to the standard K3 KL divergence.</span>
@@ -1296,7 +1298,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        - KL_standard: exp(log(π_ref/π_θ)) - log(π_ref/π_θ) - 1</span>
 
 <span class="sd">    If old_logprob is not provided, it falls back to standard K3.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="CorrectedK3Fn.calculate_kl">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.kl_fn.kl_fn.html#trinity.algorithm.CorrectedK3Fn.calculate_kl">[docs]</a>
@@ -1306,7 +1308,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">ref_logprob</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
         <span class="n">old_logprob</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute corrected K3 KL divergence with importance sampling.</span>
+<span class="w">        </span><span class="sd">"""Compute corrected K3 KL divergence with importance sampling.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            logprob: Log probabilities from current policy (log π_θ)</span>
@@ -1315,7 +1317,7 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            KL divergence tensor with same shape as input</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Standard K3 KL term: exp(log_ratio) - log_ratio - 1</span>
         <span class="c1"># where log_ratio = log(π_ref / π_θ) = ref_logprob - logprob</span>
         <span class="n">logr</span> <span class="o">=</span> <span class="n">ref_logprob</span> <span class="o">-</span> <span class="n">logprob</span>

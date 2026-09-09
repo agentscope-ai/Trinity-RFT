@@ -46,6 +46,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1015,11 +1017,11 @@ window.runMermaid = runMermaid;</script>
                   
   <h1>Source code for trinity.trainer.verl.config</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="sd">&quot;&quot;&quot;veRL 0.8 configuration builder for Trinity-RFT.</span>
+<span class="sd">"""veRL 0.8 configuration builder for Trinity-RFT.</span>
 
 <span class="sd">This module provides `build_verl_config()`, the single entry point that</span>
-<span class="sd">converts Trinity&#39;s `Config` (global_config) into the `DictConfig` required</span>
-<span class="sd">by veRL 0.8&#39;s `ActorRolloutRefWorker` and `TrainingWorker`.</span>
+<span class="sd">converts Trinity's `Config` (global_config) into the `DictConfig` required</span>
+<span class="sd">by veRL 0.8's `ActorRolloutRefWorker` and `TrainingWorker`.</span>
 
 <span class="sd">Design principle (P1):</span>
 <span class="sd">  - VERLTrainer uses `global_config` for all Trinity-level logic.</span>
@@ -1042,7 +1044,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">  config.rollout      → RolloutConfig</span>
 <span class="sd">  config.critic       → FSDPCriticConfig | McoreCriticConfig</span>
 <span class="sd">  config.global_profiler → dict (plain dict, not a dataclass)</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
@@ -1065,11 +1067,11 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_dc_type</span><span class="p">(</span><span class="n">type_hint</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Resolve the concrete BaseConfig dataclass type from a field annotation.</span>
+<span class="w">    </span><span class="sd">"""Resolve the concrete BaseConfig dataclass type from a field annotation.</span>
 
 <span class="sd">    Handles plain types, Optional[T], and Union[T, None].</span>
 <span class="sd">    Returns None if the type is not a BaseConfig subclass.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.base_config</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseConfig</span>
 
     <span class="c1"># Direct dataclass type</span>
@@ -1093,25 +1095,25 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_inject_targets</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">dataclass_type</span><span class="p">,</span> <span class="n">type_overrides</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">skip_fields</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Recursively inject `_target_` into a config dict based on the dataclass type hierarchy.</span>
+<span class="w">    </span><span class="sd">"""Recursively inject `_target_` into a config dict based on the dataclass type hierarchy.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        config: The config dict to inject _target_ into.</span>
 <span class="sd">        dataclass_type: The verl dataclass type that this config corresponds to.</span>
 <span class="sd">        type_overrides: Dict mapping field name → concrete dataclass type, for fields</span>
-<span class="sd">            where the annotation type doesn&#39;t match the desired concrete type</span>
+<span class="sd">            where the annotation type doesn't match the desired concrete type</span>
 <span class="sd">            (e.g., ActorConfig.optim: OptimizerConfig → FSDPOptimizerConfig).</span>
 <span class="sd">        skip_fields: Set of field names to skip (no _target_ injection).</span>
-<span class="sd">            Used for fields like CriticConfig.model_config where we don&#39;t want</span>
+<span class="sd">            Used for fields like CriticConfig.model_config where we don't want</span>
 <span class="sd">            Hydra to recursively instantiate the nested config.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">type_overrides</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">type_overrides</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">if</span> <span class="n">skip_fields</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">skip_fields</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
 
     <span class="c1"># Set _target_ at this level</span>
-    <span class="n">config</span><span class="p">[</span><span class="s2">&quot;_target_&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">dataclass_type</span><span class="o">.</span><span class="vm">__module__</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">dataclass_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">config</span><span class="p">[</span><span class="s2">"_target_"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">dataclass_type</span><span class="o">.</span><span class="vm">__module__</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">dataclass_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span>
 
     <span class="c1"># Walk all fields of the dataclass (including inherited fields)</span>
     <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">dataclass_type</span><span class="o">.</span><span class="n">__dataclass_fields__</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
@@ -1142,7 +1144,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="build_verl_config">
 <a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.config.html#trinity.trainer.verl.config.build_verl_config">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">build_verl_config</span><span class="p">(</span><span class="n">global_config</span><span class="p">:</span> <span class="n">Config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DictConfig</span><span class="p">:</span>  <span class="c1"># noqa: C901</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build the veRL 0.8 DictConfig from Trinity&#39;s global Config.</span>
+<span class="w">    </span><span class="sd">"""Build the veRL 0.8 DictConfig from Trinity's global Config.</span>
 
 <span class="sd">    This produces the *minimal* DictConfig that ActorRolloutRefWorker and</span>
 <span class="sd">    TrainingWorker need.  All Trinity-level logic (algorithm, advantage,</span>
@@ -1155,9 +1157,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">      - rollout:     RolloutConfig fields</span>
 <span class="sd">      - critic:      CriticConfig fields (for VERLTrainer._init_workers)</span>
 <span class="sd">      - global_profiler: plain dict</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">cfg</span> <span class="o">=</span> <span class="n">global_config</span>
-    <span class="n">strategy</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">trainer_strategy</span>  <span class="c1"># &quot;fsdp&quot;, &quot;fsdp2&quot;, or &quot;megatron&quot;</span>
+    <span class="n">strategy</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">trainer_strategy</span>  <span class="c1"># "fsdp", "fsdp2", or "megatron"</span>
 
     <span class="n">total_training_steps</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">total_steps</span> <span class="ow">or</span> <span class="n">sys</span><span class="o">.</span><span class="n">maxsize</span>
     <span class="n">algorithm</span> <span class="o">=</span> <span class="n">ALGORITHM_TYPE</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">algorithm_type</span><span class="p">)</span>
@@ -1192,27 +1194,27 @@ window.runMermaid = runMermaid;</script>
     <span class="c1"># 6. Global profiler</span>
     <span class="c1"># ====================================================================</span>
     <span class="n">global_profiler</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;tool&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;enable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;all_ranks&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;ranks&quot;</span><span class="p">:</span> <span class="p">[],</span>
-        <span class="s2">&quot;save_path&quot;</span><span class="p">:</span> <span class="s2">&quot;outputs/profile&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;tool_config&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;global_tool_config&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;steps&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;profile_continuous_steps&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"tool"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"enable"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"all_ranks"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"ranks"</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">"save_path"</span><span class="p">:</span> <span class="s2">"outputs/profile"</span><span class="p">,</span>
+        <span class="s2">"tool_config"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"global_tool_config"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"steps"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"profile_continuous_steps"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="c1"># ====================================================================</span>
     <span class="c1"># 7. Assemble the DictConfig</span>
     <span class="c1"># ====================================================================</span>
     <span class="n">verl_dict</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">model</span><span class="p">,</span>
-        <span class="s2">&quot;actor&quot;</span><span class="p">:</span> <span class="n">actor</span><span class="p">,</span>
-        <span class="s2">&quot;ref&quot;</span><span class="p">:</span> <span class="n">ref</span><span class="p">,</span>
-        <span class="s2">&quot;rollout&quot;</span><span class="p">:</span> <span class="n">rollout</span><span class="p">,</span>
-        <span class="s2">&quot;critic&quot;</span><span class="p">:</span> <span class="n">critic</span><span class="p">,</span>
-        <span class="s2">&quot;global_profiler&quot;</span><span class="p">:</span> <span class="n">global_profiler</span><span class="p">,</span>
+        <span class="s2">"model"</span><span class="p">:</span> <span class="n">model</span><span class="p">,</span>
+        <span class="s2">"actor"</span><span class="p">:</span> <span class="n">actor</span><span class="p">,</span>
+        <span class="s2">"ref"</span><span class="p">:</span> <span class="n">ref</span><span class="p">,</span>
+        <span class="s2">"rollout"</span><span class="p">:</span> <span class="n">rollout</span><span class="p">,</span>
+        <span class="s2">"critic"</span><span class="p">:</span> <span class="n">critic</span><span class="p">,</span>
+        <span class="s2">"global_profiler"</span><span class="p">:</span> <span class="n">global_profiler</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="c1"># Merge user overrides from trainer_config (if any)</span>
@@ -1221,7 +1223,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">_strip_incompatible_engine_keys</span><span class="p">(</span><span class="n">user_overrides</span><span class="p">,</span> <span class="n">strategy</span><span class="p">)</span>
         <span class="n">_deep_merge</span><span class="p">(</span><span class="n">verl_dict</span><span class="p">,</span> <span class="n">user_overrides</span><span class="p">,</span> <span class="n">FROZEN_KEYS</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">OmegaConf</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">verl_dict</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;allow_objects&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span></div>
+    <span class="k">return</span> <span class="n">OmegaConf</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="n">verl_dict</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="p">{</span><span class="s2">"allow_objects"</span><span class="p">:</span> <span class="kc">True</span><span class="p">})</span></div>
 
 
 
@@ -1231,177 +1233,177 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_build_model_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">:</span> <span class="n">Config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build HFModelConfig-compatible dict with `_target_`.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Build HFModelConfig-compatible dict with `_target_`."""</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.workers.config.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">HFModelConfig</span>
 
     <span class="n">model</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;path&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">model_path</span><span class="p">,</span>
-        <span class="s2">&quot;use_shm&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;trust_remote_code&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">trust_remote_code</span><span class="p">,</span>
+        <span class="s2">"path"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">model_path</span><span class="p">,</span>
+        <span class="s2">"use_shm"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"trust_remote_code"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">trust_remote_code</span><span class="p">,</span>
         <span class="c1"># LoRA fields</span>
-        <span class="s2">&quot;lora_rank&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-        <span class="s2">&quot;lora_alpha&quot;</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
-        <span class="s2">&quot;target_modules&quot;</span><span class="p">:</span> <span class="s2">&quot;all-linear&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;exclude_modules&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;lora_adapter_path&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"lora_rank"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">"lora_alpha"</span><span class="p">:</span> <span class="mi">16</span><span class="p">,</span>
+        <span class="s2">"target_modules"</span><span class="p">:</span> <span class="s2">"all-linear"</span><span class="p">,</span>
+        <span class="s2">"exclude_modules"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"lora_adapter_path"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
         <span class="c1"># Other HFModelConfig fields</span>
-        <span class="s2">&quot;enable_gradient_checkpointing&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">&quot;use_remove_padding&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">use_remove_padding</span><span class="p">,</span>
-        <span class="s2">&quot;use_fused_kernels&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;fused_kernel_options&quot;</span><span class="p">:</span> <span class="p">{},</span>
-        <span class="s2">&quot;custom_chat_template&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">custom_chat_template</span><span class="p">,</span>
-        <span class="s2">&quot;enable_activation_offload&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;external_lib&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;override_config&quot;</span><span class="p">:</span> <span class="p">{},</span>
-        <span class="s2">&quot;mtp&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;enable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+        <span class="s2">"enable_gradient_checkpointing"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"use_remove_padding"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">use_remove_padding</span><span class="p">,</span>
+        <span class="s2">"use_fused_kernels"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"fused_kernel_options"</span><span class="p">:</span> <span class="p">{},</span>
+        <span class="s2">"custom_chat_template"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">custom_chat_template</span><span class="p">,</span>
+        <span class="s2">"enable_activation_offload"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"external_lib"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"override_config"</span><span class="p">:</span> <span class="p">{},</span>
+        <span class="s2">"mtp"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"enable"</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
     <span class="p">}</span>
 
     <span class="c1"># Apply LoRA config if present</span>
     <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">lora_configs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">lora_config</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">lora_configs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">model</span><span class="p">[</span><span class="s2">&quot;lora_rank&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lora_config</span><span class="o">.</span><span class="n">lora_rank</span>
-        <span class="n">model</span><span class="p">[</span><span class="s2">&quot;lora_alpha&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lora_config</span><span class="o">.</span><span class="n">lora_alpha</span>
-        <span class="n">model</span><span class="p">[</span><span class="s2">&quot;target_modules&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lora_config</span><span class="o">.</span><span class="n">target_modules</span>
-        <span class="n">model</span><span class="p">[</span><span class="s2">&quot;exclude_modules&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lora_config</span><span class="o">.</span><span class="n">exclude_modules</span>
+        <span class="n">model</span><span class="p">[</span><span class="s2">"lora_rank"</span><span class="p">]</span> <span class="o">=</span> <span class="n">lora_config</span><span class="o">.</span><span class="n">lora_rank</span>
+        <span class="n">model</span><span class="p">[</span><span class="s2">"lora_alpha"</span><span class="p">]</span> <span class="o">=</span> <span class="n">lora_config</span><span class="o">.</span><span class="n">lora_alpha</span>
+        <span class="n">model</span><span class="p">[</span><span class="s2">"target_modules"</span><span class="p">]</span> <span class="o">=</span> <span class="n">lora_config</span><span class="o">.</span><span class="n">target_modules</span>
+        <span class="n">model</span><span class="p">[</span><span class="s2">"exclude_modules"</span><span class="p">]</span> <span class="o">=</span> <span class="n">lora_config</span><span class="o">.</span><span class="n">exclude_modules</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">lora_config</span><span class="o">.</span><span class="n">is_dummy</span><span class="p">:</span>
-            <span class="n">model</span><span class="p">[</span><span class="s2">&quot;lora_adapter_path&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lora_config</span><span class="o">.</span><span class="n">path</span>
+            <span class="n">model</span><span class="p">[</span><span class="s2">"lora_adapter_path"</span><span class="p">]</span> <span class="o">=</span> <span class="n">lora_config</span><span class="o">.</span><span class="n">path</span>
 
     <span class="c1"># Rope config — only scalar overrides go through override_config.</span>
-    <span class="c1"># rope_scaling (a nested dict) is NOT supported by veRL&#39;s update_model_config</span>
-    <span class="c1"># and is not needed for training (the model&#39;s config.json is authoritative).</span>
+    <span class="c1"># rope_scaling (a nested dict) is NOT supported by veRL's update_model_config</span>
+    <span class="c1"># and is not needed for training (the model's config.json is authoritative).</span>
     <span class="c1"># It is primarily relevant for the Explorer/vLLM inference side.</span>
     <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">rope_theta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">model</span><span class="p">[</span><span class="s2">&quot;override_config&quot;</span><span class="p">][</span><span class="s2">&quot;rope_theta&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">rope_theta</span>  <span class="c1"># type: ignore</span>
+        <span class="n">model</span><span class="p">[</span><span class="s2">"override_config"</span><span class="p">][</span><span class="s2">"rope_theta"</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">rope_theta</span>  <span class="c1"># type: ignore</span>
 
     <span class="n">_inject_targets</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">HFModelConfig</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">model</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_build_actor_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">:</span> <span class="n">Config</span><span class="p">,</span> <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">total_training_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build ActorConfig-compatible dict with `_target_`.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Build ActorConfig-compatible dict with `_target_`."""</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.workers.config.actor</span><span class="w"> </span><span class="kn">import</span> <span class="n">FSDPActorConfig</span><span class="p">,</span> <span class="n">McoreActorConfig</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.workers.config.engine</span><span class="w"> </span><span class="kn">import</span> <span class="n">FSDPEngineConfig</span><span class="p">,</span> <span class="n">McoreEngineConfig</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.workers.config.optimizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">FSDPOptimizerConfig</span><span class="p">,</span> <span class="n">McoreOptimizerConfig</span>
 
-    <span class="n">is_fsdp</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;fsdp&quot;</span><span class="p">)</span>
-    <span class="n">is_megatron</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;megatron&quot;</span><span class="p">)</span>
+    <span class="n">is_fsdp</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"fsdp"</span><span class="p">)</span>
+    <span class="n">is_megatron</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"megatron"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">is_fsdp</span><span class="p">:</span>
         <span class="n">dc_type</span> <span class="o">=</span> <span class="n">FSDPActorConfig</span>
         <span class="n">type_overrides</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;optim&quot;</span><span class="p">:</span> <span class="n">FSDPOptimizerConfig</span><span class="p">,</span>
-            <span class="s2">&quot;engine&quot;</span><span class="p">:</span> <span class="n">FSDPEngineConfig</span><span class="p">,</span>
+            <span class="s2">"optim"</span><span class="p">:</span> <span class="n">FSDPOptimizerConfig</span><span class="p">,</span>
+            <span class="s2">"engine"</span><span class="p">:</span> <span class="n">FSDPEngineConfig</span><span class="p">,</span>
         <span class="p">}</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">dc_type</span> <span class="o">=</span> <span class="n">McoreActorConfig</span>
         <span class="n">type_overrides</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;optim&quot;</span><span class="p">:</span> <span class="n">McoreOptimizerConfig</span><span class="p">,</span>
-            <span class="s2">&quot;engine&quot;</span><span class="p">:</span> <span class="n">McoreEngineConfig</span><span class="p">,</span>
+            <span class="s2">"optim"</span><span class="p">:</span> <span class="n">McoreOptimizerConfig</span><span class="p">,</span>
+            <span class="s2">"engine"</span><span class="p">:</span> <span class="n">McoreEngineConfig</span><span class="p">,</span>
         <span class="p">}</span>
 
     <span class="n">actor</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;strategy&quot;</span><span class="p">:</span> <span class="n">strategy</span><span class="p">,</span>
-        <span class="s2">&quot;ppo_mini_batch_size&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">train_batch_size</span><span class="p">,</span>
-        <span class="s2">&quot;ppo_micro_batch_size_per_gpu&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;ppo_micro_batch_size&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;use_dynamic_bsz&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">use_dynamic_bsz</span><span class="p">,</span>
-        <span class="s2">&quot;ppo_max_token_len_per_gpu&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">max_token_len_per_gpu</span><span class="p">,</span>
-        <span class="s2">&quot;ppo_infer_max_token_len_per_gpu&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">max_token_len_per_gpu</span><span class="p">,</span>
-        <span class="s2">&quot;clip_ratio&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
-        <span class="s2">&quot;clip_ratio_low&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
-        <span class="s2">&quot;clip_ratio_high&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
-        <span class="s2">&quot;entropy_coeff&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-        <span class="s2">&quot;use_kl_loss&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">kl_loss_fn</span> <span class="o">!=</span> <span class="s2">&quot;none&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;kl_loss_coef&quot;</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">,</span>
-        <span class="s2">&quot;kl_loss_type&quot;</span><span class="p">:</span> <span class="s2">&quot;low_var_kl&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;ppo_epochs&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-        <span class="s2">&quot;shuffle&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;data_loader_seed&quot;</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span>
-        <span class="s2">&quot;loss_agg_mode&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">loss_agg_mode</span> <span class="ow">or</span> <span class="s2">&quot;token-mean&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;loss_scale_factor&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;use_prefix_grouper&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;use_torch_compile&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">&quot;freeze_vision_tower&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;use_fused_kernels&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;rollout_n&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">repeat_times</span><span class="p">,</span>
-        <span class="s2">&quot;policy_loss&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;loss_mode&quot;</span><span class="p">:</span> <span class="s2">&quot;vanilla&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;rollout_correction&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">rollout_correction</span> <span class="ow">or</span> <span class="p">{</span><span class="s2">&quot;bypass_mode&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+        <span class="s2">"strategy"</span><span class="p">:</span> <span class="n">strategy</span><span class="p">,</span>
+        <span class="s2">"ppo_mini_batch_size"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">train_batch_size</span><span class="p">,</span>
+        <span class="s2">"ppo_micro_batch_size_per_gpu"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"ppo_micro_batch_size"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"use_dynamic_bsz"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">use_dynamic_bsz</span><span class="p">,</span>
+        <span class="s2">"ppo_max_token_len_per_gpu"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">max_token_len_per_gpu</span><span class="p">,</span>
+        <span class="s2">"ppo_infer_max_token_len_per_gpu"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">max_token_len_per_gpu</span><span class="p">,</span>
+        <span class="s2">"clip_ratio"</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+        <span class="s2">"clip_ratio_low"</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+        <span class="s2">"clip_ratio_high"</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+        <span class="s2">"entropy_coeff"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="s2">"use_kl_loss"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">kl_loss_fn</span> <span class="o">!=</span> <span class="s2">"none"</span><span class="p">,</span>
+        <span class="s2">"kl_loss_coef"</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">,</span>
+        <span class="s2">"kl_loss_type"</span><span class="p">:</span> <span class="s2">"low_var_kl"</span><span class="p">,</span>
+        <span class="s2">"ppo_epochs"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">"shuffle"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"data_loader_seed"</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span>
+        <span class="s2">"loss_agg_mode"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">loss_agg_mode</span> <span class="ow">or</span> <span class="s2">"token-mean"</span><span class="p">,</span>
+        <span class="s2">"loss_scale_factor"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"use_prefix_grouper"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"use_torch_compile"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"freeze_vision_tower"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"use_fused_kernels"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"rollout_n"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">repeat_times</span><span class="p">,</span>
+        <span class="s2">"policy_loss"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">"loss_mode"</span><span class="p">:</span> <span class="s2">"vanilla"</span><span class="p">,</span>
+            <span class="s2">"rollout_correction"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">rollout_correction</span> <span class="ow">or</span> <span class="p">{</span><span class="s2">"bypass_mode"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
         <span class="p">},</span>
-        <span class="s2">&quot;router_replay&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;R3&quot;</span> <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">enable_router_replay</span> <span class="k">else</span> <span class="s2">&quot;disabled&quot;</span><span class="p">},</span>
-        <span class="s2">&quot;profiler&quot;</span><span class="p">:</span> <span class="n">_build_profiler_config</span><span class="p">(),</span>
-        <span class="s2">&quot;checkpoint&quot;</span><span class="p">:</span> <span class="n">_build_checkpoint_config</span><span class="p">(),</span>
-        <span class="s2">&quot;optim&quot;</span><span class="p">:</span> <span class="n">_build_optimizer_config</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">strategy</span><span class="p">,</span> <span class="n">total_training_steps</span><span class="p">),</span>
+        <span class="s2">"router_replay"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"mode"</span><span class="p">:</span> <span class="s2">"R3"</span> <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">enable_router_replay</span> <span class="k">else</span> <span class="s2">"disabled"</span><span class="p">},</span>
+        <span class="s2">"profiler"</span><span class="p">:</span> <span class="n">_build_profiler_config</span><span class="p">(),</span>
+        <span class="s2">"checkpoint"</span><span class="p">:</span> <span class="n">_build_checkpoint_config</span><span class="p">(),</span>
+        <span class="s2">"optim"</span><span class="p">:</span> <span class="n">_build_optimizer_config</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">strategy</span><span class="p">,</span> <span class="n">total_training_steps</span><span class="p">),</span>
     <span class="p">}</span>
 
     <span class="c1"># Strategy-specific fields</span>
-    <span class="n">router_replay_mode</span> <span class="o">=</span> <span class="s2">&quot;R3&quot;</span> <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">enable_router_replay</span> <span class="k">else</span> <span class="s2">&quot;disabled&quot;</span>
+    <span class="n">router_replay_mode</span> <span class="o">=</span> <span class="s2">"R3"</span> <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">enable_router_replay</span> <span class="k">else</span> <span class="s2">"disabled"</span>
     <span class="k">if</span> <span class="n">is_fsdp</span><span class="p">:</span>
-        <span class="n">actor</span><span class="p">[</span><span class="s2">&quot;grad_clip&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">grad_clip</span>
-        <span class="n">actor</span><span class="p">[</span><span class="s2">&quot;ulysses_sequence_parallel_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">ulysses_sequence_parallel_size</span>
-        <span class="n">actor</span><span class="p">[</span><span class="s2">&quot;entropy_from_logits_with_chunking&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">actor</span><span class="p">[</span><span class="s2">&quot;entropy_checkpointing&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">actor</span><span class="p">[</span><span class="s2">&quot;fsdp_config&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_build_fsdp_engine_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">strategy</span><span class="p">,</span> <span class="n">router_replay_mode</span><span class="p">)</span>
-        <span class="n">actor</span><span class="p">[</span><span class="s2">&quot;use_remove_padding&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">use_remove_padding</span>
-        <span class="n">actor</span><span class="p">[</span><span class="s2">&quot;use_rollout_log_probs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">actor</span><span class="p">[</span><span class="s2">&quot;calculate_sum_pi_squared&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">actor</span><span class="p">[</span><span class="s2">"grad_clip"</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">grad_clip</span>
+        <span class="n">actor</span><span class="p">[</span><span class="s2">"ulysses_sequence_parallel_size"</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">ulysses_sequence_parallel_size</span>
+        <span class="n">actor</span><span class="p">[</span><span class="s2">"entropy_from_logits_with_chunking"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">actor</span><span class="p">[</span><span class="s2">"entropy_checkpointing"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">actor</span><span class="p">[</span><span class="s2">"fsdp_config"</span><span class="p">]</span> <span class="o">=</span> <span class="n">_build_fsdp_engine_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">strategy</span><span class="p">,</span> <span class="n">router_replay_mode</span><span class="p">)</span>
+        <span class="n">actor</span><span class="p">[</span><span class="s2">"use_remove_padding"</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">use_remove_padding</span>
+        <span class="n">actor</span><span class="p">[</span><span class="s2">"use_rollout_log_probs"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">actor</span><span class="p">[</span><span class="s2">"calculate_sum_pi_squared"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="k">elif</span> <span class="n">is_megatron</span><span class="p">:</span>
-        <span class="n">actor</span><span class="p">[</span><span class="s2">&quot;megatron&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_build_mcore_engine_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">router_replay_mode</span><span class="p">)</span>
-        <span class="n">actor</span><span class="p">[</span><span class="s2">&quot;load_weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="n">actor</span><span class="p">[</span><span class="s2">&quot;use_rollout_log_probs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">actor</span><span class="p">[</span><span class="s2">"megatron"</span><span class="p">]</span> <span class="o">=</span> <span class="n">_build_mcore_engine_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">router_replay_mode</span><span class="p">)</span>
+        <span class="n">actor</span><span class="p">[</span><span class="s2">"load_weight"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">actor</span><span class="p">[</span><span class="s2">"use_rollout_log_probs"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="n">_inject_targets</span><span class="p">(</span><span class="n">actor</span><span class="p">,</span> <span class="n">dc_type</span><span class="p">,</span> <span class="n">type_overrides</span><span class="o">=</span><span class="n">type_overrides</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">actor</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_build_ref_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">:</span> <span class="n">Config</span><span class="p">,</span> <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build ref-config dict with `_target_` (subset of actor config).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Build ref-config dict with `_target_` (subset of actor config)."""</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.workers.config.actor</span><span class="w"> </span><span class="kn">import</span> <span class="n">FSDPActorConfig</span><span class="p">,</span> <span class="n">McoreActorConfig</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.workers.config.engine</span><span class="w"> </span><span class="kn">import</span> <span class="n">FSDPEngineConfig</span><span class="p">,</span> <span class="n">McoreEngineConfig</span>
 
-    <span class="n">is_fsdp</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;fsdp&quot;</span><span class="p">)</span>
-    <span class="n">is_megatron</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;megatron&quot;</span><span class="p">)</span>
+    <span class="n">is_fsdp</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"fsdp"</span><span class="p">)</span>
+    <span class="n">is_megatron</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"megatron"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">is_fsdp</span><span class="p">:</span>
         <span class="n">dc_type</span> <span class="o">=</span> <span class="n">FSDPActorConfig</span>
-        <span class="n">type_overrides</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;engine&quot;</span><span class="p">:</span> <span class="n">FSDPEngineConfig</span><span class="p">}</span>
+        <span class="n">type_overrides</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"engine"</span><span class="p">:</span> <span class="n">FSDPEngineConfig</span><span class="p">}</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">dc_type</span> <span class="o">=</span> <span class="n">McoreActorConfig</span>
-        <span class="n">type_overrides</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;engine&quot;</span><span class="p">:</span> <span class="n">McoreEngineConfig</span><span class="p">}</span>
+        <span class="n">type_overrides</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"engine"</span><span class="p">:</span> <span class="n">McoreEngineConfig</span><span class="p">}</span>
 
     <span class="c1"># NOTE: use log_prob_* naming — engine_workers.py renames these to ppo_*</span>
     <span class="c1"># before calling omega_conf_to_dataclass().</span>
     <span class="n">ref</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;strategy&quot;</span><span class="p">:</span> <span class="n">strategy</span><span class="p">,</span>
-        <span class="s2">&quot;rollout_n&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">repeat_times</span><span class="p">,</span>
-        <span class="s2">&quot;log_prob_micro_batch_size_per_gpu&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;log_prob_use_dynamic_bsz&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">use_dynamic_bsz</span><span class="p">,</span>
-        <span class="s2">&quot;log_prob_max_token_len_per_gpu&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">max_token_len_per_gpu</span><span class="p">,</span>
-        <span class="s2">&quot;use_prefix_grouper&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;profiler&quot;</span><span class="p">:</span> <span class="n">_build_profiler_config</span><span class="p">(),</span>
-        <span class="s2">&quot;router_replay&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;disabled&quot;</span><span class="p">},</span>
-        <span class="s2">&quot;checkpoint&quot;</span><span class="p">:</span> <span class="n">_build_checkpoint_config</span><span class="p">(</span><span class="n">save_contents</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">],</span> <span class="n">load_contents</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]),</span>
+        <span class="s2">"strategy"</span><span class="p">:</span> <span class="n">strategy</span><span class="p">,</span>
+        <span class="s2">"rollout_n"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">repeat_times</span><span class="p">,</span>
+        <span class="s2">"log_prob_micro_batch_size_per_gpu"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"log_prob_use_dynamic_bsz"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">use_dynamic_bsz</span><span class="p">,</span>
+        <span class="s2">"log_prob_max_token_len_per_gpu"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">max_token_len_per_gpu</span><span class="p">,</span>
+        <span class="s2">"use_prefix_grouper"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"profiler"</span><span class="p">:</span> <span class="n">_build_profiler_config</span><span class="p">(),</span>
+        <span class="s2">"router_replay"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"mode"</span><span class="p">:</span> <span class="s2">"disabled"</span><span class="p">},</span>
+        <span class="s2">"checkpoint"</span><span class="p">:</span> <span class="n">_build_checkpoint_config</span><span class="p">(</span><span class="n">save_contents</span><span class="o">=</span><span class="p">[</span><span class="s2">"model"</span><span class="p">],</span> <span class="n">load_contents</span><span class="o">=</span><span class="p">[</span><span class="s2">"model"</span><span class="p">]),</span>
     <span class="p">}</span>
 
     <span class="c1"># Strategy-specific fields</span>
     <span class="k">if</span> <span class="n">is_fsdp</span><span class="p">:</span>
-        <span class="n">ref</span><span class="p">[</span><span class="s2">&quot;ulysses_sequence_parallel_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">ulysses_sequence_parallel_size</span>
-        <span class="n">ref</span><span class="p">[</span><span class="s2">&quot;entropy_from_logits_with_chunking&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">ref</span><span class="p">[</span><span class="s2">&quot;entropy_checkpointing&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">ref</span><span class="p">[</span><span class="s2">&quot;fsdp_config&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">_build_fsdp_engine_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">strategy</span><span class="p">),</span> <span class="s2">&quot;forward_only&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
-        <span class="n">ref</span><span class="p">[</span><span class="s2">&quot;use_remove_padding&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">use_remove_padding</span>
-        <span class="n">ref</span><span class="p">[</span><span class="s2">&quot;use_rollout_log_probs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">ref</span><span class="p">[</span><span class="s2">"ulysses_sequence_parallel_size"</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">ulysses_sequence_parallel_size</span>
+        <span class="n">ref</span><span class="p">[</span><span class="s2">"entropy_from_logits_with_chunking"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">ref</span><span class="p">[</span><span class="s2">"entropy_checkpointing"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">ref</span><span class="p">[</span><span class="s2">"fsdp_config"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">_build_fsdp_engine_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">strategy</span><span class="p">),</span> <span class="s2">"forward_only"</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+        <span class="n">ref</span><span class="p">[</span><span class="s2">"use_remove_padding"</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">use_remove_padding</span>
+        <span class="n">ref</span><span class="p">[</span><span class="s2">"use_rollout_log_probs"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="k">elif</span> <span class="n">is_megatron</span><span class="p">:</span>
-        <span class="n">ref</span><span class="p">[</span><span class="s2">&quot;load_weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="n">ref</span><span class="p">[</span><span class="s2">&quot;use_rollout_log_probs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">ref</span><span class="p">[</span><span class="s2">&quot;megatron&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">_build_mcore_engine_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">),</span> <span class="s2">&quot;forward_only&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+        <span class="n">ref</span><span class="p">[</span><span class="s2">"load_weight"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">ref</span><span class="p">[</span><span class="s2">"use_rollout_log_probs"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">ref</span><span class="p">[</span><span class="s2">"megatron"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">_build_mcore_engine_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">),</span> <span class="s2">"forward_only"</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
 
     <span class="n">_inject_targets</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="n">dc_type</span><span class="p">,</span> <span class="n">type_overrides</span><span class="o">=</span><span class="n">type_overrides</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">ref</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_build_rollout_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">:</span> <span class="n">Config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build RolloutConfig-compatible dict with `_target_`.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Build RolloutConfig-compatible dict with `_target_`."""</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.workers.config.rollout</span><span class="w"> </span><span class="kn">import</span> <span class="n">RolloutConfig</span>
 
     <span class="c1"># Get temperature from taskset or default</span>
@@ -1410,26 +1412,26 @@ window.runMermaid = runMermaid;</script>
         <span class="n">temperature</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">explorer_input</span><span class="o">.</span><span class="n">tasksets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">rollout_args</span><span class="o">.</span><span class="n">temperature</span>
 
     <span class="n">rollout</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;async&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;temperature&quot;</span><span class="p">:</span> <span class="n">temperature</span><span class="p">,</span>
-        <span class="s2">&quot;n&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">repeat_times</span><span class="p">,</span>
+        <span class="s2">"name"</span><span class="p">:</span> <span class="s2">"auto"</span><span class="p">,</span>
+        <span class="s2">"mode"</span><span class="p">:</span> <span class="s2">"async"</span><span class="p">,</span>
+        <span class="s2">"temperature"</span><span class="p">:</span> <span class="n">temperature</span><span class="p">,</span>
+        <span class="s2">"n"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">repeat_times</span><span class="p">,</span>
         <span class="c1"># log prob settings mirror actor settings</span>
-        <span class="s2">&quot;log_prob_micro_batch_size&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;log_prob_micro_batch_size_per_gpu&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;log_prob_use_dynamic_bsz&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">use_dynamic_bsz</span><span class="p">,</span>
-        <span class="s2">&quot;log_prob_max_token_len_per_gpu&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">max_token_len_per_gpu</span><span class="p">,</span>
-        <span class="c1"># Multi-turn / val (Trinity doesn&#39;t use these)</span>
-        <span class="s2">&quot;val_kwargs&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;do_sample&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
-        <span class="s2">&quot;multi_turn&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;enable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
-        <span class="s2">&quot;checkpoint_engine&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;backend&quot;</span><span class="p">:</span> <span class="s2">&quot;naive&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;update_weights_bucket_megabytes&quot;</span><span class="p">:</span> <span class="mi">2048</span><span class="p">,</span>
-            <span class="s2">&quot;engine_kwargs&quot;</span><span class="p">:</span> <span class="p">{},</span>
+        <span class="s2">"log_prob_micro_batch_size"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"log_prob_micro_batch_size_per_gpu"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"log_prob_use_dynamic_bsz"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">use_dynamic_bsz</span><span class="p">,</span>
+        <span class="s2">"log_prob_max_token_len_per_gpu"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">max_token_len_per_gpu</span><span class="p">,</span>
+        <span class="c1"># Multi-turn / val (Trinity doesn't use these)</span>
+        <span class="s2">"val_kwargs"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"do_sample"</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+        <span class="s2">"multi_turn"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"enable"</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+        <span class="s2">"checkpoint_engine"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">"backend"</span><span class="p">:</span> <span class="s2">"naive"</span><span class="p">,</span>
+            <span class="s2">"update_weights_bucket_megabytes"</span><span class="p">:</span> <span class="mi">2048</span><span class="p">,</span>
+            <span class="s2">"engine_kwargs"</span><span class="p">:</span> <span class="p">{},</span>
         <span class="p">},</span>
-        <span class="s2">&quot;load_format&quot;</span><span class="p">:</span> <span class="s2">&quot;dummy&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;skip_tokenizer_init&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">&quot;enable_sleep_mode&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"load_format"</span><span class="p">:</span> <span class="s2">"dummy"</span><span class="p">,</span>
+        <span class="s2">"skip_tokenizer_init"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"enable_sleep_mode"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="n">_inject_targets</span><span class="p">(</span><span class="n">rollout</span><span class="p">,</span> <span class="n">RolloutConfig</span><span class="p">)</span>
@@ -1439,10 +1441,10 @@ window.runMermaid = runMermaid;</script>
 <span class="k">def</span><span class="w"> </span><span class="nf">_build_critic_config</span><span class="p">(</span>
     <span class="n">cfg</span><span class="p">:</span> <span class="n">Config</span><span class="p">,</span> <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">use_critic</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">total_training_steps</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build CriticConfig-compatible dict with `_target_`.</span>
+<span class="w">    </span><span class="sd">"""Build CriticConfig-compatible dict with `_target_`.</span>
 
 <span class="sd">    Key design decisions for the critic config:</span>
-<span class="sd">    - `model_config` is NOT a dataclass field in CriticConfig (it&#39;s only in</span>
+<span class="sd">    - `model_config` is NOT a dataclass field in CriticConfig (it's only in</span>
 <span class="sd">      _mutable_fields).  It cannot be passed to __init__ as a kwarg.  The</span>
 <span class="sd">      trainer.py code creates HFModelConfig manually.</span>
 <span class="sd">    - `model` is a dataclass field typed as `HFModelConfig = None`.  We omit</span>
@@ -1453,58 +1455,58 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        McoreCriticConfig.__post_init__ sets self.engine = self.megatron</span>
 <span class="sd">      So we include `fsdp` / `megatron` in the dict and let __post_init__</span>
 <span class="sd">      wire up `engine` automatically.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.workers.config.critic</span><span class="w"> </span><span class="kn">import</span> <span class="n">FSDPCriticConfig</span><span class="p">,</span> <span class="n">McoreCriticConfig</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">verl.workers.config.optimizer</span><span class="w"> </span><span class="kn">import</span> <span class="n">FSDPOptimizerConfig</span><span class="p">,</span> <span class="n">McoreOptimizerConfig</span>
 
-    <span class="n">is_fsdp</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;fsdp&quot;</span><span class="p">)</span>
-    <span class="n">is_megatron</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;megatron&quot;</span><span class="p">)</span>
+    <span class="n">is_fsdp</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"fsdp"</span><span class="p">)</span>
+    <span class="n">is_megatron</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"megatron"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">is_fsdp</span><span class="p">:</span>
         <span class="n">dc_type</span> <span class="o">=</span> <span class="n">FSDPCriticConfig</span>
         <span class="n">type_overrides</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;optim&quot;</span><span class="p">:</span> <span class="n">FSDPOptimizerConfig</span><span class="p">,</span>
+            <span class="s2">"optim"</span><span class="p">:</span> <span class="n">FSDPOptimizerConfig</span><span class="p">,</span>
         <span class="p">}</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">dc_type</span> <span class="o">=</span> <span class="n">McoreCriticConfig</span>
         <span class="n">type_overrides</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;optim&quot;</span><span class="p">:</span> <span class="n">McoreOptimizerConfig</span><span class="p">,</span>
+            <span class="s2">"optim"</span><span class="p">:</span> <span class="n">McoreOptimizerConfig</span><span class="p">,</span>
         <span class="p">}</span>
 
     <span class="n">critic</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;enable&quot;</span><span class="p">:</span> <span class="n">use_critic</span><span class="p">,</span>
-        <span class="s2">&quot;strategy&quot;</span><span class="p">:</span> <span class="n">strategy</span><span class="p">,</span>
-        <span class="s2">&quot;ppo_mini_batch_size&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">train_batch_size</span><span class="p">,</span>
-        <span class="s2">&quot;ppo_micro_batch_size_per_gpu&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;ppo_micro_batch_size&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;use_dynamic_bsz&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">use_dynamic_bsz</span><span class="p">,</span>
-        <span class="s2">&quot;ppo_max_token_len_per_gpu&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">max_token_len_per_gpu</span><span class="p">,</span>
-        <span class="s2">&quot;ppo_infer_max_token_len_per_gpu&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">max_token_len_per_gpu</span><span class="p">,</span>
-        <span class="s2">&quot;ppo_epochs&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-        <span class="s2">&quot;shuffle&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">&quot;cliprange_value&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
-        <span class="s2">&quot;loss_agg_mode&quot;</span><span class="p">:</span> <span class="s2">&quot;token-mean&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;data_loader_seed&quot;</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span>
-        <span class="s2">&quot;rollout_n&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">repeat_times</span><span class="p">,</span>
-        <span class="s2">&quot;profiler&quot;</span><span class="p">:</span> <span class="n">_build_profiler_config</span><span class="p">(),</span>
-        <span class="s2">&quot;optim&quot;</span><span class="p">:</span> <span class="n">_build_critic_optimizer_config</span><span class="p">(</span><span class="n">strategy</span><span class="p">,</span> <span class="n">total_training_steps</span><span class="p">),</span>
-        <span class="s2">&quot;checkpoint&quot;</span><span class="p">:</span> <span class="n">_build_checkpoint_config</span><span class="p">(),</span>
+        <span class="s2">"enable"</span><span class="p">:</span> <span class="n">use_critic</span><span class="p">,</span>
+        <span class="s2">"strategy"</span><span class="p">:</span> <span class="n">strategy</span><span class="p">,</span>
+        <span class="s2">"ppo_mini_batch_size"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">buffer</span><span class="o">.</span><span class="n">train_batch_size</span><span class="p">,</span>
+        <span class="s2">"ppo_micro_batch_size_per_gpu"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"ppo_micro_batch_size"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"use_dynamic_bsz"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">use_dynamic_bsz</span><span class="p">,</span>
+        <span class="s2">"ppo_max_token_len_per_gpu"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">max_token_len_per_gpu</span><span class="p">,</span>
+        <span class="s2">"ppo_infer_max_token_len_per_gpu"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">max_token_len_per_gpu</span><span class="p">,</span>
+        <span class="s2">"ppo_epochs"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">"shuffle"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"cliprange_value"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+        <span class="s2">"loss_agg_mode"</span><span class="p">:</span> <span class="s2">"token-mean"</span><span class="p">,</span>
+        <span class="s2">"data_loader_seed"</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span>
+        <span class="s2">"rollout_n"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">repeat_times</span><span class="p">,</span>
+        <span class="s2">"profiler"</span><span class="p">:</span> <span class="n">_build_profiler_config</span><span class="p">(),</span>
+        <span class="s2">"optim"</span><span class="p">:</span> <span class="n">_build_critic_optimizer_config</span><span class="p">(</span><span class="n">strategy</span><span class="p">,</span> <span class="n">total_training_steps</span><span class="p">),</span>
+        <span class="s2">"checkpoint"</span><span class="p">:</span> <span class="n">_build_checkpoint_config</span><span class="p">(),</span>
     <span class="p">}</span>
 
     <span class="c1"># Strategy-specific fields</span>
     <span class="k">if</span> <span class="n">is_fsdp</span><span class="p">:</span>
-        <span class="n">critic</span><span class="p">[</span><span class="s2">&quot;grad_clip&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">grad_clip</span>
-        <span class="n">critic</span><span class="p">[</span><span class="s2">&quot;ulysses_sequence_parallel_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">ulysses_sequence_parallel_size</span>
-        <span class="n">critic</span><span class="p">[</span><span class="s2">&quot;forward_micro_batch_size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="n">critic</span><span class="p">[</span><span class="s2">&quot;forward_micro_batch_size_per_gpu&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
-        <span class="n">critic</span><span class="p">[</span><span class="s2">&quot;forward_max_token_len_per_gpu&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">max_token_len_per_gpu</span>
+        <span class="n">critic</span><span class="p">[</span><span class="s2">"grad_clip"</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">grad_clip</span>
+        <span class="n">critic</span><span class="p">[</span><span class="s2">"ulysses_sequence_parallel_size"</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">ulysses_sequence_parallel_size</span>
+        <span class="n">critic</span><span class="p">[</span><span class="s2">"forward_micro_batch_size"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">critic</span><span class="p">[</span><span class="s2">"forward_micro_batch_size_per_gpu"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="n">critic</span><span class="p">[</span><span class="s2">"forward_max_token_len_per_gpu"</span><span class="p">]</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">max_token_len_per_gpu</span>
         <span class="c1"># fsdp field — FSDPCriticConfig.__post_init__ sets self.engine = self.fsdp</span>
-        <span class="n">critic</span><span class="p">[</span><span class="s2">&quot;fsdp&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_build_fsdp_engine_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">strategy</span><span class="p">)</span>
+        <span class="n">critic</span><span class="p">[</span><span class="s2">"fsdp"</span><span class="p">]</span> <span class="o">=</span> <span class="n">_build_fsdp_engine_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">strategy</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">is_megatron</span><span class="p">:</span>
-        <span class="n">critic</span><span class="p">[</span><span class="s2">&quot;load_weight&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="n">critic</span><span class="p">[</span><span class="s2">&quot;nccl_timeout&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">600</span>
+        <span class="n">critic</span><span class="p">[</span><span class="s2">"load_weight"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">critic</span><span class="p">[</span><span class="s2">"nccl_timeout"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">600</span>
         <span class="c1"># megatron field — McoreCriticConfig.__post_init__ sets self.engine = self.megatron</span>
-        <span class="n">critic</span><span class="p">[</span><span class="s2">&quot;megatron&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_build_mcore_engine_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
+        <span class="n">critic</span><span class="p">[</span><span class="s2">"megatron"</span><span class="p">]</span> <span class="o">=</span> <span class="n">_build_mcore_engine_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">)</span>
 
     <span class="n">_inject_targets</span><span class="p">(</span><span class="n">critic</span><span class="p">,</span> <span class="n">dc_type</span><span class="p">,</span> <span class="n">type_overrides</span><span class="o">=</span><span class="n">type_overrides</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">critic</span>
@@ -1516,158 +1518,158 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_build_fsdp_engine_config</span><span class="p">(</span>
-    <span class="n">cfg</span><span class="p">:</span> <span class="n">Config</span><span class="p">,</span> <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">router_replay_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;disabled&quot;</span>
+    <span class="n">cfg</span><span class="p">:</span> <span class="n">Config</span><span class="p">,</span> <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">router_replay_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"disabled"</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build FSDPEngineConfig-compatible dict.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Build FSDPEngineConfig-compatible dict."""</span>
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;param_offload&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">param_offload</span><span class="p">,</span>
-        <span class="s2">&quot;optimizer_offload&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">optimizer_offload</span><span class="p">,</span>
-        <span class="s2">&quot;offload_policy&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">offload_policy</span><span class="p">,</span>
-        <span class="s2">&quot;reshard_after_forward&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">&quot;wrap_policy&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;min_num_params&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
-        <span class="s2">&quot;fsdp_size&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
-        <span class="s2">&quot;forward_prefetch&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;model_dtype&quot;</span><span class="p">:</span> <span class="s2">&quot;fp32&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;dtype&quot;</span><span class="p">:</span> <span class="s2">&quot;bfloat16&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;mixed_precision&quot;</span><span class="p">:</span> <span class="p">{},</span>
-        <span class="s2">&quot;ulysses_sequence_parallel_size&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">ulysses_sequence_parallel_size</span><span class="p">,</span>
-        <span class="s2">&quot;strategy&quot;</span><span class="p">:</span> <span class="n">strategy</span><span class="p">,</span>  <span class="c1"># &quot;fsdp&quot; or &quot;fsdp2&quot;</span>
-        <span class="s2">&quot;use_dynamic_bsz&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">use_dynamic_bsz</span><span class="p">,</span>
-        <span class="s2">&quot;max_token_len_per_gpu&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">max_token_len_per_gpu</span><span class="p">,</span>
-        <span class="s2">&quot;use_remove_padding&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">use_remove_padding</span><span class="p">,</span>
-        <span class="s2">&quot;use_fused_kernels&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;router_replay&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="n">router_replay_mode</span><span class="p">},</span>
+        <span class="s2">"param_offload"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">param_offload</span><span class="p">,</span>
+        <span class="s2">"optimizer_offload"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">optimizer_offload</span><span class="p">,</span>
+        <span class="s2">"offload_policy"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">offload_policy</span><span class="p">,</span>
+        <span class="s2">"reshard_after_forward"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"wrap_policy"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"min_num_params"</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+        <span class="s2">"fsdp_size"</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="s2">"forward_prefetch"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"model_dtype"</span><span class="p">:</span> <span class="s2">"fp32"</span><span class="p">,</span>
+        <span class="s2">"dtype"</span><span class="p">:</span> <span class="s2">"bfloat16"</span><span class="p">,</span>
+        <span class="s2">"mixed_precision"</span><span class="p">:</span> <span class="p">{},</span>
+        <span class="s2">"ulysses_sequence_parallel_size"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">ulysses_sequence_parallel_size</span><span class="p">,</span>
+        <span class="s2">"strategy"</span><span class="p">:</span> <span class="n">strategy</span><span class="p">,</span>  <span class="c1"># "fsdp" or "fsdp2"</span>
+        <span class="s2">"use_dynamic_bsz"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">use_dynamic_bsz</span><span class="p">,</span>
+        <span class="s2">"max_token_len_per_gpu"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">max_token_len_per_gpu</span><span class="p">,</span>
+        <span class="s2">"use_remove_padding"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">use_remove_padding</span><span class="p">,</span>
+        <span class="s2">"use_fused_kernels"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"router_replay"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"mode"</span><span class="p">:</span> <span class="n">router_replay_mode</span><span class="p">},</span>
     <span class="p">}</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_build_mcore_engine_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">:</span> <span class="n">Config</span><span class="p">,</span> <span class="n">router_replay_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;disabled&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build McoreEngineConfig-compatible dict.&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_build_mcore_engine_config</span><span class="p">(</span><span class="n">cfg</span><span class="p">:</span> <span class="n">Config</span><span class="p">,</span> <span class="n">router_replay_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"disabled"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Build McoreEngineConfig-compatible dict."""</span>
     <span class="n">mg</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">megatron</span>
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;strategy&quot;</span><span class="p">:</span> <span class="s2">&quot;megatron&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;param_offload&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">param_offload</span><span class="p">,</span>
-        <span class="s2">&quot;optimizer_offload&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">optimizer_offload</span><span class="p">,</span>
-        <span class="s2">&quot;grad_offload&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">grad_offload</span><span class="p">,</span>
-        <span class="s2">&quot;forward_only&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;dtype&quot;</span><span class="p">:</span> <span class="s2">&quot;bfloat16&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;use_dynamic_bsz&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">use_dynamic_bsz</span><span class="p">,</span>
-        <span class="s2">&quot;max_token_len_per_gpu&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">max_token_len_per_gpu</span><span class="p">,</span>
-        <span class="s2">&quot;use_remove_padding&quot;</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">use_remove_padding</span><span class="p">,</span>
-        <span class="s2">&quot;use_fused_kernels&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;seed&quot;</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span>
+        <span class="s2">"strategy"</span><span class="p">:</span> <span class="s2">"megatron"</span><span class="p">,</span>
+        <span class="s2">"param_offload"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">param_offload</span><span class="p">,</span>
+        <span class="s2">"optimizer_offload"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">optimizer_offload</span><span class="p">,</span>
+        <span class="s2">"grad_offload"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">grad_offload</span><span class="p">,</span>
+        <span class="s2">"forward_only"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"dtype"</span><span class="p">:</span> <span class="s2">"bfloat16"</span><span class="p">,</span>
+        <span class="s2">"use_dynamic_bsz"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">use_dynamic_bsz</span><span class="p">,</span>
+        <span class="s2">"max_token_len_per_gpu"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">max_token_len_per_gpu</span><span class="p">,</span>
+        <span class="s2">"use_remove_padding"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">use_remove_padding</span><span class="p">,</span>
+        <span class="s2">"use_fused_kernels"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"seed"</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span>
         <span class="c1"># Mcore-specific parallelism</span>
-        <span class="s2">&quot;tensor_model_parallel_size&quot;</span><span class="p">:</span> <span class="n">mg</span><span class="o">.</span><span class="n">tensor_model_parallel_size</span><span class="p">,</span>
-        <span class="s2">&quot;expert_model_parallel_size&quot;</span><span class="p">:</span> <span class="n">mg</span><span class="o">.</span><span class="n">expert_model_parallel_size</span><span class="p">,</span>
-        <span class="s2">&quot;expert_tensor_parallel_size&quot;</span><span class="p">:</span> <span class="n">mg</span><span class="o">.</span><span class="n">expert_tensor_parallel_size</span><span class="p">,</span>
-        <span class="s2">&quot;pipeline_model_parallel_size&quot;</span><span class="p">:</span> <span class="n">mg</span><span class="o">.</span><span class="n">pipeline_model_parallel_size</span><span class="p">,</span>
-        <span class="s2">&quot;virtual_pipeline_model_parallel_size&quot;</span><span class="p">:</span> <span class="n">mg</span><span class="o">.</span><span class="n">virtual_pipeline_model_parallel_size</span><span class="p">,</span>
-        <span class="s2">&quot;context_parallel_size&quot;</span><span class="p">:</span> <span class="n">mg</span><span class="o">.</span><span class="n">context_parallel_size</span><span class="p">,</span>
-        <span class="s2">&quot;sequence_parallel&quot;</span><span class="p">:</span> <span class="n">mg</span><span class="o">.</span><span class="n">sequence_parallel</span><span class="p">,</span>
-        <span class="s2">&quot;use_distributed_optimizer&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">&quot;use_dist_checkpointing&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;dist_checkpointing_path&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;dist_ckpt_optim_fully_reshardable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;distrib_optim_fully_reshardable_mem_efficient&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;use_mbridge&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">&quot;vanilla_mbridge&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">&quot;override_ddp_config&quot;</span><span class="p">:</span> <span class="p">{},</span>
-        <span class="s2">&quot;override_transformer_config&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;recompute_granularity&quot;</span><span class="p">:</span> <span class="s2">&quot;full&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;recompute_modules&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;core_attn&quot;</span><span class="p">],</span>
-            <span class="s2">&quot;recompute_method&quot;</span><span class="p">:</span> <span class="s2">&quot;uniform&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;recompute_num_layers&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">"tensor_model_parallel_size"</span><span class="p">:</span> <span class="n">mg</span><span class="o">.</span><span class="n">tensor_model_parallel_size</span><span class="p">,</span>
+        <span class="s2">"expert_model_parallel_size"</span><span class="p">:</span> <span class="n">mg</span><span class="o">.</span><span class="n">expert_model_parallel_size</span><span class="p">,</span>
+        <span class="s2">"expert_tensor_parallel_size"</span><span class="p">:</span> <span class="n">mg</span><span class="o">.</span><span class="n">expert_tensor_parallel_size</span><span class="p">,</span>
+        <span class="s2">"pipeline_model_parallel_size"</span><span class="p">:</span> <span class="n">mg</span><span class="o">.</span><span class="n">pipeline_model_parallel_size</span><span class="p">,</span>
+        <span class="s2">"virtual_pipeline_model_parallel_size"</span><span class="p">:</span> <span class="n">mg</span><span class="o">.</span><span class="n">virtual_pipeline_model_parallel_size</span><span class="p">,</span>
+        <span class="s2">"context_parallel_size"</span><span class="p">:</span> <span class="n">mg</span><span class="o">.</span><span class="n">context_parallel_size</span><span class="p">,</span>
+        <span class="s2">"sequence_parallel"</span><span class="p">:</span> <span class="n">mg</span><span class="o">.</span><span class="n">sequence_parallel</span><span class="p">,</span>
+        <span class="s2">"use_distributed_optimizer"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"use_dist_checkpointing"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"dist_checkpointing_path"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"dist_ckpt_optim_fully_reshardable"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"distrib_optim_fully_reshardable_mem_efficient"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"use_mbridge"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"vanilla_mbridge"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"override_ddp_config"</span><span class="p">:</span> <span class="p">{},</span>
+        <span class="s2">"override_transformer_config"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">"recompute_granularity"</span><span class="p">:</span> <span class="s2">"full"</span><span class="p">,</span>
+            <span class="s2">"recompute_modules"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"core_attn"</span><span class="p">],</span>
+            <span class="s2">"recompute_method"</span><span class="p">:</span> <span class="s2">"uniform"</span><span class="p">,</span>
+            <span class="s2">"recompute_num_layers"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
         <span class="p">},</span>
-        <span class="s2">&quot;override_mcore_model_config&quot;</span><span class="p">:</span> <span class="p">{},</span>
-        <span class="s2">&quot;router_replay&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="n">router_replay_mode</span><span class="p">},</span>
+        <span class="s2">"override_mcore_model_config"</span><span class="p">:</span> <span class="p">{},</span>
+        <span class="s2">"router_replay"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"mode"</span><span class="p">:</span> <span class="n">router_replay_mode</span><span class="p">},</span>
     <span class="p">}</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_build_optimizer_config</span><span class="p">(</span>
     <span class="n">trinity_optim</span><span class="p">:</span> <span class="n">TrinityOptimizerConfig</span><span class="p">,</span> <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">total_training_steps</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build veRL OptimizerConfig-compatible dict from Trinity&#39;s OptimizerConfig.&quot;&quot;&quot;</span>
-    <span class="n">is_fsdp</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;fsdp&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">"""Build veRL OptimizerConfig-compatible dict from Trinity's OptimizerConfig."""</span>
+    <span class="n">is_fsdp</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"fsdp"</span><span class="p">)</span>
 
     <span class="n">optim</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">lr</span><span class="p">,</span>
-        <span class="s2">&quot;lr_warmup_steps_ratio&quot;</span><span class="p">:</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">lr_warmup_steps_ratio</span><span class="p">,</span>
-        <span class="s2">&quot;lr_warmup_steps&quot;</span><span class="p">:</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">lr_warmup_steps</span><span class="p">,</span>
-        <span class="s2">&quot;total_training_steps&quot;</span><span class="p">:</span> <span class="n">total_training_steps</span><span class="p">,</span>
-        <span class="s2">&quot;weight_decay&quot;</span><span class="p">:</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">weight_decay</span><span class="p">,</span>
-        <span class="s2">&quot;betas&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">trinity_optim</span><span class="o">.</span><span class="n">betas</span><span class="p">),</span>
-        <span class="s2">&quot;clip_grad&quot;</span><span class="p">:</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">clip_grad</span><span class="p">,</span>
+        <span class="s2">"lr"</span><span class="p">:</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">lr</span><span class="p">,</span>
+        <span class="s2">"lr_warmup_steps_ratio"</span><span class="p">:</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">lr_warmup_steps_ratio</span><span class="p">,</span>
+        <span class="s2">"lr_warmup_steps"</span><span class="p">:</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">lr_warmup_steps</span><span class="p">,</span>
+        <span class="s2">"total_training_steps"</span><span class="p">:</span> <span class="n">total_training_steps</span><span class="p">,</span>
+        <span class="s2">"weight_decay"</span><span class="p">:</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">weight_decay</span><span class="p">,</span>
+        <span class="s2">"betas"</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">trinity_optim</span><span class="o">.</span><span class="n">betas</span><span class="p">),</span>
+        <span class="s2">"clip_grad"</span><span class="p">:</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">clip_grad</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="k">if</span> <span class="n">is_fsdp</span><span class="p">:</span>
         <span class="c1"># FSDP uses FSDPOptimizerConfig</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;optimizer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_map_optimizer_name_fsdp</span><span class="p">(</span><span class="n">trinity_optim</span><span class="o">.</span><span class="n">optimizer_type</span><span class="p">)</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;optimizer_impl&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;torch.optim&quot;</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;min_lr_ratio&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">min_lr_ratio</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;lr_scheduler_type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">lr_scheduler_type</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;num_cycles&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.5</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;override_optimizer_config&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;zero_indexed_step&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"optimizer"</span><span class="p">]</span> <span class="o">=</span> <span class="n">_map_optimizer_name_fsdp</span><span class="p">(</span><span class="n">trinity_optim</span><span class="o">.</span><span class="n">optimizer_type</span><span class="p">)</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"optimizer_impl"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"torch.optim"</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"min_lr_ratio"</span><span class="p">]</span> <span class="o">=</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">min_lr_ratio</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"lr_scheduler_type"</span><span class="p">]</span> <span class="o">=</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">lr_scheduler_type</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"num_cycles"</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.5</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"override_optimizer_config"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"zero_indexed_step"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="c1"># Megatron uses McoreOptimizerConfig</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;optimizer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">optimizer_type</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;lr_warmup_init&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">min_lr_ratio</span> <span class="o">*</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">lr</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;lr_decay_steps&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_training_steps</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;lr_decay_style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">lr_scheduler_type</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;min_lr&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">min_lr_ratio</span> <span class="o">*</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">lr</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;weight_decay_incr_style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;constant&quot;</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;lr_wsd_decay_style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;exponential&quot;</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;lr_wsd_decay_steps&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;use_checkpoint_opt_param_scheduler&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;override_optimizer_config&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"optimizer"</span><span class="p">]</span> <span class="o">=</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">optimizer_type</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"lr_warmup_init"</span><span class="p">]</span> <span class="o">=</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">min_lr_ratio</span> <span class="o">*</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">lr</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"lr_decay_steps"</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_training_steps</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"lr_decay_style"</span><span class="p">]</span> <span class="o">=</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">lr_scheduler_type</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"min_lr"</span><span class="p">]</span> <span class="o">=</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">min_lr_ratio</span> <span class="o">*</span> <span class="n">trinity_optim</span><span class="o">.</span><span class="n">lr</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"weight_decay_incr_style"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"constant"</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"lr_wsd_decay_style"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"exponential"</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"lr_wsd_decay_steps"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"use_checkpoint_opt_param_scheduler"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"override_optimizer_config"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">return</span> <span class="n">optim</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_build_critic_optimizer_config</span><span class="p">(</span><span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">total_training_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a default optimizer config for the critic model.&quot;&quot;&quot;</span>
-    <span class="n">is_fsdp</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;fsdp&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">"""Build a default optimizer config for the critic model."""</span>
+    <span class="n">is_fsdp</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"fsdp"</span><span class="p">)</span>
     <span class="n">optim</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;lr&quot;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
-        <span class="s2">&quot;lr_warmup_steps_ratio&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
-        <span class="s2">&quot;lr_warmup_steps&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
-        <span class="s2">&quot;total_training_steps&quot;</span><span class="p">:</span> <span class="n">total_training_steps</span><span class="p">,</span>
-        <span class="s2">&quot;weight_decay&quot;</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>
-        <span class="s2">&quot;betas&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">],</span>
-        <span class="s2">&quot;clip_grad&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+        <span class="s2">"lr"</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">,</span>
+        <span class="s2">"lr_warmup_steps_ratio"</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="s2">"lr_warmup_steps"</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="s2">"total_training_steps"</span><span class="p">:</span> <span class="n">total_training_steps</span><span class="p">,</span>
+        <span class="s2">"weight_decay"</span><span class="p">:</span> <span class="mf">0.01</span><span class="p">,</span>
+        <span class="s2">"betas"</span><span class="p">:</span> <span class="p">[</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.999</span><span class="p">],</span>
+        <span class="s2">"clip_grad"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="k">if</span> <span class="n">is_fsdp</span><span class="p">:</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;optimizer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;AdamW&quot;</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;optimizer_impl&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;torch.optim&quot;</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;min_lr_ratio&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.01</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;lr_scheduler_type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;constant&quot;</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;num_cycles&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.5</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;override_optimizer_config&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;zero_indexed_step&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"optimizer"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"AdamW"</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"optimizer_impl"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"torch.optim"</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"min_lr_ratio"</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.01</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"lr_scheduler_type"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"constant"</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"num_cycles"</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.5</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"override_optimizer_config"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"zero_indexed_step"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;optimizer&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;adam&quot;</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;lr_warmup_init&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;lr_decay_steps&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_training_steps</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;lr_decay_style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;constant&quot;</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;min_lr&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;weight_decay_incr_style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;constant&quot;</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;lr_wsd_decay_style&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;exponential&quot;</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;lr_wsd_decay_steps&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;use_checkpoint_opt_param_scheduler&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">optim</span><span class="p">[</span><span class="s2">&quot;override_optimizer_config&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"optimizer"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"adam"</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"lr_warmup_init"</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"lr_decay_steps"</span><span class="p">]</span> <span class="o">=</span> <span class="n">total_training_steps</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"lr_decay_style"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"constant"</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"min_lr"</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"weight_decay_incr_style"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"constant"</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"lr_wsd_decay_style"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"exponential"</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"lr_wsd_decay_steps"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"use_checkpoint_opt_param_scheduler"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">optim</span><span class="p">[</span><span class="s2">"override_optimizer_config"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="k">return</span> <span class="n">optim</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_build_profiler_config</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build a disabled ProfilerConfig-compatible dict for worker-level profiler.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Build a disabled ProfilerConfig-compatible dict for worker-level profiler."""</span>
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;tool&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;enable&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;all_ranks&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;ranks&quot;</span><span class="p">:</span> <span class="p">[],</span>
-        <span class="s2">&quot;save_path&quot;</span><span class="p">:</span> <span class="s2">&quot;outputs/profile&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;tool_config&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">&quot;global_tool_config&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"tool"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"enable"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"all_ranks"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"ranks"</span><span class="p">:</span> <span class="p">[],</span>
+        <span class="s2">"save_path"</span><span class="p">:</span> <span class="s2">"outputs/profile"</span><span class="p">,</span>
+        <span class="s2">"tool_config"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"global_tool_config"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">}</span>
 
 
@@ -1675,19 +1677,19 @@ window.runMermaid = runMermaid;</script>
     <span class="n">save_contents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">load_contents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build CheckpointConfig-compatible dict.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Build CheckpointConfig-compatible dict."""</span>
     <span class="k">if</span> <span class="n">save_contents</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">save_contents</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="s2">&quot;optimizer&quot;</span><span class="p">,</span> <span class="s2">&quot;extra&quot;</span><span class="p">]</span>
+        <span class="n">save_contents</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"model"</span><span class="p">,</span> <span class="s2">"optimizer"</span><span class="p">,</span> <span class="s2">"extra"</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">load_contents</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">load_contents</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="s2">&quot;optimizer&quot;</span><span class="p">,</span> <span class="s2">&quot;extra&quot;</span><span class="p">]</span>
+        <span class="n">load_contents</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"model"</span><span class="p">,</span> <span class="s2">"optimizer"</span><span class="p">,</span> <span class="s2">"extra"</span><span class="p">]</span>
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;save_contents&quot;</span><span class="p">:</span> <span class="n">save_contents</span><span class="p">,</span>
-        <span class="s2">&quot;load_contents&quot;</span><span class="p">:</span> <span class="n">load_contents</span><span class="p">,</span>
-        <span class="s2">&quot;async_save&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;mbridge_config&quot;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s2">&quot;distributed_filesystem&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-            <span class="s2">&quot;memory_efficient&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-            <span class="s2">&quot;strict&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"save_contents"</span><span class="p">:</span> <span class="n">save_contents</span><span class="p">,</span>
+        <span class="s2">"load_contents"</span><span class="p">:</span> <span class="n">load_contents</span><span class="p">,</span>
+        <span class="s2">"async_save"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"mbridge_config"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">"distributed_filesystem"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">"memory_efficient"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">"strict"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">}</span>
 
@@ -1698,11 +1700,11 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_map_optimizer_name_fsdp</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Map Trinity&#39;s optimizer name to the class name FSDPOptimizerConfig expects.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Map Trinity's optimizer name to the class name FSDPOptimizerConfig expects."""</span>
     <span class="n">mapping</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;adam&quot;</span><span class="p">:</span> <span class="s2">&quot;AdamW&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;adamw&quot;</span><span class="p">:</span> <span class="s2">&quot;AdamW&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;sgd&quot;</span><span class="p">:</span> <span class="s2">&quot;SGD&quot;</span><span class="p">,</span>
+        <span class="s2">"adam"</span><span class="p">:</span> <span class="s2">"AdamW"</span><span class="p">,</span>
+        <span class="s2">"adamw"</span><span class="p">:</span> <span class="s2">"AdamW"</span><span class="p">,</span>
+        <span class="s2">"sgd"</span><span class="p">:</span> <span class="s2">"SGD"</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="k">return</span> <span class="n">mapping</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
 
@@ -1714,80 +1716,80 @@ window.runMermaid = runMermaid;</script>
 <span class="c1"># Keys derived from global_config — user overrides for these are ignored.</span>
 <span class="n">FROZEN_KEYS</span> <span class="o">=</span> <span class="p">{</span>
     <span class="c1"># model</span>
-    <span class="s2">&quot;model.path&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;model.trust_remote_code&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;model.use_remove_padding&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;model.custom_chat_template&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;model.lora_rank&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;model.lora_alpha&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;model.target_modules&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;model.exclude_modules&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;model.lora_adapter_path&quot;</span><span class="p">,</span>
+    <span class="s2">"model.path"</span><span class="p">,</span>
+    <span class="s2">"model.trust_remote_code"</span><span class="p">,</span>
+    <span class="s2">"model.use_remove_padding"</span><span class="p">,</span>
+    <span class="s2">"model.custom_chat_template"</span><span class="p">,</span>
+    <span class="s2">"model.lora_rank"</span><span class="p">,</span>
+    <span class="s2">"model.lora_alpha"</span><span class="p">,</span>
+    <span class="s2">"model.target_modules"</span><span class="p">,</span>
+    <span class="s2">"model.exclude_modules"</span><span class="p">,</span>
+    <span class="s2">"model.lora_adapter_path"</span><span class="p">,</span>
     <span class="c1"># actor</span>
-    <span class="s2">&quot;actor.strategy&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;actor.ppo_mini_batch_size&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;actor.use_dynamic_bsz&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;actor.ppo_max_token_len_per_gpu&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;actor.ppo_infer_max_token_len_per_gpu&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;actor.use_kl_loss&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;actor.loss_agg_mode&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;actor.rollout_n&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;actor.grad_clip&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;actor.ulysses_sequence_parallel_size&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;actor.use_remove_padding&quot;</span><span class="p">,</span>
+    <span class="s2">"actor.strategy"</span><span class="p">,</span>
+    <span class="s2">"actor.ppo_mini_batch_size"</span><span class="p">,</span>
+    <span class="s2">"actor.use_dynamic_bsz"</span><span class="p">,</span>
+    <span class="s2">"actor.ppo_max_token_len_per_gpu"</span><span class="p">,</span>
+    <span class="s2">"actor.ppo_infer_max_token_len_per_gpu"</span><span class="p">,</span>
+    <span class="s2">"actor.use_kl_loss"</span><span class="p">,</span>
+    <span class="s2">"actor.loss_agg_mode"</span><span class="p">,</span>
+    <span class="s2">"actor.rollout_n"</span><span class="p">,</span>
+    <span class="s2">"actor.grad_clip"</span><span class="p">,</span>
+    <span class="s2">"actor.ulysses_sequence_parallel_size"</span><span class="p">,</span>
+    <span class="s2">"actor.use_remove_padding"</span><span class="p">,</span>
     <span class="c1"># ref</span>
-    <span class="s2">&quot;ref.strategy&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ref.rollout_n&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ref.log_prob_use_dynamic_bsz&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ref.log_prob_max_token_len_per_gpu&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ref.ulysses_sequence_parallel_size&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;ref.use_remove_padding&quot;</span><span class="p">,</span>
+    <span class="s2">"ref.strategy"</span><span class="p">,</span>
+    <span class="s2">"ref.rollout_n"</span><span class="p">,</span>
+    <span class="s2">"ref.log_prob_use_dynamic_bsz"</span><span class="p">,</span>
+    <span class="s2">"ref.log_prob_max_token_len_per_gpu"</span><span class="p">,</span>
+    <span class="s2">"ref.ulysses_sequence_parallel_size"</span><span class="p">,</span>
+    <span class="s2">"ref.use_remove_padding"</span><span class="p">,</span>
     <span class="c1"># rollout</span>
-    <span class="s2">&quot;rollout.temperature&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;rollout.n&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;rollout.log_prob_use_dynamic_bsz&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;rollout.log_prob_max_token_len_per_gpu&quot;</span><span class="p">,</span>
+    <span class="s2">"rollout.temperature"</span><span class="p">,</span>
+    <span class="s2">"rollout.n"</span><span class="p">,</span>
+    <span class="s2">"rollout.log_prob_use_dynamic_bsz"</span><span class="p">,</span>
+    <span class="s2">"rollout.log_prob_max_token_len_per_gpu"</span><span class="p">,</span>
     <span class="c1"># critic</span>
-    <span class="s2">&quot;critic.enable&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;critic.strategy&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;critic.ppo_mini_batch_size&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;critic.use_dynamic_bsz&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;critic.ppo_max_token_len_per_gpu&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;critic.ppo_infer_max_token_len_per_gpu&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;critic.rollout_n&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;critic.grad_clip&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;critic.ulysses_sequence_parallel_size&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;critic.forward_max_token_len_per_gpu&quot;</span><span class="p">,</span>
+    <span class="s2">"critic.enable"</span><span class="p">,</span>
+    <span class="s2">"critic.strategy"</span><span class="p">,</span>
+    <span class="s2">"critic.ppo_mini_batch_size"</span><span class="p">,</span>
+    <span class="s2">"critic.use_dynamic_bsz"</span><span class="p">,</span>
+    <span class="s2">"critic.ppo_max_token_len_per_gpu"</span><span class="p">,</span>
+    <span class="s2">"critic.ppo_infer_max_token_len_per_gpu"</span><span class="p">,</span>
+    <span class="s2">"critic.rollout_n"</span><span class="p">,</span>
+    <span class="s2">"critic.grad_clip"</span><span class="p">,</span>
+    <span class="s2">"critic.ulysses_sequence_parallel_size"</span><span class="p">,</span>
+    <span class="s2">"critic.forward_max_token_len_per_gpu"</span><span class="p">,</span>
 <span class="p">}</span>
 
-<span class="n">_MERGEABLE_KEYS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="s2">&quot;actor&quot;</span><span class="p">,</span> <span class="s2">&quot;ref&quot;</span><span class="p">,</span> <span class="s2">&quot;rollout&quot;</span><span class="p">,</span> <span class="s2">&quot;critic&quot;</span><span class="p">)</span>
+<span class="n">_MERGEABLE_KEYS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"model"</span><span class="p">,</span> <span class="s2">"actor"</span><span class="p">,</span> <span class="s2">"ref"</span><span class="p">,</span> <span class="s2">"rollout"</span><span class="p">,</span> <span class="s2">"critic"</span><span class="p">)</span>
 
 <span class="c1"># Engine config keys that are strategy-specific.</span>
-<span class="c1"># FSDP actor/ref use &quot;fsdp_config&quot;; FSDP critic uses &quot;fsdp&quot;.</span>
-<span class="c1"># Megatron actor/ref/critic all use &quot;megatron&quot;.</span>
-<span class="n">_FSDP_ENGINE_KEYS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;fsdp_config&quot;</span><span class="p">,</span> <span class="s2">&quot;fsdp&quot;</span><span class="p">)</span>
-<span class="n">_MEGATRON_ENGINE_KEYS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;megatron&quot;</span><span class="p">,)</span>
+<span class="c1"># FSDP actor/ref use "fsdp_config"; FSDP critic uses "fsdp".</span>
+<span class="c1"># Megatron actor/ref/critic all use "megatron".</span>
+<span class="n">_FSDP_ENGINE_KEYS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"fsdp_config"</span><span class="p">,</span> <span class="s2">"fsdp"</span><span class="p">)</span>
+<span class="n">_MEGATRON_ENGINE_KEYS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"megatron"</span><span class="p">,)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_strip_incompatible_engine_keys</span><span class="p">(</span><span class="n">overrides</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">strategy</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove engine config keys that don&#39;t belong to the active strategy.</span>
+<span class="w">    </span><span class="sd">"""Remove engine config keys that don't belong to the active strategy.</span>
 
 <span class="sd">    When ``trainer_config`` carries overrides from a different strategy</span>
 <span class="sd">    (e.g. ``actor.megatron`` while the strategy is ``fsdp2``), the extra</span>
 <span class="sd">    keys would fail at ``omega_conf_to_dataclass`` time because the target</span>
-<span class="sd">    dataclass doesn&#39;t define them.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">is_fsdp</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;fsdp&quot;</span><span class="p">)</span>
+<span class="sd">    dataclass doesn't define them.</span>
+<span class="sd">    """</span>
+    <span class="n">is_fsdp</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"fsdp"</span><span class="p">)</span>
     <span class="n">drop_keys</span> <span class="o">=</span> <span class="n">_MEGATRON_ENGINE_KEYS</span> <span class="k">if</span> <span class="n">is_fsdp</span> <span class="k">else</span> <span class="n">_FSDP_ENGINE_KEYS</span>
 
-    <span class="k">for</span> <span class="n">section</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;actor&quot;</span><span class="p">,</span> <span class="s2">&quot;ref&quot;</span><span class="p">,</span> <span class="s2">&quot;critic&quot;</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">section</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"actor"</span><span class="p">,</span> <span class="s2">"ref"</span><span class="p">,</span> <span class="s2">"critic"</span><span class="p">):</span>
         <span class="n">sub</span> <span class="o">=</span> <span class="n">overrides</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">section</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">drop_keys</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">sub</span><span class="p">:</span>
                     <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                        <span class="s2">&quot;Stripping trainer_config override &#39;</span><span class="si">%s</span><span class="s2">.</span><span class="si">%s</span><span class="s2">&#39; — &quot;</span>
-                        <span class="s2">&quot;incompatible with strategy &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span><span class="p">,</span>
+                        <span class="s2">"Stripping trainer_config override '</span><span class="si">%s</span><span class="s2">.</span><span class="si">%s</span><span class="s2">' — "</span>
+                        <span class="s2">"incompatible with strategy '</span><span class="si">%s</span><span class="s2">'"</span><span class="p">,</span>
                         <span class="n">section</span><span class="p">,</span>
                         <span class="n">key</span><span class="p">,</span>
                         <span class="n">strategy</span><span class="p">,</span>
@@ -1796,17 +1798,17 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_normalize_trainer_config</span><span class="p">(</span><span class="n">trainer_config</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalize user trainer_config to verl flat structure.</span>
+<span class="w">    </span><span class="sd">"""Normalize user trainer_config to verl flat structure.</span>
 
 <span class="sd">    Accepts the old ``veRLConfig`` layout (with ``actor_rollout_ref`` wrapper)</span>
 <span class="sd">    or the flat layout (``model``/``actor``/``ref``/``rollout``/``critic`` at</span>
 <span class="sd">    the top level).  Returns a plain dict with only the mergeable top-level</span>
 <span class="sd">    keys.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">trainer_config</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{}</span>
 
-    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">trainer_config</span><span class="p">,</span> <span class="s2">&quot;to_container&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">trainer_config</span><span class="p">,</span> <span class="s2">"to_container"</span><span class="p">):</span>
         <span class="n">tc</span> <span class="o">=</span> <span class="n">OmegaConf</span><span class="o">.</span><span class="n">to_container</span><span class="p">(</span><span class="n">trainer_config</span><span class="p">,</span> <span class="n">resolve</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">trainer_config</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="n">tc</span> <span class="o">=</span> <span class="n">OmegaConf</span><span class="o">.</span><span class="n">to_container</span><span class="p">(</span><span class="n">OmegaConf</span><span class="o">.</span><span class="n">structured</span><span class="p">(</span><span class="n">trainer_config</span><span class="p">),</span> <span class="n">resolve</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -1816,16 +1818,16 @@ window.runMermaid = runMermaid;</script>
     <span class="n">result</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="c1"># Unwrap actor_rollout_ref → flat model/actor/ref/rollout</span>
-    <span class="k">if</span> <span class="s2">&quot;actor_rollout_ref&quot;</span> <span class="ow">in</span> <span class="n">tc</span><span class="p">:</span>
-        <span class="n">arr</span> <span class="o">=</span> <span class="n">tc</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;actor_rollout_ref&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">"actor_rollout_ref"</span> <span class="ow">in</span> <span class="n">tc</span><span class="p">:</span>
+        <span class="n">arr</span> <span class="o">=</span> <span class="n">tc</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"actor_rollout_ref"</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">_MERGEABLE_KEYS</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">arr</span><span class="p">:</span>
                     <span class="n">result</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">arr</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
 
     <span class="c1"># Direct top-level keys (critic lives outside actor_rollout_ref)</span>
-    <span class="k">if</span> <span class="s2">&quot;critic&quot;</span> <span class="ow">in</span> <span class="n">tc</span><span class="p">:</span>
-        <span class="n">result</span><span class="p">[</span><span class="s2">&quot;critic&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tc</span><span class="p">[</span><span class="s2">&quot;critic&quot;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s2">"critic"</span> <span class="ow">in</span> <span class="n">tc</span><span class="p">:</span>
+        <span class="n">result</span><span class="p">[</span><span class="s2">"critic"</span><span class="p">]</span> <span class="o">=</span> <span class="n">tc</span><span class="p">[</span><span class="s2">"critic"</span><span class="p">]</span>
 
     <span class="c1"># Also accept the flat format where user writes model/actor/… at top level</span>
     <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">_MERGEABLE_KEYS</span><span class="p">:</span>
@@ -1835,20 +1837,20 @@ window.runMermaid = runMermaid;</script>
     <span class="k">return</span> <span class="n">result</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_deep_merge</span><span class="p">(</span><span class="n">base</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">overrides</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">frozen</span><span class="p">:</span> <span class="nb">set</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Recursively deep-merge *overrides* into *base*, skipping frozen keys.&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_deep_merge</span><span class="p">(</span><span class="n">base</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">overrides</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">frozen</span><span class="p">:</span> <span class="nb">set</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Recursively deep-merge *overrides* into *base*, skipping frozen keys."""</span>
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">overrides</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="n">full_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">prefix</span> <span class="k">else</span> <span class="n">key</span>
+        <span class="n">full_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">prefix</span> <span class="k">else</span> <span class="n">key</span>
 
         <span class="k">if</span> <span class="n">full_key</span> <span class="ow">in</span> <span class="n">frozen</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">&quot;Ignoring trainer_config override for &#39;</span><span class="si">%s</span><span class="s2">&#39; — &quot;</span>
-                <span class="s2">&quot;this field is controlled by global_config&quot;</span><span class="p">,</span>
+                <span class="s2">"Ignoring trainer_config override for '</span><span class="si">%s</span><span class="s2">' — "</span>
+                <span class="s2">"this field is controlled by global_config"</span><span class="p">,</span>
                 <span class="n">full_key</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="k">continue</span>
 
-        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">&quot;_target_&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s2">"_target_"</span><span class="p">:</span>
             <span class="k">continue</span>
 
         <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">base</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">base</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>

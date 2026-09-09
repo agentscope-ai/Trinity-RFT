@@ -698,10 +698,10 @@
 <h2>步骤 0：准备专家数据<a class="headerlink" href="#id1" title="Link to this heading">#</a></h2>
 <p>我们提示一个强大的 LLM 对一些预定义问题使用 CoT（思维链）过程生成回答。收集到的数据被视为来自专家的一些 experience。我们将它们以 <code class="docutils literal notranslate"><span class="pre">jsonl</span></code> 格式存储在文件 <code class="docutils literal notranslate"><span class="pre">expert_data.jsonl</span></code> 中，格式如下：</p>
 <div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-<span class="w">    </span><span class="nt">&quot;messages&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;system&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;system_prompt&gt;&quot;</span><span class="w"> </span><span class="p">},</span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;user&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;What is the sum of 4 and 12?&quot;</span><span class="w"> </span><span class="p">},</span>
-<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">&quot;role&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;assistant&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;content&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;&lt;think&gt;thinking process...&lt;/think&gt;\n&lt;answer&gt;16&lt;/answer&gt;&quot;</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">]</span>
+<span class="w">    </span><span class="nt">"messages"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">"role"</span><span class="p">:</span><span class="w"> </span><span class="s2">"system"</span><span class="p">,</span><span class="w"> </span><span class="nt">"content"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;system_prompt&gt;"</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">"role"</span><span class="p">:</span><span class="w"> </span><span class="s2">"user"</span><span class="p">,</span><span class="w"> </span><span class="nt">"content"</span><span class="p">:</span><span class="w"> </span><span class="s2">"What is the sum of 4 and 12?"</span><span class="w"> </span><span class="p">},</span>
+<span class="w">    </span><span class="p">{</span><span class="w"> </span><span class="nt">"role"</span><span class="p">:</span><span class="w"> </span><span class="s2">"assistant"</span><span class="p">,</span><span class="w"> </span><span class="nt">"content"</span><span class="p">:</span><span class="w"> </span><span class="s2">"&lt;think&gt;thinking process...&lt;/think&gt;\n&lt;answer&gt;16&lt;/answer&gt;"</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">]</span>
 <span class="p">},</span>
 <span class="err">...</span>
 </pre></div>
@@ -711,23 +711,23 @@
 <section id="id2">
 <h2>步骤 1：定义算法<a class="headerlink" href="#id2" title="Link to this heading">#</a></h2>
 <p>在 <code class="docutils literal notranslate"><span class="pre">trinity/algorithm/algorithm.py</span></code> 中，我们引入一个新的算法类型 <code class="docutils literal notranslate"><span class="pre">MIX</span></code>。</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@ALGORITHM_TYPE</span><span class="o">.</span><span class="n">register_module</span><span class="p">(</span><span class="s2">&quot;mix&quot;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@ALGORITHM_TYPE</span><span class="o">.</span><span class="n">register_module</span><span class="p">(</span><span class="s2">"mix"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">MIXAlgorithm</span><span class="p">(</span><span class="n">AlgorithmType</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;MIX algorithm.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""MIX algorithm."""</span>
 
     <span class="n">use_critic</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">use_reference</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">compute_advantage_in_trainer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">can_balance_batch</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="n">schema</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;experience&quot;</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"experience"</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">default_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;repeat_times&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
-            <span class="s2">&quot;advantage_fn&quot;</span><span class="p">:</span> <span class="s2">&quot;grpo&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;policy_loss_fn&quot;</span><span class="p">:</span> <span class="s2">&quot;mix&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;sample_strategy&quot;</span><span class="p">:</span> <span class="s2">&quot;mix&quot;</span><span class="p">,</span>
+            <span class="s2">"repeat_times"</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span>
+            <span class="s2">"advantage_fn"</span><span class="p">:</span> <span class="s2">"grpo"</span><span class="p">,</span>
+            <span class="s2">"policy_loss_fn"</span><span class="p">:</span> <span class="s2">"mix"</span><span class="p">,</span>
+            <span class="s2">"sample_strategy"</span><span class="p">:</span> <span class="s2">"mix"</span><span class="p">,</span>
         <span class="p">}</span>
 </pre></div>
 </div>
@@ -736,12 +736,12 @@
 <h2>步骤 2：定义采样策略<a class="headerlink" href="#id3" title="Link to this heading">#</a></h2>
 <p>我们需要在每一步读取两种类型的 experience 数据：普通 experience 和专家 experience。为此，我们定义了一个新的 experience 采样策略，名为 <code class="docutils literal notranslate"><span class="pre">MixSampleStrategy</span></code>。</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MixSampleStrategy</span><span class="p">(</span><span class="n">SampleStrategy</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;The default sample strategy.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""The default sample strategy."""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">buffer_config</span><span class="p">:</span> <span class="n">BufferConfig</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">buffer_config</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">expert_data_ratio</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;expert_data_ratio&quot;</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sft_dataset_name</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sft_dataset_name&quot;</span><span class="p">,</span> <span class="s2">&quot;sft_dataset&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expert_data_ratio</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"expert_data_ratio"</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sft_dataset_name</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sft_dataset_name"</span><span class="p">,</span> <span class="s2">"sft_dataset"</span><span class="p">)</span>
         <span class="n">tot_batch_size</span> <span class="o">=</span> <span class="n">buffer_config</span><span class="o">.</span><span class="n">train_batch_size</span>
         <span class="n">expert_batch_size</span> <span class="o">=</span> <span class="n">ceil</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">expert_data_ratio</span> <span class="o">*</span> <span class="n">tot_batch_size</span><span class="p">)</span>
 
@@ -752,7 +752,7 @@
 
         <span class="k">if</span> <span class="n">buffer_config</span><span class="o">.</span><span class="n">trainer_input</span><span class="o">.</span><span class="n">auxiliary_buffers</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;`buffer_config.trainer_input.auxiliary_buffers` is required in MIX algorithm&quot;</span>
+                <span class="s2">"`buffer_config.trainer_input.auxiliary_buffers` is required in MIX algorithm"</span>
             <span class="p">)</span>
 
         <span class="c1"># expert experience buffer</span>
@@ -766,13 +766,13 @@
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Experiences</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">]:</span>
         <span class="n">metrics</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">with</span> <span class="n">Timer</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="s2">&quot;time/read_experience&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">Timer</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="s2">"time/read_experience"</span><span class="p">):</span>
             <span class="n">usual_exp_list</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">usual_exp_buffer</span><span class="o">.</span><span class="n">read_async</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">usual_exp_list</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">exp</span><span class="o">.</span><span class="n">info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">exp</span><span class="o">.</span><span class="n">info</span> <span class="o">=</span> <span class="p">{}</span>
-                <span class="n">exp</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;is_expert&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-                <span class="n">exp</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">step</span>
+                <span class="n">exp</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s2">"is_expert"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="n">exp</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s2">"step"</span><span class="p">]</span> <span class="o">=</span> <span class="n">step</span>
 
             <span class="n">expert_exp_list</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">expert_exp_buffer</span><span class="o">.</span><span class="n">read_async</span><span class="p">()</span>
             <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">expert_exp_list</span><span class="p">:</span>
@@ -786,25 +786,25 @@
                 <span class="p">)</span>
                 <span class="k">if</span> <span class="n">exp</span><span class="o">.</span><span class="n">info</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                     <span class="n">exp</span><span class="o">.</span><span class="n">info</span> <span class="o">=</span> <span class="p">{}</span>
-                <span class="n">exp</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;is_expert&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-                <span class="n">exp</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">step</span>
+                <span class="n">exp</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s2">"is_expert"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="n">exp</span><span class="o">.</span><span class="n">info</span><span class="p">[</span><span class="s2">"step"</span><span class="p">]</span> <span class="o">=</span> <span class="n">step</span>
 
             <span class="n">exp_list</span> <span class="o">=</span> <span class="n">usual_exp_list</span> <span class="o">+</span> <span class="n">expert_exp_list</span>
             <span class="n">repr_samples</span> <span class="o">=</span> <span class="n">representative_sample</span><span class="p">(</span><span class="n">exp_list</span><span class="p">)</span>
 
-        <span class="k">with</span> <span class="n">Timer</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="s2">&quot;time/gather_experience&quot;</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">Timer</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="s2">"time/gather_experience"</span><span class="p">):</span>
             <span class="n">exps</span> <span class="o">=</span> <span class="n">Experiences</span><span class="o">.</span><span class="n">gather_experiences</span><span class="p">(</span>
                 <span class="n">experiences</span><span class="o">=</span><span class="n">exp_list</span><span class="p">,</span>
                 <span class="n">pad_token_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pad_token_id</span><span class="p">,</span>  <span class="c1"># type: ignore [arg-type]</span>
                 <span class="n">custom_fields</span><span class="o">=</span><span class="p">[</span>
                     <span class="n">CustomField</span><span class="p">(</span>
-                        <span class="n">source_field</span><span class="o">=</span><span class="s2">&quot;is_expert&quot;</span><span class="p">,</span>
-                        <span class="n">destination_field</span><span class="o">=</span><span class="s2">&quot;expert_mask&quot;</span><span class="p">,</span>
+                        <span class="n">source_field</span><span class="o">=</span><span class="s2">"is_expert"</span><span class="p">,</span>
+                        <span class="n">destination_field</span><span class="o">=</span><span class="s2">"expert_mask"</span><span class="p">,</span>
                         <span class="n">data_type</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span>
                     <span class="p">),</span>
                     <span class="n">CustomField</span><span class="p">(</span>
-                        <span class="n">source_field</span><span class="o">=</span><span class="s2">&quot;step&quot;</span><span class="p">,</span>
-                        <span class="n">destination_field</span><span class="o">=</span><span class="s2">&quot;step&quot;</span><span class="p">,</span>
+                        <span class="n">source_field</span><span class="o">=</span><span class="s2">"step"</span><span class="p">,</span>
+                        <span class="n">destination_field</span><span class="o">=</span><span class="s2">"step"</span><span class="p">,</span>
                         <span class="n">data_type</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span>
                     <span class="p">),</span>
                 <span class="p">],</span>
@@ -817,11 +817,11 @@
 <section id="id4">
 <h2>步骤 3：定义策略损失函数<a class="headerlink" href="#id4" title="Link to this heading">#</a></h2>
 <p>我们在 <code class="docutils literal notranslate"><span class="pre">trinity/algorithm/policy_loss_fn/mix_policy_loss.py</span></code> 中定义一个 <code class="docutils literal notranslate"><span class="pre">MixPolicyLoss</span></code> 类，它分别计算关于普通 experience 和专家 experience 的两个 losses 之和。</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@POLICY_LOSS_FN</span><span class="o">.</span><span class="n">register_module</span><span class="p">(</span><span class="s2">&quot;mix&quot;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@POLICY_LOSS_FN</span><span class="o">.</span><span class="n">register_module</span><span class="p">(</span><span class="s2">"mix"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">MIXPolicyLossFn</span><span class="p">(</span><span class="n">PolicyLossFn</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;verl&quot;</span><span class="p">,</span>
+        <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"verl"</span><span class="p">,</span>
         <span class="n">mu</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
         <span class="n">clip_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">clip_range_low</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -832,8 +832,8 @@
         <span class="n">ngpus_trainer</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">train_batch_size_usual</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">train_batch_size_expert</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-        <span class="n">sft_loss_agg_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;token-mean&quot;</span><span class="p">,</span>
-        <span class="n">grpo_loss_agg_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;token-mean&quot;</span><span class="p">,</span>
+        <span class="n">sft_loss_agg_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"token-mean"</span><span class="p">,</span>
+        <span class="n">grpo_loss_agg_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"token-mean"</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mu</span> <span class="o">=</span> <span class="n">mu</span>
@@ -861,7 +861,7 @@
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
         <span class="k">assert</span> <span class="p">(</span>
             <span class="nb">len</span><span class="p">(</span><span class="n">expert_mask</span><span class="p">)</span> <span class="o">==</span> <span class="n">logprob</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Error: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">expert_mask</span><span class="p">)</span><span class="si">=}</span><span class="s2"> != </span><span class="si">{</span><span class="n">logprob</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">=}</span><span class="s2">&quot;</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">"Error: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">expert_mask</span><span class="p">)</span><span class="si">=}</span><span class="s2"> != </span><span class="si">{</span><span class="n">logprob</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">=}</span><span class="s2">"</span>
 
         <span class="n">n_usual_exp</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">~</span><span class="n">expert_mask</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
         <span class="n">n_expert_exp</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">expert_mask</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
@@ -909,17 +909,17 @@
 
         <span class="n">loss</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span><span class="p">)</span> <span class="o">*</span> <span class="n">grpo_loss</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">mu</span> <span class="o">*</span> <span class="n">sft_loss</span>
 
-        <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span><span class="sa">f</span><span class="s2">&quot;usual/</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">grpo_metrics</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-        <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="sa">f</span><span class="s2">&quot;expert/</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sft_metrics</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
-        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span><span class="sa">f</span><span class="s2">"usual/</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">"</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">grpo_metrics</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="sa">f</span><span class="s2">"expert/</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">"</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sft_metrics</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s2">"loss"</span><span class="p">]</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 
         <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="n">metrics</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">default_args</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;mu&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
-            <span class="s2">&quot;clip_range&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+            <span class="s2">"mu"</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+            <span class="s2">"clip_range"</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
         <span class="p">}</span>
 </pre></div>
 </div>
@@ -936,7 +936,7 @@
 <span class="w">  </span><span class="nt">policy_loss_fn_args</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">mu</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.1</span>
 <span class="w">    </span><span class="nt">clip_range</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.2</span>
-<span class="w">    </span><span class="nt">sft_loss_agg_mode</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;token-mean&quot;</span>
+<span class="w">    </span><span class="nt">sft_loss_agg_mode</span><span class="p">:</span><span class="w"> </span><span class="s">"token-mean"</span>
 <span class="w">    </span><span class="nt">use_dynamic_bsz</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">True</span>
 <span class="w">    </span><span class="nt">repeat_times</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
 <span class="w">    </span><span class="nt">ppo_mini_batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">256</span>

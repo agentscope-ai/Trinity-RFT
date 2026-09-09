@@ -809,29 +809,29 @@ trinity<span class="w"> </span>run<span class="w"> </span>--config<span class="w
 <p>请参考 <code class="docutils literal notranslate"><span class="pre">trinity/common/workflows/envs/alfworld/alfworld_workflow.py</span></code> 示例，了解如何构建一个多轮 workflow。</p>
 <p>你可以使用消息格式与环境交互，并调用 <code class="docutils literal notranslate"><span class="pre">self.process_messages_to_experience</span></code> 函数将消息和奖励转换为我们所需的 <code class="docutils literal notranslate"><span class="pre">experience</span></code>，然后发送到缓冲区。</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">AlfworldWorkflow</span><span class="p">(</span><span class="n">MultiTurnWorkflow</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A workflow for alfworld task.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""A workflow for alfworld task."""</span>
     <span class="o">...</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">generate_env_inference_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">env</span><span class="p">,</span> <span class="n">rollout_num</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Generating env inference samples...&quot;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Generating env inference samples..."</span><span class="p">)</span>
         <span class="n">experience_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">rollout_num</span><span class="p">):</span>
             <span class="n">observation</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
             <span class="n">final_reward</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.1</span>
             <span class="n">memory</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="n">memory</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">AlfWORLD_SYSTEM_PROMPT</span><span class="p">})</span>
+            <span class="n">memory</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"system"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">AlfWORLD_SYSTEM_PROMPT</span><span class="p">})</span>
             <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_env_steps</span><span class="p">):</span>
                 <span class="n">format_obs</span> <span class="o">=</span> <span class="n">format_observation</span><span class="p">(</span><span class="n">observation</span><span class="p">)</span>
-                <span class="n">memory</span> <span class="o">=</span> <span class="n">memory</span> <span class="o">+</span> <span class="p">[{</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">format_obs</span><span class="p">}]</span>
+                <span class="n">memory</span> <span class="o">=</span> <span class="n">memory</span> <span class="o">+</span> <span class="p">[{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">format_obs</span><span class="p">}]</span>
                 <span class="n">response_text</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_model_response_text</span><span class="p">(</span><span class="n">memory</span><span class="p">)</span>
-                <span class="n">memory</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">response_text</span><span class="p">})</span>
+                <span class="n">memory</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"assistant"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">response_text</span><span class="p">})</span>
                 <span class="n">action</span> <span class="o">=</span> <span class="n">parse_action</span><span class="p">(</span><span class="n">response_text</span><span class="p">)</span>
                 <span class="n">observation</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="n">env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">done</span><span class="p">:</span>
                     <span class="n">final_reward</span> <span class="o">=</span> <span class="n">reward</span>
                     <span class="k">break</span>
             <span class="n">experience</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_messages_to_experience</span><span class="p">(</span>
-                <span class="n">memory</span><span class="p">,</span> <span class="n">final_reward</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;env_rounds&quot;</span><span class="p">:</span> <span class="n">r</span><span class="p">,</span> <span class="s2">&quot;env_done&quot;</span><span class="p">:</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">done</span> <span class="k">else</span> <span class="mi">0</span><span class="p">}</span>
+                <span class="n">memory</span><span class="p">,</span> <span class="n">final_reward</span><span class="p">,</span> <span class="p">{</span><span class="s2">"env_rounds"</span><span class="p">:</span> <span class="n">r</span><span class="p">,</span> <span class="s2">"env_done"</span><span class="p">:</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">done</span> <span class="k">else</span> <span class="mi">0</span><span class="p">}</span>
             <span class="p">)</span>
             <span class="n">experience_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">experience</span><span class="p">)</span>
         <span class="c1"># Close the env to save cpu memory</span>
@@ -850,9 +850,9 @@ trinity<span class="w"> </span>run<span class="w"> </span>--config<span class="w
 </div>
 <p>同时，记得在 <code class="docutils literal notranslate"><span class="pre">trinity/common/workflows/__init__.py</span></code> 中的 <code class="docutils literal notranslate"><span class="pre">default_mapping</span></code> 中注册你的 workflow。</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">WORKFLOWS</span> <span class="o">=</span> <span class="n">Registry</span><span class="p">(</span>
-    <span class="s2">&quot;workflows&quot;</span><span class="p">,</span>
+    <span class="s2">"workflows"</span><span class="p">,</span>
     <span class="n">default_mapping</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">&quot;alfworld_workflow&quot;</span><span class="p">:</span> <span class="s2">&quot;trinity.common.workflows.envs.alfworld.alfworld_workflow.AlfworldWorkflow&quot;</span><span class="p">,</span>
+        <span class="s2">"alfworld_workflow"</span><span class="p">:</span> <span class="s2">"trinity.common.workflows.envs.alfworld.alfworld_workflow.AlfworldWorkflow"</span><span class="p">,</span>
     <span class="p">},</span>
 <span class="p">)</span>
 </pre></div>

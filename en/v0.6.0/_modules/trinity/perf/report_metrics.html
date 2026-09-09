@@ -46,6 +46,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1015,12 +1017,12 @@ window.runMermaid = runMermaid;</script>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
 
-<span class="n">EXPERIENCE_COUNT_METRIC_KEY</span> <span class="o">=</span> <span class="s2">&quot;experience_pipeline/experience_count&quot;</span>
-<span class="n">PROMPT_LENGTH_MEAN_METRIC_KEY</span> <span class="o">=</span> <span class="s2">&quot;rollout/prompt_length/mean&quot;</span>
-<span class="n">RESPONSE_LENGTH_MEAN_METRIC_KEY</span> <span class="o">=</span> <span class="s2">&quot;rollout/response_length/mean&quot;</span>
-<span class="n">API_CALL_PROMPT_TOKENS_PER_SECOND_MEAN_METRIC_KEY</span> <span class="o">=</span> <span class="s2">&quot;rollout/api_call_prompt_tokens_per_second/mean&quot;</span>
+<span class="n">EXPERIENCE_COUNT_METRIC_KEY</span> <span class="o">=</span> <span class="s2">"experience_pipeline/experience_count"</span>
+<span class="n">PROMPT_LENGTH_MEAN_METRIC_KEY</span> <span class="o">=</span> <span class="s2">"rollout/prompt_length/mean"</span>
+<span class="n">RESPONSE_LENGTH_MEAN_METRIC_KEY</span> <span class="o">=</span> <span class="s2">"rollout/response_length/mean"</span>
+<span class="n">API_CALL_PROMPT_TOKENS_PER_SECOND_MEAN_METRIC_KEY</span> <span class="o">=</span> <span class="s2">"rollout/api_call_prompt_tokens_per_second/mean"</span>
 <span class="n">API_CALL_RESPONSE_TOKENS_PER_SECOND_MEAN_METRIC_KEY</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s2">&quot;rollout/api_call_response_tokens_per_second/mean&quot;</span>
+    <span class="s2">"rollout/api_call_response_tokens_per_second/mean"</span>
 <span class="p">)</span>
 
 
@@ -1042,15 +1044,15 @@ window.runMermaid = runMermaid;</script>
 
     <span class="k">if</span> <span class="n">execution_time_sec</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">execution_time_sec</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;prompt_tokens_per_second&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="s2">&quot;response_tokens_per_second&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-            <span class="s2">&quot;api_call_prompt_tokens_per_second&quot;</span><span class="p">:</span> <span class="p">(</span>
+            <span class="s2">"prompt_tokens_per_second"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">"response_tokens_per_second"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s2">"api_call_prompt_tokens_per_second"</span><span class="p">:</span> <span class="p">(</span>
                 <span class="nb">sum</span><span class="p">(</span><span class="n">api_call_prompt_tokens_per_second_values</span><span class="p">)</span>
                 <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">api_call_prompt_tokens_per_second_values</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">api_call_prompt_tokens_per_second_values</span>
                 <span class="k">else</span> <span class="kc">None</span>
             <span class="p">),</span>
-            <span class="s2">&quot;api_call_response_tokens_per_second&quot;</span><span class="p">:</span> <span class="p">(</span>
+            <span class="s2">"api_call_response_tokens_per_second"</span><span class="p">:</span> <span class="p">(</span>
                 <span class="nb">sum</span><span class="p">(</span><span class="n">api_call_response_tokens_per_second_values</span><span class="p">)</span>
                 <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">api_call_response_tokens_per_second_values</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">api_call_response_tokens_per_second_values</span>
@@ -1072,15 +1074,15 @@ window.runMermaid = runMermaid;</script>
             <span class="n">response_token_total</span> <span class="o">+=</span> <span class="nb">float</span><span class="p">(</span><span class="n">experience_count</span><span class="p">)</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">response_length_mean</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;prompt_tokens_per_second&quot;</span><span class="p">:</span> <span class="n">prompt_token_total</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">execution_time_sec</span><span class="p">),</span>
-        <span class="s2">&quot;response_tokens_per_second&quot;</span><span class="p">:</span> <span class="n">response_token_total</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">execution_time_sec</span><span class="p">),</span>
-        <span class="s2">&quot;api_call_prompt_tokens_per_second&quot;</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">"prompt_tokens_per_second"</span><span class="p">:</span> <span class="n">prompt_token_total</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">execution_time_sec</span><span class="p">),</span>
+        <span class="s2">"response_tokens_per_second"</span><span class="p">:</span> <span class="n">response_token_total</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">execution_time_sec</span><span class="p">),</span>
+        <span class="s2">"api_call_prompt_tokens_per_second"</span><span class="p">:</span> <span class="p">(</span>
             <span class="nb">sum</span><span class="p">(</span><span class="n">api_call_prompt_tokens_per_second_values</span><span class="p">)</span>
             <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">api_call_prompt_tokens_per_second_values</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">api_call_prompt_tokens_per_second_values</span>
             <span class="k">else</span> <span class="kc">None</span>
         <span class="p">),</span>
-        <span class="s2">&quot;api_call_response_tokens_per_second&quot;</span><span class="p">:</span> <span class="p">(</span>
+        <span class="s2">"api_call_response_tokens_per_second"</span><span class="p">:</span> <span class="p">(</span>
             <span class="nb">sum</span><span class="p">(</span><span class="n">api_call_response_tokens_per_second_values</span><span class="p">)</span>
             <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">api_call_response_tokens_per_second_values</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">api_call_response_tokens_per_second_values</span>

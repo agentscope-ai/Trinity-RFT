@@ -46,6 +46,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1014,7 +1016,7 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>Source code for trinity.common.workflows.thinking_budget_workflow</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;OpenAI-compatible workflow with vLLM thinking-budget support.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""OpenAI-compatible workflow with vLLM thinking-budget support."""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -1034,15 +1036,15 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="ThinkingBudgetWorkflow">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.workflows.thinking_budget_workflow.html#trinity.common.workflows.thinking_budget_workflow.ThinkingBudgetWorkflow">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ThinkingBudgetWorkflow</span><span class="p">(</span><span class="n">Workflow</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run raw OpenAI messages with a per-request reasoning-token budget.</span>
+<span class="w">    </span><span class="sd">"""Run raw OpenAI messages with a per-request reasoning-token budget.</span>
 
 <span class="sd">    vLLM forces the configured end-of-reasoning token sequence when the budget</span>
 <span class="sd">    is exhausted. The workflow locates that sequence in the returned completion</span>
 <span class="sd">    token IDs and masks it out so it does not contribute to the policy loss.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">can_repeat</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="n">DEFAULT_REASONING_END_STR</span> <span class="o">=</span> <span class="s2">&quot;&lt;/think&gt;&quot;</span>
+    <span class="n">DEFAULT_REASONING_END_STR</span> <span class="o">=</span> <span class="s2">"&lt;/think&gt;"</span>
 
 <div class="viewcode-block" id="ThinkingBudgetWorkflow.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.common.workflows.thinking_budget_workflow.html#trinity.common.workflows.thinking_budget_workflow.ThinkingBudgetWorkflow.__init__">[docs]</a>
@@ -1055,23 +1057,23 @@ window.runMermaid = runMermaid;</script>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="n">task</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">auxiliary_models</span><span class="o">=</span><span class="n">auxiliary_models</span><span class="p">)</span>
         <span class="n">raw_task</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">raw_task</span> <span class="ow">or</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">messages</span> <span class="o">=</span> <span class="n">raw_task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;messages&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">messages</span> <span class="o">=</span> <span class="n">raw_task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"messages"</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">messages</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;ThinkingBudgetWorkflow requires raw_task[&#39;messages&#39;] to be a list.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"ThinkingBudgetWorkflow requires raw_task['messages'] to be a list."</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">thinking_token_budget</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">task</span><span class="o">.</span><span class="n">workflow_args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;thinking_token_budget&quot;</span><span class="p">))</span>  <span class="c1"># type: ignore [arg-type]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">thinking_token_budget</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">task</span><span class="o">.</span><span class="n">workflow_args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"thinking_token_budget"</span><span class="p">))</span>  <span class="c1"># type: ignore [arg-type]</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">thinking_token_budget</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">thinking_token_budget</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;workflow_args[&#39;thinking_token_budget&#39;] must be a non-negative integer.&quot;</span>
+                <span class="s2">"workflow_args['thinking_token_budget'] must be a non-negative integer."</span>
             <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reasoning_end_str</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">workflow_args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
-            <span class="s2">&quot;reasoning_end_str&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">DEFAULT_REASONING_END_STR</span>
+            <span class="s2">"reasoning_end_str"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">DEFAULT_REASONING_END_STR</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reasoning_end_str</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">reasoning_end_str</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;workflow_args[&#39;reasoning_end_str&#39;] must be a non-empty string.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"workflow_args['reasoning_end_str'] must be a non-empty string."</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">model</span><span class="o">.</span><span class="n">enable_history</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;ThinkingBudgetWorkflow requires explorer.rollout_model.enable_history=true.&quot;</span>
+                <span class="s2">"ThinkingBudgetWorkflow requires explorer.rollout_model.enable_history=true."</span>
             <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">repeat_times</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">rollout_args</span><span class="o">.</span><span class="n">n</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">run_id_base</span> <span class="o">=</span> <span class="mi">0</span>
@@ -1084,7 +1086,7 @@ window.runMermaid = runMermaid;</script>
             <span class="bp">self</span><span class="o">.</span><span class="n">reasoning_end_str</span><span class="p">,</span> <span class="n">add_special_tokens</span><span class="o">=</span><span class="kc">False</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">reasoning_end_token_ids</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;workflow_args[&#39;reasoning_end_str&#39;] encodes to no tokens.&quot;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"workflow_args['reasoning_end_str'] encodes to no tokens."</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ThinkingBudgetWorkflow.set_repeat_times">
@@ -1099,7 +1101,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">exp</span><span class="p">:</span> <span class="n">Experience</span><span class="p">,</span>
         <span class="n">reasoning_end_token_ids</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the vLLM-forced reasoning-end token action entries to zero.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Set the vLLM-forced reasoning-end token action entries to zero."""</span>
         <span class="n">response_len</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">tokens</span><span class="p">)</span> <span class="o">-</span> <span class="n">exp</span><span class="o">.</span><span class="n">prompt_length</span>  <span class="c1"># type: ignore [arg-type]</span>
         <span class="k">if</span> <span class="n">exp</span><span class="o">.</span><span class="n">action_mask</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">exp</span><span class="o">.</span><span class="n">action_mask</span><span class="p">)</span> <span class="o">!=</span> <span class="n">response_len</span><span class="p">:</span>
             <span class="n">exp</span><span class="o">.</span><span class="n">action_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">response_len</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
@@ -1116,12 +1118,12 @@ window.runMermaid = runMermaid;</script>
         <span class="n">rollout_args</span> <span class="o">=</span> <span class="p">{</span>
             <span class="n">key</span><span class="p">:</span> <span class="n">value</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">asdict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">rollout_args</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">&quot;top_k&quot;</span><span class="p">,</span> <span class="s2">&quot;logprobs&quot;</span><span class="p">,</span> <span class="s2">&quot;n&quot;</span><span class="p">}</span>
+            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s2">"top_k"</span><span class="p">,</span> <span class="s2">"logprobs"</span><span class="p">,</span> <span class="s2">"n"</span><span class="p">}</span>
         <span class="p">}</span>
-        <span class="n">rollout_args</span><span class="p">[</span><span class="s2">&quot;n&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeat_times</span>
-        <span class="n">extra_body</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;thinking_token_budget&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">thinking_token_budget</span><span class="p">}</span>
+        <span class="n">rollout_args</span><span class="p">[</span><span class="s2">"n"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">repeat_times</span>
+        <span class="n">extra_body</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"thinking_token_budget"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">thinking_token_budget</span><span class="p">}</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">rollout_args</span><span class="o">.</span><span class="n">top_k</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">extra_body</span><span class="p">[</span><span class="s2">&quot;top_k&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">rollout_args</span><span class="o">.</span><span class="n">top_k</span>
+            <span class="n">extra_body</span><span class="p">[</span><span class="s2">"top_k"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">rollout_args</span><span class="o">.</span><span class="n">top_k</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">chat</span><span class="o">.</span><span class="n">completions</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
             <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">model_path</span><span class="p">,</span>

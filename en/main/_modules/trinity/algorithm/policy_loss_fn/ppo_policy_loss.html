@@ -46,6 +46,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1014,10 +1016,10 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>Source code for trinity.algorithm.policy_loss_fn.ppo_policy_loss</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;PPO policy loss function.</span>
+<span></span><span class="sd">"""PPO policy loss function.</span>
 
 <span class="sd">Modified from https://github.com/volcengine/verl/blob/main/verl/trainer/ppo/core_algos.py</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
@@ -1034,12 +1036,12 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.policy_loss_fn.ppo_policy_loss.html#trinity.algorithm.policy_loss_fn.ppo_policy_loss.PPOPolicyLossFn.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;verl&quot;</span><span class="p">,</span>
+        <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"verl"</span><span class="p">,</span>
         <span class="n">clip_range</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">clip_range_low</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">clip_range_high</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">clip_ratio_c</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">3.0</span><span class="p">,</span>
-        <span class="n">loss_agg_mode</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;token-mean&quot;</span><span class="p">,</span>
+        <span class="n">loss_agg_mode</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"token-mean"</span><span class="p">,</span>
         <span class="n">enable_sequence_masking</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>  <span class="c1"># introduced in DeepseekV3.2</span>
         <span class="n">delta_sequence_masking</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
         <span class="n">fallback_to_policy_gradient</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -1054,9 +1056,9 @@ window.runMermaid = runMermaid;</script>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">clip_range_high</span> <span class="o">=</span> <span class="n">clip_range_high</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">clip_ratio_c</span> <span class="o">=</span> <span class="n">clip_ratio_c</span>
-        <span class="k">assert</span> <span class="n">clip_ratio_c</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;clip_ratio_c must be greater than 1.0.&quot;</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">clip_range_low</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;clip_range_low must be specified.&quot;</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">clip_range_high</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;clip_range_high must be specified.&quot;</span>
+        <span class="k">assert</span> <span class="n">clip_ratio_c</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">"clip_ratio_c must be greater than 1.0."</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">clip_range_low</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"clip_range_low must be specified."</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">clip_range_high</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"clip_range_high must be specified."</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">loss_agg_mode</span> <span class="o">=</span> <span class="n">loss_agg_mode</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">enable_sequence_masking</span> <span class="o">=</span> <span class="n">enable_sequence_masking</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">delta_sequence_masking</span> <span class="o">=</span> <span class="n">delta_sequence_masking</span>
@@ -1120,17 +1122,17 @@ window.runMermaid = runMermaid;</script>
             <span class="n">pg_losses</span> <span class="o">=</span> <span class="n">pg_losses</span> <span class="o">*</span> <span class="n">sequence_mask</span>
 
             <span class="n">metrics_seq_mask</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;seq_mask/masked_tokens&quot;</span><span class="p">:</span> <span class="n">should_mask</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+                <span class="s2">"seq_mask/masked_tokens"</span><span class="p">:</span> <span class="n">should_mask</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
                 <span class="o">/</span> <span class="p">(</span><span class="n">action_mask</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">+</span> <span class="mf">1e-10</span><span class="p">),</span>
-                <span class="s2">&quot;seq_mask/mean_sequence_kl&quot;</span><span class="p">:</span> <span class="n">sequence_kl</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+                <span class="s2">"seq_mask/mean_sequence_kl"</span><span class="p">:</span> <span class="n">sequence_kl</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
             <span class="p">}</span>
 
         <span class="n">pg_loss</span> <span class="o">=</span> <span class="n">aggregate_loss</span><span class="p">(</span><span class="n">pg_losses</span><span class="p">,</span> <span class="n">action_mask</span><span class="p">,</span> <span class="n">loss_agg_mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">loss_agg_mode</span><span class="p">)</span>
         <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;pg_clipfrac&quot;</span><span class="p">:</span> <span class="n">pg_clip_frac</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
-            <span class="s2">&quot;pg_clipfrac_lower&quot;</span><span class="p">:</span> <span class="n">pg_clipfrac_lower</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
-            <span class="s2">&quot;ppo_kl&quot;</span><span class="p">:</span> <span class="n">ppo_kl</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
-            <span class="s2">&quot;pg_loss&quot;</span><span class="p">:</span> <span class="n">pg_loss</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+            <span class="s2">"pg_clipfrac"</span><span class="p">:</span> <span class="n">pg_clip_frac</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+            <span class="s2">"pg_clipfrac_lower"</span><span class="p">:</span> <span class="n">pg_clipfrac_lower</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+            <span class="s2">"ppo_kl"</span><span class="p">:</span> <span class="n">ppo_kl</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+            <span class="s2">"pg_loss"</span><span class="p">:</span> <span class="n">pg_loss</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
         <span class="p">}</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">enable_sequence_masking</span><span class="p">:</span>
             <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">metrics_seq_mask</span><span class="p">)</span>
@@ -1141,12 +1143,12 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">default_args</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;clip_range&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
-            <span class="s2">&quot;clip_ratio_c&quot;</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span>
-            <span class="s2">&quot;loss_agg_mode&quot;</span><span class="p">:</span> <span class="s2">&quot;token-mean&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;enable_sequence_masking&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-            <span class="s2">&quot;delta_sequence_masking&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
-            <span class="s2">&quot;fallback_to_policy_gradient&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">"clip_range"</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+            <span class="s2">"clip_ratio_c"</span><span class="p">:</span> <span class="mf">3.0</span><span class="p">,</span>
+            <span class="s2">"loss_agg_mode"</span><span class="p">:</span> <span class="s2">"token-mean"</span><span class="p">,</span>
+            <span class="s2">"enable_sequence_masking"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="s2">"delta_sequence_masking"</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+            <span class="s2">"fallback_to_policy_gradient"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
         <span class="p">}</span></div>
 </div>
 

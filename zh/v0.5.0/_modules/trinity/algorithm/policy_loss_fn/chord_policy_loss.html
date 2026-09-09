@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -985,7 +987,7 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>trinity.algorithm.policy_loss_fn.chord_policy_loss 源代码</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Implements the CHORD policy loss function.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""Implements the CHORD policy loss function."""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
@@ -1003,9 +1005,9 @@ window.runMermaid = runMermaid;</script>
 <span class="k">def</span><span class="w"> </span><span class="nf">mu_schedule_function</span><span class="p">(</span>
     <span class="n">global_step</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">mu_warmup_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">mu_decay_steps</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">mu_peak</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">mu_valley</span><span class="p">:</span> <span class="nb">float</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Computes a cosine decay schedule with a warmup phase for the mu parameter.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Warmup</span>
     <span class="k">if</span> <span class="n">global_step</span> <span class="o">&lt;</span> <span class="n">mu_warmup_steps</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">global_step</span> <span class="o">/</span> <span class="n">mu_warmup_steps</span><span class="p">)</span> <span class="o">*</span> <span class="n">mu_peak</span>
@@ -1024,13 +1026,13 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="SFTISLossFn">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.policy_loss_fn.chord_policy_loss.html#trinity.algorithm.policy_loss_fn.chord_policy_loss.SFTISLossFn">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SFTISLossFn</span><span class="p">(</span><span class="n">PolicyLossFn</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    SFT loss with importance sampling</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="SFTISLossFn.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.policy_loss_fn.chord_policy_loss.html#trinity.algorithm.policy_loss_fn.chord_policy_loss.SFTISLossFn.__init__">[文档]</a>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;verl&quot;</span><span class="p">,</span> <span class="n">loss_agg_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;token-mean&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"verl"</span><span class="p">,</span> <span class="n">loss_agg_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"token-mean"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">loss_agg_mode</span> <span class="o">=</span> <span class="n">loss_agg_mode</span></div>
 
@@ -1045,14 +1047,14 @@ window.runMermaid = runMermaid;</script>
         <span class="n">sft_loss</span> <span class="o">=</span> <span class="n">aggregate_loss</span><span class="p">(</span>
             <span class="o">-</span><span class="n">logprob</span> <span class="o">*</span> <span class="n">token_prob</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">action_mask</span><span class="p">,</span> <span class="n">loss_agg_mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">loss_agg_mode</span>
         <span class="p">)</span>
-        <span class="k">return</span> <span class="n">sft_loss</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;sft_is_loss&quot;</span><span class="p">:</span> <span class="n">sft_loss</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()}</span>
+        <span class="k">return</span> <span class="n">sft_loss</span><span class="p">,</span> <span class="p">{</span><span class="s2">"sft_is_loss"</span><span class="p">:</span> <span class="n">sft_loss</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()}</span>
 
 <div class="viewcode-block" id="SFTISLossFn.default_args">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.policy_loss_fn.chord_policy_loss.html#trinity.algorithm.policy_loss_fn.chord_policy_loss.SFTISLossFn.default_args">[文档]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">default_args</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;loss_agg_mode&quot;</span><span class="p">:</span> <span class="s2">&quot;token-mean&quot;</span><span class="p">,</span>
+            <span class="s2">"loss_agg_mode"</span><span class="p">:</span> <span class="s2">"token-mean"</span><span class="p">,</span>
         <span class="p">}</span></div>
 </div>
 
@@ -1061,10 +1063,10 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="phi_function">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.policy_loss_fn.chord_policy_loss.html#trinity.algorithm.policy_loss_fn.chord_policy_loss.phi_function">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">phi_function</span><span class="p">(</span><span class="n">token_prob</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    The phi function downweights token with extreme probability.</span>
 <span class="sd">    Feel free to modify this function.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="n">token_prob</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">token_prob</span><span class="p">)</span></div>
 
 
@@ -1072,14 +1074,14 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="SFTPhiLossFn">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.policy_loss_fn.chord_policy_loss.html#trinity.algorithm.policy_loss_fn.chord_policy_loss.SFTPhiLossFn">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">SFTPhiLossFn</span><span class="p">(</span><span class="n">PolicyLossFn</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    SFT loss with transformed phi function</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="SFTPhiLossFn.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.policy_loss_fn.chord_policy_loss.html#trinity.algorithm.policy_loss_fn.chord_policy_loss.SFTPhiLossFn.__init__">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;verl&quot;</span><span class="p">,</span> <span class="n">loss_agg_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;token-mean&quot;</span><span class="p">,</span> <span class="n">cutoff_prob</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"verl"</span><span class="p">,</span> <span class="n">loss_agg_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"token-mean"</span><span class="p">,</span> <span class="n">cutoff_prob</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">loss_agg_mode</span> <span class="o">=</span> <span class="n">loss_agg_mode</span>
@@ -1102,15 +1104,15 @@ window.runMermaid = runMermaid;</script>
         <span class="n">sft_loss</span> <span class="o">=</span> <span class="n">aggregate_loss</span><span class="p">(</span>
             <span class="o">-</span><span class="n">logprob</span> <span class="o">*</span> <span class="n">weighted_phi</span><span class="o">.</span><span class="n">detach</span><span class="p">(),</span> <span class="n">action_mask</span><span class="p">,</span> <span class="n">loss_agg_mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">loss_agg_mode</span>
         <span class="p">)</span>
-        <span class="k">return</span> <span class="n">sft_loss</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;sft_phi_loss&quot;</span><span class="p">:</span> <span class="n">sft_loss</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()}</span>
+        <span class="k">return</span> <span class="n">sft_loss</span><span class="p">,</span> <span class="p">{</span><span class="s2">"sft_phi_loss"</span><span class="p">:</span> <span class="n">sft_loss</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()}</span>
 
 <div class="viewcode-block" id="SFTPhiLossFn.default_args">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.policy_loss_fn.chord_policy_loss.html#trinity.algorithm.policy_loss_fn.chord_policy_loss.SFTPhiLossFn.default_args">[文档]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">default_args</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;loss_agg_mode&quot;</span><span class="p">:</span> <span class="s2">&quot;token-mean&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;cutoff_prob&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+            <span class="s2">"loss_agg_mode"</span><span class="p">:</span> <span class="s2">"token-mean"</span><span class="p">,</span>
+            <span class="s2">"cutoff_prob"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
         <span class="p">}</span></div>
 </div>
 
@@ -1119,7 +1121,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="MIXCHORDPolicyLossFn">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.policy_loss_fn.chord_policy_loss.html#trinity.algorithm.policy_loss_fn.chord_policy_loss.MIXCHORDPolicyLossFn">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MIXCHORDPolicyLossFn</span><span class="p">(</span><span class="n">PolicyLossFn</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Implements a mixed policy loss combining GRPO and SFT losses.</span>
+<span class="w">    </span><span class="sd">"""Implements a mixed policy loss combining GRPO and SFT losses.</span>
 
 <span class="sd">    This loss function applies different loss components to data based on whether</span>
 <span class="sd">    it comes from an expert or not, as indicated by `expert_mask`. It combines:</span>
@@ -1132,13 +1134,13 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    The per-sample weights are normalized using either `experience_per_gpu` or</span>
 <span class="sd">    `gradient_accumulation`, depending on whether dynamic batch sizing is enabled,</span>
 <span class="sd">    to ensure consistent weighting across different batches of the same type experiences.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="MIXCHORDPolicyLossFn.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.policy_loss_fn.chord_policy_loss.html#trinity.algorithm.policy_loss_fn.chord_policy_loss.MIXCHORDPolicyLossFn.__init__">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;verl&quot;</span><span class="p">,</span>
+        <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"verl"</span><span class="p">,</span>
         <span class="n">mu_warmup_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
         <span class="n">mu_decay_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
         <span class="n">mu_peak</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
@@ -1153,7 +1155,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">ngpus_trainer</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">train_batch_size_usual</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">train_batch_size_expert</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-        <span class="n">loss_agg_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;token-mean&quot;</span><span class="p">,</span>
+        <span class="n">loss_agg_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"token-mean"</span><span class="p">,</span>
         <span class="n">sft_loss_agg_mode</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">grpo_loss_agg_mode</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -1192,13 +1194,13 @@ window.runMermaid = runMermaid;</script>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
         <span class="k">assert</span> <span class="p">(</span>
             <span class="nb">len</span><span class="p">(</span><span class="n">expert_mask</span><span class="p">)</span> <span class="o">==</span> <span class="n">logprob</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Error: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">expert_mask</span><span class="p">)</span><span class="si">=}</span><span class="s2"> != </span><span class="si">{</span><span class="n">logprob</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">=}</span><span class="s2">&quot;</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">"Error: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">expert_mask</span><span class="p">)</span><span class="si">=}</span><span class="s2"> != </span><span class="si">{</span><span class="n">logprob</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">=}</span><span class="s2">"</span>
 
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">step</span><span class="p">)</span> <span class="o">==</span> <span class="n">logprob</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="sa">f</span><span class="s2">&quot;Error: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">step</span><span class="p">)</span><span class="si">=}</span><span class="s2"> != </span><span class="si">{</span><span class="n">logprob</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">=}</span><span class="s2">&quot;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">step</span><span class="p">)</span> <span class="o">==</span> <span class="n">logprob</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="sa">f</span><span class="s2">"Error: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">step</span><span class="p">)</span><span class="si">=}</span><span class="s2"> != </span><span class="si">{</span><span class="n">logprob</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">=}</span><span class="s2">"</span>
 
         <span class="k">assert</span> <span class="p">(</span>
             <span class="n">step</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">==</span> <span class="n">step</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-        <span class="p">),</span> <span class="sa">f</span><span class="s2">&quot;Error: </span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">}</span><span class="s2"> != </span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">),</span> <span class="sa">f</span><span class="s2">"Error: </span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">}</span><span class="s2"> != </span><span class="si">{</span><span class="n">step</span><span class="o">.</span><span class="n">min</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
         <span class="n">current_step</span> <span class="o">=</span> <span class="n">step</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
 
         <span class="n">n_usual_exp</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">~</span><span class="n">expert_mask</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
@@ -1243,9 +1245,9 @@ window.runMermaid = runMermaid;</script>
 
         <span class="n">loss</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">mu</span><span class="p">)</span> <span class="o">*</span> <span class="n">grpo_loss</span> <span class="o">+</span> <span class="n">mu</span> <span class="o">*</span> <span class="n">sft_loss</span>
 
-        <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span><span class="sa">f</span><span class="s2">&quot;usual/</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">grpo_metrics</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-        <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="sa">f</span><span class="s2">&quot;expert/</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sft_metrics</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
-        <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;loss&quot;</span><span class="p">:</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span> <span class="s2">&quot;mu&quot;</span><span class="p">:</span> <span class="n">mu</span><span class="p">})</span>
+        <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span><span class="sa">f</span><span class="s2">"usual/</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">"</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">grpo_metrics</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="sa">f</span><span class="s2">"expert/</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">"</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sft_metrics</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+        <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">"loss"</span><span class="p">:</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span> <span class="s2">"mu"</span><span class="p">:</span> <span class="n">mu</span><span class="p">})</span>
 
         <span class="k">return</span> <span class="n">loss</span><span class="p">,</span> <span class="n">metrics</span>
 
@@ -1253,17 +1255,17 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.policy_loss_fn.chord_policy_loss.html#trinity.algorithm.policy_loss_fn.chord_policy_loss.MIXCHORDPolicyLossFn.default_args">[文档]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">default_args</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        mu_warmup_steps: int, mu_decay_steps: int, mu_peak: float, mu_valley: float</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;mu_warmup_steps&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="s2">&quot;mu_decay_steps&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-            <span class="s2">&quot;mu_peak&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
-            <span class="s2">&quot;mu_valley&quot;</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
-            <span class="s2">&quot;clip_range&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
-            <span class="s2">&quot;enable_phi_function&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-            <span class="s2">&quot;loss_agg_mode&quot;</span><span class="p">:</span> <span class="s2">&quot;token-mean&quot;</span><span class="p">,</span>
+            <span class="s2">"mu_warmup_steps"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">"mu_decay_steps"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="s2">"mu_peak"</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+            <span class="s2">"mu_valley"</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span>
+            <span class="s2">"clip_range"</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+            <span class="s2">"enable_phi_function"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+            <span class="s2">"loss_agg_mode"</span><span class="p">:</span> <span class="s2">"token-mean"</span><span class="p">,</span>
         <span class="p">}</span></div>
 </div>
 

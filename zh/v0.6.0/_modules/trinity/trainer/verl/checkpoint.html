@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1019,7 +1021,7 @@ window.runMermaid = runMermaid;</script>
                   
   <h1>trinity.trainer.verl.checkpoint 源代码</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="sd">&quot;&quot;&quot;Checkpoint coordination for verl trainer.</span>
+<span class="sd">"""Checkpoint coordination for verl trainer.</span>
 
 <span class="sd">Provides CheckpointCoordinator — the single entry point for all checkpoint</span>
 <span class="sd">operations. It wraps the CheckpointMonitor Ray actor and background-thread</span>
@@ -1032,7 +1034,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    3. The thread calls notify_started → save → notify_finished on CheckpointMonitor</span>
 <span class="sd">    4. CheckpointMonitor only updates latest_state_dict_iteration.txt after ALL</span>
 <span class="sd">       registered saves for a given step complete</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
@@ -1046,7 +1048,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="CheckpointCoordinator">
 <a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.checkpoint.html#trinity.trainer.verl.checkpoint.CheckpointCoordinator">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CheckpointCoordinator</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Manages checkpoint saves and coordinates with CheckpointMonitor.</span>
+<span class="w">    </span><span class="sd">"""Manages checkpoint saves and coordinates with CheckpointMonitor.</span>
 
 <span class="sd">    This is the **only** interface callers should use for checkpoint</span>
 <span class="sd">    operations.  CheckpointMonitor (a Ray actor) is an internal</span>
@@ -1060,10 +1062,10 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Usage::</span>
 
 <span class="sd">        coordinator = CheckpointCoordinator(checkpoint_monitor)</span>
-<span class="sd">        coordinator.save_async(&quot;model&quot;, lambda: torch.save(sd, path), step, is_state_dict=True)</span>
+<span class="sd">        coordinator.save_async("model", lambda: torch.save(sd, path), step, is_state_dict=True)</span>
 <span class="sd">        # ... training continues while save runs in background ...</span>
 <span class="sd">        coordinator.wait_all()  # block until all saves complete</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="CheckpointCoordinator.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.checkpoint.html#trinity.trainer.verl.checkpoint.CheckpointCoordinator.__init__">[文档]</a>
@@ -1086,18 +1088,18 @@ window.runMermaid = runMermaid;</script>
         <span class="n">global_step</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">is_state_dict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run save_fn in a background thread with CheckpointMonitor coordination.</span>
+<span class="w">        </span><span class="sd">"""Run save_fn in a background thread with CheckpointMonitor coordination.</span>
 
 <span class="sd">        Joins any previous thread with the same ``name`` before starting, so</span>
 <span class="sd">        concurrent writes to the same destination are impossible.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            name: Logical name for this save slot (e.g. &quot;model_state_dict&quot;).</span>
+<span class="sd">            name: Logical name for this save slot (e.g. "model_state_dict").</span>
 <span class="sd">            save_fn: Zero-arg callable that does the actual I/O.</span>
 <span class="sd">            global_step: Training step, passed to CheckpointMonitor.</span>
 <span class="sd">            is_state_dict: True for state-dict-only saves (weight sync),</span>
 <span class="sd">                False for full checkpoint components.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_join</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">_run</span><span class="p">():</span>
@@ -1112,11 +1114,11 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">ray</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_monitor</span><span class="o">.</span><span class="n">notify_finished</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">global_step</span><span class="p">,</span> <span class="n">is_state_dict</span><span class="p">))</span>
             <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Background save &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; failed at step </span><span class="si">{</span><span class="n">global_step</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span>
+                    <span class="sa">f</span><span class="s2">"Background save '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">' failed at step </span><span class="si">{</span><span class="n">global_step</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">exc_info</span><span class="o">=</span><span class="kc">True</span>
                 <span class="p">)</span>
                 <span class="k">raise</span>
 
-        <span class="n">t</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">_run</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;ckpt-</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">-step</span><span class="si">{</span><span class="n">global_step</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">_run</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">"ckpt-</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">-step</span><span class="si">{</span><span class="n">global_step</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">t</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_threads</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span></div>
 
@@ -1129,11 +1131,11 @@ window.runMermaid = runMermaid;</script>
         <span class="n">global_step</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
         <span class="n">is_state_dict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run save_fn synchronously with CheckpointMonitor notifications.</span>
+<span class="w">        </span><span class="sd">"""Run save_fn synchronously with CheckpointMonitor notifications.</span>
 
 <span class="sd">        Use this for saves that must run on the main thread (e.g. because they</span>
 <span class="sd">        involve distributed barriers).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">ctx</span> <span class="o">=</span> <span class="n">ray</span><span class="o">.</span><span class="n">get_runtime_context</span><span class="p">()</span>
         <span class="n">ray</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_monitor</span><span class="o">.</span><span class="n">notify_started</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span><span class="n">node_id</span><span class="o">=</span><span class="n">ctx</span><span class="o">.</span><span class="n">get_node_id</span><span class="p">(),</span> <span class="n">job_id</span><span class="o">=</span><span class="n">ctx</span><span class="o">.</span><span class="n">get_job_id</span><span class="p">())</span>
@@ -1150,7 +1152,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="CheckpointCoordinator.wait_all">
 <a class="viewcode-back" href="../../../../build_api/trinity.trainer.verl.checkpoint.html#trinity.trainer.verl.checkpoint.CheckpointCoordinator.wait_all">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">wait_all</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Block until all background save threads complete.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Block until all background save threads complete."""</span>
         <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_threads</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
             <span class="n">t</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_threads</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span></div>
@@ -1169,7 +1171,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">state_dict_thread_count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
         <span class="n">checkpoint_thread_count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Register expected save thread counts and commit the step.</span>
+<span class="w">        </span><span class="sd">"""Register expected save thread counts and commit the step.</span>
 
 <span class="sd">        Called by VERLTrainer after dispatching save operations to workers.</span>
 <span class="sd">        This wraps the two Monitor RPCs (register_thread_count + monitor_step)</span>
@@ -1180,7 +1182,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">            is_state_dict: Whether this is a state-dict-only save.</span>
 <span class="sd">            state_dict_thread_count: Number of state dict save threads to expect.</span>
 <span class="sd">            checkpoint_thread_count: Number of full checkpoint save threads to expect.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">state_dict_thread_count</span> <span class="ow">or</span> <span class="n">checkpoint_thread_count</span><span class="p">:</span>
             <span class="n">ray</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_monitor</span><span class="o">.</span><span class="n">register_thread_count</span><span class="o">.</span><span class="n">remote</span><span class="p">(</span>

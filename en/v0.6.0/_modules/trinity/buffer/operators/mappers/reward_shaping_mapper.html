@@ -46,6 +46,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1021,17 +1023,17 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="RewardShapingMapper">
 <a class="viewcode-back" href="../../../../../build_api/trinity.buffer.operators.mappers.reward_shaping_mapper.html#trinity.buffer.operators.mappers.reward_shaping_mapper.RewardShapingMapper">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">RewardShapingMapper</span><span class="p">(</span><span class="n">ExperienceOperator</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Re-shaping the existing rewards of experiences based on rules or other advanced methods.</span>
+<span class="w">    </span><span class="sd">"""Re-shaping the existing rewards of experiences based on rules or other advanced methods.</span>
 
 <span class="sd">    Note:</span>
 <span class="sd">        This mapper assumes that the reward is already calculated and stored in the Experience object,</span>
 <span class="sd">        and the necessary stats are already calculated and stored in the Experience info field.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="RewardShapingMapper.__init__">
 <a class="viewcode-back" href="../../../../../build_api/trinity.buffer.operators.mappers.reward_shaping_mapper.html#trinity.buffer.operators.mappers.reward_shaping_mapper.RewardShapingMapper.__init__">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reward_shaping_configs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initializes the RewardShapingMapper.</span>
+<span class="w">        </span><span class="sd">"""Initializes the RewardShapingMapper.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            reward_shaping_configs (list[dict], optional): A list of dictionaries containing reward shaping</span>
@@ -1039,18 +1041,18 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">                - stats_key (str): The field key name of target stats used to shape the reward.</span>
 <span class="sd">                - op_type (str): The type of operator to apply between the reward and the target stats.</span>
-<span class="sd">                  Should be one of {&quot;ADD&quot;, &quot;SUB&quot;, &quot;MUL&quot;, &quot;DIV&quot;}.</span>
+<span class="sd">                  Should be one of {"ADD", "SUB", "MUL", "DIV"}.</span>
 <span class="sd">                - weight (float): The weight for the target stats.</span>
 
 <span class="sd">                Example:</span>
 <span class="sd">                    [</span>
 <span class="sd">                        {</span>
-<span class="sd">                            &quot;stats_key&quot;: &quot;llm_quality_score&quot;,</span>
-<span class="sd">                            &quot;op_type&quot;: &quot;ADD&quot;,</span>
-<span class="sd">                            &quot;weight&quot;: 1.0,</span>
+<span class="sd">                            "stats_key": "llm_quality_score",</span>
+<span class="sd">                            "op_type": "ADD",</span>
+<span class="sd">                            "weight": 1.0,</span>
 <span class="sd">                        }</span>
 <span class="sd">                    ]</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">reward_shaping_configs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">reward_shaping_configs</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reward_shaping_configs</span> <span class="o">=</span> <span class="n">reward_shaping_configs</span></div>
@@ -1062,7 +1064,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">res_exps</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">reward_diff</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">exps</span><span class="p">:</span>
-            <span class="c1"># skip experiences that don&#39;t have reward</span>
+            <span class="c1"># skip experiences that don't have reward</span>
             <span class="k">if</span> <span class="n">exp</span><span class="o">.</span><span class="n">reward</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">res_exps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">exp</span><span class="p">)</span>
                 <span class="n">reward_diff</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
@@ -1080,20 +1082,20 @@ window.runMermaid = runMermaid;</script>
             <span class="n">res_exps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">res_exp</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">reward_diff</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">res_exps</span><span class="p">,</span> <span class="p">{</span>
-                <span class="s2">&quot;reward_diff/mean&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                <span class="s2">&quot;reward_diff/min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
-                <span class="s2">&quot;reward_diff/max&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">"reward_diff/mean"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">"reward_diff/min"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                <span class="s2">"reward_diff/max"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;reward_diff/mean&quot;</span><span class="p">:</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">(</span><span class="n">reward_diff</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">reward_diff</span><span class="p">),</span>
-            <span class="s2">&quot;reward_diff/min&quot;</span><span class="p">:</span> <span class="nb">min</span><span class="p">(</span><span class="n">reward_diff</span><span class="p">),</span>
-            <span class="s2">&quot;reward_diff/max&quot;</span><span class="p">:</span> <span class="nb">max</span><span class="p">(</span><span class="n">reward_diff</span><span class="p">),</span>
+            <span class="s2">"reward_diff/mean"</span><span class="p">:</span> <span class="mf">1.0</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">(</span><span class="n">reward_diff</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">reward_diff</span><span class="p">),</span>
+            <span class="s2">"reward_diff/min"</span><span class="p">:</span> <span class="nb">min</span><span class="p">(</span><span class="n">reward_diff</span><span class="p">),</span>
+            <span class="s2">"reward_diff/max"</span><span class="p">:</span> <span class="nb">max</span><span class="p">(</span><span class="n">reward_diff</span><span class="p">),</span>
         <span class="p">}</span>
         <span class="k">return</span> <span class="n">res_exps</span><span class="p">,</span> <span class="n">metrics</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_reward_shaping_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exp</span><span class="p">:</span> <span class="n">Experience</span><span class="p">,</span> <span class="n">reward_shaping_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Re-shapes the existing reward of one experience based on the given reward_shaping_config.</span>
+<span class="w">        </span><span class="sd">"""Re-shapes the existing reward of one experience based on the given reward_shaping_config.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            exp (Experience): The experience object whose reward is to be reshaped.</span>
@@ -1101,15 +1103,15 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">                It should include the following keys:</span>
 <span class="sd">                - stats_key (str): The field key name of target stats used to shape the reward.</span>
 <span class="sd">                - op_type (str): The type of operator to apply between the reward and the target stats.</span>
-<span class="sd">                  Should be one of {&quot;ADD&quot;, &quot;SUB&quot;, &quot;MUL&quot;, &quot;DIV&quot;}.</span>
+<span class="sd">                  Should be one of {"ADD", "SUB", "MUL", "DIV"}.</span>
 <span class="sd">                - weight (float): The weight for the target stats.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            Experience: The experience object with the reshaped reward.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">tgt_stats</span> <span class="o">=</span> <span class="n">reward_shaping_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;stats_key&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="n">op_type</span> <span class="o">=</span> <span class="n">OpType</span><span class="p">[</span><span class="n">reward_shaping_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;op_type&quot;</span><span class="p">,</span> <span class="s2">&quot;ADD&quot;</span><span class="p">)]</span>
-        <span class="n">weight</span> <span class="o">=</span> <span class="n">reward_shaping_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;weight&quot;</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="n">tgt_stats</span> <span class="o">=</span> <span class="n">reward_shaping_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"stats_key"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">op_type</span> <span class="o">=</span> <span class="n">OpType</span><span class="p">[</span><span class="n">reward_shaping_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"op_type"</span><span class="p">,</span> <span class="s2">"ADD"</span><span class="p">)]</span>
+        <span class="n">weight</span> <span class="o">=</span> <span class="n">reward_shaping_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"weight"</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
         <span class="c1"># if the target stats is not specified, skip the stats and return the original experience</span>
         <span class="k">if</span> <span class="n">tgt_stats</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">exp</span>

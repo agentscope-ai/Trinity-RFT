@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -982,7 +984,7 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>trinity.algorithm.advantage_fn.asymre_advantage 源代码</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;AsymRE advantage computation&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""AsymRE advantage computation"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">defaultdict</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span>
@@ -1001,7 +1003,7 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.advantage_fn.asymre_advantage.html#trinity.algorithm.advantage_fn.asymre_advantage.ASYMREAdvantageFn">[文档]</a>
 <span class="nd">@Deprecated</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ASYMREAdvantageFn</span><span class="p">(</span><span class="n">AdvantageFn</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;AsymRE advantage computation&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""AsymRE advantage computation"""</span>
 
 <div class="viewcode-block" id="ASYMREAdvantageFn.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.advantage_fn.asymre_advantage.html#trinity.algorithm.advantage_fn.asymre_advantage.ASYMREAdvantageFn.__init__">[文档]</a>
@@ -1014,10 +1016,10 @@ window.runMermaid = runMermaid;</script>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">exps</span><span class="p">:</span> <span class="s2">&quot;DataProto&quot;</span><span class="p">,</span>
+        <span class="n">exps</span><span class="p">:</span> <span class="s2">"DataProto"</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="s2">&quot;DataProto&quot;</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Modified from compute_grpo_outcome_advantage</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="s2">"DataProto"</span><span class="p">,</span> <span class="n">Dict</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Modified from compute_grpo_outcome_advantage</span>
 
 <span class="sd">        Compute advantage for AsymRE, operating only on Outcome reward</span>
 <span class="sd">        (with only one scalar reward for each response).</span>
@@ -1028,11 +1030,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">                shape: (bs, response_length)</span>
 <span class="sd">            scores: `(torch.Tensor)`</span>
 <span class="sd">                shape: (bs, response_length)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">token_level_rewards</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;token_level_rewards&quot;</span><span class="p">]</span>
-        <span class="n">eos_mask</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;response_mask&quot;</span><span class="p">]</span>
+<span class="sd">        """</span>
+        <span class="n">token_level_rewards</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"token_level_rewards"</span><span class="p">]</span>
+        <span class="n">eos_mask</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"response_mask"</span><span class="p">]</span>
 
-        <span class="n">index</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">non_tensor_batch</span><span class="p">[</span><span class="s2">&quot;uid&quot;</span><span class="p">]</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">exps</span><span class="o">.</span><span class="n">non_tensor_batch</span><span class="p">[</span><span class="s2">"uid"</span><span class="p">]</span>
         <span class="n">baseline_shift</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">baseline_shift</span>
 
         <span class="n">response_length</span> <span class="o">=</span> <span class="n">token_level_rewards</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
@@ -1048,17 +1050,17 @@ window.runMermaid = runMermaid;</script>
             <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">id2score</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">id2score</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
                     <span class="n">id2baseline</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
-                    <span class="c1"># TODO: consider id2baseline[idx] = id2score[idx] (so that this sample won&#39;t take effect?)</span>
+                    <span class="c1"># TODO: consider id2baseline[idx] = id2score[idx] (so that this sample won't take effect?)</span>
                 <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">id2score</span><span class="p">[</span><span class="n">idx</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                     <span class="n">id2baseline</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">id2score</span><span class="p">[</span><span class="n">idx</span><span class="p">]))</span> <span class="o">+</span> <span class="n">baseline_shift</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;no score in prompt index: </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"no score in prompt index: </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">bsz</span><span class="p">):</span>
                 <span class="n">scores</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">scores</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">id2baseline</span><span class="p">[</span><span class="n">index</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
             <span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">tile</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="n">response_length</span><span class="p">])</span> <span class="o">*</span> <span class="n">eos_mask</span>
 
-        <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;advantages&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scores</span>
-        <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">&quot;returns&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">scores</span>
+        <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"advantages"</span><span class="p">]</span> <span class="o">=</span> <span class="n">scores</span>
+        <span class="n">exps</span><span class="o">.</span><span class="n">batch</span><span class="p">[</span><span class="s2">"returns"</span><span class="p">]</span> <span class="o">=</span> <span class="n">scores</span>
 
         <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span>
             <span class="c1"># TODO: add meaningful metrics</span>
@@ -1071,7 +1073,7 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">default_args</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;baseline_shift&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span>
+            <span class="s2">"baseline_shift"</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span>
         <span class="p">}</span></div>
 </div>
 
@@ -1080,7 +1082,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="ASYMREGroupAdvantage">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.advantage_fn.asymre_advantage.html#trinity.algorithm.advantage_fn.asymre_advantage.ASYMREGroupAdvantage">[文档]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ASYMREGroupAdvantage</span><span class="p">(</span><span class="n">GroupAdvantage</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;asymre Group Advantage computation&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""asymre Group Advantage computation"""</span>
 
 <div class="viewcode-block" id="ASYMREGroupAdvantage.__init__">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.advantage_fn.asymre_advantage.html#trinity.algorithm.advantage_fn.asymre_advantage.ASYMREGroupAdvantage.__init__">[文档]</a>
@@ -1092,7 +1094,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="ASYMREGroupAdvantage.group_experiences">
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.advantage_fn.asymre_advantage.html#trinity.algorithm.advantage_fn.asymre_advantage.ASYMREGroupAdvantage.group_experiences">[文档]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">group_experiences</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exps</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">group_by</span><span class="p">(</span><span class="n">exps</span><span class="p">,</span> <span class="n">id_type</span><span class="o">=</span><span class="s2">&quot;task&quot;</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">group_by</span><span class="p">(</span><span class="n">exps</span><span class="p">,</span> <span class="n">id_type</span><span class="o">=</span><span class="s2">"task"</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ASYMREGroupAdvantage.calculate_group_advantage">
@@ -1111,8 +1113,8 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">exp</span><span class="o">.</span><span class="n">advantages</span> <span class="o">=</span> <span class="n">score</span> <span class="o">*</span> <span class="n">exp</span><span class="o">.</span><span class="n">action_mask</span>
                 <span class="n">exp</span><span class="o">.</span><span class="n">returns</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">advantages</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
             <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;group_baseline&quot;</span><span class="p">:</span> <span class="n">group_baseline</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
-                <span class="s2">&quot;reward_mean&quot;</span><span class="p">:</span> <span class="n">group_baseline</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">baseline_shift</span><span class="p">,</span>
+                <span class="s2">"group_baseline"</span><span class="p">:</span> <span class="n">group_baseline</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+                <span class="s2">"reward_mean"</span><span class="p">:</span> <span class="n">group_baseline</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">baseline_shift</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="k">return</span> <span class="n">exps</span><span class="p">,</span> <span class="n">metrics</span></div>
 
@@ -1121,7 +1123,7 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../../build_api/trinity.algorithm.advantage_fn.asymre_advantage.html#trinity.algorithm.advantage_fn.asymre_advantage.ASYMREGroupAdvantage.default_args">[文档]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">default_args</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;baseline_shift&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">}</span></div>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"baseline_shift"</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">}</span></div>
 </div>
 
 </pre></div>

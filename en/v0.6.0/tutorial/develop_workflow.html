@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1148,8 +1150,8 @@ To handle differences in <code class="docutils literal notranslate"><span class=
 </ul>
 </div>
 <p>In the math problem scenario, the <code class="docutils literal notranslate"><span class="pre">Task</span></code> dataset can be a <code class="docutils literal notranslate"><span class="pre">jsonl</span></code> file, where each line contains JSON with <code class="docutils literal notranslate"><span class="pre">question</span></code> and <code class="docutils literal notranslate"><span class="pre">answer</span></code> fields representing the problem description and standard answer, respectively. For example:</p>
-<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">&quot;question&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1+1=&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;answer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2&quot;</span><span class="p">}</span>
-<span class="p">{</span><span class="nt">&quot;question&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2+2=&quot;</span><span class="p">,</span><span class="w"> </span><span class="nt">&quot;answer&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;4&quot;</span><span class="p">}</span>
+<div class="highlight-json notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="nt">"question"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1+1="</span><span class="p">,</span><span class="w"> </span><span class="nt">"answer"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2"</span><span class="p">}</span>
+<span class="p">{</span><span class="nt">"question"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2+2="</span><span class="p">,</span><span class="w"> </span><span class="nt">"answer"</span><span class="p">:</span><span class="w"> </span><span class="s2">"4"</span><span class="p">}</span>
 <span class="err">...</span>
 </pre></div>
 </div>
@@ -1158,11 +1160,11 @@ To handle differences in <code class="docutils literal notranslate"><span class=
 <span class="nt">buffer</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">explorer_input</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">taskset</span><span class="p">:</span>
-<span class="w">      </span><span class="nt">default_workflow</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;math_workflow&quot;</span>
+<span class="w">      </span><span class="nt">default_workflow</span><span class="p">:</span><span class="w"> </span><span class="s">"math_workflow"</span>
 <span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${oc.env:TRINITY_TASKSET_PATH}</span>
 <span class="w">      </span><span class="nt">format</span><span class="p">:</span>
-<span class="w">        </span><span class="nt">prompt_key</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;question&quot;</span>
-<span class="w">        </span><span class="nt">response_key</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;answer&quot;</span>
+<span class="w">        </span><span class="nt">prompt_key</span><span class="p">:</span><span class="w"> </span><span class="s">"question"</span>
+<span class="w">        </span><span class="nt">response_key</span><span class="p">:</span><span class="w"> </span><span class="s">"answer"</span>
 <span class="w">      </span><span class="nt">rollout_args</span><span class="p">:</span>
 <span class="w">        </span><span class="nt">temperature</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
 <span class="w">      </span><span class="c1"># some other configs</span>
@@ -1191,7 +1193,7 @@ To handle differences in <code class="docutils literal notranslate"><span class=
 
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run the workflow and return a list of Experiences.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Run the workflow and return a list of Experiences."""</span>
 </pre></div>
 </div>
 <section id="initialize-your-workflow">
@@ -1212,8 +1214,8 @@ And the <code class="docutils literal notranslate"><span class="pre">model</span
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">ModelWrapper</span><span class="p">,</span> <span class="n">auxiliary_models</span><span class="p">:</span> <span class="n">List</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="n">task</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">auxiliary_models</span><span class="o">=</span><span class="n">auxiliary_models</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">question</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;question&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">answer</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;answer&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">question</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"question"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">answer</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"answer"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rollout_args</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">rollout_args</span>
         <span class="c1"># Optional: If you want to use OpenAI API in your workflow</span>
         <span class="c1"># self.openai_client = self.model.get_openai_client()</span>
@@ -1242,8 +1244,8 @@ Finally, we construct a list of <code class="docutils literal notranslate"><span
         <span class="n">responses</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span>
             <span class="p">[</span>
                 <span class="p">{</span>
-                    <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Question:</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">question</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span>
+                    <span class="s2">"content"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"Question:</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">question</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">],</span>
             <span class="n">temperature</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rollout_args</span><span class="o">.</span><span class="n">temperature</span><span class="p">,</span>
@@ -1266,9 +1268,9 @@ Finally, we construct a list of <code class="docutils literal notranslate"><span
 <p>Register your workflow using the <code class="docutils literal notranslate"><span class="pre">default_mapping</span></code> in <code class="docutils literal notranslate"><span class="pre">trinity/common/workflows/__init__.py</span></code>.
 Ensure the name does not conflict with existing workflows.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">WORKFLOWS</span> <span class="o">=</span> <span class="n">Registry</span><span class="p">(</span>
-    <span class="s2">&quot;workflows&quot;</span><span class="p">,</span>
+    <span class="s2">"workflows"</span><span class="p">,</span>
     <span class="n">default_mapping</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">&quot;example_workflow&quot;</span><span class="p">:</span> <span class="s2">&quot;trinity.common.workflows.workflow.ExampleWorkflow&quot;</span><span class="p">,</span>
+        <span class="s2">"example_workflow"</span><span class="p">:</span> <span class="s2">"trinity.common.workflows.workflow.ExampleWorkflow"</span><span class="p">,</span>
     <span class="p">},</span>
 <span class="p">)</span>
 </pre></div>
@@ -1289,8 +1291,8 @@ In this case, you can set the <code class="docutils literal notranslate"><span c
     <span class="c1"># ...</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">question</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;question&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">answer</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;answer&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">question</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"question"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">answer</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"answer"</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
@@ -1313,8 +1315,8 @@ For this case, you can implement the <code class="docutils literal notranslate">
         <span class="n">responses</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span>
             <span class="p">[</span>
                 <span class="p">{</span>
-                    <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Question:</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">question</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span>
+                    <span class="s2">"content"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"Question:</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">question</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">],</span>
             <span class="n">n</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">repeat_times</span><span class="p">,</span>  <span class="c1"># run multiple times in one call</span>
@@ -1346,8 +1348,8 @@ For this case, you can implement the <code class="docutils literal notranslate">
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">,</span> <span class="n">model</span><span class="p">:</span> <span class="n">ModelWrapper</span><span class="p">,</span> <span class="n">auxiliary_models</span><span class="p">:</span> <span class="n">List</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="n">task</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">auxiliary_models</span><span class="o">=</span><span class="n">auxiliary_models</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">question</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;question&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">answer</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;answer&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">question</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"question"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">answer</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"answer"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">rollout_args</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">rollout_args</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">calculate_reward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">response</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">truth</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
@@ -1361,8 +1363,8 @@ For this case, you can implement the <code class="docutils literal notranslate">
         <span class="n">responses</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span>
             <span class="p">[</span>
                 <span class="p">{</span>
-                    <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Question:</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">question</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span>
+                    <span class="s2">"content"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"Question:</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">question</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
                 <span class="p">}</span>
             <span class="p">],</span>
             <span class="n">n</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">rollout_args</span><span class="o">.</span><span class="n">n</span><span class="p">,</span>
@@ -1384,8 +1386,8 @@ For this case, you can implement the <code class="docutils literal notranslate">
         <span class="k">return</span> <span class="n">experiences</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="p">:</span> <span class="n">Task</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">question</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;question&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">answer</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;answer&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">question</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"question"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">answer</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"answer"</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">set_repeat_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">repeat_times</span><span class="p">,</span> <span class="n">run_id_base</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">repeat_times</span> <span class="o">=</span> <span class="n">repeat_times</span>
@@ -1517,12 +1519,12 @@ For this case, you can implement the <code class="docutils literal notranslate">
             <span class="n">model</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">judge_model</span><span class="o">.</span><span class="n">model_path</span><span class="p">,</span>
             <span class="n">messages</span><span class="o">=</span><span class="p">[</span>
                 <span class="p">{</span>
-                    <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;system&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="s2">&quot;You are a judge. You need to give a score from 0 to 1 based on the quality of the answer.&quot;</span><span class="p">,</span>
+                    <span class="s2">"role"</span><span class="p">:</span> <span class="s2">"system"</span><span class="p">,</span>
+                    <span class="s2">"content"</span><span class="p">:</span> <span class="s2">"You are a judge. You need to give a score from 0 to 1 based on the quality of the answer."</span><span class="p">,</span>
                 <span class="p">},</span>
                 <span class="p">{</span>
-                    <span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span>
-                    <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Question:</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="p">[</span><span class="s1">&#39;question&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">Answer:</span><span class="se">\n</span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">response_text</span><span class="si">}</span><span class="se">\n</span><span class="s2">Please give a score from 0 to 1.&quot;</span><span class="p">,</span>
+                    <span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span>
+                    <span class="s2">"content"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"Question:</span><span class="se">\n</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">raw_task</span><span class="p">[</span><span class="s1">'question'</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">Answer:</span><span class="se">\n</span><span class="si">{</span><span class="n">response</span><span class="o">.</span><span class="n">response_text</span><span class="si">}</span><span class="se">\n</span><span class="s2">Please give a score from 0 to 1."</span><span class="p">,</span>
                 <span class="p">},</span>
             <span class="p">],</span>
             <span class="n">temperature</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
@@ -1592,11 +1594,11 @@ Note that the viewer reads experiences from the <code class="docutils literal no
 <p>Different from standard Python loggers, this built-in logger is configured to output logs to both the console and a file under the <code class="docutils literal notranslate"><span class="pre">&lt;checkpoint_root_dir&gt;/&lt;project&gt;/&lt;group&gt;/&lt;name&gt;/log</span></code> directory. This allows you to monitor the workflow’s runtime status during training conveniently. All workflow subclasses inherit this logger, so you can directly use it in your custom workflow implementations with <code class="docutils literal notranslate"><span class="pre">self.logger</span></code>.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">ExampleWorkflow</span><span class="p">(</span><span class="n">Workflow</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Starting workflow for task: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Starting workflow for task: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="c1"># your workflow logic</span>
         <span class="k">if</span> <span class="n">some_error_condition</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;An error occurred during workflow execution.&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Completed workflow for task: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">"An error occurred during workflow execution."</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Completed workflow for task: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">experiences</span>
 </pre></div>
 </div>

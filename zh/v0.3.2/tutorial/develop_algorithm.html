@@ -714,17 +714,17 @@
 <p>以下是 OPMD 算法优势函数的实现示例：</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">trinity.algorithm.advantage_fn</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADVANTAGE_FN</span><span class="p">,</span> <span class="n">GroupAdvantage</span>
 
-<span class="nd">@ADVANTAGE_FN</span><span class="o">.</span><span class="n">register_module</span><span class="p">(</span><span class="s2">&quot;opmd&quot;</span><span class="p">)</span>
+<span class="nd">@ADVANTAGE_FN</span><span class="o">.</span><span class="n">register_module</span><span class="p">(</span><span class="s2">"opmd"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">OPMDGroupAdvantage</span><span class="p">(</span><span class="n">GroupAdvantage</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;OPMD Group Advantage computation&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""OPMD Group Advantage computation"""</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opmd_baseline</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="n">tau</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">opmd_baseline</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"mean"</span><span class="p">,</span> <span class="n">tau</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">opmd_baseline</span> <span class="o">=</span> <span class="n">opmd_baseline</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tau</span> <span class="o">=</span> <span class="n">tau</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">group_experiences</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exps</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">group_by</span><span class="p">(</span><span class="n">exps</span><span class="p">,</span> <span class="n">id_type</span><span class="o">=</span><span class="s2">&quot;task&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">group_by</span><span class="p">(</span><span class="n">exps</span><span class="p">,</span> <span class="n">id_type</span><span class="o">=</span><span class="s2">"task"</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">calculate_group_advantage</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">group_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">exps</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Experience</span><span class="p">]</span>
@@ -734,7 +734,7 @@
                 <span class="n">group_baseline</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">group_rewards</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="n">exp</span><span class="o">.</span><span class="n">reward</span> <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">exps</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opmd_baseline</span> <span class="o">==</span> <span class="s2">&quot;mean&quot;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">opmd_baseline</span> <span class="o">==</span> <span class="s2">"mean"</span><span class="p">:</span>
                     <span class="n">group_baseline</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">group_rewards</span><span class="p">)</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">group_baseline</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tau</span> <span class="o">*</span> <span class="p">(</span>
@@ -746,13 +746,13 @@
                 <span class="n">exp</span><span class="o">.</span><span class="n">advantages</span> <span class="o">=</span> <span class="n">score</span> <span class="o">*</span> <span class="n">exp</span><span class="o">.</span><span class="n">action_mask</span>
                 <span class="n">exp</span><span class="o">.</span><span class="n">returns</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">advantages</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
             <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s2">&quot;group_baseline&quot;</span><span class="p">:</span> <span class="n">group_baseline</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+                <span class="s2">"group_baseline"</span><span class="p">:</span> <span class="n">group_baseline</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
             <span class="p">}</span>
         <span class="k">return</span> <span class="n">exps</span><span class="p">,</span> <span class="n">metrics</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">default_args</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;opmd_baseline&quot;</span><span class="p">:</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span> <span class="s2">&quot;tau&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"opmd_baseline"</span><span class="p">:</span> <span class="s2">"mean"</span><span class="p">,</span> <span class="s2">"tau"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}</span>
 </pre></div>
 </div>
 <p>实现后，你需要通过 <code class="xref py py-class docutils literal notranslate"><span class="pre">trinity.algorithm.ADVANTAGE_FN</span></code> 注册此模块。注册后，该模块可在配置文件中使用注册名称进行配置。</p>
@@ -766,10 +766,10 @@
 </ul>
 <p>同样，实现后需要通过 <code class="xref py py-class docutils literal notranslate"><span class="pre">trinity.algorithm.POLICY_LOSS_FN</span></code> 注册此模块。</p>
 <p>以下是 OPMD 算法策略损失函数的实现示例。由于 OPMD 的策略损失仅需 logprob、action_mask 和 advantages，因此 <code class="docutils literal notranslate"><span class="pre">__call__</span></code> 方法的参数列表中仅指定这三个项：</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@POLICY_LOSS_FN</span><span class="o">.</span><span class="n">register_module</span><span class="p">(</span><span class="s2">&quot;opmd&quot;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@POLICY_LOSS_FN</span><span class="o">.</span><span class="n">register_module</span><span class="p">(</span><span class="s2">"opmd"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">OPMDPolicyLossFn</span><span class="p">(</span><span class="n">PolicyLossFn</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;verl&quot;</span><span class="p">,</span> <span class="n">tau</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">loss_agg_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;token-mean&quot;</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">backend</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"verl"</span><span class="p">,</span> <span class="n">tau</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">loss_agg_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"token-mean"</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tau</span> <span class="o">=</span> <span class="n">tau</span>
@@ -785,11 +785,11 @@
         <span class="n">pg_losses</span> <span class="o">=</span> <span class="o">-</span><span class="n">advantages</span> <span class="o">*</span> <span class="n">logprob</span>
         <span class="n">opmd_loss</span> <span class="o">=</span> <span class="n">masked_loss</span><span class="p">(</span><span class="n">pg_losses</span><span class="p">,</span> <span class="n">action_mask</span><span class="p">,</span> <span class="n">loss_agg_mode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">loss_agg_mode</span><span class="p">)</span>
         <span class="n">opmd_loss</span> <span class="o">=</span> <span class="n">opmd_loss</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">tau</span><span class="p">)</span>  <span class="c1"># for regularization (w.r.t. current pi_theta)</span>
-        <span class="k">return</span> <span class="n">opmd_loss</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;opmd_loss&quot;</span><span class="p">:</span> <span class="n">opmd_loss</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()}</span>
+        <span class="k">return</span> <span class="n">opmd_loss</span><span class="p">,</span> <span class="p">{</span><span class="s2">"opmd_loss"</span><span class="p">:</span> <span class="n">opmd_loss</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()}</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">default_args</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;tau&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"tau"</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">}</span>
 </pre></div>
 </div>
 </section>
@@ -812,26 +812,26 @@
 <p>以下是 OPMD 算法的实现。
 由于 OPMD 算法不需要使用 Critic 模型，<code class="docutils literal notranslate"><span class="pre">use_critic</span></code> 设置为 <code class="docutils literal notranslate"><span class="pre">False</span></code>。
 <code class="docutils literal notranslate"><span class="pre">default_config</span></code> 方法返回的字典表明 OPMD 将使用步骤 1 中实现的 <code class="docutils literal notranslate"><span class="pre">opmd</span></code> 类型的 <code class="docutils literal notranslate"><span class="pre">AdvantageFn</span></code> 和 <code class="docutils literal notranslate"><span class="pre">PolicyLossFn</span></code>，不会对奖励应用 KL 惩罚，但在计算最终损失时会添加 <code class="docutils literal notranslate"><span class="pre">k2</span></code> 类型的 KL 损失。</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@ALGORITHM_TYPE</span><span class="o">.</span><span class="n">register_module</span><span class="p">(</span><span class="s2">&quot;opmd&quot;</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@ALGORITHM_TYPE</span><span class="o">.</span><span class="n">register_module</span><span class="p">(</span><span class="s2">"opmd"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">OPMDAlgorithm</span><span class="p">(</span><span class="n">AlgorithmType</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;OPMD algorithm.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""OPMD algorithm."""</span>
 
     <span class="n">use_critic</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">use_reference</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">compute_advantage_in_trainer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">can_balance_batch</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="n">schema</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;experience&quot;</span>
+    <span class="n">schema</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"experience"</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">default_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;repeat_times&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-            <span class="s2">&quot;advantage_fn&quot;</span><span class="p">:</span> <span class="s2">&quot;opmd&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;sample_strategy&quot;</span><span class="p">:</span> <span class="s2">&quot;warmup&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;policy_loss_fn&quot;</span><span class="p">:</span> <span class="s2">&quot;opmd&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;kl_penalty_fn&quot;</span><span class="p">:</span> <span class="s2">&quot;none&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;kl_loss_fn&quot;</span><span class="p">:</span> <span class="s2">&quot;k2&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;entropy_loss_fn&quot;</span><span class="p">:</span> <span class="s2">&quot;default&quot;</span><span class="p">,</span>
+            <span class="s2">"repeat_times"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+            <span class="s2">"advantage_fn"</span><span class="p">:</span> <span class="s2">"opmd"</span><span class="p">,</span>
+            <span class="s2">"sample_strategy"</span><span class="p">:</span> <span class="s2">"warmup"</span><span class="p">,</span>
+            <span class="s2">"policy_loss_fn"</span><span class="p">:</span> <span class="s2">"opmd"</span><span class="p">,</span>
+            <span class="s2">"kl_penalty_fn"</span><span class="p">:</span> <span class="s2">"none"</span><span class="p">,</span>
+            <span class="s2">"kl_loss_fn"</span><span class="p">:</span> <span class="s2">"k2"</span><span class="p">,</span>
+            <span class="s2">"entropy_loss_fn"</span><span class="p">:</span> <span class="s2">"default"</span><span class="p">,</span>
         <span class="p">}</span>
 </pre></div>
 </div>
@@ -853,17 +853,17 @@
 <p>对于默认配置，你只需在 <code class="docutils literal notranslate"><span class="pre">config.yaml</span></code> 文件中添加以下内容：</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># some other configs</span>
 <span class="nt">algorithm</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">algorithm_type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;opmd&quot;</span>
+<span class="w">  </span><span class="nt">algorithm_type</span><span class="p">:</span><span class="w"> </span><span class="s">"opmd"</span>
 <span class="c1"># some other configs</span>
 </pre></div>
 </div>
 <p>如果需要修改某些参数，可以在 <code class="docutils literal notranslate"><span class="pre">algorithm</span></code> 部分直接添加对应参数。例如，若需要修改 <code class="docutils literal notranslate"><span class="pre">repeat_times</span></code> 以及 <code class="docutils literal notranslate"><span class="pre">AdvantageFn</span></code> 和 <code class="docutils literal notranslate"><span class="pre">PolicyLossFn</span></code> 的初始化参数，修改后的 <code class="docutils literal notranslate"><span class="pre">config.yaml</span></code> 文件如下：</p>
 <div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="c1"># some other configs</span>
 <span class="nt">algorithm</span><span class="p">:</span>
-<span class="w">  </span><span class="nt">algorithm_type</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;opmd&quot;</span>
+<span class="w">  </span><span class="nt">algorithm_type</span><span class="p">:</span><span class="w"> </span><span class="s">"opmd"</span>
 <span class="w">  </span><span class="nt">repeat_times</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
 <span class="w">  </span><span class="nt">advantage_fn_args</span><span class="p">:</span>
-<span class="w">    </span><span class="nt">opmd_baseline</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;logavgexp&quot;</span>
+<span class="w">    </span><span class="nt">opmd_baseline</span><span class="p">:</span><span class="w"> </span><span class="s">"logavgexp"</span>
 <span class="w">    </span><span class="nt">tau</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.99</span>
 <span class="w">  </span><span class="nt">policy_loss_fn_args</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">tau</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.99</span>

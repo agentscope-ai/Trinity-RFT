@@ -754,12 +754,12 @@
 
         <span class="c1"># 为模型格式化观测结果</span>
         <span class="n">format_obs</span> <span class="o">=</span> <span class="n">format_observation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">observation</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;user&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">format_obs</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">format_obs</span><span class="p">})</span>
 
         <span class="c1"># 从模型获取动作</span>
         <span class="n">responses</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">chat</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="p">)</span>
         <span class="n">response_text</span> <span class="o">=</span> <span class="n">responses</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">response_text</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;role&quot;</span><span class="p">:</span> <span class="s2">&quot;assistant&quot;</span><span class="p">,</span> <span class="s2">&quot;content&quot;</span><span class="p">:</span> <span class="n">response_text</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">memory</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"assistant"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="n">response_text</span><span class="p">})</span>
         <span class="n">action</span> <span class="o">=</span> <span class="n">parse_action</span><span class="p">(</span><span class="n">response_text</span><span class="p">)</span>
 
         <span class="c1"># 在环境中执行动作</span>
@@ -780,9 +780,9 @@
 </div>
 <p>同时，请记得在 <code class="docutils literal notranslate"><span class="pre">trinity/common/workflows/__init__.py</span></code> 中的 <code class="docutils literal notranslate"><span class="pre">default_mapping</span></code> 中注册你的工作流：</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">WORKFLOWS</span> <span class="o">=</span> <span class="n">Registry</span><span class="p">(</span>
-    <span class="s2">&quot;workflows&quot;</span><span class="p">,</span>
+    <span class="s2">"workflows"</span><span class="p">,</span>
     <span class="n">default_mapping</span><span class="o">=</span><span class="p">{</span>
-      <span class="s2">&quot;step_wise_alfworld_workflow&quot;</span><span class="p">:</span> <span class="s2">&quot;trinity.common.workflows.step_wise_workflow.StepWiseAlfworldWorkflow&quot;</span><span class="p">,</span>
+      <span class="s2">"step_wise_alfworld_workflow"</span><span class="p">:</span> <span class="s2">"trinity.common.workflows.step_wise_workflow.StepWiseAlfworldWorkflow"</span><span class="p">,</span>
     <span class="p">},</span>
 <span class="p">)</span>
 </pre></div>
@@ -799,8 +799,8 @@
 <li><p><code class="docutils literal notranslate"><span class="pre">synchronizer.sync_style</span> <span class="pre">=</span> <span class="pre">explorer_driven</span></code>：由 explorer 决定何时与 trainer 同步模型权重。</p></li>
 </ul>
 <p>示例配置如下所示：</p>
-<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;ALFWORLD&quot;</span>
-<span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Step_Wise_Alfworld&quot;</span>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="s">"ALFWORLD"</span>
+<span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="s">"Step_Wise_Alfworld"</span>
 <span class="nt">checkpoint_root_dir</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}</span>
 <span class="nt">algorithm</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">algorithm_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">multi_step_grpo</span>
@@ -822,16 +822,16 @@
 <span class="w">    </span><span class="nt">taskset</span><span class="p">:</span>
 <span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">alfworld</span>
 <span class="w">      </span><span class="nt">storage_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">file</span>
-<span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;examples/grpo_alfworld/alfworld_data&#39;</span><span class="w"> </span><span class="c1"># PATH TO ALFWORLD DATA</span>
+<span class="w">      </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="s">'examples/grpo_alfworld/alfworld_data'</span><span class="w"> </span><span class="c1"># PATH TO ALFWORLD DATA</span>
 <span class="w">      </span><span class="nt">format</span><span class="p">:</span>
-<span class="w">        </span><span class="nt">prompt_key</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;game_file&#39;</span>
+<span class="w">        </span><span class="nt">prompt_key</span><span class="p">:</span><span class="w"> </span><span class="s">'game_file'</span>
 <span class="w">      </span><span class="nt">rollout_args</span><span class="p">:</span>
 <span class="w">        </span><span class="nt">temperature</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
 <span class="w">        </span><span class="nt">logprobs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
 <span class="w">      </span><span class="nt">workflow_args</span><span class="p">:</span>
 <span class="w">        </span><span class="nt">max_env_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">30</span>
 <span class="w">      </span><span class="nt">enable_progress_bar</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
-<span class="w">      </span><span class="nt">default_workflow_type</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;step_wise_alfworld_workflow&#39;</span>
+<span class="w">      </span><span class="nt">default_workflow_type</span><span class="p">:</span><span class="w"> </span><span class="s">'step_wise_alfworld_workflow'</span>
 <span class="w">  </span><span class="nt">trainer_input</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">experience_buffer</span><span class="p">:</span>
 <span class="w">      </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">alfworld_buffer</span>
@@ -856,7 +856,7 @@
 <span class="w">    </span><span class="nt">TMPDIR</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${oc.env:TMPDIR,/tmp}</span>
 <span class="nt">synchronizer</span><span class="p">:</span>
 <span class="w">  </span><span class="nt">sync_style</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">explorer_driven</span>
-<span class="w">  </span><span class="nt">sync_method</span><span class="p">:</span><span class="w"> </span><span class="s">&#39;nccl&#39;</span>
+<span class="w">  </span><span class="nt">sync_method</span><span class="p">:</span><span class="w"> </span><span class="s">'nccl'</span>
 <span class="w">  </span><span class="nt">sync_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
 <span class="w">  </span><span class="nt">sync_timeout</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3600</span>
 <span class="nt">trainer</span><span class="p">:</span>

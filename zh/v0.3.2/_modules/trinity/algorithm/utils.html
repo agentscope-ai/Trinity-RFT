@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -964,18 +966,18 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>trinity.algorithm.utils 源代码</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Common utils for algorithm module.</span>
+<span></span><span class="sd">"""Common utils for algorithm module.</span>
 
 <span class="sd">Modified from https://github.com/volcengine/verl/blob/main/verl/utils/torch_functional.py</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
 
 <div class="viewcode-block" id="aggregate_loss">
 <a class="viewcode-back" href="../../../build_api/trinity.algorithm.utils.html#trinity.algorithm.utils.aggregate_loss">[文档]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">aggregate_loss</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">loss_agg_mode</span><span class="o">=</span><span class="s2">&quot;token-mean&quot;</span><span class="p">,</span> <span class="n">normalizer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">aggregate_loss</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">loss_agg_mode</span><span class="o">=</span><span class="s2">"token-mean"</span><span class="p">,</span> <span class="n">normalizer</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Compute loss from values and mask with various aggregation modes.</span>
 <span class="sd">    Modified from: https://github.com/volcengine/verl/blob/main/verl/trainer/ppo/core_algos.py</span>
 
@@ -983,37 +985,37 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        values (torch.Tensor): Arbitrary shape tensor of values to aggregate.</span>
 <span class="sd">        mask (torch.BoolTensor or torch.FloatTensor): Same shape as values, 1/True = include, 0 = ignore.</span>
 <span class="sd">        loss_agg_mode (str): One of the following:</span>
-<span class="sd">            - &quot;token-mean&quot;: mean over all unmasked elements.</span>
-<span class="sd">            - &quot;seq-mean-token-sum&quot;: average over sequences, where each sequence&#39;s loss is sum of unmasked values.</span>
-<span class="sd">            - &quot;seq-mean-token-mean&quot;: average over sequences, where each sequence&#39;s loss is mean of unmasked values.</span>
-<span class="sd">            - &quot;seq-mean-token-sum-norm&quot;: total sum of unmasked values divided by a fixed normalizer (e.g., seq length).</span>
-<span class="sd">        normalizer (float or None): Only used in &#39;seq-mean-token-sum-norm&#39;. If None, uses mask.shape[-1].</span>
+<span class="sd">            - "token-mean": mean over all unmasked elements.</span>
+<span class="sd">            - "seq-mean-token-sum": average over sequences, where each sequence's loss is sum of unmasked values.</span>
+<span class="sd">            - "seq-mean-token-mean": average over sequences, where each sequence's loss is mean of unmasked values.</span>
+<span class="sd">            - "seq-mean-token-sum-norm": total sum of unmasked values divided by a fixed normalizer (e.g., seq length).</span>
+<span class="sd">        normalizer (float or None): Only used in 'seq-mean-token-sum-norm'. If None, uses mask.shape[-1].</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        torch.Tensor: Scalar loss value.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">loss_agg_mode</span> <span class="o">==</span> <span class="s2">&quot;token-mean&quot;</span><span class="p">:</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">loss_agg_mode</span> <span class="o">==</span> <span class="s2">"token-mean"</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">masked_mean</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">mask</span><span class="p">)</span>
 
-    <span class="k">elif</span> <span class="n">loss_agg_mode</span> <span class="o">==</span> <span class="s2">&quot;seq-mean-token-sum&quot;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">loss_agg_mode</span> <span class="o">==</span> <span class="s2">"seq-mean-token-sum"</span><span class="p">:</span>
         <span class="c1"># Sum over last dimension (token-level), then take mean across batch (sequence-level)</span>
         <span class="n">seq_losses</span> <span class="o">=</span> <span class="n">masked_sum</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># [batch]</span>
         <span class="k">return</span> <span class="n">seq_losses</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
 
-    <span class="k">elif</span> <span class="n">loss_agg_mode</span> <span class="o">==</span> <span class="s2">&quot;seq-mean-token-mean&quot;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">loss_agg_mode</span> <span class="o">==</span> <span class="s2">"seq-mean-token-mean"</span><span class="p">:</span>
         <span class="c1"># Mean over tokens per sequence, then mean over sequences</span>
         <span class="n">seq_losses</span> <span class="o">=</span> <span class="n">masked_mean</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># [batch]</span>
         <span class="k">return</span> <span class="n">seq_losses</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
 
-    <span class="k">elif</span> <span class="n">loss_agg_mode</span> <span class="o">==</span> <span class="s2">&quot;seq-mean-token-sum-norm&quot;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">loss_agg_mode</span> <span class="o">==</span> <span class="s2">"seq-mean-token-sum-norm"</span><span class="p">:</span>
         <span class="n">total_token_sum</span> <span class="o">=</span> <span class="n">masked_sum</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">mask</span><span class="p">)</span>  <span class="c1"># scalar</span>
         <span class="n">norm</span> <span class="o">=</span> <span class="n">normalizer</span> <span class="k">if</span> <span class="n">normalizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">mask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">total_token_sum</span> <span class="o">/</span> <span class="p">(</span><span class="n">norm</span> <span class="o">+</span> <span class="mf">1e-8</span><span class="p">)</span>
 
     <span class="k">else</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Invalid loss_agg_mode: </span><span class="si">{</span><span class="n">loss_agg_mode</span><span class="si">}</span><span class="s2">. &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;Choose from [&#39;token-mean&#39;, &#39;seq-mean-token-sum&#39;, &#39;seq-mean-token-mean&#39;, &#39;seq-mean-token-sum-norm&#39;]&quot;</span>
+            <span class="sa">f</span><span class="s2">"Invalid loss_agg_mode: </span><span class="si">{</span><span class="n">loss_agg_mode</span><span class="si">}</span><span class="s2">. "</span>
+            <span class="sa">f</span><span class="s2">"Choose from ['token-mean', 'seq-mean-token-sum', 'seq-mean-token-mean', 'seq-mean-token-sum-norm']"</span>
         <span class="p">)</span></div>
 
 
@@ -1021,7 +1023,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="masked_sum">
 <a class="viewcode-back" href="../../../build_api/trinity.algorithm.utils.html#trinity.algorithm.utils.masked_sum">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">masked_sum</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute mean of tensor with a masked values.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Compute mean of tensor with a masked values."""</span>
     <span class="n">valid_values</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">bool</span><span class="p">(),</span> <span class="n">values</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">valid_values</span> <span class="o">*</span> <span class="n">mask</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span></div>
 
@@ -1030,7 +1032,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="masked_mean">
 <a class="viewcode-back" href="../../../build_api/trinity.algorithm.utils.html#trinity.algorithm.utils.masked_mean">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">masked_mean</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute mean of tensor with a masked values.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Compute mean of tensor with a masked values."""</span>
     <span class="k">return</span> <span class="n">masked_sum</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-8</span><span class="p">)</span></div>
 
 
@@ -1038,18 +1040,18 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="masked_var">
 <a class="viewcode-back" href="../../../build_api/trinity.algorithm.utils.html#trinity.algorithm.utils.masked_var">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">masked_var</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">unbiased</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute variance of tensor with masked values.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Compute variance of tensor with masked values."""</span>
     <span class="n">mean</span> <span class="o">=</span> <span class="n">masked_mean</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">mask</span><span class="p">)</span>
     <span class="n">centered_values</span> <span class="o">=</span> <span class="n">values</span> <span class="o">-</span> <span class="n">mean</span>
     <span class="n">variance</span> <span class="o">=</span> <span class="n">masked_mean</span><span class="p">(</span><span class="n">centered_values</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">mask</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">unbiased</span><span class="p">:</span>
         <span class="n">mask_sum</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">mask_sum</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;At least one element in the mask has to be 1.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"At least one element in the mask has to be 1."</span><span class="p">)</span>
         <span class="c1"># note that if mask_sum == 1, then there is a division by zero issue</span>
         <span class="c1"># to avoid it you just need to use a larger minibatch_size</span>
         <span class="k">if</span> <span class="n">mask_sum</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The sum of the mask is one, which can cause a division by zero.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"The sum of the mask is one, which can cause a division by zero."</span><span class="p">)</span>
         <span class="n">bessel_correction</span> <span class="o">=</span> <span class="n">mask_sum</span> <span class="o">/</span> <span class="p">(</span><span class="n">mask_sum</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">variance</span> <span class="o">=</span> <span class="n">variance</span> <span class="o">*</span> <span class="n">bessel_correction</span>
     <span class="k">return</span> <span class="n">variance</span></div>
@@ -1059,7 +1061,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="masked_whiten">
 <a class="viewcode-back" href="../../../build_api/trinity.algorithm.utils.html#trinity.algorithm.utils.masked_whiten">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">masked_whiten</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">mask</span><span class="p">,</span> <span class="n">shift_mean</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Whiten `values` by normalizing with mean and variance computed over `mask`.</span>
 
 <span class="sd">    Args:</span>
@@ -1070,7 +1072,7 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        torch.Tensor: Whitened tensor of same shape as `values`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">mean</span><span class="p">,</span> <span class="n">var</span> <span class="o">=</span> <span class="n">masked_mean</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">mask</span><span class="p">),</span> <span class="n">masked_var</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">mask</span><span class="p">)</span>
     <span class="n">whitened</span> <span class="o">=</span> <span class="p">(</span><span class="n">values</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">rsqrt</span><span class="p">(</span><span class="n">var</span> <span class="o">+</span> <span class="mf">1e-8</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">shift_mean</span><span class="p">:</span>
@@ -1085,7 +1087,7 @@ window.runMermaid = runMermaid;</script>
     <span class="k">if</span> <span class="n">dst_metrics</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">dst_metrics</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">src_metrics</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="n">dst_metrics</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="n">dst_metrics</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
 
     <span class="k">return</span> <span class="n">dst_metrics</span></div>
 

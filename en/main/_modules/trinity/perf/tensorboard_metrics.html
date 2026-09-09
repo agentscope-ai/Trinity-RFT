@@ -46,6 +46,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1014,7 +1016,7 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>Source code for trinity.perf.tensorboard_metrics</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Helpers for TensorBoard metric parsing and aggregation.&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""Helpers for TensorBoard metric parsing and aggregation."""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
@@ -1024,15 +1026,15 @@ window.runMermaid = runMermaid;</script>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">tensorboard.backend.event_processing.event_accumulator</span><span class="w"> </span><span class="kn">import</span> <span class="n">EventAccumulator</span>
 
-<span class="n">TASK_EXECUTION_METRIC_NAME</span> <span class="o">=</span> <span class="s2">&quot;rollout/time/task_execution/mean&quot;</span>
-<span class="n">RUN_EXECUTION_METRIC_NAME</span> <span class="o">=</span> <span class="s2">&quot;rollout/time/run_execution/mean&quot;</span>
-<span class="n">FINISHED_TASK_METRIC_NAME</span> <span class="o">=</span> <span class="s2">&quot;rollout/finished_task_count&quot;</span>
+<span class="n">TASK_EXECUTION_METRIC_NAME</span> <span class="o">=</span> <span class="s2">"rollout/time/task_execution/mean"</span>
+<span class="n">RUN_EXECUTION_METRIC_NAME</span> <span class="o">=</span> <span class="s2">"rollout/time/run_execution/mean"</span>
+<span class="n">FINISHED_TASK_METRIC_NAME</span> <span class="o">=</span> <span class="s2">"rollout/finished_task_count"</span>
 
 
 <div class="viewcode-block" id="TensorBoardScalarReader">
 <a class="viewcode-back" href="../../../build_api/trinity.perf.tensorboard_metrics.html#trinity.perf.TensorBoardScalarReader">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">TensorBoardScalarReader</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read scalar metrics from TensorBoard event files.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Read scalar metrics from TensorBoard event files."""</span>
 
 <div class="viewcode-block" id="TensorBoardScalarReader.__init__">
 <a class="viewcode-back" href="../../../build_api/trinity.perf.tensorboard_metrics.html#trinity.perf.TensorBoardScalarReader.__init__">[docs]</a>
@@ -1046,7 +1048,7 @@ window.runMermaid = runMermaid;</script>
         <span class="k">for</span> <span class="n">event_file</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_event_files</span><span class="p">(</span><span class="n">log_dir</span><span class="p">):</span>
             <span class="n">accumulator</span> <span class="o">=</span> <span class="n">EventAccumulator</span><span class="p">(</span><span class="n">event_file</span><span class="p">)</span>
             <span class="n">accumulator</span><span class="o">.</span><span class="n">Reload</span><span class="p">()</span>
-            <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">accumulator</span><span class="o">.</span><span class="n">Tags</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;scalars&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+            <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">accumulator</span><span class="o">.</span><span class="n">Tags</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"scalars"</span><span class="p">,</span> <span class="p">[]):</span>
                 <span class="k">for</span> <span class="n">scalar</span> <span class="ow">in</span> <span class="n">accumulator</span><span class="o">.</span><span class="n">Scalars</span><span class="p">(</span><span class="n">tag</span><span class="p">):</span>
                     <span class="n">prior_value</span> <span class="o">=</span> <span class="n">metric_map</span><span class="p">[</span><span class="n">tag</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">scalar</span><span class="o">.</span><span class="n">step</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">prior_value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">scalar</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;</span> <span class="n">prior_value</span><span class="p">:</span>
@@ -1057,7 +1059,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">event_files</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">log_dir</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">file_name</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">file_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;events.out.tfevents.&quot;</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">file_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"events.out.tfevents."</span><span class="p">):</span>
                     <span class="n">event_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">file_name</span><span class="p">))</span>
         <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">event_files</span><span class="p">)</span></div>
 
@@ -1068,7 +1070,7 @@ window.runMermaid = runMermaid;</script>
 <span class="k">def</span><span class="w"> </span><span class="nf">extract_raw_metrics_for_step</span><span class="p">(</span>
     <span class="n">metric_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]],</span> <span class="n">step</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract all scalar metrics that were logged for one step.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Extract all scalar metrics that were logged for one step."""</span>
     <span class="k">return</span> <span class="p">{</span>
         <span class="n">metric_name</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">step_values</span><span class="p">[</span><span class="n">step</span><span class="p">])</span>
         <span class="k">for</span> <span class="n">metric_name</span><span class="p">,</span> <span class="n">step_values</span> <span class="ow">in</span> <span class="n">metric_map</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
@@ -1080,12 +1082,12 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="collect_step_metrics">
 <a class="viewcode-back" href="../../../build_api/trinity.perf.tensorboard_metrics.html#trinity.perf.collect_step_metrics">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">collect_step_metrics</span><span class="p">(</span><span class="n">metric_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build per-step metrics from TensorBoard scalars.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Build per-step metrics from TensorBoard scalars."""</span>
     <span class="n">step_numbers</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">metric_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">FINISHED_TASK_METRIC_NAME</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
     <span class="n">step_metrics</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">step_numbers</span><span class="p">:</span>
         <span class="n">metrics</span> <span class="o">=</span> <span class="n">extract_raw_metrics_for_step</span><span class="p">(</span><span class="n">metric_map</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
-        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">step</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s2">"step"</span><span class="p">]</span> <span class="o">=</span> <span class="n">step</span>
         <span class="n">step_metrics</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">step_metrics</span></div>
 

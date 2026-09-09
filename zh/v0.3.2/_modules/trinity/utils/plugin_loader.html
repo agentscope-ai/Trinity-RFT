@@ -47,6 +47,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -964,7 +966,7 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>trinity.utils.plugin_loader 源代码</h1><div class="highlight"><pre>
-<span></span><span class="sd">&quot;&quot;&quot;Load modules from custom directory&quot;&quot;&quot;</span>
+<span></span><span class="sd">"""Load modules from custom directory"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">importlib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
@@ -980,13 +982,13 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="load_plugins">
 <a class="viewcode-back" href="../../../build_api/trinity.utils.plugin_loader.html#trinity.utils.plugin_loader.load_plugins">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_plugins</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Load plugin modules from the default plugin directory or directories specified in the environment variable.</span>
 <span class="sd">    If the environment variable `PLUGIN_DIRS_ENV_VAR` is not set, it defaults to `trinity/plugins`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">plugin_dirs</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">PLUGIN_DIRS_ENV_VAR</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">pathsep</span><span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">plugin_dirs</span> <span class="ow">or</span> <span class="n">plugin_dirs</span> <span class="o">==</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">]:</span>
-        <span class="n">plugin_dirs</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;plugins&quot;</span><span class="p">)]</span>
+<span class="sd">    """</span>
+    <span class="n">plugin_dirs</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">PLUGIN_DIRS_ENV_VAR</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">pathsep</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">plugin_dirs</span> <span class="ow">or</span> <span class="n">plugin_dirs</span> <span class="o">==</span> <span class="p">[</span><span class="s2">""</span><span class="p">]:</span>
+        <span class="n">plugin_dirs</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">"plugins"</span><span class="p">)]</span>
 
     <span class="n">load_plugin_from_dirs</span><span class="p">(</span><span class="n">plugin_dirs</span><span class="p">)</span></div>
 
@@ -995,37 +997,37 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="load_plugin_from_dirs">
 <a class="viewcode-back" href="../../../build_api/trinity.utils.plugin_loader.html#trinity.utils.plugin_loader.load_plugin_from_dirs">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_plugin_from_dirs</span><span class="p">(</span><span class="n">plugin_dirs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Load plugin modules from a directory.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">plugin_dirs</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
         <span class="n">plugin_dirs</span> <span class="o">=</span> <span class="p">[</span><span class="n">plugin_dirs</span><span class="p">]</span>
     <span class="n">plugin_dirs</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">plugin_dirs</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">plugin_dir</span> <span class="ow">in</span> <span class="n">plugin_dirs</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">plugin_dir</span><span class="p">):</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;plugin-dir [</span><span class="si">{</span><span class="n">plugin_dir</span><span class="si">}</span><span class="s2">] does not exist.&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"plugin-dir [</span><span class="si">{</span><span class="n">plugin_dir</span><span class="si">}</span><span class="s2">] does not exist."</span><span class="p">)</span>
             <span class="k">continue</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">plugin_dir</span><span class="p">):</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;plugin-dir [</span><span class="si">{</span><span class="n">plugin_dir</span><span class="si">}</span><span class="s2">] is not a directory.&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="sa">f</span><span class="s2">"plugin-dir [</span><span class="si">{</span><span class="n">plugin_dir</span><span class="si">}</span><span class="s2">] is not a directory."</span><span class="p">)</span>
             <span class="k">continue</span>
 
-        <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">Path</span><span class="p">(</span><span class="n">plugin_dir</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.py&quot;</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;__&quot;</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">Path</span><span class="p">(</span><span class="n">plugin_dir</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"*.py"</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">file</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"__"</span><span class="p">):</span>
                 <span class="k">continue</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Loading plugin modules from [</span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">]...&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Loading plugin modules from [</span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">]..."</span><span class="p">)</span>
             <span class="c1"># load modules from file</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">load_from_file</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">file</span><span class="p">))</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to load plugin module from [</span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">]: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Failed to load plugin module from [</span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">]: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="load_from_file">
 <a class="viewcode-back" href="../../../build_api/trinity.utils.plugin_loader.html#trinity.utils.plugin_loader.load_from_file">[文档]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">load_from_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Load modules from a Python file</span>
 
 <span class="sd">    Args:</span>
@@ -1033,26 +1035,26 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        `Any`: The loaded module.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">module_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">file_path</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
 
-    <span class="n">full_module_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;trinity.plugins.</span><span class="si">{</span><span class="n">module_name</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">full_module_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"trinity.plugins.</span><span class="si">{</span><span class="n">module_name</span><span class="si">}</span><span class="s2">"</span>
 
     <span class="n">spec</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">spec_from_file_location</span><span class="p">(</span><span class="n">full_module_name</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">spec</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot load module from </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cannot load module from </span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="n">module</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">module_from_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
 
-    <span class="n">module</span><span class="o">.</span><span class="n">__package__</span> <span class="o">=</span> <span class="s2">&quot;trinity.plugins&quot;</span>
+    <span class="n">module</span><span class="o">.</span><span class="n">__package__</span> <span class="o">=</span> <span class="s2">"trinity.plugins"</span>
 
     <span class="n">spec</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">exec_module</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">full_module_name</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Module </span><span class="si">{</span><span class="n">module_name</span><span class="si">}</span><span class="s2"> already exists.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Module </span><span class="si">{</span><span class="n">module_name</span><span class="si">}</span><span class="s2"> already exists."</span><span class="p">)</span>
     <span class="n">sys</span><span class="o">.</span><span class="n">modules</span><span class="p">[</span><span class="n">full_module_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">module</span>
     <span class="k">try</span><span class="p">:</span>
-        <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">&quot;plugins&quot;</span><span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">"plugins"</span><span class="p">)</span>
     <span class="k">except</span> <span class="n">shutil</span><span class="o">.</span><span class="n">SameFileError</span><span class="p">:</span>
         <span class="k">pass</span>
     <span class="k">return</span> <span class="n">module</span></div>

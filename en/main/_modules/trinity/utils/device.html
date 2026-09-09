@@ -46,6 +46,8 @@
 
 
 
+
+
 const initStyles = () => {
     const defaultStyle = document.createElement('style');
     defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
@@ -1015,11 +1017,11 @@ window.runMermaid = runMermaid;</script>
                   
   <h1>Source code for trinity.utils.device</h1><div class="highlight"><pre>
 <span></span><span class="c1"># -*- coding: utf-8 -*-</span>
-<span class="sd">&quot;&quot;&quot;Device detection and abstraction layer.</span>
+<span class="sd">"""Device detection and abstraction layer.</span>
 
 <span class="sd">Unifies the differences among NPU / GPU / CPU devices for trinity modules.</span>
 
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
@@ -1030,12 +1032,12 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="DeviceType">
 <a class="viewcode-back" href="../../../build_api/trinity.utils.device.html#trinity.utils.device.DeviceType">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DeviceType</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Device type enum. Inherits str so it can be passed directly to APIs that</span>
-<span class="sd">    require &quot;npu&quot;/&quot;cuda&quot; strings.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Device type enum. Inherits str so it can be passed directly to APIs that</span>
+<span class="sd">    require "npu"/"cuda" strings."""</span>
 
-    <span class="n">NPU</span> <span class="o">=</span> <span class="s2">&quot;npu&quot;</span>
-    <span class="n">CUDA</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span>
-    <span class="n">CPU</span> <span class="o">=</span> <span class="s2">&quot;cpu&quot;</span></div>
+    <span class="n">NPU</span> <span class="o">=</span> <span class="s2">"npu"</span>
+    <span class="n">CUDA</span> <span class="o">=</span> <span class="s2">"cuda"</span>
+    <span class="n">CPU</span> <span class="o">=</span> <span class="s2">"cpu"</span></div>
 
 
 
@@ -1046,16 +1048,16 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../../build_api/trinity.utils.device.html#trinity.utils.device.get_device_type">[docs]</a>
 <span class="nd">@functools</span><span class="o">.</span><span class="n">lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_device_type</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">DeviceType</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Detect the currently available device type, with process-level caching.</span>
+<span class="w">    </span><span class="sd">"""Detect the currently available device type, with process-level caching.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        DeviceType.NPU / DeviceType.CUDA / DeviceType.CPU</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">env_override</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;TRINITY_DEVICE&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-    <span class="k">if</span> <span class="n">env_override</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;npu&quot;</span><span class="p">,</span> <span class="s2">&quot;cuda&quot;</span><span class="p">,</span> <span class="s2">&quot;cpu&quot;</span><span class="p">):</span>
+<span class="sd">    """</span>
+    <span class="n">env_override</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"TRINITY_DEVICE"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">env_override</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"npu"</span><span class="p">,</span> <span class="s2">"cuda"</span><span class="p">,</span> <span class="s2">"cpu"</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">DeviceType</span><span class="p">(</span><span class="n">env_override</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">torch</span><span class="p">,</span> <span class="s2">&quot;npu&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">torch</span><span class="o">.</span><span class="n">npu</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">torch</span><span class="p">,</span> <span class="s2">"npu"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">torch</span><span class="o">.</span><span class="n">npu</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">DeviceType</span><span class="o">.</span><span class="n">NPU</span>
     <span class="k">elif</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
         <span class="k">return</span> <span class="n">DeviceType</span><span class="o">.</span><span class="n">CUDA</span>
@@ -1067,7 +1069,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="is_npu">
 <a class="viewcode-back" href="../../../build_api/trinity.utils.device.html#trinity.utils.device.is_npu">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">is_npu</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Whether the current process is running in an NPU environment.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Whether the current process is running in an NPU environment."""</span>
     <span class="k">return</span> <span class="n">get_device_type</span><span class="p">()</span> <span class="ow">is</span> <span class="n">DeviceType</span><span class="o">.</span><span class="n">NPU</span></div>
 
 
@@ -1075,7 +1077,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="is_cuda">
 <a class="viewcode-back" href="../../../build_api/trinity.utils.device.html#trinity.utils.device.is_cuda">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">is_cuda</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Whether the current process is running in a CUDA environment.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Whether the current process is running in a CUDA environment."""</span>
     <span class="k">return</span> <span class="n">get_device_type</span><span class="p">()</span> <span class="ow">is</span> <span class="n">DeviceType</span><span class="o">.</span><span class="n">CUDA</span></div>
 
 
@@ -1083,7 +1085,7 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="is_cpu">
 <a class="viewcode-back" href="../../../build_api/trinity.utils.device.html#trinity.utils.device.is_cpu">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">is_cpu</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Whether the current process is running in a CPU environment.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Whether the current process is running in a CPU environment."""</span>
     <span class="k">return</span> <span class="n">get_device_type</span><span class="p">()</span> <span class="ow">is</span> <span class="n">DeviceType</span><span class="o">.</span><span class="n">CPU</span></div>
 
 
@@ -1094,32 +1096,32 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="get_ray_resource_key">
 <a class="viewcode-back" href="../../../build_api/trinity.utils.device.html#trinity.utils.device.get_ray_resource_key">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_ray_resource_key</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Accelerator key name in the Ray cluster Resources dict.</span>
+<span class="w">    </span><span class="sd">"""Accelerator key name in the Ray cluster Resources dict.</span>
 
-<span class="sd">    NPU nodes report as &quot;NPU&quot;, GPU nodes report as &quot;GPU&quot;.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="s2">&quot;NPU&quot;</span> <span class="k">if</span> <span class="n">is_npu</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;GPU&quot;</span></div>
+<span class="sd">    NPU nodes report as "NPU", GPU nodes report as "GPU".</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="s2">"NPU"</span> <span class="k">if</span> <span class="n">is_npu</span><span class="p">()</span> <span class="k">else</span> <span class="s2">"GPU"</span></div>
 
 
 
 <div class="viewcode-block" id="get_collective_backend">
 <a class="viewcode-back" href="../../../build_api/trinity.utils.device.html#trinity.utils.device.get_collective_backend">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_collective_backend</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Collective communication backend name. NPU uses hccl, GPU uses nccl.&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="s2">&quot;hccl&quot;</span> <span class="k">if</span> <span class="n">is_npu</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;nccl&quot;</span></div>
+<span class="w">    </span><span class="sd">"""Collective communication backend name. NPU uses hccl, GPU uses nccl."""</span>
+    <span class="k">return</span> <span class="s2">"hccl"</span> <span class="k">if</span> <span class="n">is_npu</span><span class="p">()</span> <span class="k">else</span> <span class="s2">"nccl"</span></div>
 
 
 
 <div class="viewcode-block" id="get_device_capability">
 <a class="viewcode-back" href="../../../build_api/trinity.utils.device.html#trinity.utils.device.get_device_capability">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">get_device_capability</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get major device capability version (device-agnostic).</span>
+<span class="w">    </span><span class="sd">"""Get major device capability version (device-agnostic).</span>
 
 <span class="sd">    Used to decide whether to enable meta tensor initialization for FSDP2.</span>
 <span class="sd">    - NPU: returns 10 (supports meta tensor init, equivalent to sm90+)</span>
 <span class="sd">    - CUDA: returns the actual major compute capability from torch.cuda</span>
 <span class="sd">    - CPU: returns 0 (meta tensor not beneficial)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">is_npu</span><span class="p">():</span>
         <span class="k">return</span> <span class="mi">10</span>
     <span class="k">if</span> <span class="n">is_cuda</span><span class="p">():</span>
