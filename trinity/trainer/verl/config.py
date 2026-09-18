@@ -586,7 +586,15 @@ def _build_optimizer_config(
         optim["min_lr_ratio"] = trinity_optim.min_lr_ratio
         optim["lr_scheduler_type"] = trinity_optim.lr_scheduler_type
         optim["num_cycles"] = 0.5
-        optim["override_optimizer_config"] = None
+        optimizer_overrides = {
+            key: value
+            for key, value in {
+                "fused": trinity_optim.fused,
+                "foreach": trinity_optim.foreach,
+            }.items()
+            if value is not None
+        }
+        optim["override_optimizer_config"] = optimizer_overrides or None
         optim["zero_indexed_step"] = True
     else:
         # Megatron uses McoreOptimizerConfig
