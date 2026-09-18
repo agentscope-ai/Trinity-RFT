@@ -317,6 +317,20 @@ class Explorer:
             self.explore_start_time = time.time()
         try:
             tasks = await self.taskset.read()
+            # !!! PATCH FOR COD START !!!
+            from trinity.common.workflows.connect_the_dots.cod_workflow import (
+                pack_tasks,
+            )
+
+            pack_size = self.config.cod.task_pack_size
+            cod_workflow_args = self.config.cod.cod_workflow_args
+            tasks = pack_tasks(
+                tasks,
+                pack_size,
+                cod_workflow_args,
+                pack_strategy=self.config.cod.packing_strategy,
+            )
+            # !!! PATCH FOR COD END !!!
         except StopAsyncIteration:
             self.logger.warning("No more tasks to explore. Stop exploring.")
             await self.finish_current_steps()
@@ -418,7 +432,8 @@ class Explorer:
                 f"Use '{self.config.buffer.explorer_input.default_eval_workflow_type}' for evaluation."
             )
 
-        for eval_taskset_config in self.config.buffer.explorer_input.eval_tasksets:
+        eval_taskset_configs = self.config.buffer.explorer_input.eval_tasksets
+        for eval_taskset_id, eval_taskset_config in enumerate(eval_taskset_configs):
             self.logger.info(
                 f"Evaluation on {eval_taskset_config.name} at step {self.explore_step_num} started."
             )
@@ -428,7 +443,27 @@ class Explorer:
             eval_tasks = []
             while True:
                 try:
-                    eval_tasks.extend(await eval_taskset.read())
+                    data = await eval_taskset.read()
+                    # !!! PATCH FOR COD START !!!
+                    from trinity.common.workflows.connect_the_dots.cod_workflow import (
+                        pack_tasks,
+                    )
+
+                    if self.config.cod.eval_task_pack_size:
+                        pack_size = self.config.cod.eval_task_pack_size
+                    else:
+                        pack_size = self.config.cod.task_pack_size
+                    cod_workflow_args = self.config.cod.cod_workflow_args
+                    for task in data:
+                        task.index["taskset_id"] = eval_taskset_id
+                    data = pack_tasks(
+                        data,
+                        pack_size,
+                        cod_workflow_args,
+                        pack_strategy=self.config.cod.packing_strategy,
+                    )
+                    # !!! PATCH FOR COD END !!!
+                    eval_tasks.extend(data)
                 except StopAsyncIteration:
                     break
             assert (

@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional, Sequence, Union
 import numpy as np
 import torch
 from packaging.version import parse as parse_version
-from transformers import AutoProcessor
+from transformers import AutoProcessor, AutoTokenizer
 
 from trinity.common.config import InferenceModelConfig
 from trinity.common.constants import SyncMethod
@@ -95,10 +95,19 @@ class vLLMRolloutModel(BaseInferenceModel):
 
     async def _initialize_tokenizer(self):
         if self.tokenizer is None:
+            # !!! PATCH FOR COD START !!!
             if self.vllm_version >= parse_version("0.15.0"):
-                self.tokenizer = self.async_llm.get_tokenizer()
+                engine_tokenizer = self.async_llm.get_tokenizer()
             else:
-                self.tokenizer = await self.async_llm.get_tokenizer()
+                engine_tokenizer = await self.async_llm.get_tokenizer()
+            # Standalone tokenizer to avoid the "Already borrowed" race, keeping
+            # the engine's model_max_length so truncation stays aligned.
+            self.tokenizer = AutoTokenizer.from_pretrained(
+                self.config.model_path,
+                trust_remote_code=self.config.trust_remote_code,
+            )
+            self.tokenizer.model_max_length = engine_tokenizer.model_max_length
+            # !!! PATCH FOR COD END !!!
         self.tokenizer.truncation_side = "left"
 
     async def _initialize_processor(self):

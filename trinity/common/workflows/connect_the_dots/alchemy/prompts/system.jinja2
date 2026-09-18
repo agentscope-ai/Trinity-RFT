@@ -1,0 +1,61 @@
+You are in an Alchemy crafting environment. Your goal is to synthesize the target element "{{ target }}" by combining elements in your inventory.
+
+## Game Mechanics
+
+There exists a fixed set of recipes. Each recipe takes exactly two input elements and produces one output element. A recipe's two inputs can be the same or different elements, and can be from different tiers.
+
+- **Combination**: Each round, choose two elements from your inventory to combine. If the pair matches a valid recipe, the result is added to your inventory. If not, nothing is produced.
+- **Tier system**: Every element has a tier. Every recipe produces a result whose tier is strictly higher than both inputs' tiers.
+{% if material_mode == "unlimited" %}
+- **No consumption**: Elements are NOT consumed when used. You keep all elements after each attempt, whether it succeeds or fails. Newly discovered elements are permanently added to your inventory.
+{% else %}
+- **Consumption**: Every attempt consumes 1 copy of each input element, whether it succeeds or fails. If both inputs are the same element, 2 copies are consumed. Failed attempts lose materials with no result.
+{% endif %}
+- **Winning**: You win when "{{ target }}" appears in your inventory.
+{% if material_mode == "unlimited" %}
+- **Ending**: The game ends when you succeed or reach the round limit.
+{% else %}
+- **Ending**: The game ends when you succeed, run out of materials, or reach the round limit.
+{% endif %}
+{% if obfuscate_names %}
+- All element names in this Alchemy crafting environment have no correspondence to real-world concepts. Do not try to guess recipes based on element names. 
+{% endif %}
+{% if not show_recipes %}
+
+## Hidden Clues About the Environment
+Recipes (i.e., which elements can be combined and which cannot) are unknown initially. You can try to discover them through experimentation, or based on additional hints provided in the context.{% if not obfuscate_names %} You may also use your knowledge of how elements naturally combine to make educated guesses.{% endif %}
+
+{% endif %}
+{% if show_recipes %}
+
+## Available Recipes
+{% for key, result in recipes.items() %}
+- {{ key[0] }} + {{ key[1] }} = {{ result }}
+{% endfor %}
+{% endif %}
+{% if show_elements %}
+
+## Elements in This World
+{{ all_elements | join(', ') }}
+{% endif %}
+{% if show_tiers %}
+
+## Element Tiers
+
+{{ tier_info }}
+{% endif %}
+
+## Response Format
+First think about which combination of elements to try out in the current round, then provide your action using <answer>...</answer> tags at the end. Format your complete response as follows:
+```
+[THINKING]
+<answer>Element1 + Element2</answer>
+```
+where [THINKING] should be replaced with your thinking process, while Element1 and Element2 are elements (same or different) chosen from your inventory.
+
+Other requirements:
+- Be concise and avoid overthinking in your thinking process.
+- Take one and only one action for each round.
+- You should synthesize the target element within a limited number of rounds. Try to find a short path towards the goal, e.g., by leveraging recipes that have been revealed and avoiding combinations that are known to fail.
+- Balance exploration and exploitation: as you strive to reach the goal, you may acquire information about the environment along the way, which can be potentially helpful for solving other similar tasks later on.
+

@@ -440,8 +440,10 @@ def apply_monkey_patch(  # noqa: C901
 
             from trinity.common.patch.qwen3_5 import ulysses_gate_delta_net_decorator
 
-            for layer in model.model.language_model.layers:
-                if layer.layer_type == "linear_attention":
+            language_model = model.model.language_model
+            for layer_idx, layer in enumerate(language_model.layers):
+                layer_type = language_model.config.layer_types[layer_idx]
+                if layer_type == "linear_attention":
                     ulysses_gate_delta_net_decorator(layer.linear_attn, ulysses_sp_size)
 
         # Step 3: patch verl.utils.flops_counter

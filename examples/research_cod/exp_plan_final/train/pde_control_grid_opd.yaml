@@ -1,0 +1,235 @@
+# Multi-teacher OPD on PDE, optimal-control, and grid-navigation tasksets.
+# Data prep:
+#   python examples/research_cod/get_pde_discovery_data.py --local_dir examples/research_cod/data/pde_discovery_runtime_seed --train_size 50000 --test_size 4000 --seed 42
+#   python examples/research_cod/get_optimal_control_data.py --local_dir examples/research_cod/data/optimal_control --train_size 50000 --test_size 4000 --difficulty hard --train_seed 42 --test_seed 2024
+#   python examples/research_cod/get_grid_navigation_data.py --local_dir examples/research_cod/data/grid_navigation --train_size 50000 --test_size 4000 --seed 42
+# 教师路径指向已转换的 Hugging Face checkpoint，顺序为 PDE、Optimal Control、Grid Navigation。
+#   export TRINITY_PDE_TEACHER_MODEL_PATH=/path/to/pde-teacher/actor/huggingface
+#   export TRINITY_OPTIMAL_CONTROL_TEACHER_MODEL_PATH=/path/to/control-teacher/actor/huggingface
+#   export TRINITY_GRID_NAVIGATION_TEACHER_MODEL_PATH=/path/to/grid-teacher/actor/huggingface
+project: ${oc.env:OPD_PROJECT,trinity-cod}
+group: "mixed_multi_teacher_opd"
+name: ${oc.env:EXP_NAME,qwen3.6-27b-mixed-opd-pde75-control200-grid100}
+mode: both
+checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
+continue_from_checkpoint: false
+
+cod:
+  task_pack_size: 4
+  eval_task_pack_size: 8
+  packing_strategy: cod
+  cod_workflow_args:
+    hint_example: false
+    activated_cod_methods: ["iterative_hint_e2e"]
+    reuse_workflow_instance: false
+    enable_teacher_logprobs: true
+    max_response_tokens_restraint: 4000
+    hint_penalty_coef: 0.1
+    cod_log_interval: 200
+    log_dir: ${oc.env:TRINITY_LOG_DIR,./logs/research_cod}
+    exp_name: ${project}-${group}-${name}
+    inject_pack_seed: true
+    stable_pack_seed: true
+    pad_tasks_to_full_pack: true
+
+algorithm:
+  algorithm_type: on_policy_distill
+  sample_strategy: staleness_control
+  sample_strategy_args:
+    max_staleness: 5
+  repeat_times: 1
+  optimizer:
+    lr: 1e-6
+    lr_warmup_steps: 10
+    lr_scheduler_type: constant
+  advantage_fn_args:
+    kl_coef: 1.0
+  policy_loss_fn: rec
+  policy_loss_fn_args:
+    clip_mode: "none"
+    weight: "none"
+    fix_opd_advantage: true
+  kl_loss_fn: k2
+  kl_loss_fn_args:
+    kl_coef: 0.0
+  entropy_loss_fn: default
+
+model:
+  model_path: ${oc.env:TRINITY_MODEL_PATH}
+  max_prompt_tokens: 22000
+  max_response_tokens: 4000
+  max_model_len: 26001
+
+cluster:
+  node_num: 3
+  gpu_per_node: 8
+
+buffer:
+  total_epochs: 1
+  batch_size: 256
+  train_batch_size: 720
+  explorer_input:
+    tasksets:
+      - name: pde_discovery
+        storage_type: file
+        path: ${oc.env:TRINITY_PDE_TASKSET_PATH,examples/research_cod/data/pde_discovery_runtime_seed}
+        split: train
+        format:
+          prompt_key: "task_desc"
+          response_key: "answer"
+        workflow_args:
+          update_context_impl: "pde_update_context"
+          context_compression_mode: "keep_all"
+          max_steps: 6
+          point_budget: 6
+          min_reaction_terms: 1
+          max_reaction_terms: 2
+          ground_truth_family: "physical_full_train.json"
+          pde_state_abs_limit: 3.0
+          initial_condition_shape:
+            mode_count_range: [1, 2]
+          noise_level: 0.002
+          kappa_threshold: 100.0
+          dump_trajectories: false
+        rollout_args:
+          temperature: 1.0
+        data_selector:
+          selector_type: sequential
+        default_workflow_type: "trinity.common.workflows.connect_the_dots.pde_discovery.workflow.CoDPDEDiscoveryWorkflow"
+
+      - name: optimal_control
+        storage_type: file
+        path: ${oc.env:TRINITY_OPTIMAL_CONTROL_TASKSET_PATH,examples/research_cod/data/optimal_control}
+        split: train
+        format:
+          prompt_key: "task_desc"
+        workflow_args:
+          update_context_impl: "update_context"
+          context_compression_mode: "keep_all"
+          include_previous_control_policy: true
+          a_env_range: [0.55, 1.20]
+          b_env_range: [-1.5, 1.5]
+          min_abs_b_env: 0.35
+          enable_process_noise: false
+        rollout_args:
+          temperature: 1.0
+        data_selector:
+          selector_type: sequential
+        default_workflow_type: "cod_optimalcontrol_workflow"
+
+      - name: grid_navigation
+        storage_type: file
+        path: ${oc.env:TRINITY_GRID_NAVIGATION_TASKSET_PATH,examples/research_cod/data/grid_navigation}
+        split: train
+        workflow_args:
+          update_context_impl: "update_context"
+          context_compression_mode: "keep_all"
+          length_penalty_coef: 0.0
+          grid_min_size: 8
+          grid_max_size: 12
+          landscape_num_components: 4
+          landscape_min_scale: 0.15
+          landscape_max_scale: 0.45
+          min_rounds: 3
+          max_rounds: 5
+          reveal_radius: 1
+        rollout_args:
+          temperature: 1.0
+        data_selector:
+          selector_type: sequential
+        default_workflow_type: "cod_grid_navigation_workflow"
+
+  trainer_input:
+    experience_buffer:
+      name: buffer
+      storage_type: queue
+      max_read_timeout: 72000
+
+explorer:
+  runner_per_model: 32
+  max_repeat_times_per_runner: 1
+  max_timeout: 72000
+  rollout_model:
+    enable_thinking: false
+    enable_history: false
+    engine_num: 4
+    tensor_parallel_size: 1
+    enable_prefix_caching: false
+    enforce_eager: true
+    dtype: bfloat16
+    seed: 42
+  auxiliary_models:
+    - name: pde_step75_teacher
+      model_path: ${oc.env:TRINITY_PDE_TEACHER_MODEL_PATH}
+      engine_type: vllm
+      engine_num: 4
+      tensor_parallel_size: 1
+      max_prompt_tokens: 22000
+      max_response_tokens: 4000
+      max_model_len: 26001
+      enable_prefix_caching: false
+      enforce_eager: true
+      extra_engine_args:
+        max_num_seqs: 32
+      dtype: bfloat16
+      seed: 42
+    - name: optimal_control_step200_teacher
+      model_path: ${oc.env:TRINITY_OPTIMAL_CONTROL_TEACHER_MODEL_PATH}
+      engine_type: vllm
+      engine_num: 4
+      tensor_parallel_size: 1
+      max_prompt_tokens: 22000
+      max_response_tokens: 4000
+      max_model_len: 26001
+      enable_prefix_caching: false
+      enforce_eager: true
+      extra_engine_args:
+        max_num_seqs: 32
+      dtype: bfloat16
+      seed: 42
+    - name: grid_navigation_step100_teacher
+      model_path: ${oc.env:TRINITY_GRID_NAVIGATION_TEACHER_MODEL_PATH}
+      engine_type: vllm
+      engine_num: 4
+      tensor_parallel_size: 1
+      max_prompt_tokens: 22000
+      max_response_tokens: 4000
+      max_model_len: 26001
+      enable_prefix_caching: false
+      enforce_eager: true
+      extra_engine_args:
+        max_num_seqs: 32
+      dtype: bfloat16
+      seed: 42
+
+trainer:
+  total_steps: 200
+  save_interval: 5
+  enable_preview: true
+  grad_clip: 1.0
+  use_dynamic_bsz: ${oc.env:USE_DYNAMIC_BSZ,true}
+  max_token_len_per_gpu: 7500
+  use_remove_padding: ${oc.env:REMOVE_PADDING,true}
+  ulysses_sequence_parallel_size: 4
+  offload_policy: false
+  # Keep enabled for this run; revisit after inspecting the initial curves.
+  fix_actor_microbatch_loss_scale: ${oc.env:FIX_LOSS_SCALE,true}
+  trainer_config:
+    actor_rollout_ref:
+      model:
+        use_fused_kernels: ${oc.decode:${oc.env:FUSED_KERNELS,true}}
+        fused_kernel_options:
+          impl_backend: torch
+      actor:
+        checkpoint:
+          load_contents: ["model", "extra"]
+          save_contents: ["model", "extra"]
+
+synchronizer:
+  sync_style: dynamic_by_explorer
+  sync_method: nccl
+  sync_interval: 1
+  sync_timeout: 72000
+
+monitor:
+  monitor_type: wandb

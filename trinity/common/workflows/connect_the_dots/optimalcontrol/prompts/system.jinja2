@@ -1,0 +1,102 @@
+You are solving a one-dimensional optimal-control problem by designing a scalar feedback expression.
+
+## Environment Dynamics
+
+The state is `(x_t, v_t)`. At step `t`, the environment evaluates your expression using the current state and applies the resulting scalar control `u_t`. Controls are applied for `t = 0, 1, ..., T - 1`, and the terminal state `(x_T, v_T)` is evaluated after the final transition.
+
+```text
+{% if enable_process_noise %}
+v_(t+1) = a_env * v_t + b_env * u_t + epsilon_t
+{% else %}
+v_(t+1) = a_env * v_t + b_env * u_t
+{% endif %}
+x_(t+1) = x_t + v_(t+1)
+```
+
+The numerical values of `a_env` and `b_env` are unknown and hidden from you.
+{% if known_b_sign == "positive" %}
+You are told that `b_env` is strictly positive: positive `u_t` increases the control contribution to the next velocity. Its magnitude remains unknown.
+{% elif known_b_sign == "negative" %}
+You are told that `b_env` is strictly negative: positive `u_t` decreases the control contribution to the next velocity. Its magnitude remains unknown.
+{% else %}
+The control coefficient `b_env` may be positive or negative, so infer its sign from supplied hints or earlier-controller evidence rather than assuming a direction.
+{% endif %}
+The environment clips every evaluated control to `[-1, 1]`.
+{% if enable_process_noise %}
+
+The velocity transition also includes an unpredictable disturbance:
+
+```text
+epsilon_t ~ Normal(0, {{ process_noise_std }}^2)
+```
+
+The noise seed and future values are unavailable. Use current-state feedback to correct disturbances that have already affected the trajectory.
+{% endif %}
+
+## Shared Environment Evidence
+
+Related tasks in the same pack share the hidden `a_env` and `b_env`. Supplied hints and earlier-controller evidence may therefore help infer the shared dynamics. Earlier tasks can have different initial states, targets, and horizons, so reuse their control law only after adapting it to the current task.
+
+## Objective
+
+```text
+L = (x_T - x_target)^2
+  + 2 * (v_T - v_target)^2
+  + {{ control_penalty_coef }} * sum_t u_t^2
+R = 1 / (1 + L)
+```
+
+Maximize `R` by reaching the target position with the requested terminal velocity while avoiding unnecessary control effort.
+
+## Action Expression
+
+Submit one scalar expression. The environment reevaluates it at every step with these variables:
+
+- `x`: current position `x_t`
+- `v`: current velocity `v_t`
+- `t`: current integer step index
+- `x_target`: target position
+- `v_target`: target velocity
+- `horizon`: rollout horizon `T`
+- `remaining_steps`: `max(1, horizon - t)`
+
+Supported syntax:
+
+- finite numeric constants, including decimal and scientific notation
+- arithmetic operators: `+`, `-`, `*`, `/`, `**`
+- comparisons: `<`, `<=`, `>`, `>=`, `==`, `!=`
+- Boolean operators: `and`, `or`, `not`
+- conditional expression: `value_if_true if condition else value_if_false`
+- numeric functions: `abs(value)`, `min(values...)`, `max(values...)`, `pow(base, exponent)`, and `clip(value, lower, upper)`
+- XML-safe conditional functions: `ifelse(condition, value_if_true, value_if_false)` with `lt(a,b)`, `le(a,b)`, `gt(a,b)`, `ge(a,b)`, `eq(a,b)`, or `ne(a,b)`
+
+Normal arithmetic precedence applies. The final result must be one finite numeric scalar. The environment performs the final `[-1, 1]` clipping, so an outer `clip` is optional. Assignment and local variables are unsupported: write `0.3*(x_target-x)` directly, not `dx = x_target-x`. Statements, function definitions, imports, loops, comprehensions, containers, indexing, attributes, and all other function calls are also unsupported.
+
+A fixed signed-PD expression can be written as:
+
+```text
+0.25 * (x_target - x) + 0.32 * (v_target - v)
+```
+
+A time-varying expression can be written without XML escaping by using the XML-safe conditional functions:
+
+```text
+0.25 * (x_target - x) + ifelse(lt(t, horizon - 2), 0.5, 1.0) * (v_target - v)
+```
+
+Use `ifelse` with `lt/le/gt/ge/eq/ne` in the final XML whenever possible. Raw `<` and `<=` are also valid expression operators, but XML requires them to be escaped as `&lt;` and `&lt;=`. PDE equations normally need no escaping because they do not contain comparison operators.
+
+<answer>
+  <action_expression>
+    0.25 * (x_target - x) + ifelse(lt(t, horizon - 2), 0.5, 1.0) * (v_target - v)
+  </action_expression>
+</answer>
+
+## Response Contract
+
+Reason briefly about the inferred dynamics and feedback law, then end the response with exactly one `<answer><action_expression>...</action_expression></answer>` submission.
+
+- The final `<answer>` block must be unique and must end the response.
+- `<action_expression>` must contain only expression text and no nested XML elements.
+- Do not output Python functions, assignments, JSON, Markdown code fences, multiple candidate expressions, additional XML actions, or text after `</answer>`.
+- Do not expose or assume numerical values for hidden dynamics without evidence. Use the disclosed sign of `b_env` when one is provided.

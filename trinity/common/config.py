@@ -808,7 +808,7 @@ class TrainerConfig:
     trainer_type: str = "verl"
     trainer_strategy: str = "fsdp2"  # "fsdp", "fsdp2" or "megatron"
     save_interval: int = 0
-    enable_preview: bool = False  # enable rollout preview in wandb
+    enable_preview: bool = True  # enable rollout preview in wandb
     total_steps: Optional[
         int
     ] = None  # total training steps, training stops when reaching this step, None means no limit
@@ -937,6 +937,19 @@ class StageConfig:
 
 
 @dataclass
+class CoDConfig:
+    """!!! Config for CoD !!!"""
+
+    # number of original tasks to be packed into one task
+    task_pack_size: int = 4
+    eval_task_pack_size: Optional[int] = None
+    packing_strategy: str = "cod"
+
+    # cod workflow args: log_dir, exp_name, etc.
+    cod_workflow_args: dict = field(default_factory=dict)
+
+
+@dataclass
 class Config:
     """Global Configuration"""
 
@@ -966,6 +979,9 @@ class Config:
     synchronizer: SynchronizerConfig = field(default_factory=SynchronizerConfig)
     service: ServiceConfig = field(default_factory=ServiceConfig)
     log: LogConfig = field(default_factory=LogConfig)
+
+    # !!! cod config !!!
+    cod: CoDConfig = field(default_factory=CoDConfig)
 
     # configurations for different training stages
     stages: List[StageConfig] = field(default_factory=list)

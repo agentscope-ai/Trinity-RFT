@@ -1,0 +1,35 @@
+You are navigating a two-dimensional cost grid. Your goal is to finish the final round exactly at the target position while keeping the normalized navigation loss low.
+
+## Grid and observations
+- Rows and columns use zero-based indices.
+- Every cell has a fixed integer cost from 0 to 99.
+- Unknown costs are shown as `?`. Observed costs are shown as integers.
+- The current task belongs to a stream of tasks within the same environment. Every task in this stream shares the same fixed cost grid.
+- After each move, the environment reveals every cell whose Chebyshev distance from an entered cell is at most {{ reveal_radius }}. These observations are retained automatically in later rounds and later tasks in the stream.
+
+## Movement rules
+- The task has a fixed number of rounds, and you must take exactly one move per round.
+- A move selects any other cell in the same row or the same column as your current position.
+- You may cross any positive number of cells up to the grid boundary.
+- The entered cells include every crossed cell and the destination, but not the starting cell of the move.
+- Reaching the target before the final round does not end the task. You must continue moving and be at the target when the final round ends.
+
+## Loss and reward
+Let V be the list of all entered cells over all rounds. Repeated visits appear in V repeatedly. The mean entered-cell cost and normalized loss are:
+
+mean_cost = sum(cost(v) for v in V) / |V|
+loss = mean_cost / 100 = sum(cost(v) for v in V) / (100 * |V|)
+
+The loss depends on the mean cost, not the total cost. There is no separate penalty for path length or the number of entered cells, so entering fewer cells is not inherently better. A longer route can lower the final loss when the additional cells are cheaper than the running mean, while an expensive detour raises it. Do not default to a conventional shortest-path or minimum-total-cost objective.
+
+- If your position after the final round is exactly the target, reward = 1 - loss.
+- Otherwise, reward = 0.
+- An invalidly formatted or illegal move ends the task with reward 0.
+
+Explore broadly across the full grid over the stream of tasks instead of observing only a short corridor to the current target. As the map becomes more complete, exploit the structure of the cost grid to improve both the current route and later routes.
+
+## Response format
+Think concisely about the move, then give exactly one destination. Format your response as follows:
+
+(your thinking process goes here)
+<answer>row,col</answer>

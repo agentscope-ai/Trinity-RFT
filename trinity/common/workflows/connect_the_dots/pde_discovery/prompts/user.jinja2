@@ -1,0 +1,53 @@
+Task {{ task_position }}/{{ pack_size }} | Step {{ current_step }}/{{ max_steps }}
+Point budget: {{ budget_remaining }}/{{ point_budget }} remaining
+
+{% if task_description %}
+Task: {{ task_description }}
+{% endif %}
+
+{% if available_datasets %}
+Datasets: {{ available_datasets | join(", ") }}
+{% else %}
+Datasets: none
+{% endif %}
+{% if last_sampled_max_error is not none %}
+Latest sampled-data max error: {{ "%.6g" | format(last_sampled_max_error) }}
+{% else %}
+Latest sampled-data max error: none
+{% endif %}
+
+{% if evidence_memory %}
+Prior task evidence:
+- task_evidence_status: {{ evidence_memory.get("task_evidence_status", "unknown") }}
+{% set observation_summary = evidence_memory.get("observation_summary", {}) %}
+{% if observation_summary.get("n") is not none %}
+- sampled_points: {{ observation_summary.get("n", 0) }}
+{% endif %}
+{% if observation_summary.get("u_span") is not none %}
+- sampled_u_span: {{ "%.6g" | format(observation_summary.get("u_span", 0.0)) }}
+{% endif %}
+{% if observation_summary.get("preferred_sampled_max_error") is not none %}
+- preferred_sampled_max_error: {{ "%.6g" | format(observation_summary.get("preferred_sampled_max_error", 0.0)) }}
+{% endif %}
+{% if observation_summary.get("relative_margin") is not none %}
+- relative_margin: {{ "%.6g" | format(observation_summary.get("relative_margin", 0.0)) }}
+{% endif %}
+{% endif %}
+
+{% if action_feedback %}
+Action feedback:
+{{ action_feedback }}
+{% else %}
+No action has been taken in this task yet.
+{% endif %}
+
+Choose the next action.
+
+{% if budget_remaining > 0 %}
+Sampling is available. sample_pde_data must use point_grid coordinates and cannot request more than {{ budget_remaining }} points.
+{% else %}
+No sampling budget remains. If regression has not been run after the latest samples, run_sparse_regression next; otherwise use update_scientific_context or inspect prior evidence.
+{% endif %}
+run_sparse_regression may be called whenever you have enough sampled evidence. update_scientific_context requires current-task sampling and at least one current-task run_sparse_regression call. You may decide whether to sample more points, run another regression, or finalize based on the available evidence.
+
+Include exactly one XML action wrapped in <answer> tags.
