@@ -449,6 +449,9 @@ class VERLTrainer(TrainEngineWrapper):
             algo_config=self.algorithm_config,
             rollout_engine_type=self.global_config.explorer.rollout_model.engine_type,
             ray_namespace=self.global_config.synchronizer.ray_namespace,
+            fix_actor_microbatch_loss_scale=(
+                self.global_config.trainer.fix_actor_microbatch_loss_scale
+            ),
         )
         self.global_steps = 0
         self._load_checkpoint()

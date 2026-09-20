@@ -23,7 +23,11 @@ class TrinityPolicyLoss:
     workers via set_loss_fn().
     """
 
-    def __init__(self, algo_config: AlgorithmConfig):
+    def __init__(
+        self,
+        algo_config: AlgorithmConfig,
+        fix_actor_microbatch_loss_scale: bool = False,
+    ):
         self.policy_loss_fn = POLICY_LOSS_FN.get(algo_config.policy_loss_fn)(
             backend="verl", **algo_config.policy_loss_fn_args
         )
@@ -33,6 +37,7 @@ class TrinityPolicyLoss:
         )
         self.calculate_entropy = algo_config.entropy_loss_fn != "none"
         self.loss_agg_mode = algo_config.loss_agg_mode
+        self.fix_actor_microbatch_loss_scale = fix_actor_microbatch_loss_scale
         self.use_kl_loss = not isinstance(self.kl_loss_fn, DummyKLFn)
 
     def __call__(
@@ -96,6 +101,18 @@ class TrinityPolicyLoss:
         # different scaling semantics.
         metrics["final_loss"] = policy_loss.detach().item()
 
+        # The custom loss bypasses veRL's global token normalization.
+        if (
+            self.fix_actor_microbatch_loss_scale
+            and self.loss_agg_mode == "token-mean"
+        ):
+            policy_loss = (
+                policy_loss
+                * response_mask.sum()
+                / data["batch_num_tokens"]
+                * data["dp_size"]
+            )
+
         return policy_loss, metrics
 
     def __repr__(self) -> str:
@@ -106,6 +123,9 @@ class TrinityPolicyLoss:
         )
 
 
-def build_trinity_loss(algo_config: AlgorithmConfig) -> TrinityPolicyLoss:
+def build_trinity_loss(
+    algo_config: AlgorithmConfig,
+    fix_actor_microbatch_loss_scale: bool = False,
+) -> TrinityPolicyLoss:
     """Build a TrinityPolicyLoss instance for veRL's engine API."""
-    return TrinityPolicyLoss(algo_config)
+    return TrinityPolicyLoss(algo_config, fix_actor_microbatch_loss_scale)

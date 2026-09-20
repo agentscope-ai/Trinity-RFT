@@ -584,7 +584,7 @@ class OnPolicyDistillAlgorithm(AlgorithmType):
     """
 
     use_critic: bool = False
-    use_reference: bool = False
+    use_reference: bool = True  # !!! PATCH FOR COD !!!
     compute_advantage_in_trainer: bool = True  # advantage_fn computes from teacher_logprobs
     can_balance_batch: bool = True
     schema: str = "experience"

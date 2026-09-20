@@ -1,0 +1,180 @@
+# Hard, step-bounded rerun of PDE CoD training.
+#
+# The 50,000-row training split contains about 1,562 explorer batches at
+# batch_size=32, so 600 explorer steps consume only 19,200 raw tasks (about
+# 38% of one epoch). Based on the previous run's convergence around the 100-step
+# region, save every 25 trainer steps and evaluate the saved checkpoints with
+# the hard PDE bench configs. Explorer/W&B rollout steps and trainer/checkpoint
+# global steps are separate asynchronous counters and are not guaranteed to match.
+#
+# Data prep:
+#   python examples/research_cod/get_pde_discovery_data.py --local_dir examples/research_cod/data/pde_discovery_runtime_seed --train_size 50000 --test_size 32 --seed 42
+# Before training, install the Qwen3.6 kernels as documented in examples/research_cod/README.md.
+#   export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+project: "trinity-cod"
+group: "pde_discovery"
+name: ${oc.env:EXP_NAME,qwen3.6-27b-pde-discovery-cod-600steps-hard}
+mode: both
+checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
+continue_from_checkpoint: false
+
+cod:
+  task_pack_size: 4
+  eval_task_pack_size: 8
+  packing_strategy: cod
+  cod_workflow_args:
+    hint_example: false
+    activated_cod_methods: ["iterative_hint_e2e"]
+    update_context_impl: "pde_update_context"
+    reuse_workflow_instance: false
+    max_response_tokens_restraint: 4000
+    hint_penalty_coef: 0.1
+    cod_log_interval: 200
+    log_dir: ${oc.env:TRINITY_LOG_DIR,./logs/research_cod}
+    exp_name: ${project}-${group}-${name}
+    inject_pack_seed: true
+    # Derive the runtime pack seed from dataset row identities. This preserves
+    # flexible runtime packing while keeping each eval pack's hidden PDE fixed
+    # across checkpoints, making the W&B eval curve directly comparable.
+    stable_pack_seed: true
+    pad_tasks_to_full_pack: true
+
+algorithm:
+  algorithm_type: multi_step_grpo
+  sample_strategy: staleness_control
+  sample_strategy_args:
+    max_staleness: 20
+  repeat_times: 8
+  optimizer:
+    lr: 1e-6
+  advantage_fn: cod
+  advantage_fn_args:
+    std_cal_level: "none"
+    iterative_hint_e2e_causal: true
+    red_weight_adaptive_temp: true
+    red_weight_adaptive_version: "bisection"
+  policy_loss_fn: rec
+  policy_loss_fn_args:
+    epsilon_low: 0.2
+    epsilon_high: 0.2
+    clip_mode: "one-side"
+    weight: "none"
+  kl_loss_fn: k2
+  kl_loss_fn_args:
+    kl_coef: 0.0
+  # Compute and log policy entropy for collapse monitoring, but keep its
+  # optimization coefficient at zero so it does not change the training objective.
+  entropy_loss_fn: default
+  entropy_loss_fn_args:
+    entropy_coef: 0.0
+
+model:
+  model_path: ${oc.env:TRINITY_MODEL_PATH}
+  # Prior PDE rollouts peaked around 16,111 prompt tokens. Keep prompt headroom
+  # and restore the 4,000-token response budget so the model has enough space
+  # to finish the mandatory XML action after its reasoning.
+  max_prompt_tokens: 18000
+  max_response_tokens: 4000
+  max_model_len: 22001
+
+cluster:
+  node_num: 3
+  gpu_per_node: 8
+
+buffer:
+  # Caps task production at 600 explorer/rollout batches. In W&B this is the
+  # step axis used by rollout/* metrics. It takes precedence over
+  # total_epochs and is intentionally below one epoch.
+  total_steps: 600
+  batch_size: 32
+  train_batch_size: 1440
+  explorer_input:
+    tasksets:
+      - name: pde_discovery
+        storage_type: file
+        # A distinct directory prevents accidentally reusing legacy rows that
+        # already contain pack_seed/task_idx/pack_size.
+        path: ${oc.env:TRINITY_PDE_TASKSET_PATH,examples/research_cod/data/pde_discovery_runtime_seed}
+        split: train
+        format:
+          prompt_key: 'task_desc'
+          response_key: 'answer'
+        workflow_args:
+          context_compression_mode: "keep_all"
+          max_steps: 6
+          point_budget: 6
+          min_reaction_terms: 1
+          max_reaction_terms: 2
+          ground_truth_family: "physical_full_train.json"
+          pde_state_abs_limit: 3.0
+          initial_condition_shape:
+            mode_count_range: [1, 2]
+          noise_level: 0.002
+          kappa_threshold: 100.0
+          dump_trajectories: false
+        rollout_args:
+          temperature: 1.0
+        data_selector:
+          selector_type: sequential
+        default_workflow_type: 'trinity.common.workflows.connect_the_dots.pde_discovery.workflow.CoDPDEDiscoveryWorkflow'
+  trainer_input:
+    experience_buffer:
+      name: buffer
+      storage_type: queue
+      max_read_timeout: 72000
+      replay_buffer:
+        enable: true
+        priority_fn: decay_limit_randomization
+        priority_fn_args:
+          sigma: 2.0
+
+explorer:
+  runner_per_model: 32
+  max_repeat_times_per_runner: 1
+  max_timeout: 72000
+  rollout_model:
+    enable_thinking: false
+    enable_history: false
+    engine_num: 8
+    tensor_parallel_size: 1
+    enable_prefix_caching: false
+    enforce_eager: false
+    dtype: bfloat16
+    seed: 42
+
+trainer:
+  # This interval is measured in trainer global steps, not explorer steps.
+  # A final checkpoint is saved when training drains, and the default "last"
+  # policy exports that final checkpoint in Hugging Face format.
+  save_interval: 25
+  enable_preview: true
+  grad_clip: 1.0
+  use_dynamic_bsz: ${oc.env:USE_DYNAMIC_BSZ,true}
+  # A maximum-length sequence contributes ceil(22001 / SP4)=5501 tokens per
+  # trainer GPU. Sixteen trainer GPUs without offload peaked at about 51 GB
+  # with a 6500-token budget, leaving room for a larger dynamic micro-batch.
+  # The larger budget can reduce the micro-batch count and can be overridden
+  # at launch if later batches show a higher memory peak.
+  max_token_len_per_gpu: ${oc.env:MAX_TOKEN_LEN_PER_GPU,13000}
+  use_remove_padding: ${oc.env:REMOVE_PADDING,true}
+  ulysses_sequence_parallel_size: ${oc.env:SP_SIZE,4}
+  fix_actor_microbatch_loss_scale: ${oc.env:FIX_LOSS_SCALE,true}
+  trainer_config:
+    actor_rollout_ref:
+      model:
+        use_fused_kernels: ${oc.decode:${oc.env:FUSED_KERNELS,true}}
+        fused_kernel_options:
+          impl_backend: torch
+      actor:
+        checkpoint:
+          load_contents: ['model', 'extra']
+          save_contents: ['model', 'extra']
+
+synchronizer:
+  sync_style: dynamic_by_explorer
+  sync_method: 'nccl'
+  sync_interval: 4
+  sync_timeout: 72000
+
+monitor:
+  monitor_type: wandb

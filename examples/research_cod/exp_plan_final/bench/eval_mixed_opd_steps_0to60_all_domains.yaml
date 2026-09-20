@@ -1,0 +1,156 @@
+# Evaluate the mixed-domain OPD student at steps 0, 5, ..., 60 on PDE,
+# optimal control, and grid navigation in one benchmark job.
+# Data prep:
+#   python examples/research_cod/get_pde_discovery_data.py --local_dir examples/research_cod/data/pde_discovery_eval_hard_stratified_4000_disjoint_testonly --train_size 1 --test_size 4000 --seed 20260902 --eval_pack_size 8 --eval_template_count 25 --eval_ground_truth_family physical_full_eval_4000.json --test_only
+#   python examples/research_cod/get_optimal_control_data.py --local_dir examples/research_cod/data/optimal_control --train_size 50000 --test_size 4000 --difficulty hard --train_seed 42 --test_seed 2024
+#   python examples/research_cod/get_grid_navigation_data.py --local_dir examples/research_cod/data/grid_navigation --train_size 50000 --test_size 4000 --seed 42
+#
+# Trinity bench evaluates every global_step_* directory it can see and does not
+# provide a checkpoint-step filter. The checkpoint directory below is therefore
+# an eval facade that must expose only global_step_{5,10,...,60}. Step 0 is the
+# base model and is evaluated through explorer.eval_on_startup.
+#
+# The facade may contain symlinks to the model.safetensors files in the original
+# training run, leaving that run untouched:
+#   checkpoints/trinity-cod/mixed_multi_teacher_opd/
+#   <mixed-opd-training-run>/
+#
+# Run this single config as an 8-node x 4-GPU DLC job. Each target domain is a
+# separate eval taskset, batch, and metric namespace.
+
+project: ${oc.env:EVAL_PROJECT,trinity-cod}
+group: ${oc.env:EVAL_GROUP,mixed_multi_teacher_opd}
+name: ${oc.env:EVAL_NAME,mixed-opd-eval-5to60}
+ray_namespace: "mixed-opd-0to60-all-domains-seed${oc.env:EVAL_SEED,1}"
+mode: bench
+checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
+continue_from_checkpoint: true
+
+cod:
+  task_pack_size: 4
+  eval_task_pack_size: 8
+  packing_strategy: cod
+  cod_workflow_args:
+    activated_cod_methods: ["iterative_hint_e2e"]
+    hint_example: false
+    reuse_workflow_instance: false
+    context_compression_mode: "keep_all"
+    max_response_tokens_restraint: 4000
+    hint_penalty_coef: 0.1
+    cod_log_interval: 1
+    log_dir: ${oc.env:TRINITY_LOG_DIR,./logs/research_cod}
+    exp_name: ${project}-${group}-${name}-seed${oc.env:EVAL_SEED,1}
+    inject_pack_seed: true
+    stable_pack_seed: true
+    pad_tasks_to_full_pack: true
+
+model:
+  model_path: ${oc.env:TRINITY_MODEL_PATH}
+  max_prompt_tokens: 27000
+  max_response_tokens: 4000
+  max_model_len: 32000
+
+cluster:
+  node_num: 8
+  gpu_per_node: 4
+
+buffer:
+  total_epochs: 1
+  batch_size: 64
+  explorer_input:
+    eval_tasksets:
+      - name: pde_discovery
+        storage_type: file
+        path: ${oc.env:PDE_EVAL_DATA_DIR,examples/research_cod/data/pde_discovery_eval_hard_stratified_4000_disjoint_testonly}
+        split: test
+        format:
+          prompt_key: "task_desc"
+          response_key: "answer"
+        workflow_args:
+          update_context_impl: "pde_update_context"
+          context_compression_mode: "keep_all"
+          max_steps: 6
+          point_budget: 6
+          min_reaction_terms: 1
+          max_reaction_terms: 3
+          ground_truth_family: "physical_full_eval_4000.json"
+          pde_state_abs_limit: 3.0
+          initial_condition_shape:
+            mode_count_range: [1, 2]
+          noise_level: 0.002
+          kappa_threshold: 100.0
+          dump_trajectories: false
+        rollout_args:
+          temperature: 1.0
+        data_selector:
+          selector_type: sequential
+        repeat_times: 1
+        default_workflow_type: "trinity.common.workflows.connect_the_dots.pde_discovery.workflow.CoDPDEDiscoveryWorkflow"
+
+      - name: optimal_control_1d
+        storage_type: file
+        path: ${oc.env:CONTROL_1D_EVAL_DATA_DIR,examples/research_cod/data/optimal_control}
+        split: test
+        format:
+          prompt_key: "task_desc"
+        workflow_args:
+          update_context_impl: "update_context"
+          context_compression_mode: "keep_all"
+          include_previous_control_policy: true
+          a_env_range: [0.55, 1.20]
+          b_env_range: [-1.5, 1.5]
+          min_abs_b_env: 0.35
+          enable_process_noise: false
+        rollout_args:
+          temperature: 1.0
+        data_selector:
+          selector_type: sequential
+        repeat_times: 1
+        default_workflow_type: "cod_optimalcontrol_workflow"
+
+      - name: grid_navigation
+        storage_type: file
+        path: ${oc.env:GRID_NAVIGATION_EVAL_DATA_DIR,examples/research_cod/data/grid_navigation}
+        split: test
+        workflow_args:
+          update_context_impl: "update_context"
+          context_compression_mode: "keep_all"
+          length_penalty_coef: 0.0
+          grid_min_size: 10
+          grid_max_size: 14
+          landscape_num_components: 5
+          landscape_min_scale: 0.15
+          landscape_max_scale: 0.45
+          min_rounds: 3
+          max_rounds: 5
+          reveal_radius: 1
+        rollout_args:
+          temperature: 1.0
+        data_selector:
+          selector_type: sequential
+        repeat_times: 1
+        default_workflow_type: "cod_grid_navigation_workflow"
+
+explorer:
+  name: mixed_opd_0to60_all_domains_seed${oc.env:EVAL_SEED,1}
+  eval_on_startup: true
+  bench_on_latest_checkpoint: false
+  runner_per_model: 32
+  max_repeat_times_per_runner: 1
+  max_timeout: 72000
+  rollout_model:
+    enable_thinking: false
+    enable_history: false
+    engine_num: 32
+    tensor_parallel_size: 1
+    enable_prefix_caching: false
+    enforce_eager: false
+    dtype: bfloat16
+    seed: ${oc.env:EVAL_SEED,1}
+
+synchronizer:
+  sync_method: "checkpoint"
+  sync_timeout: 72000
+
+monitor:
+  monitor_type: wandb

@@ -107,6 +107,7 @@ class FSDPConfig:
     wrap_policy: dict = field(default_factory=dict)
     fsdp_size: int = -1
     forward_prefetch: bool = False
+    use_orig_params: bool = False
     model_dtype: Optional[str] = None
     dtype: str = "bfloat16"
     mixed_precision: dict = field(default_factory=dict)

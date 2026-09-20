@@ -263,19 +263,27 @@ class TrinityActorRolloutRefWorker(ActorRolloutRefWorker):
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
     def set_trinity_config(
-        self, algo_config: AlgorithmConfig, rollout_engine_type: str, ray_namespace: str
+        self,
+        algo_config: AlgorithmConfig,
+        rollout_engine_type: str,
+        ray_namespace: str,
+        fix_actor_microbatch_loss_scale: bool,
     ):
         """Set Trinity-specific runtime config on the worker.
 
         This is called by VERLTrainer after worker initialization to inject:
         - The pluggable policy loss, KL loss, and entropy loss from Trinity's algorithm registry
+        - Token-based dynamic-microbatch loss scaling when enabled
         - The Ray namespace used to locate Synchronizer and CheckpointMonitor actors
         """
         self._algo_config = algo_config
         self._ray_namespace = ray_namespace
         self._rollout_engine_type = rollout_engine_type
         if self.actor is not None:
-            loss_fn = build_trinity_loss(algo_config)
+            loss_fn = build_trinity_loss(
+                algo_config,
+                fix_actor_microbatch_loss_scale,
+            )
             self.actor.set_loss_fn(loss_fn)
 
     @register(dispatch_mode=Dispatch.ONE_TO_ALL)
