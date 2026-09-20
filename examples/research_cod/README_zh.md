@@ -59,7 +59,7 @@ pack = [ task0, task1, task2, task3 ]      # 同一 taskset 的一包相关任�
 | Terminal | `cod_terminal_workflow` | 命令、路径的用法与易踩的坑，以及文件大致在哪 |
 | Learn2Ask | `cod_learn2ask_workflow` | 何时继续追问、何时停下来给诊断 |
 | Optimal Control | `cod_optimalcontrol_workflow` | 从交互反馈中了解系统的运动规律，更好地控制它到达不同目标 |
-| PDE Discovery | `trinity.common.workflows.connect_the_dots.pde_discovery.workflow.CoDPDEDiscoveryWorkflow` | 从采样数据中发现未知的反应项，在后续任务中不断完善判断 |
+| PDE Discovery | `CoDPDEDiscoveryWorkflow` | 从采样数据中发现未知的反应项，在后续任务中不断完善判断 |
 | Grid Navigation | `cod_grid_navigation_workflow` | 逐步探索并记住地图中的移动代价，为后续任务选择低代价路线 |
 
 实现位于 [`trinity/common/workflows/connect_the_dots/`](../../trinity/common/workflows/connect_the_dots/)。
