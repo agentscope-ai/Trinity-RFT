@@ -59,7 +59,7 @@ In each environment, the tasks in a pack share something reusable: sometimes a h
 | Terminal | `cod_terminal_workflow` | How commands and paths work and their pitfalls, and roughly where files live |
 | Learn2Ask | `cod_learn2ask_workflow` | When to keep asking vs. when to stop and give a diagnosis |
 | Optimal Control | `cod_optimalcontrol_workflow` | Learn the system's hidden dynamics from feedback and use them to reach new target states |
-| PDE Discovery | `trinity.common.workflows.connect_the_dots.pde_discovery.workflow.CoDPDEDiscoveryWorkflow` | Discover the unknown reaction term from sampled data and refine it across tasks |
+| PDE Discovery | `CoDPDEDiscoveryWorkflow` | Discover the unknown reaction term from sampled data and refine it across tasks |
 | Grid Navigation | `cod_grid_navigation_workflow` | Explore a shared cost map and use accumulated observations to choose lower-cost routes |
 
 Implementations live in [`trinity/common/workflows/connect_the_dots/`](../../trinity/common/workflows/connect_the_dots/).
