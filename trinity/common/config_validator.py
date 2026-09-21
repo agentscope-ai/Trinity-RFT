@@ -868,6 +868,12 @@ class SynchronizerConfigValidator(ConfigValidator):
             config.synchronizer, "explorer_sync_interval", config.synchronizer.sync_interval
         )
         set_if_none(config.synchronizer, "trainer_sync_interval", config.synchronizer.sync_interval)
+        assert (
+            config.synchronizer.explorer_sync_interval > 0
+        ), "`explorer_sync_interval` must be positive."
+        assert (
+            config.synchronizer.trainer_sync_interval > 0
+        ), "`trainer_sync_interval` must be positive."
 
 
 class IntervalConfigValidator(ConfigValidator):
