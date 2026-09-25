@@ -182,6 +182,36 @@ class WorkflowTest(unittest.TestCase):
                 experiences = workflow.run()
             self.assertEqual(len(experiences), 3)
 
+    def test_workflows_stop_after_response_truncation(self) -> None:
+        for workflow_cls in _dummy_workflows:
+            call_count = 0
+
+            def next_experience():
+                nonlocal call_count
+                call_count += 1
+                return [
+                    Experience(
+                        tokens=Tensor([0, 0]),
+                        prompt_length=1,
+                        truncate_status=("response_truncated" if call_count == 2 else None),
+                    )
+                ]
+
+            self.model.extract_experience_from_history.side_effect = next_experience
+            task = Task(
+                workflow=workflow_cls,
+                repeat_times=self.taskset_config.repeat_times,
+                workflow_args={"max_env_steps": 10, "actual_steps": 10},
+            )
+            workflow = task.to_workflow(model=self.model)
+            if workflow.asynchronous:
+                experiences = asyncio.run(workflow.run_async())
+            else:
+                experiences = workflow.run()
+
+            self.assertEqual(len(experiences), 2)
+            self.assertEqual(call_count, 2)
+
     def test_workflows_raise_error(self) -> None:
         self.model.enable_history = False
         for workflow in _dummy_workflows:
