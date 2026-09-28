@@ -22,26 +22,29 @@ Compatibility:
     `MultiModalRender` normalizes legacy transformers-style message parts
     (e.g., type=image with url/path/base64) into vLLM/OpenAI-style part schema
     before calling vLLM `parse_chat_messages`.
+    vLLM is loaded only by its renderer, so text-only backends can import the
+    shared helpers without installing the optional vLLM dependency.
 """
+from __future__ import annotations
+
 import json
 import re
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import numpy as np
 import torch
 import transformers
-from vllm.config import ModelConfig
-from vllm.entrypoints.chat_utils import (
-    ChatTemplateContentFormat,
-    ConversationMessage,
-    parse_chat_messages,
-    parse_chat_messages_async,
-)
-from vllm.inputs import MultiModalDataDict
 
 from trinity.utils.log import get_logger
+
+if TYPE_CHECKING:
+    from vllm.entrypoints.chat_utils import (
+        ChatTemplateContentFormat,
+        ConversationMessage,
+    )
+    from vllm.inputs import MultiModalDataDict
 
 _MM_TYPE_TO_URL_FIELD = {
     "image": "image_url",
@@ -275,6 +278,16 @@ class vLLMMultiModalRender(MultiModalRender):
         self.mm_processor_kwargs = mm_processor_kwargs or {}
 
         # Initialize ModelConfig
+        try:
+            from vllm.config import ModelConfig
+        except ModuleNotFoundError as exc:
+            if exc.name != "vllm":
+                raise
+            raise ImportError(
+                "vLLM is required for vLLMMultiModalRender. Install Trinity-RFT with the "
+                "'vllm' extra to use this renderer."
+            ) from exc
+
         self.model_config = ModelConfig(
             model=model_path,
             tokenizer=model_path,
@@ -420,6 +433,8 @@ class vLLMMultiModalRender(MultiModalRender):
         """
         normalized_messages = self._normalize_messages_for_vllm(messages)
 
+        from vllm.entrypoints.chat_utils import parse_chat_messages
+
         conversation, mm_data, _ = parse_chat_messages(
             messages=normalized_messages,
             model_config=self.model_config,
@@ -439,6 +454,8 @@ class vLLMMultiModalRender(MultiModalRender):
         Async version of process_messages for concurrent media fetching.
         """
         normalized_messages = self._normalize_messages_for_vllm(messages)
+
+        from vllm.entrypoints.chat_utils import parse_chat_messages_async
 
         conversation, mm_data, _ = await parse_chat_messages_async(
             messages=normalized_messages,
