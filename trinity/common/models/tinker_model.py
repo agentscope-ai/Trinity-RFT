@@ -34,7 +34,9 @@ class TinkerModel(BaseInferenceModel):
         assert self.model is not None
         sampling_params = {
             "max_tokens": kwargs.get("max_tokens", self.config.max_response_tokens),
-            "seed": kwargs.get("seed", self.config.seed),
+            # A fixed per-request seed replays identical prompts across GRPO
+            # repeats. Leave sampling unseeded unless the caller requests a seed.
+            "seed": kwargs.get("seed"),
             "temperature": kwargs.get("temperature", 1.0),
             "top_k": kwargs.get("top_k", -1),
             "top_p": kwargs.get("top_p", 1),

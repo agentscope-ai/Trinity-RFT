@@ -83,6 +83,9 @@ class Workflow:
     Attributes:
         auxiliary_model_wrappers: List of ModelWrapper instances for auxiliary models.
         auxiliary_models: List of OpenAI clients (sync or async based on is_async) for auxiliary models.
+        repeat_index: Zero-based run index within the task's full repeat group.
+            The runner sets this before each non-repeatable workflow run, including
+            the offset when the group is split across runners.
     """
 
     can_reset: bool = False  # whether the workflow can be reset with a new task. If true, `reset()` must be implemented.
@@ -108,6 +111,7 @@ class Workflow:
             else:
                 self.auxiliary_models = [m.get_openai_client() for m in auxiliary_models]
         self.run_id_base = 0
+        self.repeat_index = 0
         self.logger = get_logger(__name__)
 
     @property

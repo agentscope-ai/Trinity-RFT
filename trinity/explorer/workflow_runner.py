@@ -257,6 +257,7 @@ class WorkflowRunner:
         run_id_base: int,
     ) -> Tuple[bool, List[Experience], Optional[Dict[str, float]], Optional[str]]:
         st = time.time()
+        workflow.repeat_index = run_id_base + run_index
         await self.model_wrapper.clean_workflow_state()
         self.runner_state["workflow_id"] = f"{task.batch_id}/{task.task_id}/{run_index}"
         self.runner_state["terminate_time"] = None
