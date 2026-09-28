@@ -446,6 +446,8 @@ class TinkerConfig:
     train_attn: bool = True
     train_unembed: bool = True
     base_url: Optional[str] = None
+    # Optional loss implemented by the server; None uses the client-side callback.
+    server_loss_fn: Optional[str] = None
 
 
 @dataclass

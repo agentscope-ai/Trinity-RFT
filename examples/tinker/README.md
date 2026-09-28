@@ -61,6 +61,48 @@ trinity run --config tinker.yaml  # Replace with your actual config file path
 > 💡 A complete example configuration file is available at [`tinker.yaml`](tinker.yaml).
 
 
+## Optional server-side PPO loss
+
+A Tinker-compatible server implementing `trinity_ppo` can compute the PPO loss
+and backward pass together, avoiding the client-side custom-loss forward/backward
+round trip. This is a server extension, not a built-in loss on every Tinker service.
+
+```yaml
+model:
+  tinker:
+    enable: true
+    rank: 32
+    server_loss_fn: trinity_ppo
+algorithm:
+  algorithm_type: grpo
+  policy_loss_fn: ppo
+  policy_loss_fn_args:
+    clip_range: 0.2
+    clip_ratio_c: 3.0
+    loss_agg_mode: token-mean
+  kl_loss_fn: k2
+  kl_loss_fn_args:
+    kl_coef: 0.001
+  entropy_loss_fn: none
+  loss_agg_mode: token-mean
+```
+
+The supported objective is dual-clipped PPO with symmetric clipping and optional
+K2 KL loss. Set `kl_loss_fn: none` to disable KL and its reference-logprob requests.
+Sequence masking, fallback policy gradient, adaptive KL, entropy loss, alternative
+reductions, and `fix_actor_microbatch_loss_scale` are rejected for this path.
+Omit `server_loss_fn` to keep the existing client-side callback.
+
+Each datum contributes its mean loss over active response tokens; the sum is
+divided by the full training batch's datum count. The action mask excludes both
+prompt tokens and masked response tokens. The SDK can split the batch into
+requests, but every request receives the same full-batch denominator and the
+trainer makes one optimizer step after the batch. Empty masks contribute zero.
+
+The server reports additive statistics. Trinity derives token-weighted ratio,
+clipping, and KL diagnostics from their sums and active-token counts, so uneven
+request sizes do not become an unweighted mean of request means.
+
 ## Results on the Llama-3.2-3B Model
 
 We trained the **Llama-3.2-3B** model on the **GSM8K** dataset using both the **Tinker** and **veRL** backends. Below are the full configuration files used in our experiments.

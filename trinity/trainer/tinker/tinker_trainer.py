@@ -13,11 +13,17 @@ from trinity.algorithm.advantage_fn import ADVANTAGE_FN
 from trinity.algorithm.entropy_loss_fn import ENTROPY_LOSS_FN
 from trinity.algorithm.entropy_loss_fn.entropy_loss_fn import DummyEntropyLossFn
 from trinity.algorithm.kl_fn import KL_FN
+from trinity.algorithm.kl_fn.kl_fn import DummyKLFn, K2Fn
 from trinity.algorithm.policy_loss_fn import POLICY_LOSS_FN
+from trinity.algorithm.policy_loss_fn.ppo_policy_loss import PPOPolicyLossFn
 from trinity.algorithm.utils import prefix_metrics
 from trinity.common.config import Config
 from trinity.common.experience import Experience
 from trinity.manager.synchronizer import Synchronizer
+from trinity.trainer.tinker.server_loss import (
+    trinity_ppo_metrics,
+    with_trinity_ppo_inputs,
+)
 from trinity.trainer.tinker.utils import (
     compute_data_metrics,
     compute_throughout_metrics,
@@ -64,6 +70,9 @@ class TinkerTrainerWrapper(TrainEngineWrapper):
             self.config.trainer.fix_actor_microbatch_loss_scale
             and (self.loss_agg_mode == "token-mean")
         )
+        self.server_loss_config = (
+            self._server_loss_fn_config() if self.config.model.tinker.server_loss_fn else None
+        )
 
         self.lr_scheduler_type = algorithm_config.optimizer.lr_scheduler_type
         self.total_steps = self.config.trainer.total_steps or sys.maxsize
@@ -107,6 +116,42 @@ class TinkerTrainerWrapper(TrainEngineWrapper):
             factor = 0.5 * (1.0 + math.cos(math.pi * float(num_cycles) * 2.0 * progress))
         factor = self.min_lr_ratio + (1.0 - self.min_lr_ratio) * factor
         return max(self.min_lr_ratio, factor)
+
+    def _server_loss_fn_config(self) -> dict:
+        """Validate that the server loss implements the configured objective."""
+        if self.config.model.tinker.server_loss_fn != "trinity_ppo":
+            raise ValueError("The only supported server_loss_fn is 'trinity_ppo'.")
+        policy = self.policy_loss_fn
+        if type(policy) is not PPOPolicyLossFn:
+            raise ValueError("trinity_ppo requires the PPO policy loss.")
+        if type(self.kl_loss_fn) not in (DummyKLFn, K2Fn):
+            raise ValueError("trinity_ppo supports only K2 or disabled KL loss.")
+        if type(self.entropy_loss_fn) is not DummyEntropyLossFn:
+            raise ValueError("trinity_ppo requires entropy_loss_fn='none'.")
+        if not math.isfinite(policy.clip_range_low) or not 0 <= policy.clip_range_low < 1:
+            raise ValueError("trinity_ppo requires clip_range in [0, 1).")
+        unsupported = {
+            "asymmetric clipping": policy.clip_range_low != policy.clip_range_high,
+            "sequence masking": policy.enable_sequence_masking,
+            "fallback policy gradient": policy.fallback_to_policy_gradient,
+            "policy reduction": policy.loss_agg_mode != "token-mean",
+            "loss reduction": self.loss_agg_mode != "token-mean",
+            "microbatch loss rescaling": self.do_fix_actor_microbatch_loss_scale,
+            "adaptive KL": self.kl_loss_fn.adaptive,
+        }
+        if any(unsupported.values()):
+            names = ", ".join(name for name, enabled in unsupported.items() if enabled)
+            raise ValueError(f"trinity_ppo does not support: {names}.")
+        kl_coef = 0.0 if isinstance(self.kl_loss_fn, DummyKLFn) else self.kl_loss_fn.kl_coef
+        if kl_coef < 0 or not math.isfinite(kl_coef):
+            raise ValueError("trinity_ppo requires a finite nonnegative KL coefficient.")
+        if kl_coef > 0 and not self.algorithm.use_reference:
+            raise ValueError("trinity_ppo with KL loss requires a reference policy.")
+        return {
+            "clip_range": policy.clip_range_low,
+            "clip_ratio_c": policy.clip_ratio_c,
+            "kl_coef": kl_coef,
+        }
 
     @property
     def current_learning_rate(self):
@@ -273,7 +318,9 @@ class TinkerTrainerWrapper(TrainEngineWrapper):
         self._train_step_num += 1
 
         with Timer(timing_raw, "step"):
-            if self.algorithm.use_reference:  # ref_logprob may not be used
+            if self.algorithm.use_reference and (
+                self.server_loss_config is None or self.server_loss_config["kl_coef"] > 0
+            ):
                 import asyncio
 
                 ref_logprobs = await asyncio.gather(
@@ -300,13 +347,30 @@ class TinkerTrainerWrapper(TrainEngineWrapper):
 
             # update actor
             with Timer(timing_raw, "update_actor"):
-                fwdbwd_future = await self.actor_client.forward_backward_custom_async(
-                    batch, self._loss_func
-                )
+                if self.server_loss_config is None:
+                    fwdbwd_future = await self.actor_client.forward_backward_custom_async(
+                        batch, self._loss_func
+                    )
+                else:
+                    server_batch = with_trinity_ppo_inputs(
+                        batch, model_inputs_list, self.server_loss_config["kl_coef"]
+                    )
+                    # The SDK may split this call into requests. Every request
+                    # must use the full batch denominator before one optim step.
+                    loss_config = dict(self.server_loss_config, num_total_datums=len(batch))
+                    fwdbwd_future = await self.actor_client.forward_backward_async(
+                        server_batch, "trinity_ppo", loss_config
+                    )
+                    # Do not apply a partial optimizer update if a server rejects
+                    # the extension or one of its accumulated requests fails.
+                    fwdbwd_result = await fwdbwd_future
                 optim_future = await self.actor_client.optim_step_async(self.adam_params)
-                fwdbwd_result = await fwdbwd_future
+                if self.server_loss_config is None:
+                    fwdbwd_result = await fwdbwd_future
                 optim_result = await optim_future
                 metrics.update(fwdbwd_result.metrics)
+                if self.server_loss_config is not None:
+                    metrics.update(trinity_ppo_metrics(fwdbwd_result.metrics))
                 if optim_result.metrics:
                     metrics.update(optim_result.metrics)
 
