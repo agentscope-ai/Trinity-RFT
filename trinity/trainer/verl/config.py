@@ -311,7 +311,7 @@ def _build_actor_config(cfg: Config, strategy: str, total_training_steps: int) -
         },
         "router_replay": {"mode": "R3" if cfg.algorithm.enable_router_replay else "disabled"},
         "profiler": _build_profiler_config(),
-        "checkpoint": _build_checkpoint_config(),
+        "checkpoint": _build_checkpoint_config(include_mbridge_config=is_megatron),
         "optim": _build_optimizer_config(cfg.algorithm.optimizer, strategy, total_training_steps),
     }
 
@@ -361,7 +361,9 @@ def _build_ref_config(cfg: Config, strategy: str) -> dict:
         "use_prefix_grouper": False,
         "profiler": _build_profiler_config(),
         "router_replay": {"mode": "disabled"},
-        "checkpoint": _build_checkpoint_config(save_contents=["model"], load_contents=["model"]),
+        "checkpoint": _build_checkpoint_config(
+            save_contents=["model"], load_contents=["model"], include_mbridge_config=is_megatron
+        ),
     }
 
     # Strategy-specific fields
@@ -469,7 +471,7 @@ def _build_critic_config(
         "rollout_n": cfg.algorithm.repeat_times,
         "profiler": _build_profiler_config(),
         "optim": _build_critic_optimizer_config(strategy, total_training_steps),
-        "checkpoint": _build_checkpoint_config(),
+        "checkpoint": _build_checkpoint_config(include_mbridge_config=is_megatron),
     }
 
     # Strategy-specific fields
@@ -647,7 +649,7 @@ def _build_profiler_config() -> dict:
         "all_ranks": False,
         "ranks": [],
         "save_path": "outputs/profile",
-        "tool_config": None,
+        "tool_config": {},
         "global_tool_config": None,
     }
 
@@ -655,22 +657,26 @@ def _build_profiler_config() -> dict:
 def _build_checkpoint_config(
     save_contents: Optional[List[str]] = None,
     load_contents: Optional[List[str]] = None,
+    include_mbridge_config: bool = False,
 ) -> dict:
     """Build CheckpointConfig-compatible dict."""
     if save_contents is None:
         save_contents = ["model", "optimizer", "extra"]
     if load_contents is None:
         load_contents = ["model", "optimizer", "extra"]
-    return {
+    config = {
         "save_contents": save_contents,
         "load_contents": load_contents,
         "async_save": False,
-        "mbridge_config": {
+    }
+    if include_mbridge_config:
+        # `mbridge_config` only exists on McoreCheckpointConfig (megatron backend)
+        config["mbridge_config"] = {
             "distributed_filesystem": True,
             "memory_efficient": True,
             "strict": False,
-        },
-    }
+        }
+    return config
 
 
 # ---------------------------------------------------------------------------

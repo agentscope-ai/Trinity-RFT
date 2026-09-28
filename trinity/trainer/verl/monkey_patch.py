@@ -414,6 +414,8 @@ def prepare_model_inputs(self, micro_batch: TensorDict):
         # for compute the log_prob
         input_ids_rmpad_rolled = torch.roll(input_ids_rmpad, shifts=-1, dims=1)  # (1, total_nnz)
 
+        # The output preparation reads pad_size even when sequence parallelism is disabled.
+        output_args["pad_size"] = 0
         # pad and slice the inputs if sp > 1
         if self.use_ulysses_sp:
             is_vlm_model = hasattr(
