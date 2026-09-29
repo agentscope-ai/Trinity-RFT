@@ -20,6 +20,8 @@ spec = importlib.util.spec_from_file_location(
     "prompt_learn2ask",
     os.path.join(os.path.dirname(__file__), "..", "workflow", "prompt_learn2ask.py"),
 )
+if spec is None or spec.loader is None:
+    raise ImportError("Cannot load the learn-to-ask prompt module.")
 prompt_module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(prompt_module)
 
