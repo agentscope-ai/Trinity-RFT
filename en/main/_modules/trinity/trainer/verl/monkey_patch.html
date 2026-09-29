@@ -1446,6 +1446,8 @@ window.runMermaid = runMermaid;</script>
         <span class="c1"># for compute the log_prob</span>
         <span class="n">input_ids_rmpad_rolled</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">input_ids_rmpad</span><span class="p">,</span> <span class="n">shifts</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">dims</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># (1, total_nnz)</span>
 
+        <span class="c1"># The output preparation reads pad_size even when sequence parallelism is disabled.</span>
+        <span class="n">output_args</span><span class="p">[</span><span class="s2">"pad_size"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="c1"># pad and slice the inputs if sp &gt; 1</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_ulysses_sp</span><span class="p">:</span>
             <span class="n">is_vlm_model</span> <span class="o">=</span> <span class="nb">hasattr</span><span class="p">(</span>

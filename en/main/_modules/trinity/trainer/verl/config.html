@@ -1332,7 +1332,7 @@ window.runMermaid = runMermaid;</script>
         <span class="p">},</span>
         <span class="s2">"router_replay"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"mode"</span><span class="p">:</span> <span class="s2">"R3"</span> <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">enable_router_replay</span> <span class="k">else</span> <span class="s2">"disabled"</span><span class="p">},</span>
         <span class="s2">"profiler"</span><span class="p">:</span> <span class="n">_build_profiler_config</span><span class="p">(),</span>
-        <span class="s2">"checkpoint"</span><span class="p">:</span> <span class="n">_build_checkpoint_config</span><span class="p">(),</span>
+        <span class="s2">"checkpoint"</span><span class="p">:</span> <span class="n">_build_checkpoint_config</span><span class="p">(</span><span class="n">include_mbridge_config</span><span class="o">=</span><span class="n">is_megatron</span><span class="p">),</span>
         <span class="s2">"optim"</span><span class="p">:</span> <span class="n">_build_optimizer_config</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">strategy</span><span class="p">,</span> <span class="n">total_training_steps</span><span class="p">),</span>
     <span class="p">}</span>
 
@@ -1382,7 +1382,9 @@ window.runMermaid = runMermaid;</script>
         <span class="s2">"use_prefix_grouper"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
         <span class="s2">"profiler"</span><span class="p">:</span> <span class="n">_build_profiler_config</span><span class="p">(),</span>
         <span class="s2">"router_replay"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"mode"</span><span class="p">:</span> <span class="s2">"disabled"</span><span class="p">},</span>
-        <span class="s2">"checkpoint"</span><span class="p">:</span> <span class="n">_build_checkpoint_config</span><span class="p">(</span><span class="n">save_contents</span><span class="o">=</span><span class="p">[</span><span class="s2">"model"</span><span class="p">],</span> <span class="n">load_contents</span><span class="o">=</span><span class="p">[</span><span class="s2">"model"</span><span class="p">]),</span>
+        <span class="s2">"checkpoint"</span><span class="p">:</span> <span class="n">_build_checkpoint_config</span><span class="p">(</span>
+            <span class="n">save_contents</span><span class="o">=</span><span class="p">[</span><span class="s2">"model"</span><span class="p">],</span> <span class="n">load_contents</span><span class="o">=</span><span class="p">[</span><span class="s2">"model"</span><span class="p">],</span> <span class="n">include_mbridge_config</span><span class="o">=</span><span class="n">is_megatron</span>
+        <span class="p">),</span>
     <span class="p">}</span>
 
     <span class="c1"># Strategy-specific fields</span>
@@ -1490,7 +1492,7 @@ window.runMermaid = runMermaid;</script>
         <span class="s2">"rollout_n"</span><span class="p">:</span> <span class="n">cfg</span><span class="o">.</span><span class="n">algorithm</span><span class="o">.</span><span class="n">repeat_times</span><span class="p">,</span>
         <span class="s2">"profiler"</span><span class="p">:</span> <span class="n">_build_profiler_config</span><span class="p">(),</span>
         <span class="s2">"optim"</span><span class="p">:</span> <span class="n">_build_critic_optimizer_config</span><span class="p">(</span><span class="n">strategy</span><span class="p">,</span> <span class="n">total_training_steps</span><span class="p">),</span>
-        <span class="s2">"checkpoint"</span><span class="p">:</span> <span class="n">_build_checkpoint_config</span><span class="p">(),</span>
+        <span class="s2">"checkpoint"</span><span class="p">:</span> <span class="n">_build_checkpoint_config</span><span class="p">(</span><span class="n">include_mbridge_config</span><span class="o">=</span><span class="n">is_megatron</span><span class="p">),</span>
     <span class="p">}</span>
 
     <span class="c1"># Strategy-specific fields</span>
@@ -1668,7 +1670,7 @@ window.runMermaid = runMermaid;</script>
         <span class="s2">"all_ranks"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
         <span class="s2">"ranks"</span><span class="p">:</span> <span class="p">[],</span>
         <span class="s2">"save_path"</span><span class="p">:</span> <span class="s2">"outputs/profile"</span><span class="p">,</span>
-        <span class="s2">"tool_config"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"tool_config"</span><span class="p">:</span> <span class="p">{},</span>
         <span class="s2">"global_tool_config"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">}</span>
 
@@ -1676,22 +1678,26 @@ window.runMermaid = runMermaid;</script>
 <span class="k">def</span><span class="w"> </span><span class="nf">_build_checkpoint_config</span><span class="p">(</span>
     <span class="n">save_contents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">load_contents</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">include_mbridge_config</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Build CheckpointConfig-compatible dict."""</span>
     <span class="k">if</span> <span class="n">save_contents</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">save_contents</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"model"</span><span class="p">,</span> <span class="s2">"optimizer"</span><span class="p">,</span> <span class="s2">"extra"</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">load_contents</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">load_contents</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"model"</span><span class="p">,</span> <span class="s2">"optimizer"</span><span class="p">,</span> <span class="s2">"extra"</span><span class="p">]</span>
-    <span class="k">return</span> <span class="p">{</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
         <span class="s2">"save_contents"</span><span class="p">:</span> <span class="n">save_contents</span><span class="p">,</span>
         <span class="s2">"load_contents"</span><span class="p">:</span> <span class="n">load_contents</span><span class="p">,</span>
         <span class="s2">"async_save"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">"mbridge_config"</span><span class="p">:</span> <span class="p">{</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">include_mbridge_config</span><span class="p">:</span>
+        <span class="c1"># `mbridge_config` only exists on McoreCheckpointConfig (megatron backend)</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">"mbridge_config"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
             <span class="s2">"distributed_filesystem"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
             <span class="s2">"memory_efficient"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
             <span class="s2">"strict"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="p">},</span>
-    <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="k">return</span> <span class="n">config</span>
 
 
 <span class="c1"># ---------------------------------------------------------------------------</span>
