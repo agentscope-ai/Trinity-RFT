@@ -128,7 +128,8 @@ class TinkerTrainerWrapper(TrainEngineWrapper):
             raise ValueError("trinity_ppo supports only K2 or disabled KL loss.")
         if type(self.entropy_loss_fn) is not DummyEntropyLossFn:
             raise ValueError("trinity_ppo requires entropy_loss_fn='none'.")
-        if not math.isfinite(policy.clip_range_low) or not 0 <= policy.clip_range_low < 1:
+        clip_range = policy.clip_range_low
+        if clip_range is None or not math.isfinite(clip_range) or not 0 <= clip_range < 1:
             raise ValueError("trinity_ppo requires clip_range in [0, 1).")
         unsupported = {
             "asymmetric clipping": policy.clip_range_low != policy.clip_range_high,
@@ -148,7 +149,7 @@ class TinkerTrainerWrapper(TrainEngineWrapper):
         if kl_coef > 0 and not self.algorithm.use_reference:
             raise ValueError("trinity_ppo with KL loss requires a reference policy.")
         return {
-            "clip_range": policy.clip_range_low,
+            "clip_range": clip_range,
             "clip_ratio_c": policy.clip_ratio_c,
             "kl_coef": kl_coef,
         }

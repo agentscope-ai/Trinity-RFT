@@ -144,6 +144,19 @@ class ServerLossConfigTest(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "does not support"):
                     wrapper._server_loss_fn_config()
 
+    def test_missing_nonfinite_and_out_of_range_clipping_is_rejected(self):
+        for clip_range in (None, float("nan"), float("inf"), float("-inf"), -0.1, 1.0):
+            with self.subTest(clip_range=clip_range):
+                wrapper = make_wrapper()
+                wrapper.policy_loss_fn.clip_range_low = clip_range
+                with self.assertRaisesRegex(ValueError, "clip_range in"):
+                    wrapper._server_loss_fn_config()
+
+    def test_zero_clipping_is_supported(self):
+        wrapper = make_wrapper()
+        wrapper.policy_loss_fn = PPOPolicyLossFn(backend="tinker", clip_range=0.0)
+        self.assertEqual(wrapper._server_loss_fn_config()["clip_range"], 0.0)
+
     def test_unsupported_loss_options_fail_before_training(self):
         for attribute, value in (
             ("kl_loss_fn", K1Fn()),
