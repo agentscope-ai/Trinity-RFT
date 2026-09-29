@@ -137,6 +137,10 @@
   
 
   
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
 </div>
 
     </header>
@@ -678,7 +682,9 @@
 <button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
     <i class="fa-solid fa-magnifying-glass fa-lg"></i>
 </button>
-
+<button class="sidebar-toggle secondary-toggle btn btn-sm pst-navbar-icon" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
 </div></div>
       
     </div>
@@ -694,6 +700,32 @@
     <div id="print-main-content">
         <div id="jb-print-toc">
             
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.should_use_processor"><code class="docutils literal notranslate"><span class="pre">should_use_processor()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.processor_or_tokenizer_cls"><code class="docutils literal notranslate"><span class="pre">processor_or_tokenizer_cls()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.build_mm_message"><code class="docutils literal notranslate"><span class="pre">build_mm_message()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.has_multi_modal_content"><code class="docutils literal notranslate"><span class="pre">has_multi_modal_content()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.combine_output_token_ids"><code class="docutils literal notranslate"><span class="pre">combine_output_token_ids()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.MultiModalRender"><code class="docutils literal notranslate"><span class="pre">MultiModalRender</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.MultiModalRender.__init__"><code class="docutils literal notranslate"><span class="pre">MultiModalRender.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.MultiModalRender.build_mm_input_for_training"><code class="docutils literal notranslate"><span class="pre">MultiModalRender.build_mm_input_for_training()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.MultiModalRender.process_messages"><code class="docutils literal notranslate"><span class="pre">MultiModalRender.process_messages()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.MultiModalRender.process_messages_async"><code class="docutils literal notranslate"><span class="pre">MultiModalRender.process_messages_async()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.vLLMMultiModalRender"><code class="docutils literal notranslate"><span class="pre">vLLMMultiModalRender</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.vLLMMultiModalRender.__init__"><code class="docutils literal notranslate"><span class="pre">vLLMMultiModalRender.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.vLLMMultiModalRender.build_mm_input_for_training"><code class="docutils literal notranslate"><span class="pre">vLLMMultiModalRender.build_mm_input_for_training()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.vLLMMultiModalRender.process_messages"><code class="docutils literal notranslate"><span class="pre">vLLMMultiModalRender.process_messages()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.vLLMMultiModalRender.process_messages_async"><code class="docutils literal notranslate"><span class="pre">vLLMMultiModalRender.process_messages_async()</span></code></a></li>
+</ul>
+</li>
+</ul>
+            </nav>
         </div>
     </div>
 </div>
@@ -703,8 +735,245 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="trinity-common-models-mm-utils-module">
-<h1>trinity.common.models.mm_utils module<a class="headerlink" href="#trinity-common-models-mm-utils-module" title="Link to this heading">#</a></h1>
+  <section id="module-trinity.common.models.mm_utils">
+<span id="trinity-common-models-mm-utils-module"></span><h1>trinity.common.models.mm_utils module<a class="headerlink" href="#module-trinity.common.models.mm_utils" title="Link to this heading">#</a></h1>
+<p>Utilities for processing multi-modal data (images/videos) for specific vision-language models.</p>
+<p>Main capabilities:
+- Parse prompts with media tags (<cite>&lt;image&gt;</cite> / <cite>&lt;video&gt;</cite>)
+- Detect multi-modal content in conversation messages
+- Normalize legacy transformers-style media parts to vLLM/OpenAI-style schema
+- Build training-time multimodal inputs with model processor
+- Keep client-side parsing behavior aligned with vLLM server parsing</p>
+<p>Provides functions to:
+1. Parse prompts with media tags (&lt;image&gt;/&lt;video&gt;)
+2. Validate multi-modal content in conversations
+3. Normalize and preprocess media inputs for inference/training
+4. Construct vLLM-compatible message formats</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Processor availability is detected from local model assets
+(e.g., processor/preprocessor config files). The implementation does not
+rely on model-class-name matching.</p>
+</div>
+<dl class="simple">
+<dt>Compatibility:</dt><dd><p><cite>MultiModalRender</cite> normalizes legacy transformers-style message parts
+(e.g., type=image with url/path/base64) into vLLM/OpenAI-style part schema
+before calling vLLM <cite>parse_chat_messages</cite>.
+vLLM is loaded only by its renderer, so text-only backends can import the
+shared helpers without installing the optional vLLM dependency.</p>
+</dd>
+</dl>
+<dl class="py function">
+<dt class="sig sig-object py" id="trinity.common.models.mm_utils.should_use_processor">
+<span class="sig-prename descclassname"><span class="pre">trinity.common.models.mm_utils.</span></span><span class="sig-name descname"><span class="pre">should_use_processor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/trinity/common/models/mm_utils.html#should_use_processor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.common.models.mm_utils.should_use_processor" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="trinity.common.models.mm_utils.processor_or_tokenizer_cls">
+<span class="sig-prename descclassname"><span class="pre">trinity.common.models.mm_utils.</span></span><span class="sig-name descname"><span class="pre">processor_or_tokenizer_cls</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="reference internal" href="../_modules/trinity/common/models/mm_utils.html#processor_or_tokenizer_cls"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.common.models.mm_utils.processor_or_tokenizer_cls" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="trinity.common.models.mm_utils.build_mm_message">
+<span class="sig-prename descclassname"><span class="pre">trinity.common.models.mm_utils.</span></span><span class="sig-name descname"><span class="pre">build_mm_message</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prompt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">images</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">videos</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/trinity/common/models/mm_utils.html#build_mm_message"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.common.models.mm_utils.build_mm_message" title="Link to this definition">#</a></dt>
+<dd><p>Construct multi-modal message by injecting media references at tag positions in prompt.</p>
+<p>Parses prompt for &lt;image&gt;/&lt;video&gt; tags, replaces them with corresponding media references,
+and handles surplus media items. Extra media (beyond tag count) is prepended to content.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>prompt</strong> – Text containing optional &lt;image&gt; and &lt;video&gt; tags as media placeholders.
+Example: “First &lt;image&gt; then &lt;video&gt; and finally &lt;image&gt;”</p></li>
+<li><p><strong>images</strong> – List of image references (file paths, URLs, or PIL images) in order of appearance.</p></li>
+<li><p><strong>videos</strong> – List of video references (file paths, URLs) in order of appearance.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl>
+<dt>{</dt><dd><p>“role”: “user”,
+“content”: [</p>
+<blockquote>
+<div><p>{“type”: “image”, “image”: …},  # Surplus media first
+{“type”: “video”, “video”: …},
+{“type”: “text”, “text”: “First “},
+{“type”: “image”, “image”: …},  # Tag-replaced media
+…</p>
+</div></blockquote>
+<p>]</p>
+</dd>
+</dl>
+<p>}</p>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Message dictionary formatted for VL models</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If prompt contains more &lt;image&gt; tags than provided images,
+    or more &lt;video&gt; tags than provided videos.</p>
+</dd>
+</dl>
+<dl class="simple">
+<dt>Behavior details:</dt><dd><ul class="simple">
+<li><p>Tags are case-sensitive and must be exact: “&lt;image&gt;”, “&lt;video&gt;”</p></li>
+<li><p>Empty text segments between tags are omitted</p></li>
+<li><p>Surplus media (images/videos beyond tag count) appears at START of content list</p></li>
+<li><p>Text segments preserve original prompt ordering around tags</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="trinity.common.models.mm_utils.has_multi_modal_content">
+<span class="sig-prename descclassname"><span class="pre">trinity.common.models.mm_utils.</span></span><span class="sig-name descname"><span class="pre">has_multi_modal_content</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">messages</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/trinity/common/models/mm_utils.html#has_multi_modal_content"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.common.models.mm_utils.has_multi_modal_content" title="Link to this definition">#</a></dt>
+<dd><p>Check if any message contains non-text (image/video) content.</p>
+<p>Inspects message content structure to detect multi-modal elements. Handles both:
+- String content (text-only, returns False)
+- List content (multi-modal candidates)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>messages</strong> – List of conversation messages. Each message must contain a “content” field.
+Content may be:
+- str: Plain text message
+- List[Dict]: Multi-modal content items (each with “type” key)</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if any message contains at least one non-text content item (type != “text”),
+False otherwise.</p>
+</dd>
+</dl>
+<p class="rubric">Example</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">msg</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">"role"</span><span class="p">:</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">:</span> <span class="p">[{</span><span class="s2">"type"</span><span class="p">:</span> <span class="s2">"text"</span><span class="p">,</span> <span class="s2">"text"</span><span class="p">:</span> <span class="s2">"Hi"</span><span class="p">},</span> <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="s2">"image"</span><span class="p">,</span> <span class="s2">"image"</span><span class="p">:</span> <span class="s2">"..."</span><span class="p">}]}]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">has_multi_modal_content</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="trinity.common.models.mm_utils.combine_output_token_ids">
+<span class="sig-prename descclassname"><span class="pre">trinity.common.models.mm_utils.</span></span><span class="sig-name descname"><span class="pre">combine_output_token_ids</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_token_ids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi_modal_inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Tensor</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/common/models/mm_utils.html#combine_output_token_ids"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.common.models.mm_utils.combine_output_token_ids" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="trinity.common.models.mm_utils.MultiModalRender">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">trinity.common.models.mm_utils.</span></span><span class="sig-name descname"><span class="pre">MultiModalRender</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/common/models/mm_utils.html#MultiModalRender"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.common.models.mm_utils.MultiModalRender" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></p>
+<p>Client-side processor that mirrors server’s multimodal handling.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.common.models.mm_utils.MultiModalRender.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/common/models/mm_utils.html#MultiModalRender.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.common.models.mm_utils.MultiModalRender.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.common.models.mm_utils.MultiModalRender.build_mm_input_for_training">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">build_mm_input_for_training</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">messages</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tools</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_ids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi_modal_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/trinity/common/models/mm_utils.html#MultiModalRender.build_mm_input_for_training"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.common.models.mm_utils.MultiModalRender.build_mm_input_for_training" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.common.models.mm_utils.MultiModalRender.process_messages">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">process_messages</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">messages</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/common/models/mm_utils.html#MultiModalRender.process_messages"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.common.models.mm_utils.MultiModalRender.process_messages" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.common.models.mm_utils.MultiModalRender.process_messages_async">
+<em class="property"><span class="k"><span class="pre">abstractmethod</span></span><span class="w"> </span><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">process_messages_async</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">messages</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/common/models/mm_utils.html#MultiModalRender.process_messages_async"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.common.models.mm_utils.MultiModalRender.process_messages_async" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="trinity.common.models.mm_utils.vLLMMultiModalRender">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">trinity.common.models.mm_utils.</span></span><span class="sig-name descname"><span class="pre">vLLMMultiModalRender</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">media_io_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_local_media_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_media_domains</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trust_request_chat_template</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mm_processor_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/common/models/mm_utils.html#vLLMMultiModalRender"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.common.models.mm_utils.vLLMMultiModalRender" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#trinity.common.models.mm_utils.MultiModalRender" title="trinity.common.models.mm_utils.MultiModalRender"><code class="xref py py-class docutils literal notranslate"><span class="pre">MultiModalRender</span></code></a></p>
+<p>Client-side processor that mirrors vLLM server’s multimodal handling.</p>
+<p>This class enables RL training endpoints to extract multimodal data
+with identical processing to the inference server, ensuring consistency.
+Legacy transformers-style content parts are normalized to vLLM-compatible
+OpenAI part schema before parsing.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.common.models.mm_utils.vLLMMultiModalRender.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">media_io_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_local_media_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_media_domains</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trust_request_chat_template</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mm_processor_kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/trinity/common/models/mm_utils.html#vLLMMultiModalRender.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.common.models.mm_utils.vLLMMultiModalRender.__init__" title="Link to this definition">#</a></dt>
+<dd><p>Initialize the client-side multimodal processor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_path</strong> – Path to the model</p></li>
+<li><p><strong>media_io_kwargs</strong> – Media I/O configuration (mirrors –media-io-kwargs)</p></li>
+<li><p><strong>allowed_local_media_path</strong> – Path to allowed local media directory</p></li>
+<li><p><strong>allowed_media_domains</strong> – List of allowed media domains</p></li>
+<li><p><strong>trust_request_chat_template</strong> – Whether to trust request-provided chat template</p></li>
+<li><p><strong>mm_processor_kwargs</strong> – Additional processor kwargs for multimodal processing</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.common.models.mm_utils.vLLMMultiModalRender.build_mm_input_for_training">
+<span class="sig-name descname"><span class="pre">build_mm_input_for_training</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">messages</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tools</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_ids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">multi_modal_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/trinity/common/models/mm_utils.html#vLLMMultiModalRender.build_mm_input_for_training"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.common.models.mm_utils.vLLMMultiModalRender.build_mm_input_for_training" title="Link to this definition">#</a></dt>
+<dd><p>Build multimodal tensors aligned with training token sequence.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>messages</strong> – Optional chat messages used to derive token ids and/or
+multimodal payloads when not provided explicitly.</p></li>
+<li><p><strong>tools</strong> – Optional tool schema list passed to
+<cite>mm_processor.apply_chat_template</cite> when tokenizing messages.</p></li>
+<li><p><strong>input_ids</strong> – Optional token ids (shape <cite>(seq_len,)</cite> or
+<cite>(batch_size, seq_len)</cite>). When omitted, token ids are generated
+from <cite>messages</cite>.</p></li>
+<li><p><strong>multi_modal_data</strong> – Optional multimodal payload returned by
+<cite>process_messages</cite> (e.g., image/video media items). When omitted,
+it is inferred from <cite>messages</cite>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary containing multimodal training tensors, including
+<cite>mm_token_type_ids</cite> and media-processor outputs (for example image
+and/or video tensors), or <cite>None</cite> when multimodal processing is not
+available or no multimodal content exists.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValueError</strong> – If both <cite>input_ids</cite> and <cite>messages</cite> are missing.</p>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Requires an initialized multimodal processor (<cite>self.mm_processor</cite>).
+If unavailable for the current model, returns <cite>None</cite>.</p></li>
+<li><p>1D <cite>input_ids</cite> are reshaped to <cite>(1, seq_len)</cite> to satisfy processor
+expectations.</p></li>
+</ul>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.common.models.mm_utils.vLLMMultiModalRender.process_messages">
+<span class="sig-name descname"><span class="pre">process_messages</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">messages</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ChatTemplateContentFormat</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'string'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">ConversationMessage</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">MultiModalDataDict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/trinity/common/models/mm_utils.html#vLLMMultiModalRender.process_messages"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.common.models.mm_utils.vLLMMultiModalRender.process_messages" title="Link to this definition">#</a></dt>
+<dd><p>Process chat messages and extract multimodal data.</p>
+<p>This replicates the server-side parse_chat_messages behavior.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>messages</strong> – List of chat messages with potential multimodal content</p></li>
+<li><p><strong>content_format</strong> – Chat template content format (“string” or “openai”)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tuple of (conversation, mm_data) matching server output</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="trinity.common.models.mm_utils.vLLMMultiModalRender.process_messages_async">
+<em class="property"><span class="k"><span class="pre">async</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">process_messages_async</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">messages</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content_format</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ChatTemplateContentFormat</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'string'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">ConversationMessage</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">MultiModalDataDict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/trinity/common/models/mm_utils.html#vLLMMultiModalRender.process_messages_async"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#trinity.common.models.mm_utils.vLLMMultiModalRender.process_messages_async" title="Link to this definition">#</a></dt>
+<dd><p>Async version of process_messages for concurrent media fetching.</p>
+</dd></dl>
+
+</dd></dl>
+
 </section>
 
 
@@ -742,6 +1011,41 @@
             </div>
             
             
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item"><div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.should_use_processor"><code class="docutils literal notranslate"><span class="pre">should_use_processor()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.processor_or_tokenizer_cls"><code class="docutils literal notranslate"><span class="pre">processor_or_tokenizer_cls()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.build_mm_message"><code class="docutils literal notranslate"><span class="pre">build_mm_message()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.has_multi_modal_content"><code class="docutils literal notranslate"><span class="pre">has_multi_modal_content()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.combine_output_token_ids"><code class="docutils literal notranslate"><span class="pre">combine_output_token_ids()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.MultiModalRender"><code class="docutils literal notranslate"><span class="pre">MultiModalRender</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.MultiModalRender.__init__"><code class="docutils literal notranslate"><span class="pre">MultiModalRender.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.MultiModalRender.build_mm_input_for_training"><code class="docutils literal notranslate"><span class="pre">MultiModalRender.build_mm_input_for_training()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.MultiModalRender.process_messages"><code class="docutils literal notranslate"><span class="pre">MultiModalRender.process_messages()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.MultiModalRender.process_messages_async"><code class="docutils literal notranslate"><span class="pre">MultiModalRender.process_messages_async()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.vLLMMultiModalRender"><code class="docutils literal notranslate"><span class="pre">vLLMMultiModalRender</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.vLLMMultiModalRender.__init__"><code class="docutils literal notranslate"><span class="pre">vLLMMultiModalRender.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.vLLMMultiModalRender.build_mm_input_for_training"><code class="docutils literal notranslate"><span class="pre">vLLMMultiModalRender.build_mm_input_for_training()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.vLLMMultiModalRender.process_messages"><code class="docutils literal notranslate"><span class="pre">vLLMMultiModalRender.process_messages()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#trinity.common.models.mm_utils.vLLMMultiModalRender.process_messages_async"><code class="docutils literal notranslate"><span class="pre">vLLMMultiModalRender.process_messages_async()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+</div></div>
               
             
           </div>

@@ -1062,6 +1062,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Attributes:</span>
 <span class="sd">        auxiliary_model_wrappers: List of ModelWrapper instances for auxiliary models.</span>
 <span class="sd">        auxiliary_models: List of OpenAI clients (sync or async based on is_async) for auxiliary models.</span>
+<span class="sd">        repeat_index: Zero-based run index within the task's full repeat group.</span>
+<span class="sd">            The runner sets this before each non-repeatable workflow run, including</span>
+<span class="sd">            the offset when the group is split across runners.</span>
 <span class="sd">    """</span>
 
     <span class="n">can_reset</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># whether the workflow can be reset with a new task. If true, `reset()` must be implemented.</span>
@@ -1089,6 +1092,7 @@ window.runMermaid = runMermaid;</script>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">auxiliary_models</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">get_openai_client</span><span class="p">()</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">auxiliary_models</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">run_id_base</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">repeat_index</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">get_logger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span></div>
 
 
