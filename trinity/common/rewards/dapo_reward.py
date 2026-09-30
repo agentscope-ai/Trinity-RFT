@@ -89,7 +89,7 @@ class MathDAPORewardFn(RewardFn):
         response_len = len(response_token)
         expected_len = self.max_response_length - self.cache_length
 
-        if response_len < expected_len:
+        if response_len <= expected_len:
             return 0.0
         elif response_len > self.max_response_length:
             return -self.penalty_factor
