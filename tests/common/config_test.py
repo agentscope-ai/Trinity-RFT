@@ -135,6 +135,16 @@ class TestConfig(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "to be a multiple of"):
             config.check_and_update()
 
+    def test_sync_interval_overrides_must_be_positive(self):
+        for field in ("explorer_sync_interval", "trainer_sync_interval"):
+            with self.subTest(field=field):
+                config = get_template_config()
+                config.synchronizer.sync_interval = 4
+                setattr(config.synchronizer, field, 0)
+
+                with self.assertRaisesRegex(AssertionError, f"`{field}` must be positive"):
+                    config.check_and_update()
+
     def test_load_default_config(self):
         config = get_template_config()
         config.buffer.batch_size = 8
