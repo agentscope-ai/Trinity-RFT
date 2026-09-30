@@ -6,8 +6,10 @@ DataParallelPPOActor.update_policy() approach.
 The loss function signature expected by veRL's engine:
     def loss_fn(model_output, data: TensorDict, dp_group=None) -> (loss, metrics)
 """
+
 import torch
 from tensordict import TensorDict
+from verl.utils import tensordict_utils as tu
 from verl.workers.utils.padding import no_padding_2_padding
 
 from trinity.algorithm import ENTROPY_LOSS_FN, KL_FN, POLICY_LOSS_FN
@@ -65,7 +67,14 @@ class TrinityPolicyLoss:
 
         metrics = {}
 
-        pg_loss, pg_loss_metrics = self.policy_loss_fn(logprob=log_prob, **model_inputs)
+        pg_loss, pg_loss_metrics = self.policy_loss_fn(
+            logprob=log_prob,
+            batch_num_tokens=tu.get_non_tensor_data(
+                data=data, key="batch_num_tokens", default=None
+            ),
+            dp_size=tu.get_non_tensor_data(data=data, key="dp_size", default=None),
+            **model_inputs,
+        )
         prefix_metrics(src_metrics=pg_loss_metrics, prefix="actor", dst_metrics=metrics)
         policy_loss = pg_loss
 

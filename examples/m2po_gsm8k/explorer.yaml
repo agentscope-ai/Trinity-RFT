@@ -1,0 +1,53 @@
+project: "Trinity-RFT-M2PO"
+name: "m2po-qwen2.5-1.5B-gsm8k"
+mode: explore
+checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
+algorithm:
+  algorithm_type: m2po
+  repeat_times: 8
+  bypass_old_logprobs: true
+  policy_loss_fn_args:
+    m2_threshold: 0.04
+    log_ratio_clip: 20.0
+model:
+  model_path: ${oc.env:TRINITY_MODEL_PATH,Qwen/Qwen2.5-1.5B-Instruct}
+  max_response_tokens: 1024
+  max_model_len: 2048
+cluster:
+  node_num: 1
+  gpu_per_node: 4
+buffer:
+  total_epochs: 1
+  batch_size: 32
+  explorer_input:
+    taskset:
+      name: gsm8k
+      storage_type: file
+      path: ${oc.env:TRINITY_TASKSET_PATH,openai/gsm8k}
+      subset_name: "main"
+      split: "train"
+      format:
+        prompt_key: "question"
+        response_key: "answer"
+      rollout_args:
+        temperature: 1.0
+        logprobs: 0
+      default_workflow_type: "math_workflow"
+  trainer_input:
+    experience_buffer:
+      name: m2po_gsm8k_buffer
+      storage_type: queue
+      path: "sqlite:///m2po_gsm8k.db"
+explorer:
+  eval_interval: 10
+  runner_per_model: 8
+  rollout_model:
+    engine_num: 4
+    tensor_parallel_size: 1
+    enable_prefix_caching: false
+    enforce_eager: true
+    dtype: bfloat16
+    seed: 42
+synchronizer:
+  sync_method: "checkpoint"
+  sync_interval: 10

@@ -408,6 +408,16 @@ class AlgorithmConfigValidator(ConfigValidator):
 
         check_and_set("sample_strategy", SAMPLE_STRATEGY, "sample_strategy_args")
         check_and_set("policy_loss_fn", POLICY_LOSS_FN, "policy_loss_fn_args")
+        if config.algorithm.algorithm_type == "m2po" and config.algorithm.policy_loss_fn != "m2po":
+            raise ValueError(
+                "`algorithm_type='m2po'` requires `policy_loss_fn='m2po'`; "
+                "select a different algorithm type for a custom policy loss."
+            )
+        if config.algorithm.policy_loss_fn == "m2po":
+            # policy_loss_fn is independently configurable, so selecting M2PO on
+            # another algorithm preset must still enforce its backend and
+            # behavior-logprob invariants after all defaults are resolved.
+            ALGORITHM_TYPE.get("m2po").check_config(config)
         check_and_set("advantage_fn", ADVANTAGE_FN, "advantage_fn_args")
         check_and_set("kl_loss_fn", KL_FN, "kl_loss_fn_args")
         check_and_set("kl_penalty_fn", KL_FN, "kl_penalty_fn_args")

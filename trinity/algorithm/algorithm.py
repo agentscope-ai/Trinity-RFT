@@ -139,6 +139,47 @@ class GRPOAlgorithm(AlgorithmType):
         }
 
 
+class M2POAlgorithm(AlgorithmType):
+    """M2PO for stable off-policy RFT with stale rollout data.
+
+    See https://openreview.net/forum?id=IIgl5MWelz.
+    """
+
+    use_critic: bool = False
+    use_reference: bool = False
+    compute_advantage_in_trainer: bool = False
+    can_balance_batch: bool = True
+    schema: str = "experience"
+
+    @classmethod
+    def default_config(cls) -> Dict:
+        return {
+            "repeat_times": 8,
+            "advantage_fn": "grpo",
+            "sample_strategy": "default",
+            "policy_loss_fn": "m2po",
+            "kl_penalty_fn": "none",
+            "kl_loss_fn": "none",
+            "entropy_loss_fn": "none",
+        }
+
+    @classmethod
+    def check_config(cls, config: Config) -> None:
+        from trinity.trainer.trainer import is_verl_legacy
+
+        if config.trainer.trainer_type != "verl" or is_verl_legacy():
+            raise ValueError(
+                "M2PO requires the veRL >= 0.8 engine backend. Legacy veRL and "
+                "Tinker split the objective before Trinity can construct one "
+                "global optimizer-batch mask."
+            )
+        if not config.algorithm.bypass_old_logprobs:
+            raise ValueError(
+                "M2PO requires `algorithm.bypass_old_logprobs=true` so the importance "
+                "ratio is measured against the rollout behavior policy."
+            )
+
+
 class DAPOAlgorithm(AlgorithmType):
     """DAPO (Decoupled Clip and Dynamic sAmpling Policy Optimization).
 
