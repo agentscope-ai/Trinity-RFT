@@ -1,0 +1,93 @@
+# 原始 LoRA32 跑通实验：来源 Trinity 4440908，同名配置。
+# 数值与历史配置相同；移除个人路径，ALFWORLD_DATA 必须显式提供。
+# 使用方法与版本边界见 docs/RL_tutorial/lora32_reproduction.md。
+mode: both
+project: "ALFWORLD"
+name: "Step_Wise_Alfworld_TuFT_lora32_lr5e5_${oc.env:TRINITY_MACHINE_ID}"
+checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
+
+algorithm:
+  algorithm_type: multi_step_grpo
+  repeat_times: 16
+  optimizer:
+    lr: 5e-5
+  kl_loss_fn_args:
+    kl_coef: 0.001
+
+model:
+  model_path: ${oc.env:TRINITY_MODEL_PATH,Qwen/Qwen3-1.7B}
+  max_response_tokens: 512
+  max_model_len: 8191
+  max_prompt_tokens: 7679
+  enable_thinking: false
+  tinker:
+    enable: true
+    base_url: ${oc.env:TINKER_BASE_URL,http://127.0.0.1:10610}
+    rank: 32
+    train_unembed: false
+    forward_backward_chunk_bytes: 4500000
+
+cluster:
+  ray_address: ${oc.env:TRINITY_RAY_ADDRESS,127.0.0.1:6393}
+  node_num: 1
+  gpu_per_node: 0
+
+buffer:
+  total_epochs: 100
+  batch_size: 16
+  train_batch_size: 7680
+  explorer_input:
+    taskset:
+      name: alfworld
+      storage_type: file
+      path: 'examples/grpo_alfworld/alfworld_data'
+      format:
+        prompt_key: 'game_file'
+      rollout_args:
+        temperature: 1.0
+        logprobs: 0
+      workflow_args:
+        max_env_steps: 30
+      enable_progress_bar: false
+      default_workflow_type: 'step_wise_alfworld_workflow'
+  trainer_input:
+    experience_buffer:
+      name: alfworld_buffer
+      storage_type: queue
+      max_read_timeout: 10800
+      replay_buffer:
+        enable: true
+
+explorer:
+  max_repeat_times_per_runner: 1
+  runner_per_model: 16
+  max_timeout: 3600
+  max_retry_times: 2
+  eval_on_startup: false
+  rollout_model:
+    engine_type: tinker
+    engine_num: 1
+    enable_history: true
+    seed: 42
+  env_vars:
+    TMPDIR: ${oc.env:TMPDIR,/tmp}
+    ALFWORLD_DATA: ${oc.env:ALFWORLD_DATA}
+
+synchronizer:
+  sync_style: fully_async
+  sync_method: memory
+  sync_interval: 2
+  sync_timeout: 3600
+
+trainer:
+  trainer_type: tinker
+  total_steps: 250
+  save_interval: 10
+  enable_preview: true
+  grad_clip: 1.0
+
+monitor:
+  monitor_type: tensorboard
+
+log:
+  level: INFO

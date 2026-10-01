@@ -1,0 +1,247 @@
+{
+  "schema_version": 1,
+  "experiment": "ALFWorld LoRA rank 32, optimized training path",
+  "metrics_file": "lora32_speed_metrics.csv",
+  "report": "2026-09-23_lora32_speed_reproduction_report.md",
+  "source": {
+    "basename": "trainer.log",
+    "sha256": "56f820340ca11a8561d1ce78fbb7860405e1b0fda8e9dfa6ecbea409f4a3c02e",
+    "size_bytes": 491487
+  },
+  "processing": {
+    "source_scalar_records": 252,
+    "retained_rows": 250,
+    "step_range": [
+      1,
+      250
+    ],
+    "missing_steps": [],
+    "deduplication_rule": "Read scalar records in source-file order and retain the last record for each trainer step. Steps 101 and 102 were rerun after restoring checkpoint 100.",
+    "duplicate_records": [
+      {
+        "step": 101,
+        "discarded_source_line": 692,
+        "retained_source_line": 717,
+        "discarded_score": 0.447852,
+        "retained_score": 0.458594
+      },
+      {
+        "step": 102,
+        "discarded_source_line": 700,
+        "retained_source_line": 725,
+        "discarded_score": 0.471055,
+        "retained_score": 0.323672
+      }
+    ],
+    "missing_values": "Empty CSV cells mean the metric was not logged. No zero filling or interpolation is applied.",
+    "missing_fields": {
+      "entropy": {
+        "missing_rows": 250,
+        "reason": "The server-loss training log does not emit actor/entropy_loss."
+      }
+    },
+    "runners_assignment": "Assign concurrency from the documented configuration stages to the retained training trajectory; this is not a per-step scalar emitted by trainer.log."
+  },
+  "fields": {
+    "step": {
+      "meaning": "Trainer iteration, not explorer iteration"
+    },
+    "score": {
+      "source_metric": "critic/score/mean"
+    },
+    "entropy": {
+      "source_metric": "actor/entropy_loss"
+    },
+    "response_clip_ratio": {
+      "source_metric": "response_length/clip_ratio"
+    },
+    "prompt_length_mean": {
+      "source_metric": "prompt_length/mean"
+    },
+    "train_step_seconds": {
+      "source_metric": "time/train_step"
+    },
+    "update_actor_seconds": {
+      "source_metric": "time/update_actor"
+    },
+    "tokens": {
+      "source_metric": "perf/total_num_tokens"
+    },
+    "runners": {
+      "meaning": "Configured rollout runner count for the retained stage"
+    }
+  },
+  "training_stages": [
+    {
+      "steps": [
+        1,
+        10
+      ],
+      "runners": 16,
+      "restore_from": null
+    },
+    {
+      "steps": [
+        11,
+        90
+      ],
+      "runners": 32,
+      "restore_from": 10
+    },
+    {
+      "steps": [
+        91,
+        100
+      ],
+      "runners": 48,
+      "restore_from": 90,
+      "note": "This stage originally reached step 102; those two scalar records are superseded by the next stage."
+    },
+    {
+      "steps": [
+        101,
+        250
+      ],
+      "runners": 72,
+      "restore_from": 100
+    }
+  ],
+  "source_evidence": {
+    "start": {
+      "source_line": 5,
+      "logged_time": "09-19 18:29:33",
+      "event": "Trainer synchronized weights at step 0 before training step 1."
+    },
+    "restores": [
+      {
+        "source_lines": [
+          76,
+          77,
+          78
+        ],
+        "checkpoint_step": 10
+      },
+      {
+        "source_lines": [
+          615,
+          616,
+          617
+        ],
+        "checkpoint_step": 90
+      },
+      {
+        "source_lines": [
+          705,
+          706,
+          707
+        ],
+        "checkpoint_step": 100
+      }
+    ],
+    "completion": {
+      "source_line": 1705,
+      "logged_time": "09-23 00:48:05",
+      "event": "Trainer finished."
+    },
+    "checkpoint_metadata": "trainer_meta.json and both latest-iteration pointer files record 250.",
+    "timestamp_note": "Times are preserved as logged; the trainer log does not encode a timezone.",
+    "interpretation": "The final trajectory covers all 250 steps after deduplication, but includes three planned restarts and concurrency changes. It is not a fixed-configuration uninterrupted run."
+  },
+  "summary": {
+    "all_steps": {
+      "step_range": [
+        1,
+        250
+      ],
+      "count": 250,
+      "score_mean": 0.2995933352
+    },
+    "first_10_steps": {
+      "step_range": [
+        1,
+        10
+      ],
+      "count": 10,
+      "score_mean": -0.08945834
+    },
+    "last_10_steps": {
+      "step_range": [
+        241,
+        250
+      ],
+      "count": 10,
+      "score_mean": 0.4045677
+    },
+    "score_max": {
+      "step": 187,
+      "value": 0.745911
+    },
+    "last_step": {
+      "step": 250,
+      "score": 0.424505
+    },
+    "best_10_step_window": {
+      "step_range": [
+        141,
+        150
+      ],
+      "count": 10,
+      "score_mean": 0.5331159,
+      "metric": "training score; not checkpoint test success"
+    },
+    "best_20_step_window": {
+      "step_range": [
+        131,
+        150
+      ],
+      "count": 20,
+      "score_mean": 0.5139733
+    }
+  },
+  "held_out_evaluation": {
+    "source": {
+      "basename": "final_eval.log",
+      "sha256": "e03738a00be3b47e10c0401037c7de8ee5cb186e7256a7d4c007ecb3374ff34a"
+    },
+    "script_basename": "eval_ckpts.py",
+    "games": 140,
+    "repeats_per_game": 2,
+    "episodes_per_checkpoint": 280,
+    "temperature": 1,
+    "max_environment_steps": 30,
+    "max_generated_tokens_per_call": 512,
+    "max_prompt_tokens": 7679,
+    "optimized": {
+      "checkpoint_step": 250,
+      "successes": 211,
+      "episodes": 280,
+      "success_rate": 0.7535714285714286,
+      "result_source_line": 2946,
+      "action_parse_failure_messages": 1666
+    },
+    "original": {
+      "checkpoint_step": 250,
+      "successes": 178,
+      "episodes": 280,
+      "success_rate": 0.6357142857142857,
+      "result_source_line": 6196,
+      "action_parse_failure_messages": 2608
+    },
+    "checkpoint_seed_offset": 97,
+    "seed_rule": "1000 + checkpoint_index * 97 + game_index * 7 + repeat_index",
+    "episode_exception_warning_count": 0,
+    "limitations": [
+      "The checkpoints use the same task set and evaluation protocol but different random seeds.",
+      "Two repeats on each of 140 games are not 280 distinct independent test tasks.",
+      "Action-parse failure counts are log-message counts, not failed-episode counts; no call-level failure rate is derived.",
+      "The report's approximate 38,000-call denominator is not verified and is not used here.",
+      "Observed success differences do not isolate a causal effect of the speed changes."
+    ]
+  },
+  "evidence_limits": [
+    "Training score is a statistic of sampled training batches, not held-out success rate.",
+    "Runner counts and optimized training code both differ from the original run; the comparison is not a single-variable experiment.",
+    "The final trajectory is reconstructed from saved records without rerunning training or evaluation.",
+    "This public provenance intentionally omits private machine paths and run identifiers."
+  ]
+}

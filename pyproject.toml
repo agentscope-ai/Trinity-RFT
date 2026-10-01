@@ -1,0 +1,36 @@
+[project]
+name = "trinity-rl-tutorial"
+version = "0.1.0"
+description = "Runnable companion code for the RL tutorial (docs/RL_tutorial, ALFWorld environment), backed by Trinity-RFT."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    # Shared Trinity source revision for the full-parameter and LoRA examples.
+    # This environment uses verl + vLLM; LoRA has a separate dependency environment.
+    # The upstream revision includes the verl-0.9.0 compatibility fixes.
+    "trinity-rft[vllm]",
+    # ALFWorld text-game environment (pulls in textworld).
+    "alfworld==0.4.2",
+    # The validated FSDP2 path needs FlashAttention2. The pinned CUDA 13 wheel
+    # supports CPython 3.12 / Linux x86_64 / torch 2.11 / CXX11 ABI TRUE only.
+    "flash-attn==2.8.3; sys_platform == 'linux' and platform_machine == 'x86_64'",
+]
+
+[tool.uv.sources]
+# Pin a merged upstream main revision, shared with requirements-lora32.txt.
+# Historical full-parameter results used 9a7e26e.
+trinity-rft = { git = "https://github.com/agentscope-ai/Trinity-RFT.git", rev = "65139711219da4338c954e546c4b8434e4f75ec2" }
+# Same hash-verified community build as TuFT d4591c1's install_flash_attn.py.
+# SHA-256 is fixed in uv.lock and checked by the entrypoint regression tests.
+flash-attn = { url = "https://github.com/adithyaxx/flash-attention/releases/download/v2.8.3/flash_attn-2.8.3%2Bcu13torch2.11cxx11abiTRUE-cp312-cp312-linux_x86_64.whl" }
+
+[tool.uv]
+# Preserve the full-parameter dependency pins while unifying Trinity source.
+# The upstream compatibility fixes cover verl==0.9.0; vllm is capped by the
+# [vllm] extra (<=0.23.0). Keep the validated transformers version fixed;
+# the numpy floor matches the upstream overrides file.
+override-dependencies = [
+    "numpy>=2",
+    "transformers==5.16.1",
+    "verl==0.9.0",
+]

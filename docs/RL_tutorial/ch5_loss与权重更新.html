@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 5 章：loss 与更新 — advantage 怎么变成梯度 · RL Tutorial</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏠</text></svg>">
+<!-- Tailwind CSS（含 typography 插件）本地预编译内嵌，完全离线可用；重编译: build_html.py --css -->
+<style>*,:after,:before{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/*! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com*/*,:after,:before{box-sizing:border-box;border:0 solid #e5e7eb}:after,:before{--tw-content:""}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;-o-tab-size:4;tab-size:4;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,Hiragino Sans GB,Microsoft YaHei,Noto Sans SC,sans-serif;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace,SF Mono,SFMono-Regular,Menlo,Consolas,Liberation Mono,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0}fieldset,legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::-moz-placeholder,textarea::-moz-placeholder{opacity:1;color:#9ca3af}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.prose{color:var(--tw-prose-body);max-width:65ch}.prose :where(p):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:1.25em;margin-bottom:1.25em}.prose :where([class~=lead]):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-lead);font-size:1.25em;line-height:1.6;margin-top:1.2em;margin-bottom:1.2em}.prose :where(a):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-links);text-decoration:underline;font-weight:500}.prose :where(strong):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-bold);font-weight:600}.prose :where(a strong):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(blockquote strong):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(thead th strong):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(ol):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:decimal;margin-top:1.25em;margin-bottom:1.25em;padding-inline-start:1.625em}.prose :where(ol[type=A]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:upper-alpha}.prose :where(ol[type=a]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:lower-alpha}.prose :where(ol[type=A s]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:upper-alpha}.prose :where(ol[type=a s]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:lower-alpha}.prose :where(ol[type=I]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:upper-roman}.prose :where(ol[type=i]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:lower-roman}.prose :where(ol[type=I s]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:upper-roman}.prose :where(ol[type=i s]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:lower-roman}.prose :where(ol[type="1"]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:decimal}.prose :where(ul):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:disc;margin-top:1.25em;margin-bottom:1.25em;padding-inline-start:1.625em}.prose :where(ol>li):not(:where([class~=not-prose],[class~=not-prose] *))::marker{font-weight:400;color:var(--tw-prose-counters)}.prose :where(ul>li):not(:where([class~=not-prose],[class~=not-prose] *))::marker{color:var(--tw-prose-bullets)}.prose :where(dt):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:600;margin-top:1.25em}.prose :where(hr):not(:where([class~=not-prose],[class~=not-prose] *)){border-color:var(--tw-prose-hr);border-top-width:1px;margin-top:3em;margin-bottom:3em}.prose :where(blockquote):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:500;font-style:italic;color:var(--tw-prose-quotes);border-inline-start-width:.25rem;border-inline-start-color:var(--tw-prose-quote-borders);quotes:"\201C""\201D""\2018""\2019";margin-top:1.6em;margin-bottom:1.6em;padding-inline-start:1em}.prose :where(blockquote p:first-of-type):not(:where([class~=not-prose],[class~=not-prose] *)):before{content:open-quote}.prose :where(blockquote p:last-of-type):not(:where([class~=not-prose],[class~=not-prose] *)):after{content:close-quote}.prose :where(h1):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:800;font-size:2.25em;margin-top:0;margin-bottom:.8888889em;line-height:1.1111111}.prose :where(h1 strong):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:900;color:inherit}.prose :where(h2):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:700;font-size:1.5em;margin-top:2em;margin-bottom:1em;line-height:1.3333333}.prose :where(h2 strong):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:800;color:inherit}.prose :where(h3):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:600;font-size:1.25em;margin-top:1.6em;margin-bottom:.6em;line-height:1.6}.prose :where(h3 strong):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:700;color:inherit}.prose :where(h4):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:600;margin-top:1.5em;margin-bottom:.5em;line-height:1.5}.prose :where(h4 strong):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:700;color:inherit}.prose :where(img):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:2em;margin-bottom:2em}.prose :where(picture):not(:where([class~=not-prose],[class~=not-prose] *)){display:block;margin-top:2em;margin-bottom:2em}.prose :where(video):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:2em;margin-bottom:2em}.prose :where(kbd):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:500;font-family:inherit;color:var(--tw-prose-kbd);box-shadow:0 0 0 1px rgb(var(--tw-prose-kbd-shadows)/10%),0 3px 0 rgb(var(--tw-prose-kbd-shadows)/10%);font-size:.875em;border-radius:.3125rem;padding-top:.1875em;padding-inline-end:.375em;padding-bottom:.1875em;padding-inline-start:.375em}.prose :where(code):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-code);font-weight:600;font-size:.875em}.prose :where(code):not(:where([class~=not-prose],[class~=not-prose] *)):before{content:"`"}.prose :where(code):not(:where([class~=not-prose],[class~=not-prose] *)):after{content:"`"}.prose :where(a code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(h1 code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(h2 code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit;font-size:.875em}.prose :where(h3 code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit;font-size:.9em}.prose :where(h4 code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(blockquote code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(thead th code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(pre):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-pre-code);background-color:var(--tw-prose-pre-bg);overflow-x:auto;font-weight:400;font-size:.875em;line-height:1.7142857;margin-top:1.7142857em;margin-bottom:1.7142857em;border-radius:.375rem;padding-top:.8571429em;padding-inline-end:1.1428571em;padding-bottom:.8571429em;padding-inline-start:1.1428571em}.prose :where(pre code):not(:where([class~=not-prose],[class~=not-prose] *)){background-color:transparent;border-width:0;border-radius:0;padding:0;font-weight:inherit;color:inherit;font-size:inherit;font-family:inherit;line-height:inherit}.prose :where(pre code):not(:where([class~=not-prose],[class~=not-prose] *)):before{content:none}.prose :where(pre code):not(:where([class~=not-prose],[class~=not-prose] *)):after{content:none}.prose :where(table):not(:where([class~=not-prose],[class~=not-prose] *)){width:100%;table-layout:auto;margin-top:2em;margin-bottom:2em;font-size:.875em;line-height:1.7142857}.prose :where(thead):not(:where([class~=not-prose],[class~=not-prose] *)){border-bottom-width:1px;border-bottom-color:var(--tw-prose-th-borders)}.prose :where(thead th):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:600;vertical-align:bottom;padding-inline-end:.5714286em;padding-bottom:.5714286em;padding-inline-start:.5714286em}.prose :where(tbody tr):not(:where([class~=not-prose],[class~=not-prose] *)){border-bottom-width:1px;border-bottom-color:var(--tw-prose-td-borders)}.prose :where(tbody tr:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){border-bottom-width:0}.prose :where(tbody td):not(:where([class~=not-prose],[class~=not-prose] *)){vertical-align:baseline}.prose :where(tfoot):not(:where([class~=not-prose],[class~=not-prose] *)){border-top-width:1px;border-top-color:var(--tw-prose-th-borders)}.prose :where(tfoot td):not(:where([class~=not-prose],[class~=not-prose] *)){vertical-align:top}.prose :where(th,td):not(:where([class~=not-prose],[class~=not-prose] *)){text-align:start}.prose :where(figure>*):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0;margin-bottom:0}.prose :where(figcaption):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-captions);font-size:.875em;line-height:1.4285714;margin-top:.8571429em}.prose{--tw-prose-body:#374151;--tw-prose-headings:#111827;--tw-prose-lead:#4b5563;--tw-prose-links:#111827;--tw-prose-bold:#111827;--tw-prose-counters:#6b7280;--tw-prose-bullets:#d1d5db;--tw-prose-hr:#e5e7eb;--tw-prose-quotes:#111827;--tw-prose-quote-borders:#e5e7eb;--tw-prose-captions:#6b7280;--tw-prose-kbd:#111827;--tw-prose-kbd-shadows:17 24 39;--tw-prose-code:#111827;--tw-prose-pre-code:#e5e7eb;--tw-prose-pre-bg:#1f2937;--tw-prose-th-borders:#d1d5db;--tw-prose-td-borders:#e5e7eb;--tw-prose-invert-body:#d1d5db;--tw-prose-invert-headings:#fff;--tw-prose-invert-lead:#9ca3af;--tw-prose-invert-links:#fff;--tw-prose-invert-bold:#fff;--tw-prose-invert-counters:#9ca3af;--tw-prose-invert-bullets:#4b5563;--tw-prose-invert-hr:#374151;--tw-prose-invert-quotes:#f3f4f6;--tw-prose-invert-quote-borders:#374151;--tw-prose-invert-captions:#9ca3af;--tw-prose-invert-kbd:#fff;--tw-prose-invert-kbd-shadows:255 255 255;--tw-prose-invert-code:#fff;--tw-prose-invert-pre-code:#d1d5db;--tw-prose-invert-pre-bg:rgba(0,0,0,.5);--tw-prose-invert-th-borders:#4b5563;--tw-prose-invert-td-borders:#374151;font-size:1rem;line-height:1.75}.prose :where(picture>img):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0;margin-bottom:0}.prose :where(li):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:.5em;margin-bottom:.5em}.prose :where(ol>li):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-start:.375em}.prose :where(ul>li):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-start:.375em}.prose :where(.prose>ul>li p):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:.75em;margin-bottom:.75em}.prose :where(.prose>ul>li>p:first-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:1.25em}.prose :where(.prose>ul>li>p:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-bottom:1.25em}.prose :where(.prose>ol>li>p:first-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:1.25em}.prose :where(.prose>ol>li>p:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-bottom:1.25em}.prose :where(ul ul,ul ol,ol ul,ol ol):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:.75em;margin-bottom:.75em}.prose :where(dl):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:1.25em;margin-bottom:1.25em}.prose :where(dd):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:.5em;padding-inline-start:1.625em}.prose :where(hr+*):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0}.prose :where(h2+*):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0}.prose :where(h3+*):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0}.prose :where(h4+*):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0}.prose :where(thead th:first-child):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-start:0}.prose :where(thead th:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-end:0}.prose :where(tbody td,tfoot td):not(:where([class~=not-prose],[class~=not-prose] *)){padding-top:.5714286em;padding-inline-end:.5714286em;padding-bottom:.5714286em;padding-inline-start:.5714286em}.prose :where(tbody td:first-child,tfoot td:first-child):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-start:0}.prose :where(tbody td:last-child,tfoot td:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-end:0}.prose :where(figure):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:2em;margin-bottom:2em}.prose :where(.prose>:first-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0}.prose :where(.prose>:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-bottom:0}.prose-slate{--tw-prose-body:#334155;--tw-prose-headings:#0f172a;--tw-prose-lead:#475569;--tw-prose-links:#0f172a;--tw-prose-bold:#0f172a;--tw-prose-counters:#64748b;--tw-prose-bullets:#cbd5e1;--tw-prose-hr:#e2e8f0;--tw-prose-quotes:#0f172a;--tw-prose-quote-borders:#e2e8f0;--tw-prose-captions:#64748b;--tw-prose-kbd:#0f172a;--tw-prose-kbd-shadows:15 23 42;--tw-prose-code:#0f172a;--tw-prose-pre-code:#e2e8f0;--tw-prose-pre-bg:#1e293b;--tw-prose-th-borders:#cbd5e1;--tw-prose-td-borders:#e2e8f0;--tw-prose-invert-body:#cbd5e1;--tw-prose-invert-headings:#fff;--tw-prose-invert-lead:#94a3b8;--tw-prose-invert-links:#fff;--tw-prose-invert-bold:#fff;--tw-prose-invert-counters:#94a3b8;--tw-prose-invert-bullets:#475569;--tw-prose-invert-hr:#334155;--tw-prose-invert-quotes:#f1f5f9;--tw-prose-invert-quote-borders:#334155;--tw-prose-invert-captions:#94a3b8;--tw-prose-invert-kbd:#fff;--tw-prose-invert-kbd-shadows:255 255 255;--tw-prose-invert-code:#fff;--tw-prose-invert-pre-code:#cbd5e1;--tw-prose-invert-pre-bg:rgba(0,0,0,.5);--tw-prose-invert-th-borders:#475569;--tw-prose-invert-td-borders:#334155}.sticky{position:sticky}.top-0{top:0}.top-8{top:2rem}.z-20{z-index:20}.mx-auto{margin-left:auto;margin-right:auto}.-ml-px{margin-left:-1px}.mb-1{margin-bottom:.25rem}.mb-10{margin-bottom:2.5rem}.mb-3{margin-bottom:.75rem}.mb-4{margin-bottom:1rem}.mt-0\.5{margin-top:.125rem}.mt-12{margin-top:3rem}.mt-14{margin-top:3.5rem}.mt-6{margin-top:1.5rem}.mt-auto{margin-top:auto}.block{display:block}.flex{display:flex}.inline-flex{display:inline-flex}.table{display:table}.grid{display:grid}.hidden{display:none}.h-4{height:1rem}.h-6{height:1.5rem}.h-screen{height:100vh}.max-h-\[calc\(100vh-4rem\)\]{max-height:calc(100vh - 4rem)}.w-4{width:1rem}.w-6{width:1.5rem}.w-64{width:16rem}.w-72{width:18rem}.min-w-0{min-width:0}.max-w-3xl{max-width:48rem}.max-w-\[96rem\]{max-width:96rem}.max-w-none{max-width:none}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-center{align-items:center}.justify-center{justify-content:center}.gap-1\.5{gap:.375rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.space-y-1>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.25rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.25rem*var(--tw-space-y-reverse))}.overflow-x-auto{overflow-x:auto}.overflow-y-auto{overflow-y:auto}.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}.rounded-md{border-radius:.375rem}.rounded-xl{border-radius:.75rem}.border{border-width:1px}.border-b{border-bottom-width:1px}.border-l{border-left-width:1px}.border-l-2{border-left-width:2px}.border-t{border-top-width:1px}.border-indigo-500{--tw-border-opacity:1;border-color:rgb(99 102 241/var(--tw-border-opacity,1))}.border-slate-200{--tw-border-opacity:1;border-color:rgb(226 232 240/var(--tw-border-opacity,1))}.border-transparent{border-color:transparent}.bg-amber-100{--tw-bg-opacity:1;background-color:rgb(254 243 199/var(--tw-bg-opacity,1))}.bg-emerald-100{--tw-bg-opacity:1;background-color:rgb(209 250 229/var(--tw-bg-opacity,1))}.bg-indigo-100{--tw-bg-opacity:1;background-color:rgb(224 231 255/var(--tw-bg-opacity,1))}.bg-indigo-50{--tw-bg-opacity:1;background-color:rgb(238 242 255/var(--tw-bg-opacity,1))}.bg-indigo-600{--tw-bg-opacity:1;background-color:rgb(79 70 229/var(--tw-bg-opacity,1))}.bg-sky-100{--tw-bg-opacity:1;background-color:rgb(224 242 254/var(--tw-bg-opacity,1))}.bg-slate-100{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.bg-slate-200{--tw-bg-opacity:1;background-color:rgb(226 232 240/var(--tw-bg-opacity,1))}.bg-slate-50{--tw-bg-opacity:1;background-color:rgb(248 250 252/var(--tw-bg-opacity,1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity,1))}.bg-white\/90{background-color:hsla(0,0%,100%,.9)}.fill-current{fill:currentColor}.p-5{padding:1.25rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-4{padding-left:1rem;padding-right:1rem}.py-0\.5{padding-top:.125rem;padding-bottom:.125rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-10{padding-top:2.5rem;padding-bottom:2.5rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.py-2\.5{padding-top:.625rem;padding-bottom:.625rem}.py-8{padding-top:2rem;padding-bottom:2rem}.pl-3{padding-left:.75rem}.pl-6{padding-left:1.5rem}.pr-4{padding-right:1rem}.pr-6{padding-right:1.5rem}.pt-6{padding-top:1.5rem}.pt-8{padding-top:2rem}.text-center{text-align:center}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-\[13px\]{font-size:13px}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-xs{font-size:.75rem;line-height:1rem}.font-black{font-weight:900}.font-bold{font-weight:700}.font-medium{font-weight:500}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.italic{font-style:italic}.leading-snug{line-height:1.375}.tracking-tight{letter-spacing:-.025em}.tracking-wider{letter-spacing:.05em}.text-amber-800{--tw-text-opacity:1;color:rgb(146 64 14/var(--tw-text-opacity,1))}.text-emerald-800{--tw-text-opacity:1;color:rgb(6 95 70/var(--tw-text-opacity,1))}.text-indigo-700{--tw-text-opacity:1;color:rgb(67 56 202/var(--tw-text-opacity,1))}.text-indigo-800{--tw-text-opacity:1;color:rgb(55 48 163/var(--tw-text-opacity,1))}.text-indigo-900{--tw-text-opacity:1;color:rgb(49 46 129/var(--tw-text-opacity,1))}.text-sky-800{--tw-text-opacity:1;color:rgb(7 89 133/var(--tw-text-opacity,1))}.text-slate-400{--tw-text-opacity:1;color:rgb(148 163 184/var(--tw-text-opacity,1))}.text-slate-500{--tw-text-opacity:1;color:rgb(100 116 139/var(--tw-text-opacity,1))}.text-slate-600{--tw-text-opacity:1;color:rgb(71 85 105/var(--tw-text-opacity,1))}.text-slate-700{--tw-text-opacity:1;color:rgb(51 65 85/var(--tw-text-opacity,1))}.text-slate-800{--tw-text-opacity:1;color:rgb(30 41 59/var(--tw-text-opacity,1))}.text-slate-900{--tw-text-opacity:1;color:rgb(15 23 42/var(--tw-text-opacity,1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1))}.underline{text-decoration-line:underline}.decoration-slate-300{text-decoration-color:#cbd5e1}.underline-offset-2{text-underline-offset:2px}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.ring-1{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}.ring-inset{--tw-ring-inset:inset}.ring-amber-200{--tw-ring-opacity:1;--tw-ring-color:rgb(253 230 138/var(--tw-ring-opacity,1))}.ring-emerald-200{--tw-ring-opacity:1;--tw-ring-color:rgb(167 243 208/var(--tw-ring-opacity,1))}.ring-indigo-200{--tw-ring-opacity:1;--tw-ring-color:rgb(199 210 254/var(--tw-ring-opacity,1))}.ring-sky-200{--tw-ring-opacity:1;--tw-ring-color:rgb(186 230 253/var(--tw-ring-opacity,1))}.ring-slate-200{--tw-ring-opacity:1;--tw-ring-color:rgb(226 232 240/var(--tw-ring-opacity,1))}.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.backdrop-blur{--tw-backdrop-blur:blur(8px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,-webkit-backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter,-webkit-backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.hover\:border-indigo-300:hover{--tw-border-opacity:1;border-color:rgb(165 180 252/var(--tw-border-opacity,1))}.hover\:bg-slate-100:hover{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.hover\:text-slate-600:hover{--tw-text-opacity:1;color:rgb(71 85 105/var(--tw-text-opacity,1))}.hover\:text-slate-700:hover{--tw-text-opacity:1;color:rgb(51 65 85/var(--tw-text-opacity,1))}.hover\:text-slate-900:hover{--tw-text-opacity:1;color:rgb(15 23 42/var(--tw-text-opacity,1))}.hover\:shadow-md:hover{--tw-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color),0 2px 4px -2px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.group:hover .group-hover\:bg-slate-300{--tw-bg-opacity:1;background-color:rgb(203 213 225/var(--tw-bg-opacity,1))}.group:hover .group-hover\:text-indigo-700{--tw-text-opacity:1;color:rgb(67 56 202/var(--tw-text-opacity,1))}@media (min-width:640px){.sm\:block{display:block}.sm\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.sm\:px-8{padding-left:2rem;padding-right:2rem}.sm\:text-right{text-align:right}.sm\:text-4xl{font-size:2.25rem;line-height:2.5rem}}@media (min-width:1024px){.lg\:block{display:block}.lg\:flex{display:flex}.lg\:hidden{display:none}.lg\:py-14{padding-top:3.5rem;padding-bottom:3.5rem}}@media (min-width:1280px){.xl\:block{display:block}}</style>
+<style>html { scroll-behavior: smooth; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', sans-serif; }
+code, pre, kbd { font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace; }
+
+
+.prose { line-height: 1.85; }
+.prose h2 { scroll-margin-top: 5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: .45rem; }
+.prose h3, .prose h4 { scroll-margin-top: 5rem; }
+.prose hr { margin: 2.75em 0; border-color: #e2e8f0; }
+
+/* 原文入口显示为一行链接，展开后仍保留原有排版。 */
+.prose details.tutorial-original {
+  border: 0; border-radius: 0; background: transparent; padding: 0;
+  margin: 1.25rem 0 2rem;
+}
+.prose details.tutorial-original > summary {
+  display: inline-block; font-size: .9rem; font-weight: 500;
+  color: #4f46e5; text-decoration: underline; text-underline-offset: 4px;
+  cursor: pointer; list-style: none;
+}
+.prose details.tutorial-original > summary::-webkit-details-marker { display: none; }
+.prose details.tutorial-original[open] > summary { margin-bottom: 1rem; }
+.prose details.tutorial-original > summary:focus-visible { outline: 2px solid #6366f1; outline-offset: 5px; }
+
+/* 行内代码：小圆角芯片，去掉 typography 默认的反引号 */
+.prose :where(code):not(:where(pre code)) {
+  background: #eef2ff; color: #4338ca; padding: .12em .42em;
+  border-radius: .375rem; font-weight: 500; font-size: .85em;
+}
+.prose :where(code)::before, .prose :where(code)::after { content: none !important; }
+
+/* 代码块：深色卡片（配 pygments github-dark） */
+.prose .highlight { margin: 1.6em 0; }
+.prose .highlight pre {
+  background: #0d1117; color: #e6edf3; border-radius: .75rem;
+  padding: 1.05rem 1.3rem; overflow-x: auto; font-size: .85em;
+  line-height: 1.7; margin: 0; border: 1px solid #1f2937;
+}
+.highlight { background: transparent !important; }
+
+/* 引用块：柔和的左边条 callout */
+.prose blockquote {
+  border-left: 4px solid #6366f1; background: #f5f6ff;
+  border-radius: 0 .75rem .75rem 0; padding: .75rem 1.25rem;
+  font-style: normal; color: #3f3f6e; font-weight: 400;
+}
+.prose blockquote p:first-of-type::before,
+.prose blockquote p:last-of-type::after { content: none; }
+
+/* 表格：圆角卡片 + 斑马纹 + 移动端横向滚动 */
+.table-wrap {
+  overflow-x: auto; border: 1px solid #e2e8f0; border-radius: .75rem;
+  margin: 1.7em 0; background: #fff; box-shadow: 0 1px 2px rgba(15,23,42,.04);
+}
+.table-wrap table { margin: 0 !important; width: 100%; font-size: .9em; }
+.prose thead { background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+.prose thead th { padding: .7rem 1rem; color: #334155; white-space: nowrap; }
+.prose tbody td { padding: .62rem 1rem; vertical-align: top; }
+.prose tbody tr { border-bottom: 1px solid #f1f5f9; }
+.prose tbody tr:last-child { border-bottom: none; }
+.prose tbody tr:nth-child(even) { background: #fafbfd; }
+
+/* 折叠块 */
+.prose details {
+  border: 1px solid #e2e8f0; border-radius: .75rem;
+  padding: .85rem 1.15rem; background: #fafafa; margin: 1.3em 0;
+}
+.prose summary { cursor: pointer; font-weight: 600; color: #4f46e5; }
+
+.prose img {
+  border-radius: .75rem; border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 14px rgba(15,23,42,.06);
+}
+.prose a { color: #4f46e5; text-decoration-color: #c7d2fe; text-underline-offset: 3px; }
+.prose a:hover { color: #3730a3; }
+</style>
+<style>pre { line-height: 125%; }
+td.linenos .normal { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+.highlight .hll { background-color: #6e7681 }
+.highlight { background: #0d1117; color: #E6EDF3 }
+.highlight .c { color: #8B949E; font-style: italic } /* Comment */
+.highlight .err { color: #F85149 } /* Error */
+.highlight .esc { color: #E6EDF3 } /* Escape */
+.highlight .g { color: #E6EDF3 } /* Generic */
+.highlight .k { color: #FF7B72 } /* Keyword */
+.highlight .l { color: #A5D6FF } /* Literal */
+.highlight .n { color: #E6EDF3 } /* Name */
+.highlight .o { color: #FF7B72; font-weight: bold } /* Operator */
+.highlight .x { color: #E6EDF3 } /* Other */
+.highlight .p { color: #E6EDF3 } /* Punctuation */
+.highlight .ch { color: #8B949E; font-style: italic } /* Comment.Hashbang */
+.highlight .cm { color: #8B949E; font-style: italic } /* Comment.Multiline */
+.highlight .cp { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Preproc */
+.highlight .cpf { color: #8B949E; font-style: italic } /* Comment.PreprocFile */
+.highlight .c1 { color: #8B949E; font-style: italic } /* Comment.Single */
+.highlight .cs { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Special */
+.highlight .gd { color: #FFA198; background-color: #490202 } /* Generic.Deleted */
+.highlight .ge { color: #E6EDF3; font-style: italic } /* Generic.Emph */
+.highlight .ges { color: #E6EDF3; font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.highlight .gr { color: #FFA198 } /* Generic.Error */
+.highlight .gh { color: #79C0FF; font-weight: bold } /* Generic.Heading */
+.highlight .gi { color: #56D364; background-color: #0F5323 } /* Generic.Inserted */
+.highlight .go { color: #8B949E } /* Generic.Output */
+.highlight .gp { color: #8B949E } /* Generic.Prompt */
+.highlight .gs { color: #E6EDF3; font-weight: bold } /* Generic.Strong */
+.highlight .gu { color: #79C0FF } /* Generic.Subheading */
+.highlight .gt { color: #FF7B72 } /* Generic.Traceback */
+.highlight .g-Underline { color: #E6EDF3; text-decoration: underline } /* Generic.Underline */
+.highlight .kc { color: #79C0FF } /* Keyword.Constant */
+.highlight .kd { color: #FF7B72 } /* Keyword.Declaration */
+.highlight .kn { color: #FF7B72 } /* Keyword.Namespace */
+.highlight .kp { color: #79C0FF } /* Keyword.Pseudo */
+.highlight .kr { color: #FF7B72 } /* Keyword.Reserved */
+.highlight .kt { color: #FF7B72 } /* Keyword.Type */
+.highlight .ld { color: #79C0FF } /* Literal.Date */
+.highlight .m { color: #A5D6FF } /* Literal.Number */
+.highlight .s { color: #A5D6FF } /* Literal.String */
+.highlight .na { color: #E6EDF3 } /* Name.Attribute */
+.highlight .nb { color: #E6EDF3 } /* Name.Builtin */
+.highlight .nc { color: #F0883E; font-weight: bold } /* Name.Class */
+.highlight .no { color: #79C0FF; font-weight: bold } /* Name.Constant */
+.highlight .nd { color: #D2A8FF; font-weight: bold } /* Name.Decorator */
+.highlight .ni { color: #FFA657 } /* Name.Entity */
+.highlight .ne { color: #F0883E; font-weight: bold } /* Name.Exception */
+.highlight .nf { color: #D2A8FF; font-weight: bold } /* Name.Function */
+.highlight .nl { color: #79C0FF; font-weight: bold } /* Name.Label */
+.highlight .nn { color: #FF7B72 } /* Name.Namespace */
+.highlight .nx { color: #E6EDF3 } /* Name.Other */
+.highlight .py { color: #79C0FF } /* Name.Property */
+.highlight .nt { color: #7EE787 } /* Name.Tag */
+.highlight .nv { color: #79C0FF } /* Name.Variable */
+.highlight .ow { color: #FF7B72; font-weight: bold } /* Operator.Word */
+.highlight .pm { color: #E6EDF3 } /* Punctuation.Marker */
+.highlight .w { color: #6E7681 } /* Text.Whitespace */
+.highlight .mb { color: #A5D6FF } /* Literal.Number.Bin */
+.highlight .mf { color: #A5D6FF } /* Literal.Number.Float */
+.highlight .mh { color: #A5D6FF } /* Literal.Number.Hex */
+.highlight .mi { color: #A5D6FF } /* Literal.Number.Integer */
+.highlight .mo { color: #A5D6FF } /* Literal.Number.Oct */
+.highlight .sa { color: #79C0FF } /* Literal.String.Affix */
+.highlight .sb { color: #A5D6FF } /* Literal.String.Backtick */
+.highlight .sc { color: #A5D6FF } /* Literal.String.Char */
+.highlight .dl { color: #79C0FF } /* Literal.String.Delimiter */
+.highlight .sd { color: #A5D6FF } /* Literal.String.Doc */
+.highlight .s2 { color: #A5D6FF } /* Literal.String.Double */
+.highlight .se { color: #79C0FF } /* Literal.String.Escape */
+.highlight .sh { color: #79C0FF } /* Literal.String.Heredoc */
+.highlight .si { color: #A5D6FF } /* Literal.String.Interpol */
+.highlight .sx { color: #A5D6FF } /* Literal.String.Other */
+.highlight .sr { color: #79C0FF } /* Literal.String.Regex */
+.highlight .s1 { color: #A5D6FF } /* Literal.String.Single */
+.highlight .ss { color: #A5D6FF } /* Literal.String.Symbol */
+.highlight .bp { color: #E6EDF3 } /* Name.Builtin.Pseudo */
+.highlight .fm { color: #D2A8FF; font-weight: bold } /* Name.Function.Magic */
+.highlight .vc { color: #79C0FF } /* Name.Variable.Class */
+.highlight .vg { color: #79C0FF } /* Name.Variable.Global */
+.highlight .vi { color: #79C0FF } /* Name.Variable.Instance */
+.highlight .vm { color: #79C0FF } /* Name.Variable.Magic */
+.highlight .il { color: #A5D6FF } /* Literal.Number.Integer.Long */</style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+<div class="lg:hidden sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
+  <div class="flex items-center gap-3 px-4 py-2.5">
+    <a href="./index.html" class="text-sm font-black tracking-tight text-slate-900 shrink-0">RL Tutorial</a>
+    <div class="flex gap-1.5 overflow-x-auto py-0.5" style="scrollbar-width:none"><a href="./index.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">总览</a><a href="./ch0_什么是强化学习.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第0章</a><a href="./ch1_跑通.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第1章</a><a href="./ch2_rollout与experience.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第2章</a><a href="./ch3_reward怎么算.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第3章</a><a href="./ch4_advantage怎么来.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第4章</a><a href="./ch5_loss与权重更新.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-indigo-600 text-white">第5章</a><a href="./ch6_动手实验.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第6章</a><a href="./lora32_reproduction.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">运行参考</a></div>
+  </div>
+</div>
+<div class="mx-auto max-w-[96rem] lg:flex">
+
+<aside class="hidden lg:block w-72 shrink-0">
+  <div class="sticky top-0 h-screen overflow-y-auto py-8 pl-6 pr-4 flex flex-col">
+    <a href="./index.html" class="block px-3">
+      <div class="text-lg font-black tracking-tight text-slate-900">RL Tutorial</div>
+      <div class="mt-0.5 text-xs text-slate-500">跑通并看懂强化学习 · 以 ALFWorld 为实验环境</div>
+    </a>
+    <nav class="mt-6 space-y-1"><a href="./index.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">§</span><span class="truncate">教程总览</span></a>
+<a href="./ch0_什么是强化学习.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">0</span><span class="truncate">什么是强化学习？</span></a>
+<a href="./ch1_跑通.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">1</span><span class="truncate">跑通：先看 RL 真的有用</span></a>
+<a href="./ch2_rollout与experience.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">2</span><span class="truncate">rollout：state/action/reward</span></a>
+<a href="./ch3_reward怎么算.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">3</span><span class="truncate">reward：环境怎么给分</span></a>
+<a href="./ch4_advantage怎么来.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">4</span><span class="truncate">advantage：为什么不用 reward 直接训</span></a>
+<a href="./ch5_loss与权重更新.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition bg-indigo-50 text-indigo-900 font-semibold"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-indigo-600 text-white">5</span><span class="truncate">loss 与更新：advantage 变梯度</span></a>
+<a href="./ch6_动手实验.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">6</span><span class="truncate">LoRA 实测与开放实验</span></a>
+<a href="./lora32_reproduction.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">▶</span><span class="truncate">LoRA32 运行参考</span></a></nav>
+    <div class="mt-auto pt-8 px-3">
+      <a href="https://github.com/agentscope-ai/Trinity-RFT/tree/tutorial" target="_blank" rel="noopener"
+         class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-slate-700 transition">
+        <svg viewBox="0 0 16 16" class="h-4 w-4 fill-current"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        教程代码 · tutorial 分支
+      </a>
+    </div>
+  </div>
+</aside>
+<main class="min-w-0 flex-1 px-4 py-10 sm:px-8 lg:py-14">
+  <div class="mx-auto max-w-3xl">
+    <header class="mb-10">
+      <div class="mb-4 flex flex-wrap items-center gap-3">
+        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset bg-sky-100 text-sky-800 ring-sky-200 ">拆解</span>
+        <span class="inline-flex items-center gap-1.5 text-sm text-slate-500"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>20 分钟阅读</span>
+      </div>
+      <h1 class="text-3xl font-bold leading-snug tracking-tight text-slate-900 sm:text-4xl">第 5 章：loss 与更新 — advantage 怎么变成梯度</h1>
+    </header>
+    <article class="prose prose-slate max-w-none">
+<blockquote>
+<p><strong>本章模式：拆解</strong>。第 4 章你算出了每条轨迹的 advantage（成功 +2.0、失败 -0.47）。这一章回答最后一个问题：<strong>这个数怎么真正改变模型？</strong> 即 advantage → loss → 梯度 → 新权重。讲完你就闭环了：第 0 章那张交互循环图里「用分数调整 policy」的箭头，本章把它拆开。</p>
+</blockquote>
+<hr />
+<h2 id="50-先回到大图更新发生在哪">5.0 先回到大图：更新发生在哪</h2>
+<p><img alt="更新流水线：rollout → reward → advantage → loss+更新 → 新 policy 循环" src="./ch5_pipeline.svg" /></p>
+<p>本章只讲 ④。它的目标很朴素：<strong>让 advantage&gt;0 的动作以后更可能出现，advantage&lt;0 的动作更不可能出现</strong>。</p>
+<hr />
+<h2 id="51-policy-gradient-的直觉好动作概率坏动作概率">5.1 policy gradient 的直觉：好动作概率↑，坏动作概率↓</h2>
+<p>模型每步输出动作时，其实是在给词表里每个 token 一个概率。训练要做的就是调这些概率。最直接的写法：</p>
+<div class="highlight"><pre><span></span><code>loss = − advantage × log P(这个动作 | 当前状态)
+</code></pre></div>
+
+<p>读这个式子：</p>
+<ul>
+<li><code>log P(动作)</code> 越大 = 模型越倾向于输出这个动作；</li>
+<li>乘上 <code>−advantage</code> 后做<strong>最小化</strong>：</li>
+<li>advantage &gt; 0（好动作）→ 最小化 <code>−正数×logP</code> → 等价于<strong>增大</strong> logP → 好动作概率↑；</li>
+<li>advantage &lt; 0（坏动作）→ <strong>减小</strong> logP → 坏动作概率↓。</li>
+</ul>
+<p>这就是 <strong>policy gradient（策略梯度）</strong> 的全部直觉：<strong>用 advantage 当「方向和力度」，去推每个动作的概率</strong>。第 4 章那个 +2.0 / -0.47，就是这里的推力大小。</p>
+<p>用 candle 例子落地：§2.3 那条成功轨迹的每个动作（<code>take candle 2 from toilet 1</code>、<code>move candle 2 to countertop 1</code>）advantage = +2.0 → 在<strong>当时那个 state 下</strong>做这些动作的概率被<strong>推高</strong>；§2.2 那条失败轨迹的动作（拿错 toiletpaper、<code>look around</code> 死循环）advantage = -0.47 → 对应 state 下的概率被<strong>压低</strong>。</p>
+<blockquote>
+<p>⚠️ <strong>关键：推高的是「在那个特定 state 下做这个动作」的条件概率（P(action | state)），不是盲目推高这个动作本身</strong>。比如 <code>take candle 2 from toilet 1</code> 只在「站在 toilet 1 前、看到 candle 2」那个 state 下才被推高；换一个没有 candle 2 的 state，这个动作本来就不该做、也不会被推高。所以 RL 学的是「<strong>看到某个局面时该做什么</strong>」，而不是「任何时候都输出某个固定动作」——state 不同、目标不同，同一个动作的意义完全不同。</p>
+<p>注意只对<strong>模型自己输出的 action token</strong> 算 loss。observation 是环境给的、不是模型选的，不应该被「鼓励/抑制」。</p>
+</blockquote>
+<hr />
+<h2 id="52-为什么需要-ppo-clip">5.2 为什么需要 PPO clip</h2>
+<p>§5.1 的朴素版有个致命问题：<strong>一步可能迈太大</strong>。如果某条轨迹 advantage 很大，朴素梯度会把那几个 token 的概率一次推得极高，模型瞬间「变脸」、下一轮 rollout 分布剧变、训练发散。</p>
+<p><strong>先补一个前情：rollout policy 和 train policy 不是同一个</strong>。采样数据（rollout）是用<strong>当时那一刻</strong>的模型跑的（叫 rollout policy / 旧 policy）；训练是在更新出一个<strong>新模型</strong>（train policy / 新 policy）。我们拿来训练的数据是<strong>旧 policy 玩出来的</strong>，更新的却是新 policy——两者不是同一个模型。这就是 <strong>off-policy</strong>：数据和当前模型有点对不上，差得越多越不可靠。实际训练里采样很慢、不可能每更新一次就重采，所以 Trinity 把采样和训练分开来提速（第 1 章：4+4 分卡并行），代价就是数据稍微 off-policy。</p>
+<p><strong>ratio</strong>：<code>P_new(动作) / P_old(动作)</code>，衡量「新旧 policy 在这个动作上差了多少」（=1 表示一致）。</p>
+<p><strong>为什么需要 clip</strong>：如果放任 ratio 无限变化，一次更新可能把某个动作的概率推高好几倍，新 policy 瞬间和旧 policy 差很远，那批 off-policy 数据立刻「过期」、训练就崩。所以 PPO 把 ratio <strong>截断（clip）</strong>在一个小范围：</p>
+<div class="highlight"><pre><span></span><code><span class="n">ratio</span> <span class="o">=</span> <span class="n">exp</span><span class="p">(</span><span class="n">log_prob_new</span> <span class="o">-</span> <span class="n">log_prob_old</span><span class="p">)</span>        <span class="c1"># = P_new / P_old</span>
+<span class="n">clipped</span> <span class="o">=</span> <span class="n">clip</span><span class="p">(</span><span class="n">ratio</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="mf">0.2</span><span class="p">)</span>         <span class="c1"># 把 ratio 限制在 [0.8, 1.2]</span>
+<span class="n">loss</span> <span class="o">=</span> <span class="o">-</span><span class="nb">min</span><span class="p">(</span><span class="n">ratio</span> <span class="o">*</span> <span class="n">advantage</span><span class="p">,</span> <span class="n">clipped</span> <span class="o">*</span> <span class="n">advantage</span><span class="p">)</span>
+</code></pre></div>
+
+<ul>
+<li><strong>advantage 决定方向</strong>：+2.016 的 token 概率被推高，-0.465 的被压低；</li>
+<li><strong>clip 决定步长</strong>：用「数据的新旧程度」（ratio 偏差）来定更新权重——<strong>数据越旧（新旧 policy 差越大），更新权重越小</strong>；一旦 ratio 超出 [0.8, 1.2]，这个 token 的更新就被直接截断。</li>
+</ul>
+<p><code>pg_clipfrac</code> = 「被 clip 截断的 token 占比」。本实验稳态 &lt; 1%（更新温和）；崩溃期升到 6.8%（step 118）。</p>
+<details>
+<summary>详细：为什么要分开采样/训练、on/off policy（可选阅读）</summary>
+<ul>
+<li><strong>为什么不每次更新都重新采样（严格 on-policy）</strong>：采一批数据要约 2 分钟（模型在环境里玩 256 局），而更新一次权重约 5 分钟。如果坚持「更新一次就重新采一次」，采样就成了瓶颈、GPU 大量空闲。所以 Trinity 让 explorer <strong>持续采样</strong>塞进 buffer、trainer 从 buffer 取数据更新，两者并行（第 1 章的 4+4 分卡）——这是吞吐高的原因。</li>
+<li><strong>代价：数据稍微 off-policy</strong>。trainer 取到的数据是 explorer 几步前的 policy 玩的，和当前正在训练的 policy 不完全一致。更新越多、新旧差越大，数据越不可靠——这正是 clip 要解决的：限制单次更新的新旧差距，让数据保持「够新」。</li>
+<li><strong>on-policy vs off-policy</strong>：on-policy = 数据由当前 policy 产生（完全一致，但慢）；off-policy = 数据由旧 policy 产生（快，但有偏差）。Trinity 选「稍微 off-policy + clip」，在速度和安全之间平衡。</li>
+</ul>
+</details>
+<hr />
+<h2 id="53-两条安全带kl-与-entropy">5.3 两条「安全带」：KL 与 entropy</h2>
+<p>除了 clip，RL 训练通常还有两个约束/观察量，帮你判断 policy 是否健康：</p>
+<p><strong>KL（别偏离初心太远）</strong>：loss 里可加一项 <code>kl_coef × KL(当前 policy ‖ 初始 policy)</code>，把模型往「出发时的自己」轻轻拉一点，防止训着训着把 base 能力忘掉或漂到奇怪的地方。</p>
+<p><strong>两类 KL 别混淆</strong>：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>名字</th>
+<th>公式</th>
+<th>哪里用</th>
+<th>本实验值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>actor/ppo_kl</code></td>
+<td>KL(π_old ‖ π_new)，新旧 policy</td>
+<td>PPO clip 健康度（§5.2）</td>
+<td>0.001-0.005（崩溃期 0.12）</td>
+</tr>
+<tr>
+<td><code>actor/kl_loss</code></td>
+<td>KL(π_θ ‖ π_ref)，当前 vs base</td>
+<td>loss 里的正则项</td>
+<td>0 → 3.35</td>
+</tr>
+</tbody>
+</table></div>
+<p>本实验 <code>kl_coef=0.001</code>，很轻——kl_loss 涨到 3.35，但乘 0.001 后对总 loss 只贡献 0.00335，几乎可忽略。<strong>这正是崩溃的伏笔</strong>：KL 约束太弱，拦不住 policy 漂走（§5.5）。</p>
+<p><strong>entropy（策略有多「随机」）</strong>：衡量 policy 输出分布的平坦程度。</p>
+<ul>
+<li>entropy 低 = 模型很果断（概率集中在少数动作）；</li>
+<li>entropy 高 = 模型很犹豫/随机（概率摊得很平）。</li>
+</ul>
+<p>健康的 RL 训练，entropy 通常<strong>先降后稳</strong>（学会果断）。<strong>如果 entropy 一路单调上升，说明 policy 在退化、变随机</strong>——这是比 reward 更早的崩溃预警（§5.5）。</p>
+<hr />
+<h2 id="54-一步训练在做什么概念级">5.4 一步训练在做什么（概念级）</h2>
+<p>把 §5.1–5.3 合起来，一个 trainer step 就是四小步：</p>
+<p><img alt="一个 trainer step：forward → loss → backward → optim，新 policy 回到 rollout" src="./ch5_training_step.svg" /></p>
+<p>两个概念：</p>
+<ul>
+<li><strong>学习率 lr</strong>：梯度算出「方向」后，lr 决定「这一步实际走多大」。lr 太大 → 走太猛易崩；太小 → 学得慢。本实验 5e-6。</li>
+<li><strong>grad_norm</strong>：梯度的整体大小。突然飙升往往意味着某批数据产生了异常大的更新（配合 reward 下跌看，是发散信号）。</li>
+</ul>
+<blockquote>
+<p>工程上这 7680 个 experience 会切成很多小批（micro-batch）累积梯度、最后一次性 optim，以省显存；多卡时权重/梯度会分片并行。这些是「跑更大实验」才需要的工程知识，本教程不展开——显存真不够时，框架提供 <span title="把暂时不用的参数/优化器状态挪到 CPU 内存、需要时搬回 GPU，用一点速度换显存">offload</span> 之类的手段，知道有这回事即可。</p>
+</blockquote>
+<hr />
+<h2 id="55-最重要的一节过度训练reward-涨上去又崩下来">5.5 🔥 最重要的一节：过度训练，reward 涨上去又崩下来</h2>
+<p>前面都是「怎么更新」。这一节讲<strong>更新过头会怎样</strong>——这是本教程真实训练里最 valuable 的一课，也是 RL 和「越训越好」的监督学习最大的直觉差异。</p>
+<p><strong>真实曲线</strong>（本实验 133 step）：reward 从 -0.09 一路涨到 <strong>+0.94（step 115 峰值）</strong>，然后 <strong>step ~118 起崩</strong>，跌到 0.24~0.44，13 步不恢复，最终手动停止、<strong>采用 step-100 的 checkpoint</strong>。</p>
+<p><img alt="过度训练崩溃（steps 95-133 真实值）：reward 下跌、entropy/ppo_kl 飙升" src="./ch5_collapse.png" /></p>
+<p><strong>崩溃时各指标同步恶化</strong>（trainer.log 真实值）：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th style="text-align: right;">step</th>
+<th style="text-align: right;">reward</th>
+<th style="text-align: right;">entropy</th>
+<th style="text-align: right;">ppo_kl</th>
+<th style="text-align: right;">clipfrac</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;">+0.768</td>
+<td style="text-align: right;">0.18</td>
+<td style="text-align: right;">0.001</td>
+<td style="text-align: right;">0.003</td>
+<td>健康</td>
+</tr>
+<tr>
+<td style="text-align: right;"><strong>115</strong></td>
+<td style="text-align: right;"><strong>+0.936</strong></td>
+<td style="text-align: right;">0.27</td>
+<td style="text-align: right;">0.001</td>
+<td style="text-align: right;">0.004</td>
+<td><strong>峰值</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">118</td>
+<td style="text-align: right;">+0.592</td>
+<td style="text-align: right;">0.40</td>
+<td style="text-align: right;"><strong>0.119</strong></td>
+<td style="text-align: right;">0.068</td>
+<td>⚠️ kl 爆</td>
+</tr>
+<tr>
+<td style="text-align: right;">125</td>
+<td style="text-align: right;">+0.257</td>
+<td style="text-align: right;"><strong>1.16</strong></td>
+<td style="text-align: right;">0.051</td>
+<td style="text-align: right;">0.029</td>
+<td>💥 entropy 爆炸</td>
+</tr>
+<tr>
+<td style="text-align: right;">129</td>
+<td style="text-align: right;">+0.435</td>
+<td style="text-align: right;"><strong>1.53</strong></td>
+<td style="text-align: right;">0.038</td>
+<td style="text-align: right;">0.029</td>
+<td>策略已退化</td>
+</tr>
+<tr>
+<td style="text-align: right;">133</td>
+<td style="text-align: right;">+0.308</td>
+<td style="text-align: right;">1.32</td>
+<td style="text-align: right;">0.075</td>
+<td style="text-align: right;">0.025</td>
+<td>停止</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>崩溃链条</strong>（把本章概念串起来）：</p>
+<div class="highlight"><pre><span></span><code>模型变强（训练 reward 升高）→ 组内大多「全对」，advantage 信号变弱变噪
+        ↓
+KL 约束太轻（0.001）+ lr 不衰减 → 在噪声上继续做较大更新
+        ↓
+entropy 单调上升（0.27 → 1.5）= policy 变随机、输出变冗长混乱
+        ↓
+ppo_kl / clipfrac 飙升 = 单步更新过大、被保险丝频繁拦下
+        ↓
+动作质量下降 → reward 崩（0.94 → 0.3）
+</code></pre></div>
+
+<p><strong>三个可操作的教训</strong>：</p>
+<ol>
+<li><strong>RL 有最佳停止点，不是越久越好</strong>。本实验的「最终模型」是 step-100 的 checkpoint，不是跑满的 step-133。</li>
+<li><strong>entropy 和 ppo_kl 是比 reward 更早的预警</strong>。reward 还在 0.9 时，entropy 已从 0.03 涨到 0.27 在示警；等 reward 跌了再停就晚了。</li>
+<li><strong>约束与步长要配套</strong>：KL 太轻 / lr 太大 / 不衰减，都会让后期更新失控。第 6 章后半部分将围绕这两个旋钮设计开放实验，供你探索它们的影响。</li>
+</ol>
+<blockquote>
+<p>💡 这一节就是第 0 章那句「RL 的边界」的具体样子：训练 reward 能从 −0.09 升到 +0.94，但<strong>也会在后期从 +0.94 跌回 +0.31</strong>。学会看 entropy / ppo_kl 刹车，和学会让 reward 上涨同样重要。</p>
+</blockquote>
+<hr />
+<h2 id="56-动手试试">5.6 动手试试</h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># 重画 reward + entropy + ppo_kl 三联曲线，亲眼看「崩溃三件套」同步恶化</span>
+python<span class="w"> </span>scripts/rl_tutorial/plot_reward_curve.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--log<span class="w"> </span>&lt;你的<span class="w"> </span>checkpoint&gt;/log/trainer.log<span class="w"> </span>--out<span class="w"> </span>/tmp/curve.png
+
+<span class="c1"># 看某一步的完整指标（loss / kl / entropy / grad_norm）</span>
+grep<span class="w"> </span><span class="s2">"Step 115:"</span><span class="w"> </span>&lt;你的<span class="w"> </span>checkpoint&gt;/log/trainer.log
+</code></pre></div>
+
+<hr />
+<h2 id="57-这一章你应该带走的">5.7 这一章你应该带走的</h2>
+<ul>
+<li>✅ <strong>policy gradient 直觉</strong>：loss = −advantage × log P(动作)，好动作概率↑、坏动作↓；只对模型自己的 action token 算。</li>
+<li>✅ <strong>PPO clip</strong>：限制单步更新幅度（ratio 限 [0.8,1.2]），是防大跳的保险丝；看 <code>pg_clipfrac</code>。</li>
+<li>✅ <strong>KL 与 entropy</strong>：KL 把 policy 往 base 轻拉；entropy 衡量随机程度，<strong>单调上升 = 退化预警</strong>。</li>
+<li>✅ <strong>一步训练四小步</strong>：forward → loss → backward → optim；lr 定步长、grad_norm 看异常。</li>
+<li>✅ <strong>过度训练会崩</strong>：reward 0.94 → 0.3 的真实案例；<strong>早停 + 看 entropy/ppo_kl</strong> 是解药；最终模型取 step-100 checkpoint。</li>
+</ul>
+<p>❌ <strong>你不需要懂</strong>：分布式分片、显存优化、框架内部实现——那些不影响你理解 RL 主线。</p>
+<p>💡 <strong>留给自己的问题</strong>：你现在通过全参数实验走通了 rollout → reward → advantage → loss → 更新。那如果只训练少量新增参数，还能学到任务能力吗？第 6 章推荐你动手运行 <strong>LoRA32 训练</strong>，并提供曲线和评测结果作为参考；之后可以通过开放实验探索早停、G、学习率等因素的影响。</p>
+    </article>
+    <nav class="mt-14 grid gap-4 sm:grid-cols-2"><a href="./ch4_advantage怎么来.html" class="group block rounded-xl border border-slate-200 bg-white p-5 transition hover:border-indigo-300 hover:shadow-md"><div class="mb-1 text-xs text-slate-400">← 上一章</div><div class="font-semibold text-slate-800 group-hover:text-indigo-700">第 4 章 · advantage：为什么不用 reward 直接训</div></a><a href="./ch6_动手实验.html" class="group block rounded-xl border border-slate-200 bg-white p-5 transition hover:border-indigo-300 hover:shadow-md sm:text-right"><div class="mb-1 text-xs text-slate-400">下一章 →</div><div class="font-semibold text-slate-800 group-hover:text-indigo-700">第 6 章 · LoRA 实测与开放实验</div></a></nav>
+    <footer class="mt-12 border-t border-slate-200 pt-6 text-center text-xs text-slate-400">
+      RL Tutorial · 基于 <a href="https://github.com/agentscope-ai/Trinity-RFT" class="underline decoration-slate-300 underline-offset-2 hover:text-slate-600">Trinity-RFT</a>
+      · 本页由 build_html.py 从 Markdown 生成
+    </footer>
+  </div>
+</main>
+
+<aside class="hidden xl:block w-64 shrink-0">
+  <div class="sticky top-8 max-h-[calc(100vh-4rem)] overflow-y-auto py-10 pr-6">
+    <div class="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">本页目录</div>
+    <nav id="toc" class="border-l border-slate-200 text-[13px]"><a href="#50-先回到大图更新发生在哪" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">5.0 先回到大图：更新发生在哪</a>
+<a href="#51-policy-gradient-的直觉好动作概率坏动作概率" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">5.1 policy gradient 的直觉：好动作概率↑，坏动作概率↓</a>
+<a href="#52-为什么需要-ppo-clip" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">5.2 为什么需要 PPO clip</a>
+<a href="#53-两条安全带kl-与-entropy" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">5.3 两条「安全带」：KL 与 entropy</a>
+<a href="#54-一步训练在做什么概念级" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">5.4 一步训练在做什么（概念级）</a>
+<a href="#55-最重要的一节过度训练reward-涨上去又崩下来" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">5.5 🔥 最重要的一节：过度训练，reward 涨上去又崩下来</a>
+<a href="#56-动手试试" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">5.6 动手试试</a>
+<a href="#57-这一章你应该带走的" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">5.7 这一章你应该带走的</a></nav>
+  </div>
+</aside>
+</div>
+<script>
+(function () {
+  var links = [].slice.call(document.querySelectorAll('#toc a'));
+  if (!links.length) return;
+  var pairs = links.map(function (a) {
+    var id = decodeURIComponent((a.getAttribute('href') || '').slice(1));
+    var el = document.getElementById(id);
+    return el ? { el: el, a: a } : null;
+  }).filter(Boolean);
+  var ACTIVE = ['border-indigo-500', 'text-indigo-700', 'font-medium'];
+  function onScroll() {
+    var y = window.scrollY + 96, cur = pairs[0];
+    pairs.forEach(function (p) { if (p.el.offsetTop <= y) cur = p; });
+    pairs.forEach(function (p) {
+      var on = (p === cur);
+      ACTIVE.forEach(function (c) { p.a.classList.toggle(c, on); });
+      p.a.classList.toggle('border-transparent', !on);
+      p.a.classList.toggle('text-slate-500', !on);
+    });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+</body>
+</html>

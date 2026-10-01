@@ -1,0 +1,43 @@
+# Reader template for upstream TuFT d4591c1, 8 x A100 80GB: 4 sampling + 4 FSDP GPUs.
+# Fill the three /absolute/path values and replace the example API key.
+# Six rank-32 slots are allocated at startup for this reader configuration.
+checkpoint_dir: /absolute/path/to/lora32-server-checkpoints
+worker_venv_path: /absolute/path/to/TuFT/.venv
+model_owner: local-user
+
+supported_models:
+  - model_name: Qwen/Qwen3-1.7B
+    model_path: /absolute/path/to/models/Qwen3-1.7B
+    max_model_len: 32768
+    sampling_max_model_len: 8192
+    default_max_tokens: 512
+    tensor_parallel_size: 1
+    fsdp_num_gpus: 4
+    data_parallel_size: 4
+    temperature: 1.0
+    top_p: 1.0
+    top_k: -1
+    max_lora_rank: 32
+    max_loras: 8
+    fsdp_target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+    fsdp_target_parameters: []
+    fsdp_train_unembed: false
+    lora_alpha_ratio: 2
+    training_backend: fsdp
+    micro_batch_size: 1
+    attn_implementation: flash_attention_2
+    enable_auto_tool_choice: true
+    tool_call_parser: hermes
+    reasoning_parser: qwen3
+    fsdp_rank_slots: {32: 6}
+
+authorized_users:
+  REPLACE_WITH_YOUR_OWN_KEY: local-user
+
+persistence:
+  mode: REDIS
+  # Point to a dedicated Redis instance/database; retain it when resuming.
+  redis_url: redis://127.0.0.1:6382/0
+
+telemetry:
+  enabled: false

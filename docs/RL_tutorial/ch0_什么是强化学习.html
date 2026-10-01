@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 0 章：什么是强化学习？你的任务适合吗？ · RL Tutorial</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏠</text></svg>">
+<!-- Tailwind CSS（含 typography 插件）本地预编译内嵌，完全离线可用；重编译: build_html.py --css -->
+<style>*,:after,:before{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/*! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com*/*,:after,:before{box-sizing:border-box;border:0 solid #e5e7eb}:after,:before{--tw-content:""}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;-o-tab-size:4;tab-size:4;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,Hiragino Sans GB,Microsoft YaHei,Noto Sans SC,sans-serif;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace,SF Mono,SFMono-Regular,Menlo,Consolas,Liberation Mono,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0}fieldset,legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::-moz-placeholder,textarea::-moz-placeholder{opacity:1;color:#9ca3af}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.prose{color:var(--tw-prose-body);max-width:65ch}.prose :where(p):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:1.25em;margin-bottom:1.25em}.prose :where([class~=lead]):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-lead);font-size:1.25em;line-height:1.6;margin-top:1.2em;margin-bottom:1.2em}.prose :where(a):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-links);text-decoration:underline;font-weight:500}.prose :where(strong):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-bold);font-weight:600}.prose :where(a strong):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(blockquote strong):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(thead th strong):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(ol):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:decimal;margin-top:1.25em;margin-bottom:1.25em;padding-inline-start:1.625em}.prose :where(ol[type=A]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:upper-alpha}.prose :where(ol[type=a]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:lower-alpha}.prose :where(ol[type=A s]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:upper-alpha}.prose :where(ol[type=a s]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:lower-alpha}.prose :where(ol[type=I]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:upper-roman}.prose :where(ol[type=i]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:lower-roman}.prose :where(ol[type=I s]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:upper-roman}.prose :where(ol[type=i s]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:lower-roman}.prose :where(ol[type="1"]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:decimal}.prose :where(ul):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:disc;margin-top:1.25em;margin-bottom:1.25em;padding-inline-start:1.625em}.prose :where(ol>li):not(:where([class~=not-prose],[class~=not-prose] *))::marker{font-weight:400;color:var(--tw-prose-counters)}.prose :where(ul>li):not(:where([class~=not-prose],[class~=not-prose] *))::marker{color:var(--tw-prose-bullets)}.prose :where(dt):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:600;margin-top:1.25em}.prose :where(hr):not(:where([class~=not-prose],[class~=not-prose] *)){border-color:var(--tw-prose-hr);border-top-width:1px;margin-top:3em;margin-bottom:3em}.prose :where(blockquote):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:500;font-style:italic;color:var(--tw-prose-quotes);border-inline-start-width:.25rem;border-inline-start-color:var(--tw-prose-quote-borders);quotes:"\201C""\201D""\2018""\2019";margin-top:1.6em;margin-bottom:1.6em;padding-inline-start:1em}.prose :where(blockquote p:first-of-type):not(:where([class~=not-prose],[class~=not-prose] *)):before{content:open-quote}.prose :where(blockquote p:last-of-type):not(:where([class~=not-prose],[class~=not-prose] *)):after{content:close-quote}.prose :where(h1):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:800;font-size:2.25em;margin-top:0;margin-bottom:.8888889em;line-height:1.1111111}.prose :where(h1 strong):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:900;color:inherit}.prose :where(h2):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:700;font-size:1.5em;margin-top:2em;margin-bottom:1em;line-height:1.3333333}.prose :where(h2 strong):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:800;color:inherit}.prose :where(h3):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:600;font-size:1.25em;margin-top:1.6em;margin-bottom:.6em;line-height:1.6}.prose :where(h3 strong):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:700;color:inherit}.prose :where(h4):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:600;margin-top:1.5em;margin-bottom:.5em;line-height:1.5}.prose :where(h4 strong):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:700;color:inherit}.prose :where(img):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:2em;margin-bottom:2em}.prose :where(picture):not(:where([class~=not-prose],[class~=not-prose] *)){display:block;margin-top:2em;margin-bottom:2em}.prose :where(video):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:2em;margin-bottom:2em}.prose :where(kbd):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:500;font-family:inherit;color:var(--tw-prose-kbd);box-shadow:0 0 0 1px rgb(var(--tw-prose-kbd-shadows)/10%),0 3px 0 rgb(var(--tw-prose-kbd-shadows)/10%);font-size:.875em;border-radius:.3125rem;padding-top:.1875em;padding-inline-end:.375em;padding-bottom:.1875em;padding-inline-start:.375em}.prose :where(code):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-code);font-weight:600;font-size:.875em}.prose :where(code):not(:where([class~=not-prose],[class~=not-prose] *)):before{content:"`"}.prose :where(code):not(:where([class~=not-prose],[class~=not-prose] *)):after{content:"`"}.prose :where(a code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(h1 code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(h2 code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit;font-size:.875em}.prose :where(h3 code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit;font-size:.9em}.prose :where(h4 code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(blockquote code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(thead th code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(pre):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-pre-code);background-color:var(--tw-prose-pre-bg);overflow-x:auto;font-weight:400;font-size:.875em;line-height:1.7142857;margin-top:1.7142857em;margin-bottom:1.7142857em;border-radius:.375rem;padding-top:.8571429em;padding-inline-end:1.1428571em;padding-bottom:.8571429em;padding-inline-start:1.1428571em}.prose :where(pre code):not(:where([class~=not-prose],[class~=not-prose] *)){background-color:transparent;border-width:0;border-radius:0;padding:0;font-weight:inherit;color:inherit;font-size:inherit;font-family:inherit;line-height:inherit}.prose :where(pre code):not(:where([class~=not-prose],[class~=not-prose] *)):before{content:none}.prose :where(pre code):not(:where([class~=not-prose],[class~=not-prose] *)):after{content:none}.prose :where(table):not(:where([class~=not-prose],[class~=not-prose] *)){width:100%;table-layout:auto;margin-top:2em;margin-bottom:2em;font-size:.875em;line-height:1.7142857}.prose :where(thead):not(:where([class~=not-prose],[class~=not-prose] *)){border-bottom-width:1px;border-bottom-color:var(--tw-prose-th-borders)}.prose :where(thead th):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:600;vertical-align:bottom;padding-inline-end:.5714286em;padding-bottom:.5714286em;padding-inline-start:.5714286em}.prose :where(tbody tr):not(:where([class~=not-prose],[class~=not-prose] *)){border-bottom-width:1px;border-bottom-color:var(--tw-prose-td-borders)}.prose :where(tbody tr:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){border-bottom-width:0}.prose :where(tbody td):not(:where([class~=not-prose],[class~=not-prose] *)){vertical-align:baseline}.prose :where(tfoot):not(:where([class~=not-prose],[class~=not-prose] *)){border-top-width:1px;border-top-color:var(--tw-prose-th-borders)}.prose :where(tfoot td):not(:where([class~=not-prose],[class~=not-prose] *)){vertical-align:top}.prose :where(th,td):not(:where([class~=not-prose],[class~=not-prose] *)){text-align:start}.prose :where(figure>*):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0;margin-bottom:0}.prose :where(figcaption):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-captions);font-size:.875em;line-height:1.4285714;margin-top:.8571429em}.prose{--tw-prose-body:#374151;--tw-prose-headings:#111827;--tw-prose-lead:#4b5563;--tw-prose-links:#111827;--tw-prose-bold:#111827;--tw-prose-counters:#6b7280;--tw-prose-bullets:#d1d5db;--tw-prose-hr:#e5e7eb;--tw-prose-quotes:#111827;--tw-prose-quote-borders:#e5e7eb;--tw-prose-captions:#6b7280;--tw-prose-kbd:#111827;--tw-prose-kbd-shadows:17 24 39;--tw-prose-code:#111827;--tw-prose-pre-code:#e5e7eb;--tw-prose-pre-bg:#1f2937;--tw-prose-th-borders:#d1d5db;--tw-prose-td-borders:#e5e7eb;--tw-prose-invert-body:#d1d5db;--tw-prose-invert-headings:#fff;--tw-prose-invert-lead:#9ca3af;--tw-prose-invert-links:#fff;--tw-prose-invert-bold:#fff;--tw-prose-invert-counters:#9ca3af;--tw-prose-invert-bullets:#4b5563;--tw-prose-invert-hr:#374151;--tw-prose-invert-quotes:#f3f4f6;--tw-prose-invert-quote-borders:#374151;--tw-prose-invert-captions:#9ca3af;--tw-prose-invert-kbd:#fff;--tw-prose-invert-kbd-shadows:255 255 255;--tw-prose-invert-code:#fff;--tw-prose-invert-pre-code:#d1d5db;--tw-prose-invert-pre-bg:rgba(0,0,0,.5);--tw-prose-invert-th-borders:#4b5563;--tw-prose-invert-td-borders:#374151;font-size:1rem;line-height:1.75}.prose :where(picture>img):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0;margin-bottom:0}.prose :where(li):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:.5em;margin-bottom:.5em}.prose :where(ol>li):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-start:.375em}.prose :where(ul>li):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-start:.375em}.prose :where(.prose>ul>li p):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:.75em;margin-bottom:.75em}.prose :where(.prose>ul>li>p:first-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:1.25em}.prose :where(.prose>ul>li>p:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-bottom:1.25em}.prose :where(.prose>ol>li>p:first-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:1.25em}.prose :where(.prose>ol>li>p:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-bottom:1.25em}.prose :where(ul ul,ul ol,ol ul,ol ol):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:.75em;margin-bottom:.75em}.prose :where(dl):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:1.25em;margin-bottom:1.25em}.prose :where(dd):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:.5em;padding-inline-start:1.625em}.prose :where(hr+*):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0}.prose :where(h2+*):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0}.prose :where(h3+*):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0}.prose :where(h4+*):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0}.prose :where(thead th:first-child):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-start:0}.prose :where(thead th:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-end:0}.prose :where(tbody td,tfoot td):not(:where([class~=not-prose],[class~=not-prose] *)){padding-top:.5714286em;padding-inline-end:.5714286em;padding-bottom:.5714286em;padding-inline-start:.5714286em}.prose :where(tbody td:first-child,tfoot td:first-child):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-start:0}.prose :where(tbody td:last-child,tfoot td:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-end:0}.prose :where(figure):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:2em;margin-bottom:2em}.prose :where(.prose>:first-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0}.prose :where(.prose>:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-bottom:0}.prose-slate{--tw-prose-body:#334155;--tw-prose-headings:#0f172a;--tw-prose-lead:#475569;--tw-prose-links:#0f172a;--tw-prose-bold:#0f172a;--tw-prose-counters:#64748b;--tw-prose-bullets:#cbd5e1;--tw-prose-hr:#e2e8f0;--tw-prose-quotes:#0f172a;--tw-prose-quote-borders:#e2e8f0;--tw-prose-captions:#64748b;--tw-prose-kbd:#0f172a;--tw-prose-kbd-shadows:15 23 42;--tw-prose-code:#0f172a;--tw-prose-pre-code:#e2e8f0;--tw-prose-pre-bg:#1e293b;--tw-prose-th-borders:#cbd5e1;--tw-prose-td-borders:#e2e8f0;--tw-prose-invert-body:#cbd5e1;--tw-prose-invert-headings:#fff;--tw-prose-invert-lead:#94a3b8;--tw-prose-invert-links:#fff;--tw-prose-invert-bold:#fff;--tw-prose-invert-counters:#94a3b8;--tw-prose-invert-bullets:#475569;--tw-prose-invert-hr:#334155;--tw-prose-invert-quotes:#f1f5f9;--tw-prose-invert-quote-borders:#334155;--tw-prose-invert-captions:#94a3b8;--tw-prose-invert-kbd:#fff;--tw-prose-invert-kbd-shadows:255 255 255;--tw-prose-invert-code:#fff;--tw-prose-invert-pre-code:#cbd5e1;--tw-prose-invert-pre-bg:rgba(0,0,0,.5);--tw-prose-invert-th-borders:#475569;--tw-prose-invert-td-borders:#334155}.sticky{position:sticky}.top-0{top:0}.top-8{top:2rem}.z-20{z-index:20}.mx-auto{margin-left:auto;margin-right:auto}.-ml-px{margin-left:-1px}.mb-1{margin-bottom:.25rem}.mb-10{margin-bottom:2.5rem}.mb-3{margin-bottom:.75rem}.mb-4{margin-bottom:1rem}.mt-0\.5{margin-top:.125rem}.mt-12{margin-top:3rem}.mt-14{margin-top:3.5rem}.mt-6{margin-top:1.5rem}.mt-auto{margin-top:auto}.block{display:block}.flex{display:flex}.inline-flex{display:inline-flex}.table{display:table}.grid{display:grid}.hidden{display:none}.h-4{height:1rem}.h-6{height:1.5rem}.h-screen{height:100vh}.max-h-\[calc\(100vh-4rem\)\]{max-height:calc(100vh - 4rem)}.w-4{width:1rem}.w-6{width:1.5rem}.w-64{width:16rem}.w-72{width:18rem}.min-w-0{min-width:0}.max-w-3xl{max-width:48rem}.max-w-\[96rem\]{max-width:96rem}.max-w-none{max-width:none}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-center{align-items:center}.justify-center{justify-content:center}.gap-1\.5{gap:.375rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.space-y-1>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.25rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.25rem*var(--tw-space-y-reverse))}.overflow-x-auto{overflow-x:auto}.overflow-y-auto{overflow-y:auto}.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}.rounded-md{border-radius:.375rem}.rounded-xl{border-radius:.75rem}.border{border-width:1px}.border-b{border-bottom-width:1px}.border-l{border-left-width:1px}.border-l-2{border-left-width:2px}.border-t{border-top-width:1px}.border-indigo-500{--tw-border-opacity:1;border-color:rgb(99 102 241/var(--tw-border-opacity,1))}.border-slate-200{--tw-border-opacity:1;border-color:rgb(226 232 240/var(--tw-border-opacity,1))}.border-transparent{border-color:transparent}.bg-amber-100{--tw-bg-opacity:1;background-color:rgb(254 243 199/var(--tw-bg-opacity,1))}.bg-emerald-100{--tw-bg-opacity:1;background-color:rgb(209 250 229/var(--tw-bg-opacity,1))}.bg-indigo-100{--tw-bg-opacity:1;background-color:rgb(224 231 255/var(--tw-bg-opacity,1))}.bg-indigo-50{--tw-bg-opacity:1;background-color:rgb(238 242 255/var(--tw-bg-opacity,1))}.bg-indigo-600{--tw-bg-opacity:1;background-color:rgb(79 70 229/var(--tw-bg-opacity,1))}.bg-sky-100{--tw-bg-opacity:1;background-color:rgb(224 242 254/var(--tw-bg-opacity,1))}.bg-slate-100{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.bg-slate-200{--tw-bg-opacity:1;background-color:rgb(226 232 240/var(--tw-bg-opacity,1))}.bg-slate-50{--tw-bg-opacity:1;background-color:rgb(248 250 252/var(--tw-bg-opacity,1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity,1))}.bg-white\/90{background-color:hsla(0,0%,100%,.9)}.fill-current{fill:currentColor}.p-5{padding:1.25rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-4{padding-left:1rem;padding-right:1rem}.py-0\.5{padding-top:.125rem;padding-bottom:.125rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-10{padding-top:2.5rem;padding-bottom:2.5rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.py-2\.5{padding-top:.625rem;padding-bottom:.625rem}.py-8{padding-top:2rem;padding-bottom:2rem}.pl-3{padding-left:.75rem}.pl-6{padding-left:1.5rem}.pr-4{padding-right:1rem}.pr-6{padding-right:1.5rem}.pt-6{padding-top:1.5rem}.pt-8{padding-top:2rem}.text-center{text-align:center}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-\[13px\]{font-size:13px}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-xs{font-size:.75rem;line-height:1rem}.font-black{font-weight:900}.font-bold{font-weight:700}.font-medium{font-weight:500}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.italic{font-style:italic}.leading-snug{line-height:1.375}.tracking-tight{letter-spacing:-.025em}.tracking-wider{letter-spacing:.05em}.text-amber-800{--tw-text-opacity:1;color:rgb(146 64 14/var(--tw-text-opacity,1))}.text-emerald-800{--tw-text-opacity:1;color:rgb(6 95 70/var(--tw-text-opacity,1))}.text-indigo-700{--tw-text-opacity:1;color:rgb(67 56 202/var(--tw-text-opacity,1))}.text-indigo-800{--tw-text-opacity:1;color:rgb(55 48 163/var(--tw-text-opacity,1))}.text-indigo-900{--tw-text-opacity:1;color:rgb(49 46 129/var(--tw-text-opacity,1))}.text-sky-800{--tw-text-opacity:1;color:rgb(7 89 133/var(--tw-text-opacity,1))}.text-slate-400{--tw-text-opacity:1;color:rgb(148 163 184/var(--tw-text-opacity,1))}.text-slate-500{--tw-text-opacity:1;color:rgb(100 116 139/var(--tw-text-opacity,1))}.text-slate-600{--tw-text-opacity:1;color:rgb(71 85 105/var(--tw-text-opacity,1))}.text-slate-700{--tw-text-opacity:1;color:rgb(51 65 85/var(--tw-text-opacity,1))}.text-slate-800{--tw-text-opacity:1;color:rgb(30 41 59/var(--tw-text-opacity,1))}.text-slate-900{--tw-text-opacity:1;color:rgb(15 23 42/var(--tw-text-opacity,1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1))}.underline{text-decoration-line:underline}.decoration-slate-300{text-decoration-color:#cbd5e1}.underline-offset-2{text-underline-offset:2px}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.ring-1{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}.ring-inset{--tw-ring-inset:inset}.ring-amber-200{--tw-ring-opacity:1;--tw-ring-color:rgb(253 230 138/var(--tw-ring-opacity,1))}.ring-emerald-200{--tw-ring-opacity:1;--tw-ring-color:rgb(167 243 208/var(--tw-ring-opacity,1))}.ring-indigo-200{--tw-ring-opacity:1;--tw-ring-color:rgb(199 210 254/var(--tw-ring-opacity,1))}.ring-sky-200{--tw-ring-opacity:1;--tw-ring-color:rgb(186 230 253/var(--tw-ring-opacity,1))}.ring-slate-200{--tw-ring-opacity:1;--tw-ring-color:rgb(226 232 240/var(--tw-ring-opacity,1))}.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.backdrop-blur{--tw-backdrop-blur:blur(8px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,-webkit-backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter,-webkit-backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.hover\:border-indigo-300:hover{--tw-border-opacity:1;border-color:rgb(165 180 252/var(--tw-border-opacity,1))}.hover\:bg-slate-100:hover{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.hover\:text-slate-600:hover{--tw-text-opacity:1;color:rgb(71 85 105/var(--tw-text-opacity,1))}.hover\:text-slate-700:hover{--tw-text-opacity:1;color:rgb(51 65 85/var(--tw-text-opacity,1))}.hover\:text-slate-900:hover{--tw-text-opacity:1;color:rgb(15 23 42/var(--tw-text-opacity,1))}.hover\:shadow-md:hover{--tw-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color),0 2px 4px -2px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.group:hover .group-hover\:bg-slate-300{--tw-bg-opacity:1;background-color:rgb(203 213 225/var(--tw-bg-opacity,1))}.group:hover .group-hover\:text-indigo-700{--tw-text-opacity:1;color:rgb(67 56 202/var(--tw-text-opacity,1))}@media (min-width:640px){.sm\:block{display:block}.sm\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.sm\:px-8{padding-left:2rem;padding-right:2rem}.sm\:text-right{text-align:right}.sm\:text-4xl{font-size:2.25rem;line-height:2.5rem}}@media (min-width:1024px){.lg\:block{display:block}.lg\:flex{display:flex}.lg\:hidden{display:none}.lg\:py-14{padding-top:3.5rem;padding-bottom:3.5rem}}@media (min-width:1280px){.xl\:block{display:block}}</style>
+<style>html { scroll-behavior: smooth; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', sans-serif; }
+code, pre, kbd { font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace; }
+
+
+.prose { line-height: 1.85; }
+.prose h2 { scroll-margin-top: 5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: .45rem; }
+.prose h3, .prose h4 { scroll-margin-top: 5rem; }
+.prose hr { margin: 2.75em 0; border-color: #e2e8f0; }
+
+/* 原文入口显示为一行链接，展开后仍保留原有排版。 */
+.prose details.tutorial-original {
+  border: 0; border-radius: 0; background: transparent; padding: 0;
+  margin: 1.25rem 0 2rem;
+}
+.prose details.tutorial-original > summary {
+  display: inline-block; font-size: .9rem; font-weight: 500;
+  color: #4f46e5; text-decoration: underline; text-underline-offset: 4px;
+  cursor: pointer; list-style: none;
+}
+.prose details.tutorial-original > summary::-webkit-details-marker { display: none; }
+.prose details.tutorial-original[open] > summary { margin-bottom: 1rem; }
+.prose details.tutorial-original > summary:focus-visible { outline: 2px solid #6366f1; outline-offset: 5px; }
+
+/* 行内代码：小圆角芯片，去掉 typography 默认的反引号 */
+.prose :where(code):not(:where(pre code)) {
+  background: #eef2ff; color: #4338ca; padding: .12em .42em;
+  border-radius: .375rem; font-weight: 500; font-size: .85em;
+}
+.prose :where(code)::before, .prose :where(code)::after { content: none !important; }
+
+/* 代码块：深色卡片（配 pygments github-dark） */
+.prose .highlight { margin: 1.6em 0; }
+.prose .highlight pre {
+  background: #0d1117; color: #e6edf3; border-radius: .75rem;
+  padding: 1.05rem 1.3rem; overflow-x: auto; font-size: .85em;
+  line-height: 1.7; margin: 0; border: 1px solid #1f2937;
+}
+.highlight { background: transparent !important; }
+
+/* 引用块：柔和的左边条 callout */
+.prose blockquote {
+  border-left: 4px solid #6366f1; background: #f5f6ff;
+  border-radius: 0 .75rem .75rem 0; padding: .75rem 1.25rem;
+  font-style: normal; color: #3f3f6e; font-weight: 400;
+}
+.prose blockquote p:first-of-type::before,
+.prose blockquote p:last-of-type::after { content: none; }
+
+/* 表格：圆角卡片 + 斑马纹 + 移动端横向滚动 */
+.table-wrap {
+  overflow-x: auto; border: 1px solid #e2e8f0; border-radius: .75rem;
+  margin: 1.7em 0; background: #fff; box-shadow: 0 1px 2px rgba(15,23,42,.04);
+}
+.table-wrap table { margin: 0 !important; width: 100%; font-size: .9em; }
+.prose thead { background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+.prose thead th { padding: .7rem 1rem; color: #334155; white-space: nowrap; }
+.prose tbody td { padding: .62rem 1rem; vertical-align: top; }
+.prose tbody tr { border-bottom: 1px solid #f1f5f9; }
+.prose tbody tr:last-child { border-bottom: none; }
+.prose tbody tr:nth-child(even) { background: #fafbfd; }
+
+/* 折叠块 */
+.prose details {
+  border: 1px solid #e2e8f0; border-radius: .75rem;
+  padding: .85rem 1.15rem; background: #fafafa; margin: 1.3em 0;
+}
+.prose summary { cursor: pointer; font-weight: 600; color: #4f46e5; }
+
+.prose img {
+  border-radius: .75rem; border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 14px rgba(15,23,42,.06);
+}
+.prose a { color: #4f46e5; text-decoration-color: #c7d2fe; text-underline-offset: 3px; }
+.prose a:hover { color: #3730a3; }
+</style>
+<style>pre { line-height: 125%; }
+td.linenos .normal { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+.highlight .hll { background-color: #6e7681 }
+.highlight { background: #0d1117; color: #E6EDF3 }
+.highlight .c { color: #8B949E; font-style: italic } /* Comment */
+.highlight .err { color: #F85149 } /* Error */
+.highlight .esc { color: #E6EDF3 } /* Escape */
+.highlight .g { color: #E6EDF3 } /* Generic */
+.highlight .k { color: #FF7B72 } /* Keyword */
+.highlight .l { color: #A5D6FF } /* Literal */
+.highlight .n { color: #E6EDF3 } /* Name */
+.highlight .o { color: #FF7B72; font-weight: bold } /* Operator */
+.highlight .x { color: #E6EDF3 } /* Other */
+.highlight .p { color: #E6EDF3 } /* Punctuation */
+.highlight .ch { color: #8B949E; font-style: italic } /* Comment.Hashbang */
+.highlight .cm { color: #8B949E; font-style: italic } /* Comment.Multiline */
+.highlight .cp { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Preproc */
+.highlight .cpf { color: #8B949E; font-style: italic } /* Comment.PreprocFile */
+.highlight .c1 { color: #8B949E; font-style: italic } /* Comment.Single */
+.highlight .cs { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Special */
+.highlight .gd { color: #FFA198; background-color: #490202 } /* Generic.Deleted */
+.highlight .ge { color: #E6EDF3; font-style: italic } /* Generic.Emph */
+.highlight .ges { color: #E6EDF3; font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.highlight .gr { color: #FFA198 } /* Generic.Error */
+.highlight .gh { color: #79C0FF; font-weight: bold } /* Generic.Heading */
+.highlight .gi { color: #56D364; background-color: #0F5323 } /* Generic.Inserted */
+.highlight .go { color: #8B949E } /* Generic.Output */
+.highlight .gp { color: #8B949E } /* Generic.Prompt */
+.highlight .gs { color: #E6EDF3; font-weight: bold } /* Generic.Strong */
+.highlight .gu { color: #79C0FF } /* Generic.Subheading */
+.highlight .gt { color: #FF7B72 } /* Generic.Traceback */
+.highlight .g-Underline { color: #E6EDF3; text-decoration: underline } /* Generic.Underline */
+.highlight .kc { color: #79C0FF } /* Keyword.Constant */
+.highlight .kd { color: #FF7B72 } /* Keyword.Declaration */
+.highlight .kn { color: #FF7B72 } /* Keyword.Namespace */
+.highlight .kp { color: #79C0FF } /* Keyword.Pseudo */
+.highlight .kr { color: #FF7B72 } /* Keyword.Reserved */
+.highlight .kt { color: #FF7B72 } /* Keyword.Type */
+.highlight .ld { color: #79C0FF } /* Literal.Date */
+.highlight .m { color: #A5D6FF } /* Literal.Number */
+.highlight .s { color: #A5D6FF } /* Literal.String */
+.highlight .na { color: #E6EDF3 } /* Name.Attribute */
+.highlight .nb { color: #E6EDF3 } /* Name.Builtin */
+.highlight .nc { color: #F0883E; font-weight: bold } /* Name.Class */
+.highlight .no { color: #79C0FF; font-weight: bold } /* Name.Constant */
+.highlight .nd { color: #D2A8FF; font-weight: bold } /* Name.Decorator */
+.highlight .ni { color: #FFA657 } /* Name.Entity */
+.highlight .ne { color: #F0883E; font-weight: bold } /* Name.Exception */
+.highlight .nf { color: #D2A8FF; font-weight: bold } /* Name.Function */
+.highlight .nl { color: #79C0FF; font-weight: bold } /* Name.Label */
+.highlight .nn { color: #FF7B72 } /* Name.Namespace */
+.highlight .nx { color: #E6EDF3 } /* Name.Other */
+.highlight .py { color: #79C0FF } /* Name.Property */
+.highlight .nt { color: #7EE787 } /* Name.Tag */
+.highlight .nv { color: #79C0FF } /* Name.Variable */
+.highlight .ow { color: #FF7B72; font-weight: bold } /* Operator.Word */
+.highlight .pm { color: #E6EDF3 } /* Punctuation.Marker */
+.highlight .w { color: #6E7681 } /* Text.Whitespace */
+.highlight .mb { color: #A5D6FF } /* Literal.Number.Bin */
+.highlight .mf { color: #A5D6FF } /* Literal.Number.Float */
+.highlight .mh { color: #A5D6FF } /* Literal.Number.Hex */
+.highlight .mi { color: #A5D6FF } /* Literal.Number.Integer */
+.highlight .mo { color: #A5D6FF } /* Literal.Number.Oct */
+.highlight .sa { color: #79C0FF } /* Literal.String.Affix */
+.highlight .sb { color: #A5D6FF } /* Literal.String.Backtick */
+.highlight .sc { color: #A5D6FF } /* Literal.String.Char */
+.highlight .dl { color: #79C0FF } /* Literal.String.Delimiter */
+.highlight .sd { color: #A5D6FF } /* Literal.String.Doc */
+.highlight .s2 { color: #A5D6FF } /* Literal.String.Double */
+.highlight .se { color: #79C0FF } /* Literal.String.Escape */
+.highlight .sh { color: #79C0FF } /* Literal.String.Heredoc */
+.highlight .si { color: #A5D6FF } /* Literal.String.Interpol */
+.highlight .sx { color: #A5D6FF } /* Literal.String.Other */
+.highlight .sr { color: #79C0FF } /* Literal.String.Regex */
+.highlight .s1 { color: #A5D6FF } /* Literal.String.Single */
+.highlight .ss { color: #A5D6FF } /* Literal.String.Symbol */
+.highlight .bp { color: #E6EDF3 } /* Name.Builtin.Pseudo */
+.highlight .fm { color: #D2A8FF; font-weight: bold } /* Name.Function.Magic */
+.highlight .vc { color: #79C0FF } /* Name.Variable.Class */
+.highlight .vg { color: #79C0FF } /* Name.Variable.Global */
+.highlight .vi { color: #79C0FF } /* Name.Variable.Instance */
+.highlight .vm { color: #79C0FF } /* Name.Variable.Magic */
+.highlight .il { color: #A5D6FF } /* Literal.Number.Integer.Long */</style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+<div class="lg:hidden sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
+  <div class="flex items-center gap-3 px-4 py-2.5">
+    <a href="./index.html" class="text-sm font-black tracking-tight text-slate-900 shrink-0">RL Tutorial</a>
+    <div class="flex gap-1.5 overflow-x-auto py-0.5" style="scrollbar-width:none"><a href="./index.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">总览</a><a href="./ch0_什么是强化学习.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-indigo-600 text-white">第0章</a><a href="./ch1_跑通.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第1章</a><a href="./ch2_rollout与experience.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第2章</a><a href="./ch3_reward怎么算.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第3章</a><a href="./ch4_advantage怎么来.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第4章</a><a href="./ch5_loss与权重更新.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第5章</a><a href="./ch6_动手实验.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第6章</a><a href="./lora32_reproduction.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">运行参考</a></div>
+  </div>
+</div>
+<div class="mx-auto max-w-[96rem] lg:flex">
+
+<aside class="hidden lg:block w-72 shrink-0">
+  <div class="sticky top-0 h-screen overflow-y-auto py-8 pl-6 pr-4 flex flex-col">
+    <a href="./index.html" class="block px-3">
+      <div class="text-lg font-black tracking-tight text-slate-900">RL Tutorial</div>
+      <div class="mt-0.5 text-xs text-slate-500">跑通并看懂强化学习 · 以 ALFWorld 为实验环境</div>
+    </a>
+    <nav class="mt-6 space-y-1"><a href="./index.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">§</span><span class="truncate">教程总览</span></a>
+<a href="./ch0_什么是强化学习.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition bg-indigo-50 text-indigo-900 font-semibold"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-indigo-600 text-white">0</span><span class="truncate">什么是强化学习？</span></a>
+<a href="./ch1_跑通.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">1</span><span class="truncate">跑通：先看 RL 真的有用</span></a>
+<a href="./ch2_rollout与experience.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">2</span><span class="truncate">rollout：state/action/reward</span></a>
+<a href="./ch3_reward怎么算.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">3</span><span class="truncate">reward：环境怎么给分</span></a>
+<a href="./ch4_advantage怎么来.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">4</span><span class="truncate">advantage：为什么不用 reward 直接训</span></a>
+<a href="./ch5_loss与权重更新.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">5</span><span class="truncate">loss 与更新：advantage 变梯度</span></a>
+<a href="./ch6_动手实验.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">6</span><span class="truncate">LoRA 实测与开放实验</span></a>
+<a href="./lora32_reproduction.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">▶</span><span class="truncate">LoRA32 运行参考</span></a></nav>
+    <div class="mt-auto pt-8 px-3">
+      <a href="https://github.com/agentscope-ai/Trinity-RFT/tree/tutorial" target="_blank" rel="noopener"
+         class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-slate-700 transition">
+        <svg viewBox="0 0 16 16" class="h-4 w-4 fill-current"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        教程代码 · tutorial 分支
+      </a>
+    </div>
+  </div>
+</aside>
+<main class="min-w-0 flex-1 px-4 py-10 sm:px-8 lg:py-14">
+  <div class="mx-auto max-w-3xl">
+    <header class="mb-10">
+      <div class="mb-4 flex flex-wrap items-center gap-3">
+        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset bg-teal-100 text-teal-800 ring-teal-200 ">概念</span>
+        <span class="inline-flex items-center gap-1.5 text-sm text-slate-500"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>10 分钟阅读</span>
+      </div>
+      <h1 class="text-3xl font-bold leading-snug tracking-tight text-slate-900 sm:text-4xl">第 0 章：什么是强化学习？你的任务适合吗？</h1>
+    </header>
+    <article class="prose prose-slate max-w-none">
+<blockquote>
+<p>在装任何依赖之前，先用 10 分钟读完这一章。这一章不跑代码，只回答两件事：<strong>强化学习到底在做什么</strong>、<strong>你的问题适不适合用它</strong>。同时把后面 6 章会反复用到的几个词（state / action / reward / policy / trajectory）先认全。</p>
+</blockquote>
+<hr />
+<h2 id="01-一句话讲清强化学习">0.1 一句话讲清强化学习</h2>
+<blockquote>
+<p><strong>强化学习（Reinforcement Learning, RL）= 让一个「会做决策的模型」在「环境」里反复试错，用「环境给的分」来调整自己，最终学会拿高分。</strong></p>
+</blockquote>
+<p>和你更熟悉的监督学习（SFT）对比一下，差异就清楚了：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>监督学习 SFT</th>
+<th>强化学习 RL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>学什么</td>
+<td>模仿「标准答案」</td>
+<td>摸索「怎么拿高分」</td>
+</tr>
+<tr>
+<td>监督信号</td>
+<td>每条数据给正确输出</td>
+<td>每条<strong>完整尝试</strong>给一个分数（reward）</td>
+</tr>
+<tr>
+<td>数据从哪来</td>
+<td>人提前准备好</td>
+<td>模型自己<strong>与环境交互</strong>产生</td>
+</tr>
+<tr>
+<td>适合</td>
+<td>有标准答案的任务</td>
+<td>答案不唯一、但<strong>能自动判分</strong>的任务</td>
+</tr>
+</tbody>
+</table></div>
+<p>关键区别在第三行：RL 的数据不是人给的，是模型<strong>自己玩出来的</strong>。模型玩一局 → 环境打分 → 用分数调整模型 → 再玩一局……循环往复，分数越来越高。这就是「训练」。</p>
+<hr />
+<h2 id="02-rl-的核心词汇先认全后面每章都会用">0.2 RL 的核心词汇（先认全，后面每章都会用）</h2>
+<blockquote>
+<p>🕯️ <strong>贯穿全教程的例子</strong>：任务 = <code>put a candle in countertop.</code>（把一支蜡烛放到台面上）。后面每介绍一个概念，我们都会回到这个例子，告诉你「它在这个例子里具体是什么」——概念不悬空。</p>
+</blockquote>
+<p>先看小机器人所在的房间：它知道周围有哪些家具，但需要走近观察，才能发现蜡烛。动画中的机器人代表做决策的模型，模型实际收到的仍是文字观察。</p>
+<div class="alf-player" data-mode="intro">
+  <p><a href="./alfworld_robot.html">打开二维小机器人动画：认识环境、逐步播放成功与失败轨迹</a></p>
+</div>
+
+<details class="tutorial-original" id="original-concepts">
+<summary aria-label="查看原文：六个核心词汇与交互循环">查看原文</summary>
+<p>一次 RL 训练里只有 6 个角色。用上面的 candle 例子逐一对应：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>词</th>
+<th>含义</th>
+<th>在 candle 例子里是什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>agent / policy（策略）</strong></td>
+<td>做决策的模型</td>
+<td>Qwen3-1.7B，它决定「为了把 candle 放到 countertop，下一步干什么」</td>
+</tr>
+<tr>
+<td><strong>environment（环境）</strong></td>
+<td>接受动作、返回结果的世界</td>
+<td>ALFWorld 文字房间（有 countertop、toilet、cabinet…）</td>
+</tr>
+<tr>
+<td><strong>state / observation（状态/观察）</strong></td>
+<td>agent 当前看到的信息</td>
+<td>一段文字：「你在房间里，看到 countertop 1、toilet 1…」</td>
+</tr>
+<tr>
+<td><strong>action（动作）</strong></td>
+<td>agent 这一步的选择</td>
+<td>一条命令，如 <code>take candle 2 from toilet 1</code>、<code>move candle 2 to countertop 1</code></td>
+</tr>
+<tr>
+<td><strong>reward（奖励）</strong></td>
+<td>环境对<strong>结果</strong>的打分</td>
+<td>candle 放到 countertop → <code>1.0</code>；30 步没放上去 → <code>-0.1</code></td>
+</tr>
+<tr>
+<td><strong>trajectory / episode（轨迹）</strong></td>
+<td>从开始到结束的一整串 (state, action)</td>
+<td>这一局：look → 搜索 → take candle → move 到 countertop，共 9 步</td>
+</tr>
+</tbody>
+</table></div>
+<p>把它们串起来就是 RL 的<strong>交互循环</strong>（第 2 章会逐行拆开）：</p>
+<p><img alt="RL 交互循环：policy 与 environment 之间交换 action 与 state+reward" src="./ch0_rl_loop.svg" /></p>
+<blockquote>
+<p>记住这张图和 candle 例子。后面所有章节都在这张图的某个箭头上做文章，并反复回到 candle 例子：第 2 章讲「循环怎么跑」，第 3 章讲「reward 怎么给」，第 4 章讲「reward 怎么变成可学习的信号」，第 5 章讲「信号怎么改 policy」。</p>
+</blockquote>
+</details>
+<hr />
+<h2 id="03-你的任务适合-rl-吗">0.3 你的任务适合 RL 吗</h2>
+<p>RL 不是万金油。三个条件<strong>同时满足</strong>才值得用：</p>
+<ol>
+<li><strong>可验证的 reward</strong>：能写一段代码给任意一次完整尝试打分，且<strong>确定性</strong>（同一次尝试跑两次得分一样）。</li>
+<li><strong>非平凡的初始成功率</strong>：模型一开始<strong>偶尔能做对</strong>（&gt;0%，有正样本可学），但<strong>远没全做对</strong>（&lt;100%，有改进空间）。</li>
+<li><strong>需要多步决策</strong>：任务不是一步问答，而是要连续做多个互相依赖的决定（否则退化成单步问题，RL 的优势体现不出来）。</li>
+</ol>
+<p><strong>自检表</strong>：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>你的情况</th>
+<th>该用什么</th>
+<th>为什么</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>有清晰标准答案 + 一批高质量答案</td>
+<td>SFT</td>
+<td>RL 没有信息增量，反而引入噪声</td>
+</tr>
+<tr>
+<td>改改 prompt 就能从 30% 到 80%</td>
+<td>Prompt 工程</td>
+<td>一晚上 RL 不如你改一小时 prompt</td>
+</tr>
+<tr>
+<td>输出主观（文风/对话好坏），无法自动判分</td>
+<td>人类偏好方法（如 DPO/RLHF）</td>
+<td>没有可计算的 reward</td>
+</tr>
+<tr>
+<td><strong>能被程序自动判分 + 模型偶尔做对偶尔做错 + 需多步决策</strong></td>
+<td>✅ <strong>RL</strong></td>
+<td>这正是 RL 的甜区</td>
+</tr>
+</tbody>
+</table></div>
+<p>本教程的实验三条全中：ALFWorld 环境自带确定性判分；配套任务族样本中，base 模型的每局成功率约 10%（偶尔做对、大多做错）；每个任务要 5–30 步多子目标决策。</p>
+<hr />
+<h2 id="04-为什么用-alfworld-当实验环境">0.4 为什么用 ALFWorld 当实验环境</h2>
+<p><a href="https://github.com/alfworld/alfworld">ALFWorld</a> 把具身家务任务抽象成<strong>文字冒险游戏</strong>：agent 在纯文本房间里用命令与物体交互。选它当本教程的实验台，是因为它把 RL 的要素暴露得特别干净：</p>
+<ul>
+<li><strong>reward 由环境内置、确定</strong>：任务完成 =1.0，否则 =-0.1，不需要你写判分器（第 3 章）。</li>
+<li><strong>天然多步 + 状态变化</strong>：找物体 →（加热/冷却/清洗）→ 放目标，每步依赖前面累积的状态（第 2 章）。</li>
+<li><strong>难度有梯度</strong>：6 个任务族从「单目标放置」到「多子目标转化」，能清楚看到 RL 先学会什么、还学不会什么（第 6 章）。</li>
+</ul>
+<p><strong>6 个任务族</strong>（本实验训练集 3553 个任务的真实分布 + 配套样本中的每局成功率）：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>任务族</th>
+<th style="text-align: right;">数量</th>
+<th>要做什么</th>
+<th style="text-align: right;">base 成功率</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pick_and_place</code></td>
+<td style="text-align: right;">790</td>
+<td>找物体放到目标</td>
+<td style="text-align: right;">27.8%</td>
+</tr>
+<tr>
+<td><code>pick_two_obj</code></td>
+<td style="text-align: right;">813</td>
+<td>找<strong>两个</strong>同类物体放目标</td>
+<td style="text-align: right;">5.8%</td>
+</tr>
+<tr>
+<td><code>pick_clean_then_place</code></td>
+<td style="text-align: right;">650</td>
+<td>找物体→水槽清洗→放</td>
+<td style="text-align: right;">3.6%</td>
+</tr>
+<tr>
+<td><code>pick_cool_then_place</code></td>
+<td style="text-align: right;">533</td>
+<td>找物体→冰箱冷却→放</td>
+<td style="text-align: right;">1.5%</td>
+</tr>
+<tr>
+<td><code>pick_heat_then_place</code></td>
+<td style="text-align: right;">459</td>
+<td>找物体→微波加热→放</td>
+<td style="text-align: right;">4.7%</td>
+</tr>
+<tr>
+<td><code>look_at_obj_in_light</code></td>
+<td style="text-align: right;">308</td>
+<td>找物体→拿到灯下看</td>
+<td style="text-align: right;">2.6%</td>
+</tr>
+</tbody>
+</table></div>
+<p>一眼可见：base 模型对最简单的族也才 27.8%，对多子目标族几乎不会（1.5%~5.8%）——<strong>巨大的改进空间</strong>，正是 RL 要填的。</p>
+<hr />
+<h2 id="05-本教程用的实验栈知道即可细节后面按需展开">0.5 本教程用的实验栈（知道即可，细节后面按需展开）</h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>选择</th>
+<th>一句话说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>教程仓库 / 网页</td>
+<td><a href="https://github.com/agentscope-ai/Trinity-RFT/tree/tutorial">Trinity-RFT 的 <code>tutorial</code> 分支</a>（<a href="https://agentscope-ai.github.io/agentic-rl">网页版</a>）</td>
+<td>本教程文档与可运行代码所在；框架以依赖引入</td>
+</tr>
+<tr>
+<td>框架</td>
+<td><a href="https://github.com/agentscope-ai/Trinity-RFT">Trinity-RFT</a></td>
+<td>底下真正干活的 RL 框架：把「rollout / reward / advantage / 更新」串成流水线</td>
+</tr>
+<tr>
+<td>算法</td>
+<td><strong>GRPO</strong>（multi-step 版）</td>
+<td>第 4、5 章的主角：用「组内相对比较」把 reward 变成更新模型的信号</td>
+</tr>
+<tr>
+<td>模型</td>
+<td>Qwen3-1.7B</td>
+<td>小模型，8 卡跑得动、曲线看得清</td>
+</tr>
+<tr>
+<td>硬件</td>
+<td>8×A100（4 卡采样 + 4 卡训练）</td>
+<td>采样与训练并行，一步约 6 分钟</td>
+</tr>
+<tr>
+<td>环境</td>
+<td>ALFWorld + TextWorld</td>
+<td>本地进程，reward 确定</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>你<strong>不需要</strong>先懂分布式训练、显存优化这些工程知识——本教程只讲 RL 的概念主线，工程细节一律从简（个别必要的做成悬停提示）。第 1 章你只需要会跑命令、会看曲线。</p>
+</blockquote>
+<hr />
+<h2 id="06-延伸主流-rl-框架与训练后端对比选工具时再看">0.6 延伸：主流 RL 框架与训练后端对比（选工具时再看）</h2>
+<blockquote>
+<p>这一节<strong>不影响你跑通本教程</strong>（栈已经钉死），只是给你一张「以后自己选工具」的地图。第一次读可以跳过，等第 1 章跑通再回来看。</p>
+</blockquote>
+<h3 id="主流-rl-框架对比">主流 RL 框架对比</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>框架</th>
+<th>强项</th>
+<th>短板</th>
+<th>适合场景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Trinity-RFT</strong>（本教程选用）</td>
+<td>multi-step agentic 原生支持；<strong>算法与训练后端解耦</strong>；yaml 即配</td>
+<td>文档 / 案例仍在补充</td>
+<td>多步 agent RL（本教程这类）</td>
+</tr>
+<tr>
+<td>verl</td>
+<td>性能强；FSDP / Megatron 调优深入</td>
+<td>配置层级深、新手起步陡</td>
+<td>大规模 RLHF、追求极致性能</td>
+</tr>
+<tr>
+<td>OpenRLHF</td>
+<td>起步简单、社区活跃</td>
+<td>偏单步 RLHF，agentic 支持弱</td>
+<td>经典 RLHF / 数学类任务</td>
+</tr>
+<tr>
+<td>TRL</td>
+<td>HuggingFace 生态最熟、入门最浅</td>
+<td>大规模训练性能不如 verl</td>
+<td>单卡 / 小规模实验</td>
+</tr>
+</tbody>
+</table></div>
+<p>本教程选 Trinity-RFT 的核心理由是<strong>算法与后端解耦</strong>：同一份「算法 + 数据」配置可以换不同后端跑（见下表）。这对「先用最容易的方式跑通概念、再换后端/换规模」的学习路径很友好。</p>
+<h3 id="训练后端对比tinker-tuft-本地-gpu">训练后端对比：Tinker / TuFT / 本地 GPU</h3>
+<p>「后端」= 真正做 forward / backward / 权重更新的地方。框架只负责把 rollout 和训练信号算好，把「更新模型」这件事委托给后端。三种常见选择：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>后端</th>
+<th>部署方式</th>
+<th>你需要</th>
+<th>适合</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Tinker</strong>（云服务）</td>
+<td>注册账号拿 API key</td>
+<td><strong>0 张本地 GPU</strong></td>
+<td>零硬件入门首选 ⭐</td>
+</tr>
+<tr>
+<td><strong>TuFT</strong>（自部署 server）</td>
+<td>在自己机器起训练 server</td>
+<td>有 GPU</td>
+<td>数据敏感 / 想改训练栈</td>
+</tr>
+<tr>
+<td><strong>本地 GPU（verl + vLLM）</strong>（本教程）</td>
+<td>本机直接跑 trainer + rollout</td>
+<td>有 GPU（本教程 8×A100）</td>
+<td>环境是本地进程、想完全掌控、采样与训练并行提速</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>为什么本教程用本地 GPU，而不是 Tinker / TuFT</strong>：</p>
+<ul>
+<li>ALFWorld 环境是<strong>本地 CPU 进程</strong>（textworld），不是远程 sandbox；「env 在本机、模型在本机」用本地后端最自然。</li>
+<li>我们要演示<strong>采样与训练并行</strong>（4 卡采样 + 4 卡训练，第 1 章 §1.1），本地多卡最容易排布。</li>
+<li>全量微调 + 大 batch，本地资源完全可控。</li>
+</ul>
+<blockquote>
+<p>三者<strong>不是优劣之分，而是「资源 vs 掌控力」的取舍</strong>：没 GPU 就用 Tinker 先跑通概念；有 GPU 且环境在本地（如本教程）就用本地后端；介于两者用 TuFT。关键在于：<strong>第 2–5 章讲的 RL 概念（rollout / reward / advantage / loss）在三种后端下完全相同</strong>——换后端只换「在哪算模型更新」，不换「RL 在学什么」。这正是算法与后端解耦的价值。</p>
+</blockquote>
+<hr />
+<h2 id="07-这一章你应该带走的">0.7 这一章你应该带走的</h2>
+<ul>
+<li>✅ <strong>RL = 模型在环境里试错，用环境给的分调整自己</strong>；与 SFT 的根本差异是「数据自己玩出来 + 信号是分数而非标准答案」。</li>
+<li>✅ <strong>6 个核心词</strong>：policy / environment / state / action / reward / trajectory——后面每章都在这张交互循环图上做文章。</li>
+<li>✅ <strong>适合 RL 的三条件</strong>：可验证 reward + 非平凡初始成功率 + 多步决策。</li>
+<li>✅ <strong>ALFWorld 是干净的实验台</strong>：reward 内置确定、天然多步、难度有梯度；base 成功率 1.5%~27.8%，改进空间巨大。</li>
+<li>✅ <strong>工具地图（§0.6）</strong>：框架看 Trinity-RFT / verl / OpenRLHF / TRL 的取舍；后端看 Tinker（零 GPU）/ TuFT / 本地 GPU 的取舍——<strong>RL 概念在三者下完全相同</strong>。</li>
+</ul>
+<p>❌ <strong>这一章你不需要懂</strong>：reward 具体怎么广播、advantage 怎么算、loss 长什么样、权重怎么更新——分别是第 3/4/5 章的事。</p>
+<p>💡 <strong>留给自己的问题</strong>：配套样本中 base 模型约有 10% 的任务局成功，意味着它「大部分时候是错的」。RL 凭什么能从这些少量成功经验里学到东西，让训练 reward 从负值一路升高？第 1 章先让你亲眼看到这条曲线，第 4 章再解释它为什么能涨。</p>
+    </article>
+    <nav class="mt-14 grid gap-4 sm:grid-cols-2"><a href="./index.html" class="group block rounded-xl border border-slate-200 bg-white p-5 transition hover:border-indigo-300 hover:shadow-md"><div class="mb-1 text-xs text-slate-400">← 上一章</div><div class="font-semibold text-slate-800 group-hover:text-indigo-700">教程总览</div></a><a href="./ch1_跑通.html" class="group block rounded-xl border border-slate-200 bg-white p-5 transition hover:border-indigo-300 hover:shadow-md sm:text-right"><div class="mb-1 text-xs text-slate-400">下一章 →</div><div class="font-semibold text-slate-800 group-hover:text-indigo-700">第 1 章 · 跑通：先看 RL 真的有用</div></a></nav>
+    <footer class="mt-12 border-t border-slate-200 pt-6 text-center text-xs text-slate-400">
+      RL Tutorial · 基于 <a href="https://github.com/agentscope-ai/Trinity-RFT" class="underline decoration-slate-300 underline-offset-2 hover:text-slate-600">Trinity-RFT</a>
+      · 本页由 build_html.py 从 Markdown 生成
+    </footer>
+  </div>
+</main>
+
+<aside class="hidden xl:block w-64 shrink-0">
+  <div class="sticky top-8 max-h-[calc(100vh-4rem)] overflow-y-auto py-10 pr-6">
+    <div class="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">本页目录</div>
+    <nav id="toc" class="border-l border-slate-200 text-[13px]"><a href="#01-一句话讲清强化学习" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">0.1 一句话讲清强化学习</a>
+<a href="#02-rl-的核心词汇先认全后面每章都会用" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">0.2 RL 的核心词汇（先认全，后面每章都会用）</a>
+<a href="#03-你的任务适合-rl-吗" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">0.3 你的任务适合 RL 吗</a>
+<a href="#04-为什么用-alfworld-当实验环境" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">0.4 为什么用 ALFWorld 当实验环境</a>
+<a href="#05-本教程用的实验栈知道即可细节后面按需展开" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">0.5 本教程用的实验栈（知道即可，细节后面按需展开）</a>
+<a href="#06-延伸主流-rl-框架与训练后端对比选工具时再看" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">0.6 延伸：主流 RL 框架与训练后端对比（选工具时再看）</a>
+<a href="#07-这一章你应该带走的" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">0.7 这一章你应该带走的</a></nav>
+  </div>
+</aside>
+</div>
+<script>
+(function () {
+  var links = [].slice.call(document.querySelectorAll('#toc a'));
+  if (!links.length) return;
+  var pairs = links.map(function (a) {
+    var id = decodeURIComponent((a.getAttribute('href') || '').slice(1));
+    var el = document.getElementById(id);
+    return el ? { el: el, a: a } : null;
+  }).filter(Boolean);
+  var ACTIVE = ['border-indigo-500', 'text-indigo-700', 'font-medium'];
+  function onScroll() {
+    var y = window.scrollY + 96, cur = pairs[0];
+    pairs.forEach(function (p) { if (p.el.offsetTop <= y) cur = p; });
+    pairs.forEach(function (p) {
+      var on = (p === cur);
+      ACTIVE.forEach(function (c) { p.a.classList.toggle(c, on); });
+      p.a.classList.toggle('border-transparent', !on);
+      p.a.classList.toggle('text-slate-500', !on);
+    });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+<style>.alf-player{--ink:#243648;--muted:#617585;--line:#dbe5e8;--teal:#087f82;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden;margin:24px 0;text-align:left;font-size:14px;line-height:1.55;box-shadow:0 10px 35px #18374408}.alf-player *{box-sizing:border-box}.alf-player button,.alf-player select{font:inherit;cursor:pointer}.alf-player button{border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--ink);padding:8px 12px;min-height:40px}.alf-player button:hover{background:#eef8f6}.alf-player button:focus-visible,.alf-player input:focus-visible,.alf-player select:focus-visible{outline:3px solid #eeaa43;outline-offset:3px}.alf-player button:disabled{opacity:.4;cursor:default}.alf-player button[aria-pressed=true],.alf-player .alf-play{background:var(--teal);color:white;border-color:var(--teal)}.alf-top{padding:20px 22px 16px;border-bottom:1px solid var(--line);display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between}.alf-kicker{font-size:11px;font-weight:750;letter-spacing:2px;color:var(--teal)}.alf-title{font-size:21px;font-weight:750;margin:5px 0!important;color:var(--ink)}.alf-tabs{display:flex;gap:6px;flex-wrap:wrap}.alf-goal{display:flex;align-items:center;gap:10px;background:#fff6e5;border-bottom:1px solid #f0e1c6;padding:12px 22px;color:#805719}.alf-goal svg{width:23px;height:30px;flex-shrink:0}.alf-main{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(240px,1fr)}.alf-map-panel{background:#f4f8f7;padding:16px;min-width:0}.alf-map-title{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);margin:0 2px 8px}.alf-scene{display:block;width:100%;height:auto;overflow:visible}.alf-scene text{font-family:inherit;fill:var(--ink);font-size:15px}.alf-scene .alf-small{font-size:12px;fill:var(--muted)}.alf-scene .alf-furniture{fill:#fff;stroke:#c1d2d4;stroke-width:2}.alf-scene .alf-active{stroke:#087f82;stroke-width:3;fill:#e3f3ec}.alf-scene .alf-robot-mover{transition:transform .7s cubic-bezier(.2,.75,.25,1)}.alf-scene .alf-item{transition:transform .7s ease,opacity .25s}.alf-scene .alf-door{transform-origin:92px 132px;transition:transform .6s}.alf-scene .alf-door.open{transform:rotate(-35deg)}.alf-map-caption{font-size:12px;color:var(--muted);margin:8px 2px 0!important}.alf-pocket{display:flex;gap:8px;justify-content:space-between;flex-wrap:wrap;background:#fff;padding:10px 12px;margin-top:12px;border-radius:10px;border:1px solid var(--line)}.alf-pocket strong{color:var(--teal)}.alf-info{padding:16px;display:flex;flex-direction:column;gap:11px;min-width:0}.alf-card{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff}.alf-card-label{font-size:11px;letter-spacing:1px;font-weight:750;color:var(--muted);margin-bottom:6px}.alf-card p{margin:0!important;font-size:14px;line-height:1.65}.alf-card.alf-action{background:#eef7f6;border-color:#b6d9d3}.alf-card.alf-feedback[data-error=true]{background:#fff2ee;border-color:#edb8a8}.alf-card.alf-feedback[data-success=true]{background:#edf9f0;border-color:#b0d6b7}.alf-raw{margin-top:8px!important;padding:0!important;border:0!important;background:none!important;font-size:12px;color:var(--muted)}.alf-raw summary{cursor:pointer;font-size:12px!important;color:var(--muted)!important;font-weight:400!important}.alf-raw pre{font:11px/1.5 ui-monospace,monospace!important;white-space:pre-wrap!important;overflow-wrap:anywhere;background:#f4f7f8!important;color:var(--ink)!important;padding:8px!important;border:0!important;border-radius:6px!important;margin:6px 0 0!important;max-height:160px;overflow:auto}.alf-note{font-size:12px;color:var(--muted);margin:0!important}.alf-status{font-size:13px;font-weight:650;padding:10px 14px;border-radius:10px;background:#f3f6f8;margin-top:auto}.alf-controls{border-bottom:1px solid var(--line);padding:14px 20px;display:flex;flex-wrap:wrap;align-items:center;gap:8px}.alf-controls label{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}.alf-controls select{background:#fff;border:1px solid var(--line);padding:8px;border-radius:8px;color:var(--ink)}.alf-progress{flex:1;min-width:150px;display:flex;align-items:center;gap:10px}.alf-progress input{min-width:70px;width:100%;accent-color:var(--teal)}.alf-counter{font-variant-numeric:tabular-nums;white-space:nowrap;font-size:12px}.alf-foot{font-size:11px;color:var(--muted);padding:0 20px 15px}.alf-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--muted)}.alf-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#087f82;margin-right:5px}.alf-dot.unknown{background:none;border:1px dashed #7d949b}.alf-player .alf-result{color:#087f82;font-weight:750}.alf-player .alf-fail{color:#bb593c;font-weight:750}@media(max-width:740px){.alf-main{grid-template-columns:1fr}.alf-info{display:grid;grid-template-columns:1fr 1fr}.alf-info .alf-card:first-child{grid-column:1/-1}.alf-status,.alf-note{grid-column:1/-1}.alf-top{padding:16px}.alf-goal{padding:12px 16px}.alf-title{font-size:19px}}@media(max-width:420px){.alf-info{display:flex;padding:12px}.alf-map-panel{padding:10px}.alf-controls{padding:12px;gap:6px}.alf-progress{flex-basis:100%;order:5}.alf-top{gap:8px}.alf-tabs button{padding:7px 10px}.alf-scene text{font-size:23px}.alf-scene .alf-small{font-size:20px}.alf-scene [data-unknown="toilet"]{display:none}.alf-map-title{font-size:11px}.alf-foot{padding:0 12px 12px}}@media(prefers-reduced-motion:reduce){.alf-player *{transition:none!important;animation:none!important}}
+/* Size by the embedded component, not the outer tutorial viewport. */
+.alf-player{container-type:inline-size}.alf-player .alf-play:hover{background:#07676b;color:#fff}
+@container(max-width:740px){.alf-main{grid-template-columns:1fr}.alf-info{display:grid;grid-template-columns:1fr 1fr}.alf-info .alf-card:first-child{grid-column:1/-1}.alf-status,.alf-note{grid-column:1/-1}}
+@container(max-width:420px){.alf-info{display:flex}.alf-scene text{font-size:23px}.alf-scene .alf-small{font-size:20px}.alf-scene [data-unknown="toilet"]{display:none}.alf-map-title{flex-wrap:wrap}.alf-tabs button{padding:7px 10px}}
+
+.alf-stage{position:relative}.alf-player .alf-start{position:absolute;left:50%;bottom:15%;transform:translateX(-50%);width:max-content;max-width:94%;padding:11px 16px;background:#087f82;color:#fff;border-color:#087f82;border-radius:24px;box-shadow:0 4px 16px #087f822b;font-weight:650}.alf-player .alf-start:hover{background:#07676b}.alf-player .alf-start[hidden]{display:none}@container(max-width:420px){.alf-player .alf-start{font-size:12px;padding:8px 12px;bottom:12%}}
+
+.alf-tag{display:inline-block;padding:2px 7px;margin-right:4px;border-radius:5px;background:#e0efed;color:#086e73;font:700 12px/1.5 ui-monospace,monospace;letter-spacing:0}.alf-reward{margin-top:auto;grid-column:1/-1}.alf-reward .alf-tag{background:#fff0d1;color:#885e17}.alf-player .alf-state-note{font-size:12px;margin-top:8px!important;color:var(--muted)}
+
+/* A carried candle uses the same timing as the robot so their relative position stays fixed. */
+.alf-scene [data-item="candle"]{transition:transform .7s cubic-bezier(.2,.75,.25,1),opacity .25s}
+</style><script>window.ALFWORLD_TRAJECTORIES={"success": {"source": "traj_success_late.json", "eid": {"batch": 166, "task": 5, "run": 9}, "reward": 1.0, "success": true, "instruction": "put a candle in countertop.", "steps": [{"action": "look", "observation": "-= Welcome to TextWorld, ALFRED! =-\n\nYou are in the middle of a room. Looking quickly around you, you see a bathtubbasin 1, a countertop 2, a countertop 1, a drawer 4, a drawer 3, a drawer 2, a drawer 1, a garbagecan 1, a handtowelholder 1, a sinkbasin 1, a toilet 1, a toiletpaperhanger 1, a towelholder 2, and a towelholder 1.\n\nYour task is to: put a candle in countertop."}, {"action": "go to countertop 1", "observation": "You are in the middle of a room. Looking quickly around you, you see nothing."}, {"action": "look", "observation": "You arrive at countertop 1. On the countertop 1, you see a soapbar 1, a spraybottle 1, and a toiletpaper 3."}, {"action": "go to bathtubbasin 1", "observation": "You are facing the countertop 1. Next to it, you see nothing."}, {"action": "look", "observation": "You arrive at bathtubbasin 1. On the bathtubbasin 1, you see a bathtub 1, and a soapbar 2."}, {"action": "go to toilet 1", "observation": "You are facing the bathtubbasin 1. Next to it, you see nothing."}, {"action": "take candle 2 from toilet 1", "observation": "You arrive at toilet 1. On the toilet 1, you see a candle 2, and a soapbottle 2."}, {"action": "go to countertop 1", "observation": "You pick up the candle 2 from the toilet 1."}, {"action": "move candle 2 to countertop 1", "observation": "You arrive at countertop 1. On the countertop 1, you see a soapbar 1, a spraybottle 1, and a toiletpaper 3."}]}, "fail": {"source": "traj_fail_early.json", "eid": {"batch": 1, "task": 1, "run": 14}, "reward": -0.1, "success": false, "instruction": "put a candle in countertop.", "steps": [{"action": "look", "observation": "-= Welcome to TextWorld, ALFRED! =-\n\nYou are in the middle of a room. Looking quickly around you, you see a cabinet 4, a cabinet 3, a cabinet 2, a cabinet 1, a countertop 1, a garbagecan 1, a handtowelholder 1, a sinkbasin 2, a sinkbasin 1, a toilet 1, a toiletpaperhanger 1, and a towelholder 1.\n\nYour task is to: put a candle in countertop."}, {"action": "go to cabinet 1", "observation": "You are in the middle of a room. Looking quickly around you, you see nothing."}, {"action": "open cabinet 1", "observation": "You arrive at cabinet 1. The cabinet 1 is closed."}, {"action": "look in cabinet 1", "observation": "You open the cabinet 1. The cabinet 1 is open. In it, you see a toiletpaper 1."}, {"action": "take toiletpaper 1 from cabinet 1", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}, {"action": "go to countertop 1", "observation": "You pick up the toiletpaper 1 from the cabinet 1."}, {"action": "put toiletpaper 1 on countertop 1", "observation": "You arrive at countertop 1. On the countertop 1, you see nothing."}, {"action": "take toiletpaper 1 from countertop 1", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}, {"action": "look around", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}, {"action": "look around", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}, {"action": "look around", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}, {"action": "look around", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}, {"action": "look around", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}, {"action": "look around", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}, {"action": "look around", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}, {"action": "look around", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}, {"action": "look around", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}, {"action": "look around", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}, {"action": "look around", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}, {"action": "look around", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}, {"action": "look around", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}, {"action": "look around", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}, {"action": "look around", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}, {"action": "look around", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}, {"action": "look around", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}, {"action": "look around", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}, {"action": "look around", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}, {"action": "look around", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}, {"action": "look around", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}, {"action": "look around", "observation": "Nothing happens.Please check if the action you take is valid or you have carefully followed the action format."}]}};</script><script>/* Reusable schematic replay. Observations describe the state BEFORE each action.
+   The final success placement is inferred from the recorded terminal reward;
+   no terminal observation was retained in the sample. */
+(() => {
+'use strict';
+const DATA = window.ALFWORLD_TRAJECTORIES;
+const escape = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const candle = '<rect x="-8" y="-17" width="16" height="29" rx="3" fill="#f9c967" stroke="#c38830" stroke-width="2"/><ellipse cx="0" cy="-17" rx="8" ry="3" fill="#fff0c9"/><path d="M0-17v-6" stroke="#876133" stroke-width="2"/>';
+const paper = '<rect x="-10" y="-12" width="20" height="24" rx="3" fill="white" stroke="#9daeb6" stroke-width="2"/><ellipse cx="0" cy="-12" rx="10" ry="4" fill="#e7edef" stroke="#9daeb6"/><ellipse cx="0" cy="-12" rx="3" ry="2" fill="#a4b5bd"/><path d="M10-8h7v24H8" fill="#fff" stroke="#9daeb6" stroke-width="2"/>';
+const OBS_SUCCESS = [
+ '你在房间中央。周围有台面、浴缸、马桶、抽屉等；还不知道蜡烛在哪里。',
+ '环顾房间，没有看到更多物品。',
+ '台面 1 上有肥皂、喷壶和纸卷，没有蜡烛。',
+ '你正面对台面 1，旁边没有看到其他物品。',
+ '浴缸区域有浴缸和肥皂，没有蜡烛。',
+ '你正面对浴缸区域，旁边没有看到其他物品。',
+ '马桶 1 上有蜡烛 2 和一瓶皂液。找到蜡烛了！',
+ '你从马桶 1 上拿起了蜡烛 2。',
+ '回到台面 1，台面上仍有肥皂、喷壶和纸卷。'
+];
+const OBS_FAIL = [
+ '你在房间中央。周围有柜子、台面、马桶、水槽等；还不知道蜡烛在哪里。',
+ '环顾房间，没有看到更多物品。',
+ '到达柜子 1，柜门关着。',
+ '柜门打开了，里面有纸卷 1。',
+ '没有发生变化。环境提示检查动作是否有效、格式是否正确。',
+ '你从柜子 1 里拿起了纸卷 1。',
+ '到达台面 1，台面上没有物品。',
+ '没有发生变化。放置指令没有执行成功，纸卷仍在手里。',
+ '没有发生变化。从台面拿纸卷的指令没有执行成功。'
+];
+const ACTIONS = {
+ 'look':'看一看当前位置', 'go to countertop 1':'走到台面 1',
+ 'go to bathtubbasin 1':'走到浴缸区域', 'go to toilet 1':'走到马桶 1',
+ 'take candle 2 from toilet 1':'从马桶 1 拿起蜡烛 2',
+ 'move candle 2 to countertop 1':'把蜡烛 2 放到台面 1',
+ 'go to cabinet 1':'走到柜子 1', 'open cabinet 1':'打开柜子 1',
+ 'look in cabinet 1':'尝试查看柜子内部',
+ 'take toiletpaper 1 from cabinet 1':'从柜子 1 拿起纸卷 1',
+ 'put toiletpaper 1 on countertop 1':'尝试把纸卷放到台面上',
+ 'take toiletpaper 1 from countertop 1':'尝试从台面拿起纸卷',
+ 'look around':'反复尝试环顾四周'
+};
+function observation(kind, i) {
+ return (kind === 'success' ? OBS_SUCCESS : OBS_FAIL)[i] || '没有发生变化。环境再次提示检查动作是否有效、格式是否正确。';
+}
+function sceneState(kind, count) {
+ const s = {place:'center', held:null, candle:null, cabinetOpen:false, paper:null, known:new Set()};
+ for (let i=0;i<count;i++) {
+  const a=DATA[kind].steps[i].action;
+  if(a.startsWith('go to ')) {
+   s.place=a.slice(6); s.known.add(s.place);
+   if(s.place==='toilet 1' && kind==='success') s.candle='toilet';
+  }
+  if(a==='open cabinet 1') {s.cabinetOpen=true;s.paper='cabinet';}
+  if(a==='take toiletpaper 1 from cabinet 1') {s.paper=null;s.held='paper';}
+  if(a==='take candle 2 from toilet 1') {s.candle='held';s.held='candle';}
+  if(a==='move candle 2 to countertop 1' && DATA[kind].success) {s.candle='countertop';s.held=null;}
+  // Invalid actions have no effect, including failed put/take/look around.
+ }
+ return s;
+}
+const places={'center':[285,265],'countertop 1':[270,180],'bathtubbasin 1':[425,265],'toilet 1':[398,363],'cabinet 1':[147,220]};
+function sceneMarkup(kind, uid) {
+ const success=kind==='success';
+ return `<svg class="alf-scene" viewBox="0 0 560 460" role="img" aria-labelledby="${uid}-scene-title"><title id="${uid}-scene-title">二维房间示意；物品随观察发现，小机器人按记录执行动作</title>
+ <defs><pattern id="${uid}-tile" width="44" height="44" patternUnits="userSpaceOnUse"><path d="M44 0H0V44" fill="none" stroke="#e1e9e7" stroke-width="1"/></pattern><filter id="${uid}-shadow" x="-40%" y="-40%" width="180%" height="180%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#547473" flood-opacity=".16"/></filter></defs>
+ <rect x="16" y="22" width="528" height="418" rx="22" fill="#e3eeea"/><rect x="25" y="37" width="510" height="394" rx="14" fill="#f8fbf8"/><rect x="25" y="37" width="510" height="394" rx="14" fill="url(#${uid}-tile)"/>
+ <g data-place="countertop 1"><rect class="alf-furniture" x="206" y="58" width="157" height="88" rx="9"/><rect x="212" y="64" width="145" height="48" rx="6" fill="#dbe8e4"/><path d="M216 122h137M285 116v25" stroke="#b0c5c3"/><text x="284" y="48" text-anchor="middle">台面 1 · 目标</text><g data-detail="countertop" visibility="hidden"><rect x="226" y="86" width="22" height="12" rx="5" fill="#d2b6cf"/><rect x="259" y="77" width="12" height="24" rx="3" fill="#a9cbd6"/><path d="M262 77v-6h12" fill="none" stroke="#7eabbc"/><g transform="translate(336 89) scale(.62)">${paper}</g></g><text class="alf-small" data-unknown="countertop" x="284" y="94" text-anchor="middle">物品待观察</text></g>
+ ${success ? `<g data-place="bathtubbasin 1"><rect class="alf-furniture" x="438" y="179" width="77" height="122" rx="30"/><rect x="448" y="191" width="57" height="91" rx="23" fill="#dceef0"/><path d="M472 188v-14h12" stroke="#8eaeb4" stroke-width="5" fill="none"/><text x="476" y="324" text-anchor="middle">浴缸</text><g data-detail="bathtub" visibility="hidden"><rect x="449" y="260" width="25" height="11" rx="5" fill="#d2b6cf"/></g></g><rect class="alf-furniture" x="48" y="96" width="105" height="73" rx="7"/><path d="M53 120h95M53 144h95M93 109h17M93 134h17M93 158h17" stroke="#b0c5c3" stroke-width="3"/><text x="100" y="190" text-anchor="middle">抽屉</text>` : `<g data-place="cabinet 1"><rect class="alf-furniture" x="49" y="94" width="111" height="94" rx="7"/><rect x="57" y="102" width="95" height="78" rx="4" fill="#d6c4a9"/><path d="M57 143h95" stroke="#b29a79" stroke-width="4"/><g data-item="cabinet-paper" transform="translate(103 134)" visibility="hidden">${paper}</g><g class="alf-door"><rect x="53" y="98" width="103" height="85" rx="4" fill="#e8d9c1" stroke="#bda989" stroke-width="2"/><circle cx="140" cy="141" r="4" fill="#a38b66"/></g><text x="104" y="215" text-anchor="middle">柜子 1</text></g>`}
+ <g data-place="toilet 1"><rect class="alf-furniture" x="429" y="347" width="78" height="27" rx="7"/><ellipse class="alf-furniture" cx="468" cy="391" rx="32" ry="29"/><ellipse cx="468" cy="391" rx="21" ry="19" fill="#dceef0"/><text x="468" y="451" text-anchor="middle">马桶 1</text><text class="alf-small" data-unknown="toilet" x="460" y="341" text-anchor="middle">物品待观察</text><g data-detail="toilet" visibility="hidden"><rect x="488" y="341" width="12" height="20" rx="4" fill="#b5cfb9"/></g></g>
+ <rect class="alf-furniture" x="54" y="320" width="107" height="63" rx="12"/><ellipse cx="108" cy="352" rx="37" ry="19" fill="#dceef0"/><path d="M108 333v-15h13" stroke="#8eaeb4" stroke-width="5" fill="none"/><text x="108" y="408" text-anchor="middle">水槽</text>
+ <path data-trail d="M285 265" fill="none" stroke="#94b8ac" stroke-width="3" stroke-dasharray="5 7" stroke-linecap="round"/>
+ <g class="alf-robot-mover" style="transform:translate(285px,265px)"><ellipse cy="35" rx="31" ry="9" fill="#264e5020"/><g filter="url(#${uid}-shadow)"><rect x="-19" y="5" width="38" height="28" rx="12" fill="#f7fafb" stroke="#799aa4" stroke-width="2"/><rect x="-19" y="27" width="10" height="11" rx="4" fill="#426877"/><rect x="9" y="27" width="10" height="11" rx="4" fill="#426877"/><path d="M-20 12l-9 11M20 12l9 11" stroke="#7596a0" stroke-width="8" stroke-linecap="round"/><rect x="-27" y="-31" width="54" height="41" rx="15" fill="#fff" stroke="#799aa4" stroke-width="2"/><rect x="-20" y="-23" width="40" height="25" rx="9" fill="#203f4d"/><circle cx="-10" cy="-11" r="4" fill="#88e1cf"/><circle cx="10" cy="-11" r="4" fill="#88e1cf"/><path d="M0-31v-9" stroke="#7596a0" stroke-width="3"/><circle cy="-43" r="5" fill="#efb44e"/><rect x="-7" y="15" width="14" height="7" rx="3" fill="#70c3b4"/></g><g data-held transform="translate(35 18) scale(.85)"></g></g>
+ <g class="alf-item" data-item="candle" visibility="hidden">${candle}</g>
+ <g data-invalid visibility="hidden"><rect x="170" y="390" width="205" height="31" rx="15" fill="#fff0eb" stroke="#e6ab95"/><text x="272" y="411" text-anchor="middle" style="fill:#aa4c31;font-size:14px">动作无效 · 环境没有变化</text></g>
+ </svg>`;
+}
+let serial=0;
+function mount(root) {
+ const uid=`alf-${++serial}`;
+ const initial=root.dataset.mode || 'intro';
+ let mode=initial, kind=mode==='fail'?'fail':'success', count=mode==='step'?6:0, timer=null;
+ let running=false, autoEnabled=true, sceneVisible=false, playbackEpoch=0;
+ root.innerHTML=`<div class="alf-top"><div><div class="alf-kicker">ALFWORLD · 跟着小机器人做任务</div><div class="alf-title">把一支蜡烛放到台面上</div></div><div class="alf-tabs" role="group" aria-label="选择演示"><button type="button" data-mode="intro">认识环境</button><button type="button" data-mode="success">成功轨迹</button><button type="button" data-mode="fail">失败轨迹</button></div></div><div class="alf-goal"><svg viewBox="-14 -28 28 45" aria-hidden="true">${candle}</svg><span><b>你的任务：</b>找到蜡烛 → 拿起来 → 放到台面 1</span></div><div class="alf-main"><div class="alf-map-panel"><div class="alf-map-title"><span data-room></span><span>二维示意 · 非原始房间布局</span></div><div class="alf-stage"><div data-scene></div><button type="button" class="alf-start" data-start>▶ 点击播放，看小机器人怎么做</button></div><div class="alf-pocket"><span>机器人手里：<strong data-pocket>空手</strong></span><span data-location>房间中央</span></div><div class="alf-legend"><span>↻ 自动循环 · 可暂停</span><span><i class="alf-dot"></i>当前位置</span><span><i class="alf-dot unknown"></i>物品随观察发现</span></div><p class="alf-map-caption">小机器人代表模型。它实际收到文字观察；房间仅画出与讲解有关的设施。</p></div><div class="alf-info"><div class="alf-card"><div class="alf-card-label"><span class="alf-tag">state</span> ① 机器人看到什么 · 执行前</div><p data-observation></p><details class="alf-raw"><summary>查看原始文字观察</summary><pre data-raw-obs></pre><p class="alf-state-note">这里展示当前观察；模型做决策时的输入还包含任务和此前的交互历史。</p></details></div><div class="alf-card alf-action"><div class="alf-card-label"><span class="alf-tag">action</span> ② 机器人做什么 · 动作</div><p data-action></p><details class="alf-raw"><summary>查看原始动作指令</summary><pre data-raw-action></pre></details></div><div class="alf-card alf-feedback"><div class="alf-card-label">③ 环境发生了什么 · 执行后</div><p data-feedback></p><details class="alf-raw"><summary>查看原始反馈 / 结果依据</summary><pre data-raw-feedback></pre></details></div><p class="alf-note" data-note></p><div class="alf-reward"><div class="alf-card-label"><span class="alf-tag">reward</span> 任务的终止奖励</div><div class="alf-status" role="status" aria-live="polite" data-status></div></div></div></div><div class="alf-controls"><button class="alf-play" type="button" data-play>▶ 播放动画</button><button type="button" data-prev aria-label="上一步">← 上一步</button><button type="button" data-next aria-label="下一步">下一步 →</button><button type="button" data-reset>重播</button><div class="alf-progress"><label for="${uid}-seek" class="alf-counter" data-counter></label><input id="${uid}-seek" type="range" min="0" value="0" aria-label="已执行动作数"></div><label>速度<select data-speed aria-label="播放速度"><option value="2200">正常</option><option value="1500">快速</option><option value="4000">慢速</option></select></label></div><div class="alf-foot">依据预置真实轨迹重放，中文为释义。成功、失败的任务指令相同，但来自不同房间；示意位置不代表实际距离。<span data-source></span></div>`;
+ root.insertBefore(root.querySelector('.alf-controls'), root.querySelector('.alf-main'));
+ const $=s=>root.querySelector(s);
+ const put=(s,t)=>{$(s).textContent=t;};
+ function stop(manual=false){
+  if(timer)clearTimeout(timer);timer=null;running=false;playbackEpoch++;
+  if(manual)autoEnabled=false;
+  root.dataset.playing='false';put('[data-play]','▶ 播放动画');
+  $('[data-start]').hidden=count!==0;
+ }
+ function newScene(){$('[data-scene]').innerHTML=sceneMarkup(kind,uid);}
+ function render(){
+  const data=DATA[kind], n=data.steps.length, s=sceneState(kind,count), step=count?data.steps[count-1]:null;
+  root.dataset.completed=String(count);root.dataset.trajectory=kind;
+  root.querySelectorAll('.alf-tabs button').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.mode===mode || (mode==='step'&&b.dataset.mode==='success'))));
+  put('[data-room]',kind==='success'?'成功记录中的房间':'失败记录中的房间');
+  const before=Math.max(0,count-1);
+  put('[data-observation]',observation(kind,before));put('[data-raw-obs]',data.steps[before].observation);
+  put('[data-action]',step?ACTIONS[step.action]||step.action:'尚未行动，先认识环境和任务目标。');
+  put('[data-raw-action]',step?step.action:'尚未执行动作');
+  let feedback=count===0?'蜡烛的位置还不知道。动画将逐步展示小机器人的寻找过程。':count<n?observation(kind,count):data.success?'蜡烛已经放到台面，任务完成！':'30 步耗尽，蜡烛没有放到台面，任务失败。';
+  const nextObs=count<n?data.steps[count].observation:null;
+  const invalid=!!(step && (nextObs?.startsWith('Nothing happens.') || (kind==='fail'&&count===n)));
+  if(kind==='fail'&&count>=9&&count<n) feedback=`第 ${count-8} 次重复环顾指令，环境仍没有变化。纸卷还在手里。`;
+  put('[data-feedback]',feedback);
+  put('[data-raw-feedback]',count===0?'尚未执行动作':nextObs || `样本未保存最后一个动作后的观察。记录的终止 reward = ${data.reward}，success = ${data.success}。${data.success?'图中最终放置依据该动作及终止成功结果示意。':'未凭空补写环境原文。'}`);
+  $('.alf-feedback').dataset.error=String(invalid);$('.alf-feedback').dataset.success=String(count===n&&data.success);
+  put('[data-note]',mode==='step'?'从找到蜡烛的时刻开始，观察拿起动作与反馈；可暂停后逐步查看。':kind==='fail'&&count>=5?'纸卷并不是任务要求的蜡烛；后续无效放置不会让它离开机器人的手。':count===0?'先认识家具，再通过观察发现物品。机器人不会提前知道蜡烛的位置。':'画面显示执行后的状态；上方三格保留本步执行前的观察、动作和执行后的反馈。');
+  put('[data-status]',count===n?data.success?'任务成功 · 9 步完成 · 终止奖励 +1.0':'任务失败 · 30 步耗尽 · 终止奖励 −0.1':`已执行 ${count} 步 / 最多 30 步 · 任务尚未结束`);
+  $('[data-status]').className='alf-status '+(count===n?(data.success?'alf-result':'alf-fail'):'');
+  put('[data-counter]',`${count} / ${n} 步`);$('input').max=n;$('input').value=count;
+  $('[data-start]').hidden=count!==0||running;
+  $('[data-prev]').disabled=count===0;$('[data-next]').disabled=count===n;
+  put('[data-pocket]',s.held==='candle'?'蜡烛 2':s.held==='paper'?'纸卷 1（不是目标）':'空手');
+  put('[data-location]',({'center':'房间中央','countertop 1':'台面前','bathtubbasin 1':'浴缸前','toilet 1':'马桶前','cabinet 1':'柜子前'})[s.place]);
+  const xy=places[s.place];$('.alf-robot-mover').style.transform=`translate(${xy[0]}px,${xy[1]}px)`;
+  // One persistent candle moves through world coordinates, including the hand.
+  $('[data-held]').innerHTML=s.held==='paper'?paper:'';
+  root.querySelectorAll('[data-place]').forEach(g=>g.querySelectorAll('.alf-furniture').forEach(r=>r.classList.toggle('alf-active',g.dataset.place===s.place)));
+  const show=(selector,visible)=>{const el=$(selector);if(el)el.setAttribute('visibility',visible?'visible':'hidden');};
+  show('[data-detail="countertop"]',kind==='success'&&s.known.has('countertop 1'));
+  show('[data-unknown="countertop"]',!s.known.has('countertop 1'));
+  show('[data-unknown="toilet"]',!s.known.has('toilet 1'));
+  show('[data-detail="toilet"]',kind==='success'&&s.known.has('toilet 1'));
+  show('[data-detail="bathtub"]',s.known.has('bathtubbasin 1'));
+  show('[data-item="cabinet-paper"]',s.paper==='cabinet');
+  if($('.alf-door'))$('.alf-door').classList.toggle('open',s.cabinetOpen);
+  const ci=$('[data-item="candle"]');show('[data-item="candle"]',s.candle!==null);
+  const candleXY=s.candle==='held'?[xy[0]+35,xy[1]+18]:s.candle==='countertop'?[300,89]:[455,351];
+  ci.style.transform=`translate(${candleXY[0]}px,${candleXY[1]}px)`;
+  show('[data-invalid]',invalid);
+  let path='M285 265';for(let i=0;i<count;i++){const a=data.steps[i].action;if(a.startsWith('go to ')){const p=places[a.slice(6)];path+=` L${p[0]} ${p[1]}`;}}$('[data-trail]').setAttribute('d',path);
+  put('[data-source]',`记录：batch ${data.eid.batch} / task ${data.eid.task} / run ${data.eid.run}。`);
+ }
+ function advance(){if(count<DATA[kind].steps.length)count++;render();}
+ function schedule(){
+  const epoch=playbackEpoch;
+  // Flush the visual update, then await its actual transitions. Reading time
+  // starts AFTER movement; stale callbacks cannot advance a paused/new replay.
+  requestAnimationFrame(async()=>{
+   if(!running||epoch!==playbackEpoch)return;
+   const stage=$('.alf-stage');
+   const motions=stage.getAnimations?stage.getAnimations({subtree:true}):[];
+   await Promise.all(motions.map(a=>a.finished.catch(()=>{})));
+   if(!running||epoch!==playbackEpoch)return;
+   const dwell=count===DATA[kind].steps.length?5000:Math.max(1500,Number($('[data-speed]').value));
+   timer=setTimeout(()=>{
+    timer=null;if(!running||epoch!==playbackEpoch)return;
+    if(count===DATA[kind].steps.length){count=mode==='step'?6:0;newScene();render();}
+    else advance();
+    schedule();
+   },dwell);
+  });
+ }
+ function start(){
+  if(running||document.hidden)return;
+  running=true;root.dataset.playing='true';put('[data-play]','Ⅱ 暂停动画');
+  $('[data-start]').hidden=true;schedule();
+ }
+ function play(){if(running){stop(true);return;}autoEnabled=true;start();}
+ function resumeIfVisible(){if(autoEnabled&&sceneVisible&&!document.hidden)start();}
+ root.querySelectorAll('.alf-tabs button').forEach(b=>b.addEventListener('click',()=>{
+  stop();mode=b.dataset.mode;kind=mode==='fail'?'fail':'success';count=0;
+  newScene();render();resumeIfVisible();
+ }));
+ $('[data-play]').addEventListener('click',play);
+ $('[data-start]').addEventListener('click',play);
+ $('[data-next]').addEventListener('click',()=>{stop(true);advance();});
+ $('[data-prev]').addEventListener('click',()=>{stop(true);count=Math.max(0,count-1);render();});
+ $('[data-reset]').addEventListener('click',()=>{stop();count=mode==='step'?6:0;autoEnabled=true;newScene();render();start();});
+ $('input').addEventListener('input',e=>{stop(true);count=Number(e.target.value);render();});
+ $('[data-speed]').addEventListener('change',()=>{if(running){stop();start();}});
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();else resumeIfVisible();});
+ if('IntersectionObserver' in window)new IntersectionObserver(entries=>{
+  sceneVisible=entries[0].isIntersecting&&entries[0].intersectionRatio>=.25;
+  if(sceneVisible)resumeIfVisible();else stop();
+ },{threshold:[0,.25]}).observe($('.alf-stage'));
+ else {sceneVisible=true;resumeIfVisible();}
+
+ newScene();render();
+}
+document.querySelectorAll('.alf-player').forEach(mount);
+})();
+</script>
+</body>
+</html>

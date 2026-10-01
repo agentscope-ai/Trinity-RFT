@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 6 章：LoRA 实测与开放实验 · RL Tutorial</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏠</text></svg>">
+<!-- Tailwind CSS（含 typography 插件）本地预编译内嵌，完全离线可用；重编译: build_html.py --css -->
+<style>*,:after,:before{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/*! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com*/*,:after,:before{box-sizing:border-box;border:0 solid #e5e7eb}:after,:before{--tw-content:""}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;-o-tab-size:4;tab-size:4;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,Hiragino Sans GB,Microsoft YaHei,Noto Sans SC,sans-serif;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace,SF Mono,SFMono-Regular,Menlo,Consolas,Liberation Mono,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0}fieldset,legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::-moz-placeholder,textarea::-moz-placeholder{opacity:1;color:#9ca3af}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.prose{color:var(--tw-prose-body);max-width:65ch}.prose :where(p):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:1.25em;margin-bottom:1.25em}.prose :where([class~=lead]):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-lead);font-size:1.25em;line-height:1.6;margin-top:1.2em;margin-bottom:1.2em}.prose :where(a):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-links);text-decoration:underline;font-weight:500}.prose :where(strong):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-bold);font-weight:600}.prose :where(a strong):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(blockquote strong):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(thead th strong):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(ol):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:decimal;margin-top:1.25em;margin-bottom:1.25em;padding-inline-start:1.625em}.prose :where(ol[type=A]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:upper-alpha}.prose :where(ol[type=a]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:lower-alpha}.prose :where(ol[type=A s]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:upper-alpha}.prose :where(ol[type=a s]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:lower-alpha}.prose :where(ol[type=I]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:upper-roman}.prose :where(ol[type=i]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:lower-roman}.prose :where(ol[type=I s]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:upper-roman}.prose :where(ol[type=i s]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:lower-roman}.prose :where(ol[type="1"]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:decimal}.prose :where(ul):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:disc;margin-top:1.25em;margin-bottom:1.25em;padding-inline-start:1.625em}.prose :where(ol>li):not(:where([class~=not-prose],[class~=not-prose] *))::marker{font-weight:400;color:var(--tw-prose-counters)}.prose :where(ul>li):not(:where([class~=not-prose],[class~=not-prose] *))::marker{color:var(--tw-prose-bullets)}.prose :where(dt):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:600;margin-top:1.25em}.prose :where(hr):not(:where([class~=not-prose],[class~=not-prose] *)){border-color:var(--tw-prose-hr);border-top-width:1px;margin-top:3em;margin-bottom:3em}.prose :where(blockquote):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:500;font-style:italic;color:var(--tw-prose-quotes);border-inline-start-width:.25rem;border-inline-start-color:var(--tw-prose-quote-borders);quotes:"\201C""\201D""\2018""\2019";margin-top:1.6em;margin-bottom:1.6em;padding-inline-start:1em}.prose :where(blockquote p:first-of-type):not(:where([class~=not-prose],[class~=not-prose] *)):before{content:open-quote}.prose :where(blockquote p:last-of-type):not(:where([class~=not-prose],[class~=not-prose] *)):after{content:close-quote}.prose :where(h1):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:800;font-size:2.25em;margin-top:0;margin-bottom:.8888889em;line-height:1.1111111}.prose :where(h1 strong):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:900;color:inherit}.prose :where(h2):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:700;font-size:1.5em;margin-top:2em;margin-bottom:1em;line-height:1.3333333}.prose :where(h2 strong):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:800;color:inherit}.prose :where(h3):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:600;font-size:1.25em;margin-top:1.6em;margin-bottom:.6em;line-height:1.6}.prose :where(h3 strong):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:700;color:inherit}.prose :where(h4):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:600;margin-top:1.5em;margin-bottom:.5em;line-height:1.5}.prose :where(h4 strong):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:700;color:inherit}.prose :where(img):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:2em;margin-bottom:2em}.prose :where(picture):not(:where([class~=not-prose],[class~=not-prose] *)){display:block;margin-top:2em;margin-bottom:2em}.prose :where(video):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:2em;margin-bottom:2em}.prose :where(kbd):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:500;font-family:inherit;color:var(--tw-prose-kbd);box-shadow:0 0 0 1px rgb(var(--tw-prose-kbd-shadows)/10%),0 3px 0 rgb(var(--tw-prose-kbd-shadows)/10%);font-size:.875em;border-radius:.3125rem;padding-top:.1875em;padding-inline-end:.375em;padding-bottom:.1875em;padding-inline-start:.375em}.prose :where(code):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-code);font-weight:600;font-size:.875em}.prose :where(code):not(:where([class~=not-prose],[class~=not-prose] *)):before{content:"`"}.prose :where(code):not(:where([class~=not-prose],[class~=not-prose] *)):after{content:"`"}.prose :where(a code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(h1 code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(h2 code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit;font-size:.875em}.prose :where(h3 code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit;font-size:.9em}.prose :where(h4 code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(blockquote code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(thead th code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(pre):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-pre-code);background-color:var(--tw-prose-pre-bg);overflow-x:auto;font-weight:400;font-size:.875em;line-height:1.7142857;margin-top:1.7142857em;margin-bottom:1.7142857em;border-radius:.375rem;padding-top:.8571429em;padding-inline-end:1.1428571em;padding-bottom:.8571429em;padding-inline-start:1.1428571em}.prose :where(pre code):not(:where([class~=not-prose],[class~=not-prose] *)){background-color:transparent;border-width:0;border-radius:0;padding:0;font-weight:inherit;color:inherit;font-size:inherit;font-family:inherit;line-height:inherit}.prose :where(pre code):not(:where([class~=not-prose],[class~=not-prose] *)):before{content:none}.prose :where(pre code):not(:where([class~=not-prose],[class~=not-prose] *)):after{content:none}.prose :where(table):not(:where([class~=not-prose],[class~=not-prose] *)){width:100%;table-layout:auto;margin-top:2em;margin-bottom:2em;font-size:.875em;line-height:1.7142857}.prose :where(thead):not(:where([class~=not-prose],[class~=not-prose] *)){border-bottom-width:1px;border-bottom-color:var(--tw-prose-th-borders)}.prose :where(thead th):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:600;vertical-align:bottom;padding-inline-end:.5714286em;padding-bottom:.5714286em;padding-inline-start:.5714286em}.prose :where(tbody tr):not(:where([class~=not-prose],[class~=not-prose] *)){border-bottom-width:1px;border-bottom-color:var(--tw-prose-td-borders)}.prose :where(tbody tr:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){border-bottom-width:0}.prose :where(tbody td):not(:where([class~=not-prose],[class~=not-prose] *)){vertical-align:baseline}.prose :where(tfoot):not(:where([class~=not-prose],[class~=not-prose] *)){border-top-width:1px;border-top-color:var(--tw-prose-th-borders)}.prose :where(tfoot td):not(:where([class~=not-prose],[class~=not-prose] *)){vertical-align:top}.prose :where(th,td):not(:where([class~=not-prose],[class~=not-prose] *)){text-align:start}.prose :where(figure>*):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0;margin-bottom:0}.prose :where(figcaption):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-captions);font-size:.875em;line-height:1.4285714;margin-top:.8571429em}.prose{--tw-prose-body:#374151;--tw-prose-headings:#111827;--tw-prose-lead:#4b5563;--tw-prose-links:#111827;--tw-prose-bold:#111827;--tw-prose-counters:#6b7280;--tw-prose-bullets:#d1d5db;--tw-prose-hr:#e5e7eb;--tw-prose-quotes:#111827;--tw-prose-quote-borders:#e5e7eb;--tw-prose-captions:#6b7280;--tw-prose-kbd:#111827;--tw-prose-kbd-shadows:17 24 39;--tw-prose-code:#111827;--tw-prose-pre-code:#e5e7eb;--tw-prose-pre-bg:#1f2937;--tw-prose-th-borders:#d1d5db;--tw-prose-td-borders:#e5e7eb;--tw-prose-invert-body:#d1d5db;--tw-prose-invert-headings:#fff;--tw-prose-invert-lead:#9ca3af;--tw-prose-invert-links:#fff;--tw-prose-invert-bold:#fff;--tw-prose-invert-counters:#9ca3af;--tw-prose-invert-bullets:#4b5563;--tw-prose-invert-hr:#374151;--tw-prose-invert-quotes:#f3f4f6;--tw-prose-invert-quote-borders:#374151;--tw-prose-invert-captions:#9ca3af;--tw-prose-invert-kbd:#fff;--tw-prose-invert-kbd-shadows:255 255 255;--tw-prose-invert-code:#fff;--tw-prose-invert-pre-code:#d1d5db;--tw-prose-invert-pre-bg:rgba(0,0,0,.5);--tw-prose-invert-th-borders:#4b5563;--tw-prose-invert-td-borders:#374151;font-size:1rem;line-height:1.75}.prose :where(picture>img):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0;margin-bottom:0}.prose :where(li):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:.5em;margin-bottom:.5em}.prose :where(ol>li):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-start:.375em}.prose :where(ul>li):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-start:.375em}.prose :where(.prose>ul>li p):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:.75em;margin-bottom:.75em}.prose :where(.prose>ul>li>p:first-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:1.25em}.prose :where(.prose>ul>li>p:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-bottom:1.25em}.prose :where(.prose>ol>li>p:first-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:1.25em}.prose :where(.prose>ol>li>p:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-bottom:1.25em}.prose :where(ul ul,ul ol,ol ul,ol ol):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:.75em;margin-bottom:.75em}.prose :where(dl):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:1.25em;margin-bottom:1.25em}.prose :where(dd):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:.5em;padding-inline-start:1.625em}.prose :where(hr+*):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0}.prose :where(h2+*):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0}.prose :where(h3+*):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0}.prose :where(h4+*):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0}.prose :where(thead th:first-child):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-start:0}.prose :where(thead th:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-end:0}.prose :where(tbody td,tfoot td):not(:where([class~=not-prose],[class~=not-prose] *)){padding-top:.5714286em;padding-inline-end:.5714286em;padding-bottom:.5714286em;padding-inline-start:.5714286em}.prose :where(tbody td:first-child,tfoot td:first-child):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-start:0}.prose :where(tbody td:last-child,tfoot td:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-end:0}.prose :where(figure):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:2em;margin-bottom:2em}.prose :where(.prose>:first-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0}.prose :where(.prose>:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-bottom:0}.prose-slate{--tw-prose-body:#334155;--tw-prose-headings:#0f172a;--tw-prose-lead:#475569;--tw-prose-links:#0f172a;--tw-prose-bold:#0f172a;--tw-prose-counters:#64748b;--tw-prose-bullets:#cbd5e1;--tw-prose-hr:#e2e8f0;--tw-prose-quotes:#0f172a;--tw-prose-quote-borders:#e2e8f0;--tw-prose-captions:#64748b;--tw-prose-kbd:#0f172a;--tw-prose-kbd-shadows:15 23 42;--tw-prose-code:#0f172a;--tw-prose-pre-code:#e2e8f0;--tw-prose-pre-bg:#1e293b;--tw-prose-th-borders:#cbd5e1;--tw-prose-td-borders:#e2e8f0;--tw-prose-invert-body:#cbd5e1;--tw-prose-invert-headings:#fff;--tw-prose-invert-lead:#94a3b8;--tw-prose-invert-links:#fff;--tw-prose-invert-bold:#fff;--tw-prose-invert-counters:#94a3b8;--tw-prose-invert-bullets:#475569;--tw-prose-invert-hr:#334155;--tw-prose-invert-quotes:#f1f5f9;--tw-prose-invert-quote-borders:#334155;--tw-prose-invert-captions:#94a3b8;--tw-prose-invert-kbd:#fff;--tw-prose-invert-kbd-shadows:255 255 255;--tw-prose-invert-code:#fff;--tw-prose-invert-pre-code:#cbd5e1;--tw-prose-invert-pre-bg:rgba(0,0,0,.5);--tw-prose-invert-th-borders:#475569;--tw-prose-invert-td-borders:#334155}.sticky{position:sticky}.top-0{top:0}.top-8{top:2rem}.z-20{z-index:20}.mx-auto{margin-left:auto;margin-right:auto}.-ml-px{margin-left:-1px}.mb-1{margin-bottom:.25rem}.mb-10{margin-bottom:2.5rem}.mb-3{margin-bottom:.75rem}.mb-4{margin-bottom:1rem}.mt-0\.5{margin-top:.125rem}.mt-12{margin-top:3rem}.mt-14{margin-top:3.5rem}.mt-6{margin-top:1.5rem}.mt-auto{margin-top:auto}.block{display:block}.flex{display:flex}.inline-flex{display:inline-flex}.table{display:table}.grid{display:grid}.hidden{display:none}.h-4{height:1rem}.h-6{height:1.5rem}.h-screen{height:100vh}.max-h-\[calc\(100vh-4rem\)\]{max-height:calc(100vh - 4rem)}.w-4{width:1rem}.w-6{width:1.5rem}.w-64{width:16rem}.w-72{width:18rem}.min-w-0{min-width:0}.max-w-3xl{max-width:48rem}.max-w-\[96rem\]{max-width:96rem}.max-w-none{max-width:none}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-center{align-items:center}.justify-center{justify-content:center}.gap-1\.5{gap:.375rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.space-y-1>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.25rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.25rem*var(--tw-space-y-reverse))}.overflow-x-auto{overflow-x:auto}.overflow-y-auto{overflow-y:auto}.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}.rounded-md{border-radius:.375rem}.rounded-xl{border-radius:.75rem}.border{border-width:1px}.border-b{border-bottom-width:1px}.border-l{border-left-width:1px}.border-l-2{border-left-width:2px}.border-t{border-top-width:1px}.border-indigo-500{--tw-border-opacity:1;border-color:rgb(99 102 241/var(--tw-border-opacity,1))}.border-slate-200{--tw-border-opacity:1;border-color:rgb(226 232 240/var(--tw-border-opacity,1))}.border-transparent{border-color:transparent}.bg-amber-100{--tw-bg-opacity:1;background-color:rgb(254 243 199/var(--tw-bg-opacity,1))}.bg-emerald-100{--tw-bg-opacity:1;background-color:rgb(209 250 229/var(--tw-bg-opacity,1))}.bg-indigo-100{--tw-bg-opacity:1;background-color:rgb(224 231 255/var(--tw-bg-opacity,1))}.bg-indigo-50{--tw-bg-opacity:1;background-color:rgb(238 242 255/var(--tw-bg-opacity,1))}.bg-indigo-600{--tw-bg-opacity:1;background-color:rgb(79 70 229/var(--tw-bg-opacity,1))}.bg-sky-100{--tw-bg-opacity:1;background-color:rgb(224 242 254/var(--tw-bg-opacity,1))}.bg-slate-100{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.bg-slate-200{--tw-bg-opacity:1;background-color:rgb(226 232 240/var(--tw-bg-opacity,1))}.bg-slate-50{--tw-bg-opacity:1;background-color:rgb(248 250 252/var(--tw-bg-opacity,1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity,1))}.bg-white\/90{background-color:hsla(0,0%,100%,.9)}.fill-current{fill:currentColor}.p-5{padding:1.25rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-4{padding-left:1rem;padding-right:1rem}.py-0\.5{padding-top:.125rem;padding-bottom:.125rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-10{padding-top:2.5rem;padding-bottom:2.5rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.py-2\.5{padding-top:.625rem;padding-bottom:.625rem}.py-8{padding-top:2rem;padding-bottom:2rem}.pl-3{padding-left:.75rem}.pl-6{padding-left:1.5rem}.pr-4{padding-right:1rem}.pr-6{padding-right:1.5rem}.pt-6{padding-top:1.5rem}.pt-8{padding-top:2rem}.text-center{text-align:center}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-\[13px\]{font-size:13px}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-xs{font-size:.75rem;line-height:1rem}.font-black{font-weight:900}.font-bold{font-weight:700}.font-medium{font-weight:500}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.italic{font-style:italic}.leading-snug{line-height:1.375}.tracking-tight{letter-spacing:-.025em}.tracking-wider{letter-spacing:.05em}.text-amber-800{--tw-text-opacity:1;color:rgb(146 64 14/var(--tw-text-opacity,1))}.text-emerald-800{--tw-text-opacity:1;color:rgb(6 95 70/var(--tw-text-opacity,1))}.text-indigo-700{--tw-text-opacity:1;color:rgb(67 56 202/var(--tw-text-opacity,1))}.text-indigo-800{--tw-text-opacity:1;color:rgb(55 48 163/var(--tw-text-opacity,1))}.text-indigo-900{--tw-text-opacity:1;color:rgb(49 46 129/var(--tw-text-opacity,1))}.text-sky-800{--tw-text-opacity:1;color:rgb(7 89 133/var(--tw-text-opacity,1))}.text-slate-400{--tw-text-opacity:1;color:rgb(148 163 184/var(--tw-text-opacity,1))}.text-slate-500{--tw-text-opacity:1;color:rgb(100 116 139/var(--tw-text-opacity,1))}.text-slate-600{--tw-text-opacity:1;color:rgb(71 85 105/var(--tw-text-opacity,1))}.text-slate-700{--tw-text-opacity:1;color:rgb(51 65 85/var(--tw-text-opacity,1))}.text-slate-800{--tw-text-opacity:1;color:rgb(30 41 59/var(--tw-text-opacity,1))}.text-slate-900{--tw-text-opacity:1;color:rgb(15 23 42/var(--tw-text-opacity,1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1))}.underline{text-decoration-line:underline}.decoration-slate-300{text-decoration-color:#cbd5e1}.underline-offset-2{text-underline-offset:2px}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.ring-1{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}.ring-inset{--tw-ring-inset:inset}.ring-amber-200{--tw-ring-opacity:1;--tw-ring-color:rgb(253 230 138/var(--tw-ring-opacity,1))}.ring-emerald-200{--tw-ring-opacity:1;--tw-ring-color:rgb(167 243 208/var(--tw-ring-opacity,1))}.ring-indigo-200{--tw-ring-opacity:1;--tw-ring-color:rgb(199 210 254/var(--tw-ring-opacity,1))}.ring-sky-200{--tw-ring-opacity:1;--tw-ring-color:rgb(186 230 253/var(--tw-ring-opacity,1))}.ring-slate-200{--tw-ring-opacity:1;--tw-ring-color:rgb(226 232 240/var(--tw-ring-opacity,1))}.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.backdrop-blur{--tw-backdrop-blur:blur(8px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,-webkit-backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter,-webkit-backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.hover\:border-indigo-300:hover{--tw-border-opacity:1;border-color:rgb(165 180 252/var(--tw-border-opacity,1))}.hover\:bg-slate-100:hover{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.hover\:text-slate-600:hover{--tw-text-opacity:1;color:rgb(71 85 105/var(--tw-text-opacity,1))}.hover\:text-slate-700:hover{--tw-text-opacity:1;color:rgb(51 65 85/var(--tw-text-opacity,1))}.hover\:text-slate-900:hover{--tw-text-opacity:1;color:rgb(15 23 42/var(--tw-text-opacity,1))}.hover\:shadow-md:hover{--tw-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color),0 2px 4px -2px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.group:hover .group-hover\:bg-slate-300{--tw-bg-opacity:1;background-color:rgb(203 213 225/var(--tw-bg-opacity,1))}.group:hover .group-hover\:text-indigo-700{--tw-text-opacity:1;color:rgb(67 56 202/var(--tw-text-opacity,1))}@media (min-width:640px){.sm\:block{display:block}.sm\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.sm\:px-8{padding-left:2rem;padding-right:2rem}.sm\:text-right{text-align:right}.sm\:text-4xl{font-size:2.25rem;line-height:2.5rem}}@media (min-width:1024px){.lg\:block{display:block}.lg\:flex{display:flex}.lg\:hidden{display:none}.lg\:py-14{padding-top:3.5rem;padding-bottom:3.5rem}}@media (min-width:1280px){.xl\:block{display:block}}</style>
+<style>html { scroll-behavior: smooth; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', sans-serif; }
+code, pre, kbd { font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace; }
+
+
+.prose { line-height: 1.85; }
+.prose h2 { scroll-margin-top: 5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: .45rem; }
+.prose h3, .prose h4 { scroll-margin-top: 5rem; }
+.prose hr { margin: 2.75em 0; border-color: #e2e8f0; }
+
+/* 原文入口显示为一行链接，展开后仍保留原有排版。 */
+.prose details.tutorial-original {
+  border: 0; border-radius: 0; background: transparent; padding: 0;
+  margin: 1.25rem 0 2rem;
+}
+.prose details.tutorial-original > summary {
+  display: inline-block; font-size: .9rem; font-weight: 500;
+  color: #4f46e5; text-decoration: underline; text-underline-offset: 4px;
+  cursor: pointer; list-style: none;
+}
+.prose details.tutorial-original > summary::-webkit-details-marker { display: none; }
+.prose details.tutorial-original[open] > summary { margin-bottom: 1rem; }
+.prose details.tutorial-original > summary:focus-visible { outline: 2px solid #6366f1; outline-offset: 5px; }
+
+/* 行内代码：小圆角芯片，去掉 typography 默认的反引号 */
+.prose :where(code):not(:where(pre code)) {
+  background: #eef2ff; color: #4338ca; padding: .12em .42em;
+  border-radius: .375rem; font-weight: 500; font-size: .85em;
+}
+.prose :where(code)::before, .prose :where(code)::after { content: none !important; }
+
+/* 代码块：深色卡片（配 pygments github-dark） */
+.prose .highlight { margin: 1.6em 0; }
+.prose .highlight pre {
+  background: #0d1117; color: #e6edf3; border-radius: .75rem;
+  padding: 1.05rem 1.3rem; overflow-x: auto; font-size: .85em;
+  line-height: 1.7; margin: 0; border: 1px solid #1f2937;
+}
+.highlight { background: transparent !important; }
+
+/* 引用块：柔和的左边条 callout */
+.prose blockquote {
+  border-left: 4px solid #6366f1; background: #f5f6ff;
+  border-radius: 0 .75rem .75rem 0; padding: .75rem 1.25rem;
+  font-style: normal; color: #3f3f6e; font-weight: 400;
+}
+.prose blockquote p:first-of-type::before,
+.prose blockquote p:last-of-type::after { content: none; }
+
+/* 表格：圆角卡片 + 斑马纹 + 移动端横向滚动 */
+.table-wrap {
+  overflow-x: auto; border: 1px solid #e2e8f0; border-radius: .75rem;
+  margin: 1.7em 0; background: #fff; box-shadow: 0 1px 2px rgba(15,23,42,.04);
+}
+.table-wrap table { margin: 0 !important; width: 100%; font-size: .9em; }
+.prose thead { background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+.prose thead th { padding: .7rem 1rem; color: #334155; white-space: nowrap; }
+.prose tbody td { padding: .62rem 1rem; vertical-align: top; }
+.prose tbody tr { border-bottom: 1px solid #f1f5f9; }
+.prose tbody tr:last-child { border-bottom: none; }
+.prose tbody tr:nth-child(even) { background: #fafbfd; }
+
+/* 折叠块 */
+.prose details {
+  border: 1px solid #e2e8f0; border-radius: .75rem;
+  padding: .85rem 1.15rem; background: #fafafa; margin: 1.3em 0;
+}
+.prose summary { cursor: pointer; font-weight: 600; color: #4f46e5; }
+
+.prose img {
+  border-radius: .75rem; border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 14px rgba(15,23,42,.06);
+}
+.prose a { color: #4f46e5; text-decoration-color: #c7d2fe; text-underline-offset: 3px; }
+.prose a:hover { color: #3730a3; }
+</style>
+<style>pre { line-height: 125%; }
+td.linenos .normal { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+.highlight .hll { background-color: #6e7681 }
+.highlight { background: #0d1117; color: #E6EDF3 }
+.highlight .c { color: #8B949E; font-style: italic } /* Comment */
+.highlight .err { color: #F85149 } /* Error */
+.highlight .esc { color: #E6EDF3 } /* Escape */
+.highlight .g { color: #E6EDF3 } /* Generic */
+.highlight .k { color: #FF7B72 } /* Keyword */
+.highlight .l { color: #A5D6FF } /* Literal */
+.highlight .n { color: #E6EDF3 } /* Name */
+.highlight .o { color: #FF7B72; font-weight: bold } /* Operator */
+.highlight .x { color: #E6EDF3 } /* Other */
+.highlight .p { color: #E6EDF3 } /* Punctuation */
+.highlight .ch { color: #8B949E; font-style: italic } /* Comment.Hashbang */
+.highlight .cm { color: #8B949E; font-style: italic } /* Comment.Multiline */
+.highlight .cp { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Preproc */
+.highlight .cpf { color: #8B949E; font-style: italic } /* Comment.PreprocFile */
+.highlight .c1 { color: #8B949E; font-style: italic } /* Comment.Single */
+.highlight .cs { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Special */
+.highlight .gd { color: #FFA198; background-color: #490202 } /* Generic.Deleted */
+.highlight .ge { color: #E6EDF3; font-style: italic } /* Generic.Emph */
+.highlight .ges { color: #E6EDF3; font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.highlight .gr { color: #FFA198 } /* Generic.Error */
+.highlight .gh { color: #79C0FF; font-weight: bold } /* Generic.Heading */
+.highlight .gi { color: #56D364; background-color: #0F5323 } /* Generic.Inserted */
+.highlight .go { color: #8B949E } /* Generic.Output */
+.highlight .gp { color: #8B949E } /* Generic.Prompt */
+.highlight .gs { color: #E6EDF3; font-weight: bold } /* Generic.Strong */
+.highlight .gu { color: #79C0FF } /* Generic.Subheading */
+.highlight .gt { color: #FF7B72 } /* Generic.Traceback */
+.highlight .g-Underline { color: #E6EDF3; text-decoration: underline } /* Generic.Underline */
+.highlight .kc { color: #79C0FF } /* Keyword.Constant */
+.highlight .kd { color: #FF7B72 } /* Keyword.Declaration */
+.highlight .kn { color: #FF7B72 } /* Keyword.Namespace */
+.highlight .kp { color: #79C0FF } /* Keyword.Pseudo */
+.highlight .kr { color: #FF7B72 } /* Keyword.Reserved */
+.highlight .kt { color: #FF7B72 } /* Keyword.Type */
+.highlight .ld { color: #79C0FF } /* Literal.Date */
+.highlight .m { color: #A5D6FF } /* Literal.Number */
+.highlight .s { color: #A5D6FF } /* Literal.String */
+.highlight .na { color: #E6EDF3 } /* Name.Attribute */
+.highlight .nb { color: #E6EDF3 } /* Name.Builtin */
+.highlight .nc { color: #F0883E; font-weight: bold } /* Name.Class */
+.highlight .no { color: #79C0FF; font-weight: bold } /* Name.Constant */
+.highlight .nd { color: #D2A8FF; font-weight: bold } /* Name.Decorator */
+.highlight .ni { color: #FFA657 } /* Name.Entity */
+.highlight .ne { color: #F0883E; font-weight: bold } /* Name.Exception */
+.highlight .nf { color: #D2A8FF; font-weight: bold } /* Name.Function */
+.highlight .nl { color: #79C0FF; font-weight: bold } /* Name.Label */
+.highlight .nn { color: #FF7B72 } /* Name.Namespace */
+.highlight .nx { color: #E6EDF3 } /* Name.Other */
+.highlight .py { color: #79C0FF } /* Name.Property */
+.highlight .nt { color: #7EE787 } /* Name.Tag */
+.highlight .nv { color: #79C0FF } /* Name.Variable */
+.highlight .ow { color: #FF7B72; font-weight: bold } /* Operator.Word */
+.highlight .pm { color: #E6EDF3 } /* Punctuation.Marker */
+.highlight .w { color: #6E7681 } /* Text.Whitespace */
+.highlight .mb { color: #A5D6FF } /* Literal.Number.Bin */
+.highlight .mf { color: #A5D6FF } /* Literal.Number.Float */
+.highlight .mh { color: #A5D6FF } /* Literal.Number.Hex */
+.highlight .mi { color: #A5D6FF } /* Literal.Number.Integer */
+.highlight .mo { color: #A5D6FF } /* Literal.Number.Oct */
+.highlight .sa { color: #79C0FF } /* Literal.String.Affix */
+.highlight .sb { color: #A5D6FF } /* Literal.String.Backtick */
+.highlight .sc { color: #A5D6FF } /* Literal.String.Char */
+.highlight .dl { color: #79C0FF } /* Literal.String.Delimiter */
+.highlight .sd { color: #A5D6FF } /* Literal.String.Doc */
+.highlight .s2 { color: #A5D6FF } /* Literal.String.Double */
+.highlight .se { color: #79C0FF } /* Literal.String.Escape */
+.highlight .sh { color: #79C0FF } /* Literal.String.Heredoc */
+.highlight .si { color: #A5D6FF } /* Literal.String.Interpol */
+.highlight .sx { color: #A5D6FF } /* Literal.String.Other */
+.highlight .sr { color: #79C0FF } /* Literal.String.Regex */
+.highlight .s1 { color: #A5D6FF } /* Literal.String.Single */
+.highlight .ss { color: #A5D6FF } /* Literal.String.Symbol */
+.highlight .bp { color: #E6EDF3 } /* Name.Builtin.Pseudo */
+.highlight .fm { color: #D2A8FF; font-weight: bold } /* Name.Function.Magic */
+.highlight .vc { color: #79C0FF } /* Name.Variable.Class */
+.highlight .vg { color: #79C0FF } /* Name.Variable.Global */
+.highlight .vi { color: #79C0FF } /* Name.Variable.Instance */
+.highlight .vm { color: #79C0FF } /* Name.Variable.Magic */
+.highlight .il { color: #A5D6FF } /* Literal.Number.Integer.Long */</style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+<div class="lg:hidden sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
+  <div class="flex items-center gap-3 px-4 py-2.5">
+    <a href="./index.html" class="text-sm font-black tracking-tight text-slate-900 shrink-0">RL Tutorial</a>
+    <div class="flex gap-1.5 overflow-x-auto py-0.5" style="scrollbar-width:none"><a href="./index.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">总览</a><a href="./ch0_什么是强化学习.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第0章</a><a href="./ch1_跑通.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第1章</a><a href="./ch2_rollout与experience.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第2章</a><a href="./ch3_reward怎么算.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第3章</a><a href="./ch4_advantage怎么来.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第4章</a><a href="./ch5_loss与权重更新.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第5章</a><a href="./ch6_动手实验.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-indigo-600 text-white">第6章</a><a href="./lora32_reproduction.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">运行参考</a></div>
+  </div>
+</div>
+<div class="mx-auto max-w-[96rem] lg:flex">
+
+<aside class="hidden lg:block w-72 shrink-0">
+  <div class="sticky top-0 h-screen overflow-y-auto py-8 pl-6 pr-4 flex flex-col">
+    <a href="./index.html" class="block px-3">
+      <div class="text-lg font-black tracking-tight text-slate-900">RL Tutorial</div>
+      <div class="mt-0.5 text-xs text-slate-500">跑通并看懂强化学习 · 以 ALFWorld 为实验环境</div>
+    </a>
+    <nav class="mt-6 space-y-1"><a href="./index.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">§</span><span class="truncate">教程总览</span></a>
+<a href="./ch0_什么是强化学习.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">0</span><span class="truncate">什么是强化学习？</span></a>
+<a href="./ch1_跑通.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">1</span><span class="truncate">跑通：先看 RL 真的有用</span></a>
+<a href="./ch2_rollout与experience.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">2</span><span class="truncate">rollout：state/action/reward</span></a>
+<a href="./ch3_reward怎么算.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">3</span><span class="truncate">reward：环境怎么给分</span></a>
+<a href="./ch4_advantage怎么来.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">4</span><span class="truncate">advantage：为什么不用 reward 直接训</span></a>
+<a href="./ch5_loss与权重更新.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">5</span><span class="truncate">loss 与更新：advantage 变梯度</span></a>
+<a href="./ch6_动手实验.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition bg-indigo-50 text-indigo-900 font-semibold"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-indigo-600 text-white">6</span><span class="truncate">LoRA 实测与开放实验</span></a>
+<a href="./lora32_reproduction.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">▶</span><span class="truncate">LoRA32 运行参考</span></a></nav>
+    <div class="mt-auto pt-8 px-3">
+      <a href="https://github.com/agentscope-ai/Trinity-RFT/tree/tutorial" target="_blank" rel="noopener"
+         class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-slate-700 transition">
+        <svg viewBox="0 0 16 16" class="h-4 w-4 fill-current"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        教程代码 · tutorial 分支
+      </a>
+    </div>
+  </div>
+</aside>
+<main class="min-w-0 flex-1 px-4 py-10 sm:px-8 lg:py-14">
+  <div class="mx-auto max-w-3xl">
+    <header class="mb-10">
+      <div class="mb-4 flex flex-wrap items-center gap-3">
+        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset bg-emerald-100 text-emerald-800 ring-emerald-200 ">实验</span>
+        <span class="inline-flex items-center gap-1.5 text-sm text-slate-500"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>看图理解，再动手运行</span>
+      </div>
+      <h1 class="text-3xl font-bold leading-snug tracking-tight text-slate-900 sm:text-4xl">第 6 章：LoRA 实测与开放实验</h1>
+    </header>
+    <article class="prose prose-slate max-w-none">
+<blockquote>
+<p><strong>一份基础模型，多个轻量任务版本。</strong> 本章用图解释 LoRA 的用途和原理，再邀请你用 LoRA32 + TuFT 训练一个 ALFWorld adapter，对照参考曲线观察它学到了什么。</p>
+</blockquote>
+<hr />
+<h2 id="60-怎么用这一章">6.0 怎么用这一章</h2>
+<p><strong>推荐先动手做 §6.1 的 LoRA32 实践</strong>：看图理解为什么用 LoRA、它如何工作，再启动训练，对照参考结果观察自己的学习曲线。</p>
+<p>后续按需探索：<strong>§6.2–6.6 是开放实验</strong>，提供问题与配置思路，不提供参考结果；表中的 baseline 数据来自前五章。<strong>§6.7 是已有数据的分析工具</strong>，无需重训。</p>
+<hr />
+<h2 id="61-推荐实践用-lora32-训练-alfworld">6.1 推荐实践：用 LoRA32 训练 ALFWorld</h2>
+<h3 id="为什么用-lora一个底座多个任务版本">为什么用 LoRA：一个底座，多个任务版本</h3>
+<p>假设你要为客服、代码和 ALFWorld 各训练一个模型。全参数微调会得到三份完整权重；<strong>LoRA 则保留同一份基础模型，每个任务只学习一份小型 adapter（适配器）</strong>。新增任务时，需要保存、分发和加载的任务参数就少得多。</p>
+<figure class="lora-figure" >
+<div class="lora-head"><div class="lora-kicker">LORA · 图解 01</div><div class="lora-title">新增一个任务，保存一份小 adapter</div></div>
+<div class="lora-body">
+<div class="lora-task-comparison">
+ <div class="lora-task-option"><div class="lora-option-title">全参数微调</div><div class="lora-task-list"><div class="lora-task-model"><strong>客服</strong><span>完整模型权重</span></div><div class="lora-task-model"><strong>代码</strong><span>完整模型权重</span></div><div class="lora-task-model"><strong>ALFWorld</strong><span>完整模型权重</span></div></div><div class="lora-task-caption">每个任务维护一份完整权重</div></div>
+ <div class="lora-task-option shared"><div class="lora-option-title">LoRA 微调</div><div class="lora-adapter-list"><div class="lora-task-adapter"><strong>客服</strong><span>adapter</span></div><div class="lora-task-adapter"><strong>代码</strong><span>adapter</span></div><div class="lora-task-adapter"><strong>ALFWorld</strong><span>adapter</span></div></div><div class="lora-sharing-arrows" aria-hidden="true">↑　　↑　　↑</div><div class="lora-base-model"><strong>一份共享的基础模型</strong><span>按任务配合不同 adapter 使用</span></div><div class="lora-task-caption">小 adapter 易于保存、分发与切换</div></div>
+</div></div><figcaption class="lora-foot">示意同一基础模型的三个任务版本。adapter 需配套基础模型；图块大小不代表显存比例，同时服务多少任务取决于后端和资源。</figcaption></figure>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>什么时候值得尝试？</th>
+<th>你得到什么？</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>为同一个基础模型维护多个任务版本</td>
+<td>每个任务单独保存、分发 adapter</td>
+</tr>
+<tr>
+<td>在同一组后端上训练或服务多个任务</td>
+<td>共享基础权重，各任务保留自己的 adapter</td>
+</tr>
+<tr>
+<td>希望减轻微调时的训练状态负担</td>
+<td>只为少量参数维护梯度和优化器状态</td>
+</tr>
+</tbody>
+</table></div>
+<p>推理框架如 <a href="https://docs.vllm.ai/en/latest/features/lora/#serving-lora-adapters">vLLM 可以按请求选择不同 adapter</a>；<a href="https://github.com/agentscope-ai/TuFT">TuFT</a> 则让多个客户端共享训练与采样后端。<strong>本节先训练一个 ALFWorld adapter，学会这套方法后，再扩展到自己的任务。</strong> 共享要求基础模型兼容，实际并发容量取决于后端配置与显存。</p>
+<details>
+<summary>看看 TuFT 如何共享训练与采样后端</summary>
+<figure class="lora-figure" >
+<div class="lora-head"><div class="lora-kicker">LORA · 图解 04</div><div class="lora-title">TuFT：多个任务，共享训练与采样后端</div></div>
+<div class="lora-body">
+<img class="lora-overview" src="./assets/tuft_multi_tenant_overview.png" alt="TuFT 主图：多个客户端向共享 GPU 后端发送前向反向、优化器更新、存档和采样请求" width="4000" height="2250">
+<div class="lora-counts"><div class="lora-count"><span class="lora-pill frozen">共享</span><p><strong>冻结的基础权重<br>GPU 计算资源与服务</strong></p></div><div class="lora-count trainable"><span class="lora-pill">各任务独立</span><p><strong>LoRA adapter<br>优化器状态与 checkpoint</strong></p></div></div>
+<div class="lora-shared-result">多个客户端提交请求，TuFT 统一调度；<br>同一基础模型上的任务可以共用基础权重，分别训练自己的 adapter。</div></div><figcaption class="lora-foot">主图来源：<a href="https://github.com/agentscope-ai/TuFT">TuFT 项目</a>。不同基础模型可以由平台管理，但不共享同一份权重；并发容量与执行方式取决于后端配置和资源。</figcaption></figure>
+<p>同一基础模型上的任务共享冻结权重，各自维护 adapter、优化器状态和 checkpoint。不同基础模型可以由同一平台管理，但不能共用同一份基础权重。</p>
+</details>
+<h3 id="原理图解原权重不动只学一条小分支">原理图解：原权重不动，只学一条小分支</h3>
+<p>把模型里的一层线性变换想成 <code>y = Wx</code>：输入 <code>x</code> 经过权重 <code>W</code> 得到输出 <code>y</code>。全参数训练直接更新 <code>W</code>；LoRA 保留它，另加一条由两个小矩阵 <code>A</code>、<code>B</code> 组成的分支。</p>
+<figure class="lora-figure" >
+<div class="lora-head"><div class="lora-kicker">LORA · 图解 02</div><div class="lora-title">原权重不动，只学一条小分支</div></div>
+<div class="lora-body">
+<div class="lora-full"><span>全参数</span><span class="lora-math">x →</span><span class="lora-weight">W 全部可训练</span><span class="lora-math">→ y</span><span class="lora-note">优化器直接更新原权重</span></div>
+<div class="lora-split"><div class="lora-input">LoRA：同一个输入 x</div>
+<div class="lora-branches">
+ <div class="lora-path"><span class="lora-arrow" aria-hidden="true">↓</span><span class="lora-pill frozen">冻结 · 不更新</span><strong>基础权重 W</strong><span class="lora-math">Wx</span><span class="lora-note">保留原有计算</span><span class="lora-arrow" aria-hidden="true">↓</span></div>
+ <div class="lora-path adapter"><span class="lora-arrow" aria-hidden="true">↓</span><span class="lora-pill">可训练 · 只更新 A、B</span><div class="lora-pair"><span class="lora-small-matrix">A</span><span class="lora-arrow" aria-hidden="true">→</span><span class="lora-small-matrix">B</span></div><span class="lora-math">s · B(Ax)</span><span class="lora-note">学习任务所需的增量</span><span class="lora-arrow" aria-hidden="true">↓</span></div>
+</div><div class="lora-sum"><span class="lora-plus" aria-label="两路逐元素相加">+</span><span class="lora-output lora-math">y = Wx + s · B(Ax)</span></div></div></div><figcaption class="lora-foot">图示一层线性变换。s 是缩放系数，常用 α/r。冻结指不更新 W；基础模型仍参与前向与梯度传播。</figcaption></figure>
+<p><strong>训练目标没有换，换的是可以更新哪些参数。</strong> 本例仍用多步 GRPO，优化器只更新 <code>A</code>、<code>B</code>；基础模型仍参与计算。Trinity 组织任务采样和 RL 流程，TuFT 提供训练与采样服务。</p>
+<p><strong>rank 是这条小分支中间的宽度。</strong> <code>A</code> 先把输入映射到 <code>r</code> 维，<code>B</code> 再映射回输出维度。用 <code>B × A</code> 表示权重增量时，只需学习两块较小矩阵中的参数。</p>
+<figure class="lora-figure" data-lora-rank-demo>
+<div class="lora-head"><div class="lora-kicker">LORA · 图解 03</div><div class="lora-title">rank 越小，需要学习的参数越少</div></div>
+<div class="lora-body">
+<div class="lora-rank-buttons" role="group" aria-label="选择示意层的 LoRA rank"><span class="lora-rank-label">切换 rank</span><button type="button" data-rank="8" aria-pressed="false">8</button><button type="button" data-rank="16" aria-pressed="false">16</button><button type="button" data-rank="32" aria-pressed="true">32</button><button type="button" data-rank="64" aria-pressed="false">64</button><button type="button" data-rank="128" aria-pressed="false">128</button></div>
+<div class="lora-shapes" aria-hidden="true">
+ <div><div class="lora-shape-slot"><div class="lora-matrix"></div></div><div class="lora-shape-label">完整增量 ΔW<br>4096 × 4096</div></div>
+ <span class="lora-arrow">→</span>
+ <div><div class="lora-shape-slot"><div class="lora-matrix thin b"></div><span>×</span><div class="lora-matrix thin a"></div></div><div class="lora-shape-label">用 B × A 表示增量<br>4096 × <span data-rank-value>32</span> · <span data-rank-value>32</span> × 4096</div></div>
+</div>
+<div class="lora-counts"><div class="lora-count"><span>直接训练一个大矩阵</span><span class="lora-number">16,777,216</span><span class="lora-formula">4096 × 4096 个参数</span></div><div class="lora-count trainable"><span>只训练 A 和 B</span><output class="lora-number" data-parameter-count aria-label="LoRA 可训练参数量">262,144</output><span class="lora-formula">4096 × <span data-rank-value>32</span> + <span data-rank-value>32</span> × 4096</span></div></div>
+<p class="lora-ratio" aria-live="polite">本层可训练参数为原来的 <strong data-parameter-ratio>1.56%</strong>。</p></div><figcaption class="lora-foot">用 4096 × 4096 的单层作算术示例；形状非等比例。它不是 Qwen3-1.7B 全模型的统计，也不预测显存、速度或效果。</figcaption></figure>
+<p>本例对 <strong>Qwen3-1.7B 使用 rank 32</strong>，总计训练约 <strong>3490 万个参数，约为基础模型的 2%</strong>。这是可训练参数比例，不是显存或耗时比例。</p>
+<details>
+<summary>参数量怎么算？rank 变大意味着什么？</summary>
+<p>原矩阵有 <code>输入维度 × 输出维度</code> 个参数，LoRA 分支有 <code>r × (输入维度 + 输出维度)</code> 个参数。上图中的单层例子是 <code>32 × (4096 + 4096) = 262144</code>，约为原矩阵的 1.56%；全模型的约 2% 则来自多个层、七类投影的合计。</p>
+<p>增大 rank 会增加可训练参数和表达能力，但不保证任务效果一定变好。冻结基础权重也不等于截断梯度：训练仍需经过基础模型计算。原理出处见 <a href="https://arxiv.org/abs/2106.09685">LoRA 论文</a>。</p>
+</details>
+<h3 id="三步运行复用第一章的模型和数据">三步运行：复用第一章的模型和数据</h3>
+<p><strong>沿用第一章的 Linux x86_64、8×A100 80GB 服务器和模型、数据目录。</strong> 开始前释放本例需要的 GPU；首次准备服务器时，按 <a href="./lora32_reproduction.html">LoRA32 运行参考</a> 检查依赖。</p>
+<p><strong>第一步：进入教程仓库。</strong> 已完成第一章，直接使用当前目录。</p>
+<details>
+<summary>还没有本章代码？展开获取命令</summary>
+<div class="highlight"><pre><span></span><code>git<span class="w"> </span>clone<span class="w"> </span>--branch<span class="w"> </span>tutorial<span class="w"> </span>--single-branch<span class="w"> </span>https://github.com/agentscope-ai/Trinity-RFT.git<span class="w"> </span>agentic-rl
+<span class="nb">cd</span><span class="w"> </span>agentic-rl
+</code></pre></div>
+
+</details>
+<p><strong>第二步：一条命令启动。</strong> 自动复用第一章根目录 <code>.env</code> 的模型和数据路径；未设置时使用 <code>./models/Qwen3-1.7B</code> 和 <code>./alfworld_data</code>，缺失时自动下载，无需重新填写路径。</p>
+<div class="highlight"><pre><span></span><code>bash<span class="w"> </span>examples/alfworld_lora32/run.sh
+</code></pre></div>
+
+<p>脚本安装配套版本、准备数据并启动训练，默认 <strong>72 个 runner、150 步，每 10 步保存一次</strong>。只想先检查条件，可以在命令末尾加 <code>--check</code>。</p>
+<p><strong>第三步：对照曲线看结果。</strong> 启动时会打印日志目录，观察 <code>critic/score/mean</code> 的趋势。结束时日志应到达第 150 步，并有 <code>global_step_150/</code> 存档；保留整个示例工作目录，方便续训。</p>
+<details>
+<summary>在另一个终端查看默认训练日志</summary>
+<div class="highlight"><pre><span></span><code><span class="nv">LORA32_RUN_DIR</span><span class="o">=</span><span class="s2">"</span><span class="nv">$HOME</span><span class="s2">/.cache/agentic-rl/alfworld-lora32/checkpoints/ALFWORLD/Step_Wise_Alfworld_TuFT_lora32_lr5e5_speed_reader72_001"</span>
+tail<span class="w"> </span>-f<span class="w"> </span><span class="s2">"</span><span class="nv">$LORA32_RUN_DIR</span><span class="s2">/log/trainer.log"</span>
+</code></pre></div>
+
+<p>更多配置、固定版本和中断续跑方式见 <a href="./lora32_reproduction.html">LoRA32 运行参考</a>。</p>
+</details>
+<h3 id="对照结果少量参数能学会任务吗">对照结果：少量参数能学会任务吗？</h3>
+<p><strong>可以观察到学习，但不必一直增加步数。</strong> 参考曲线在 120–150 步进入较高区间，141–150 步平均训练分数为 <strong>+0.5331</strong>；训练到 250 步后，末尾 10 步均值回落到 +0.4046。因此，本节先用 150 步观察学习过程，再评测保存的模型。</p>
+<p><img alt="LoRA32 前 150 步学习曲线：浅线为每步 reward，深线为滑动均值" src="./ch6_lora32_speed_first150.png" /></p>
+<p>参考曲线来自 LoRA32 加速版实验，期间调整过采样并发并从存档继续；本节练习从零固定使用 72 个 runner，供你对照学习趋势，不要求逐点一致。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>看什么</th>
+<th>参考结果</th>
+<th>你运行时怎样对照</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>学习过程</td>
+<td>120–150 步进入较高区间</td>
+<td>观察训练分数的趋势与波动，而非单步最高点</td>
+</tr>
+<tr>
+<td>留出任务表现</td>
+<td>第 250 步模型：<strong>211/280 = 75.36%</strong></td>
+<td>用相同任务和评测设置比较保存的模型</td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>75.36% 是第 250 步模型的评测结果，不是 150 步练习的预期成功率。</strong> 图中的训练分数按对话步加权，也不能直接换算成测试成功率。</p>
+<details>
+<summary>查看参考实验的完整配置与评测口径</summary>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>项目</th>
+<th>参考实验</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>模型 / 环境</td>
+<td>Qwen3-1.7B / ALFWorld</td>
+</tr>
+<tr>
+<td>微调方式</td>
+<td>LoRA rank 32，基础模型冻结</td>
+</tr>
+<tr>
+<td>目标模块</td>
+<td><code>q_proj</code>、<code>k_proj</code>、<code>v_proj</code>、<code>o_proj</code>、<code>gate_proj</code>、<code>up_proj</code>、<code>down_proj</code></td>
+</tr>
+<tr>
+<td>学习率 / KL 系数</td>
+<td><code>5e-5</code> / <code>0.001</code></td>
+</tr>
+<tr>
+<td>组内采样 / 轨迹上限</td>
+<td>每题 16 条轨迹 / 每条最多 30 个环境步</td>
+</tr>
+<tr>
+<td>参考实验</td>
+<td>共训练 250 步；本节先看前 150 步</td>
+</tr>
+<tr>
+<td>硬件</td>
+<td>8×A100，4 卡采样、4 卡训练</td>
+</tr>
+</tbody>
+</table></div>
+<p>这里的学习率是全参数基线的 10 倍，是本次实际采用的条件；不能由“LoRA 参数少”直接推出应该使用这个学习率。微调方式、后端、采样节奏等条件同时改变，因此本例不是只改变 LoRA 一项的严格对照。</p>
+<p>评测使用 140 个留出任务，每题运行两次，温度 1.0，每次最多 30 个环境步、每次生成最多 512 tokens。250 步训练的分数全期均值为 <strong>+0.2996</strong>；它来自训练采样，与独立评测回答不同的问题。</p>
+</details>
+<details>
+<summary>与全参数曲线对照，以及训练时间预算（Estimated）</summary>
+<p>左侧是两次历史实验的实测训练曲线；右侧是历史加速版在 72 个 runner 下的耗时外推（150 步约 35 小时）。<strong>当前上游配置的微批处理方式已变化，这个估算不能直接作为新版运行预算。</strong> 请先短程运行，再按自己的日志估算总耗时；安装、下载和启动时间另计。</p>
+<p><img alt="左：全参数与 LoRA32 的实测学习曲线；右：72 runners 的 LoRA32 耗时估算" src="./ch6_lora32_comparison.png?v=runner72-budget" /></p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>比较项</th>
+<th>前五章全参数基线（verl）</th>
+<th>LoRA32 参考实验（历史 TuFT 加速版）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>可训练参数</td>
+<td>约 17 亿</td>
+<td><strong>约 3490 万，约为前者的 2%</strong></td>
+</tr>
+<tr>
+<td>梯度和优化器状态</td>
+<td>为全部可训练参数维护</td>
+<td>只为 adapter 参数维护，所需状态更少</td>
+</tr>
+<tr>
+<td>任务模型的保存与部署</td>
+<td>每个任务保存对应的完整模型权重</td>
+<td>可单独保存 adapter，多个任务共享基础模型</td>
+</tr>
+<tr>
+<td>运行硬件</td>
+<td>8×A100 80GB；4 卡采样、4 卡训练</td>
+<td>相同卡数与分工</td>
+</tr>
+<tr>
+<td>训练曲线</td>
+<td>133 步；后期回落，事后选用 step-100</td>
+<td>141–150 步达到最高 10 步均值，随后未持续改善</td>
+</tr>
+<tr>
+<td>留出任务成功率</td>
+<td>未提供同协议评测</td>
+<td><strong>step-250：211/280，75.36%</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>图中的分数定义相同，都是 <strong>training batch 的平均 reward，按 turn / experience 加权</strong>，不是每局等权成功率（见第 3 章 §3.3）。全参数在这条历史轨迹上更快提升；两次运行还改变了后端、学习率、采样并发和异步数据流，不能单凭这张图把差异全部归因于 LoRA。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>目标训练步数</th>
+<th style="text-align: right;">历史加速版外推时间（Estimated）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>100 步</td>
+<td style="text-align: right;">约 23.5 小时</td>
+</tr>
+<tr>
+<td>130 步</td>
+<td style="text-align: right;">约 30.6 小时</td>
+</tr>
+<tr>
+<td>150 步（本章默认）</td>
+<td style="text-align: right;"><strong>约 35.3 小时</strong></td>
+</tr>
+</tbody>
+</table></div>
+<p>估算取参考实验第 103–150 步的完整 48 步记录：72 个 runner 已开始持续供给训练数据，平均每步约 <strong>14.1 分钟</strong>，再乘目标步数。这一窗口没有中途停训间隔，包含窗口内较慢的步骤和正常保存开销；起始恢复与填充阶段未用于估算。输入长度、生成轨迹和硬件负载会影响实际耗时，运行一段时间后应按自己的日志更新预算。</p>
+<p><strong>为什么参数少了，耗时却不按比例减少？</strong> LoRA 减少的是需要更新的参数，采样和训练处理的数据并没有同步减少：基础模型仍要处理全部 token，RL 还要与环境交互、计算参考模型概率并等待数据。增加 runner 主要缓解采样等待，不能同比缩短这些计算。因此，这里的时间用于安排本次练习，不是 LoRA 与全参数在同等效果下的成本排名。</p>
+<p>本例没有峰值显存或费用的实测对照。可以明确量化的是可训练参数减少约 98%；更小的梯度、优化器状态和 adapter 带来资源优势，不能将这个比例直接写成整机显存或费用的降幅。</p>
+<p><a href="https://github.com/agentscope-ai/Trinity-RFT/tree/tutorial/scripts/rl_tutorial/sample_data">图表数据与估算依据</a>随教程提供，便于重新绘图和比较自己的结果。</p>
+</details>
+<hr />
+<h2 id="62-开放实验-a早停与-checkpoint-选择">6.2 开放实验 A：早停与 checkpoint 选择</h2>
+<p>开展开放实验时，保留全参数 baseline 的配置和曲线，每次只改变一个因素及其必要的派生设置。先短跑检查，再决定是否完整训练。</p>
+<h3 id="探索问题与假设">探索问题与假设</h3>
+<blockquote>
+<p>第 5 章 §5.5 记录了 baseline 在 <strong>step 115 达峰 0.936</strong>，随后失稳并在 133 步手动停止。我们据此提出假设：监控训练信号、提前停止，可能避免末段退化。前文事后选用 <code>global_step_100</code>，但这不等于已经验证了一套能提前预测峰值的早停规则。</p>
+</blockquote>
+<h3 id="改什么">改什么</h3>
+<p><strong>可以比较以下三种做法</strong>。前文 baseline 使用了第 3 种方式；你可以设计实验，比较另外两种方式的效果与成本：</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># 做法 1：为新实验设置明确的训练步数上限</span>
+<span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">total_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">100</span><span class="w">        </span><span class="c1"># 示例上限；不是已经验证的最佳停止点</span>
+
+<span class="c1"># 做法 2（推荐用于新实验）：跑全长，但监控 entropy/resp_len/ppo_kl 手动/自动刹车</span>
+<span class="c1">#   不改 yaml，跑的时候盯 trainer.log：</span>
+<span class="c1">#   grep -oE "'actor/entropy_loss': [0-9.]+" &lt;ckpt&gt;/log/trainer.log | tail</span>
+<span class="c1">#   若这些信号持续异常，停止训练客户端，保留存档与服务后再评测</span>
+<span class="c1">#   告警阈值需要根据自己的曲线确定，不能照搬一个通用数值</span>
+
+<span class="c1"># 做法 3（本实验实际采用）：跑完/跑崩了也没关系，事后挑峰值 checkpoint</span>
+<span class="nt">trainer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">save_interval</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">10</span><span class="w">       </span><span class="c1"># 50 → 10，多存几个 checkpoint 以便挑峰值</span>
+<span class="c1">#   然后直接取崩溃前最佳平台期的 checkpoint：global_step_100</span>
+</code></pre></div>
+
+<h3 id="观察与记录">观察与记录</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>策略</th>
+<th>应记录什么</th>
+<th>结果记录</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>baseline（133 步）</td>
+<td>末段退化与各存档的表现</td>
+<td>已有观察，见第 5 章</td>
+</tr>
+<tr>
+<td>按预设信号早停</td>
+<td>触发时间、节省的训练时间、留出任务成功率</td>
+<td>记录实测值</td>
+</tr>
+<tr>
+<td>更密集保存并选择存档</td>
+<td>同一评测条件下各存档的表现、额外存储成本</td>
+<td>记录实测值</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="延伸思考">延伸思考</h3>
+<p>这条曲线提醒我们：<strong>更多训练不保证更好的模型</strong>。RL 的采样数据会随策略变化，退化可能来得很快；监控训练信号、保存中间版本，再用固定任务评测，有助于及时发现问题。entropy 或 KL 的异常是排查线索，单靠这次曲线还不能证明退化由哪个因素造成。</p>
+<hr />
+<h2 id="63-开放实验-b减小-grepeat_times-16-8">6.3 开放实验 B：减小 G（repeat_times 16 → 8）</h2>
+<h3 id="探索问题与假设_1">探索问题与假设</h3>
+<blockquote>
+<p>沿用第 3 章 §3.4 的简化估算：假设每条轨迹独立、成功概率均为 10%，G=16 时全失败概率约 18.5%，G=8 时约 43%。真实采样未必独立，因此这些是帮助理解组内信号的估算。减小 G 是否降低学习效率、能否节省时间，需要实测。</p>
+</blockquote>
+<h3 id="改什么_1">改什么</h3>
+<div class="highlight"><pre><span></span><code><span class="nt">algorithm</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">repeat_times</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span><span class="w">          </span><span class="c1"># 16 → 8</span>
+<span class="nt">buffer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">train_batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3840</span><span class="w">   </span><span class="c1"># 本建议按 G 的比例减半；也可以另做保持批大小不变的对照</span>
+</code></pre></div>
+
+<p><code>16 × G × 30</code> 是 16 题、每题 G 条轨迹都走满 30 步时的经验数上限，不是必须满足的等式。轨迹可能提前结束，队列也可以累计多批采样。本例同时减小训练批大小；若想单独研究 G 的影响，可以保持训练批大小不变，但要记录实际采样量和等待时间。</p>
+<h3 id="观察与记录_1">观察与记录</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>G=8</th>
+<th>G=16（baseline）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>每 step wall time</td>
+<td>记录实际耗时；数据量减少不保证耗时同比例下降</td>
+<td>全期平均约 6.8 min</td>
+</tr>
+<tr>
+<td>全失败组概率（上述独立性假设下）</td>
+<td>约 43%</td>
+<td>约 18.5%</td>
+</tr>
+<tr>
+<td>到达 reward 0.8 所需 step</td>
+<td>记录步数，或注明未达到</td>
+<td>~step 80</td>
+</tr>
+<tr>
+<td>峰值 reward</td>
+<td>记录峰值与波动</td>
+<td>0.936</td>
+</tr>
+<tr>
+<td>12 小时的训练预算</td>
+<td>记录实测值</td>
+<td>按历史平均耗时估算约 106 步</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="延伸思考_1">延伸思考</h3>
+<p>G 是<strong>稀疏 reward 任务最重要的旋钮</strong>：太小 → 组内无差异、advantage 退化为 0；太大 → wall time 不划算。在成功概率 10% 且独立采样的估算下，G=16 让约 81.5% 的组至少出现一次成功；实际组内差异还取决于任务难度与采样相关性。<strong>反过来想 G=32</strong>：全失败组降到 0.9³²=3.4%，信号更足但每 step 数据量翻倍——适合攻最难的 <code>look_at_obj_in_light</code>（base 仅 2.6%，G=16 时大量全失败组）。</p>
+<hr />
+<h2 id="64-开放实验-c换算法-multi_step_grpo-gigpo">6.4 开放实验 C：换算法 multi_step_grpo → GiGPO</h2>
+<h3 id="探索问题与假设_2">探索问题与假设</h3>
+<blockquote>
+<p>第 4 章 §4.3 进阶注脚：GiGPO 给每一步更细的「功劳分配」，理论上能修正「成功轨迹里废动作也被推高」的噪声。但 ALFWorld 状态空间大、哈希精确匹配，<strong>锚点命中率可能不高</strong> → A_S 大量退化为 0 → 效果接近纯 GRPO。这是个<strong>开放的实证问题</strong>。</p>
+</blockquote>
+<h3 id="改什么_2">改什么</h3>
+<p><strong>同一个 workflow，只改 algorithm 段</strong>（直接用现成的 <code>examples/gigpo_alfworld/gigpo.yaml</code>，或复制 baseline 改）：</p>
+<div class="highlight"><pre><span></span><code><span class="nt">algorithm</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">algorithm_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gigpo</span><span class="w">        </span><span class="c1"># multi_step_grpo → gigpo</span>
+<span class="w">  </span><span class="nt">advantage_fn</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gigpo</span>
+<span class="w">  </span><span class="nt">advantage_fn_args</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">omega</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span><span class="w">                 </span><span class="c1"># step-level 权重；试 omega=0 退化成纯 episode-level</span>
+<span class="w">    </span><span class="nt">gamma</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.0</span>
+<span class="w">    </span><span class="nt">fnorm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">none</span>
+</code></pre></div>
+
+<blockquote>
+<p>注意 <code>gigpo.yaml</code> 的个别默认值与 baseline 不同（如 <code>max_response_tokens</code>、监控后端）。对比前先把它们对齐 baseline，否则不是单变量对比。</p>
+</blockquote>
+<h3 id="观察与记录_2">观察与记录</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>multi_step_grpo（baseline）</th>
+<th>gigpo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>峰值 reward</td>
+<td>0.936</td>
+<td>记录实测值</td>
+</tr>
+<tr>
+<td><code>gigpo/anchor_group_hit_ratio</code></td>
+<td>—</td>
+<td>记录锚点匹配频率；结合 advantage 和学习曲线判断是否有用，没有通用阈值</td>
+</tr>
+<tr>
+<td><code>gigpo/mean_abs_A_S</code> vs <code>A_E</code></td>
+<td>—</td>
+<td>A_S ≪ A_E → step credit 贡献小</td>
+</tr>
+<tr>
+<td>收敛速度</td>
+<td>~step 80 到 0.8</td>
+<td>记录实测值</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="延伸思考_2">延伸思考</h3>
+<p>这个 ablation 的价值不在「谁赢」，而在<strong>理解 step-level credit assignment 在稀疏 reward 大状态空间下的局限</strong>。如果 <code>anchor_group_hit_ratio</code> 很低，说明「精确状态哈希匹配」在 ALFWorld 太严格——改进方向是用更粗的状态表示（比如「当前房间 + 手持物」而非完整 observation 哈希）来提高锚点命中。这是真实的 research 问题。</p>
+<hr />
+<h2 id="65-开放实验-d改-max_env_steps30-20-50">6.5 开放实验 D：改 max_env_steps（30 → 20 / 50）</h2>
+<h3 id="探索问题与假设_3">探索问题与假设</h3>
+<blockquote>
+<p>第 2 章观察到成功轨迹通常较短，部分失败轨迹会耗尽 30 步。把上限降到 20，可能减少长尾采样，也可能截断原本能成功的轨迹。升到 50 则提供更多尝试机会。对训练效果、吞吐和显存的实际影响，需要分别测量。</p>
+</blockquote>
+<h3 id="改什么_3">改什么</h3>
+<div class="highlight"><pre><span></span><code><span class="nt">buffer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">explorer_input</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">taskset</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">workflow_args</span><span class="p">:</span>
+<span class="w">        </span><span class="nt">max_env_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">20</span><span class="w">      </span><span class="c1"># 30 → 20</span>
+<span class="w">  </span><span class="nt">train_batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">5120</span><span class="w">       </span><span class="c1"># 本建议按轨迹上限的比例缩小；不是必须满足的等式</span>
+</code></pre></div>
+
+<h3 id="观察与记录_3">观察与记录</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>max_steps=20</th>
+<th>30（baseline）</th>
+<th>50</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>每 step experience 数</td>
+<td>记录实际采样与训练批大小</td>
+<td>保留 baseline 日志作参考</td>
+<td>记录实际采样与训练批大小</td>
+</tr>
+<tr>
+<td>每 step wall time</td>
+<td>记录实际耗时</td>
+<td>全期平均约 6.8 min</td>
+<td>记录实际耗时</td>
+</tr>
+<tr>
+<td>序列长度与截断次数</td>
+<td>记录实测值</td>
+<td>保留 baseline 日志作参考</td>
+<td>记录实测值</td>
+</tr>
+<tr>
+<td>难任务（look_at_obj）表现</td>
+<td>用相同任务评测</td>
+<td>保留 baseline 作为对照</td>
+<td>用相同任务评测</td>
+</tr>
+<tr>
+<td>峰值显存</td>
+<td>记录实测值</td>
+<td>记录实测值</td>
+<td>记录实测值</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="延伸思考_3">延伸思考</h3>
+<p><code>max_env_steps</code> 决定 agent 最多有多少次尝试机会。<strong>降到 20 是一个潜在的提速方向</strong>，但不能提前认定被截掉的轨迹都会失败，也不能把上限减少三分之一直接换算成耗时节省。应同时记录被截断的比例、任务表现和完成训练批次的时间。</p>
+<hr />
+<h2 id="66-开放实验-elr-与-kl_coef检验退化原因">6.6 开放实验 E：lr 与 kl_coef（检验退化原因）</h2>
+<h3 id="探索问题与假设_4">探索问题与假设</h3>
+<p>第 5 章观察到末段训练分数回落。一个待检验的解释是：当前学习率与 KL 约束的组合，允许策略在后期偏离过多。分别增加 kl_coef 或降低 lr，可以检验它们是否改善稳定性；现有曲线还不足以确定因果关系。</p>
+<h3 id="改什么两个独立实验别同时改">改什么（两个独立实验，别同时改）</h3>
+<div class="highlight"><pre><span></span><code><span class="c1"># E-1：加大 KL 约束</span>
+<span class="nt">algorithm</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">kl_loss_fn_args</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">kl_coef</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.01</span><span class="w">          </span><span class="c1"># 0.001 → 0.01（10×）</span>
+
+<span class="c1"># E-2：降 lr</span>
+<span class="nt">algorithm</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">optimizer</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">lr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1e-6</span><span class="w">               </span><span class="c1"># 5e-6 → 1e-6</span>
+</code></pre></div>
+
+<h3 id="观察与记录_4">观察与记录</h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>baseline</th>
+<th>kl_coef=0.01</th>
+<th>lr=1e-6</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>峰值 reward</td>
+<td>0.936 @115</td>
+<td>记录实测值</td>
+<td>记录实测值</td>
+</tr>
+<tr>
+<td>后期是否退化</td>
+<td>step 116 后回落</td>
+<td>检查回落时间与幅度</td>
+<td>检查回落时间与幅度</td>
+</tr>
+<tr>
+<td>step 121 reward</td>
+<td>0.439</td>
+<td>记录实测值</td>
+<td>记录实测值</td>
+</tr>
+<tr>
+<td>entropy @120</td>
+<td>0.67</td>
+<td>观察是否随约束增强而降低</td>
+<td>观察变化幅度</td>
+</tr>
+<tr>
+<td>达到指定分数的耗时</td>
+<td>用历史曲线作参考</td>
+<td>记录实际耗时</td>
+<td>记录实际耗时</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="延伸思考_4">延伸思考</h3>
+<p>lr 控制每次参数更新的步长，kl_coef 控制偏离参考策略的代价；两者会共同影响学习速度和策略变化。先分别改变一个参数，并使用相同评测设置，才能判断稳定性是否改善、是否牺牲了学习效果。</p>
+<hr />
+<h2 id="67-分析工具任务族成功率分解不用重训">6.7 分析工具：任务族成功率分解（不用重训）</h2>
+<blockquote>
+<p>这不是 ablation，是<strong>对已有 baseline 产物的分析</strong>——回答第 0 章 §0.2 的「难度阶梯」问题：训练后哪些任务族学会了、哪些没学会。</p>
+</blockquote>
+<div class="highlight"><pre><span></span><code><span class="c1"># 从预置真实样本看早/后期 6 个任务族的成功率</span>
+python<span class="w"> </span>scripts/rl_tutorial/ch6_task_family_breakdown.py<span class="w"> </span>--sample
+
+<span class="c1"># 或指向你自己的完整 buffer</span>
+python<span class="w"> </span>scripts/rl_tutorial/ch6_task_family_breakdown.py<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--buffer<span class="w"> </span>checkpoints/ALFWORLD/Step_Wise_Alfworld/buffer/alfworld_buffer.jsonl<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--taskset<span class="w"> </span>examples/grpo_alfworld/alfworld_data/train.jsonl
+</code></pre></div>
+
+<p><strong>本实验真实结果</strong>（运行上面命令可复现）：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>任务族</th>
+<th style="text-align: right;">早期成功率</th>
+<th style="text-align: right;">后期成功率</th>
+<th style="text-align: right;">提升</th>
+<th>解读</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>pick_and_place</code></td>
+<td style="text-align: right;">27.8%</td>
+<td style="text-align: right;"><strong>97.2%</strong></td>
+<td style="text-align: right;">+69 pp</td>
+<td>单目标，最先学会、几乎满分</td>
+</tr>
+<tr>
+<td><code>pick_heat_then_place</code></td>
+<td style="text-align: right;">4.7%</td>
+<td style="text-align: right;">93.5%</td>
+<td style="text-align: right;">+89 pp</td>
+<td>多子目标，提升最大</td>
+</tr>
+<tr>
+<td><code>pick_clean_then_place</code></td>
+<td style="text-align: right;">3.6%</td>
+<td style="text-align: right;">92.3%</td>
+<td style="text-align: right;">+89 pp</td>
+<td>多子目标</td>
+</tr>
+<tr>
+<td><code>pick_two_obj</code></td>
+<td style="text-align: right;">5.8%</td>
+<td style="text-align: right;">90.6%</td>
+<td style="text-align: right;">+85 pp</td>
+<td>要找两个物体</td>
+</tr>
+<tr>
+<td><code>pick_cool_then_place</code></td>
+<td style="text-align: right;">1.5%</td>
+<td style="text-align: right;">86.3%</td>
+<td style="text-align: right;">+85 pp</td>
+<td>base 几乎不会，提升巨大</td>
+</tr>
+<tr>
+<td><code>look_at_obj_in_light</code></td>
+<td style="text-align: right;">2.6%</td>
+<td style="text-align: right;"><strong>69.4%</strong></td>
+<td style="text-align: right;">+67 pp</td>
+<td><strong>最难</strong>：要到灯下看，仍 30% 失败</td>
+</tr>
+<tr>
+<td><strong>整体</strong></td>
+<td style="text-align: right;"><strong>10.0%</strong></td>
+<td style="text-align: right;"><strong>90.3%</strong></td>
+<td style="text-align: right;"><strong>+80 pp</strong></td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+<p><strong>怎么读这张表</strong>：</p>
+<ol>
+<li><strong>难度阶梯被 RL「填平」了大部分</strong>：base 时最简单的族（27.8%）和最难的族（1.5%）差 18 倍；训练后差距缩小到 97% vs 69%。RL 把「几乎不会」的任务拉到「大部分会」。</li>
+<li><strong><code>look_at_obj_in_light</code> 是天花板</strong>：即使训练后仍 30% 失败。它需要「找到物体 → 找到台灯/desk lamp → 拿过去看」，比「放到 receptacle」多一层抽象（目标不是「放」而是「在灯下看」）。<strong>这是下一轮实验该重点攻的族</strong>（比如对它单独加大 G，见实验 B 延伸）。</li>
+<li><strong>多子目标任务提升最大</strong>（heat/cool/clean +85~89pp）：说明 RL 主要教会了模型「子目标规划」——第 2 章 §2.3 那条「找 cup→冷却→放置」的成功轨迹就是典型。</li>
+</ol>
+<h3 id="延伸思考_5">延伸思考</h3>
+<p><strong>任务族分解是 agentic-RL 最有价值的分析</strong>——整体 reward 0.9 会掩盖「某个族还在 69% 挣扎」。生产里你永远要按任务子类型拆解成功率，找到「拖后腿的族」针对性优化（加数据、加 G、改 reward）。这比盯着一条总曲线有用得多。</p>
+<hr />
+<h2 id="68-本章回顾与实践目标">6.8 本章回顾与实践目标</h2>
+<p>完成 LoRA32 推荐实践后，可以结合参考结果分析自己的训练，并区分训练分数与测试成功率。开展开放实验时，可以用以下目标检查自己的理解：</p>
+<ul>
+<li>✅ 能启动 LoRA32 示例，并区分可训练参数量、显存、耗时与费用；</li>
+<li>✅ 能区分训练分数与留出任务成功率，知道如何评测不同 checkpoint；</li>
+<li>✅ 能提出一次可检验的配置改动，记录采样量、训练时间和学习效果；</li>
+<li>✅ 能观察训练退化的信号，同时区分现象、原因假设与验证结果；</li>
+<li>✅ 能按任务族分析结果，寻找下一次实验要解决的问题。</li>
+</ul>
+<hr />
+<h2 id="69-教程到此结束-接下来去哪">6.9 教程到此结束 — 接下来去哪</h2>
+<ol>
+<li><strong>更大模型</strong>：把 <code>model_path</code> 换成 Qwen3-4B/7B，看天花板能推到多高（显存不够时框架有 offload 等手段，见第 5 章 §5.4 悬停提示）；</li>
+<li><strong>更难环境</strong>：ALFWorld 之外，试 <a href="https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/grpo_webshop"><code>examples/grpo_webshop</code></a>（网购）、<a href="https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/grpo_sciworld"><code>examples/grpo_sciworld</code></a>（科学实验，在 Trinity 主仓库）——同样的 step-wise workflow 模式；</li>
+<li><strong>GiGPO 深入</strong>：把实验 C 的 <code>anchor_group_hit_ratio</code> 做出来，如果太低，试「粗粒度状态哈希」改进（§6.4 延伸）；</li>
+<li><strong>评估全参数 baseline 的 checkpoint</strong>：把前文推荐的 <strong><code>global_step_100</code></strong>（崩溃前最佳平台）checkpoint 转成 HF 格式，在 <code>test.jsonl</code>（140 个 valid_seen 任务）上做离线评测，对比训练曲线；</li>
+</ol>
+<p>最后，欢迎在 <a href="https://github.com/agentscope-ai/Trinity-RFT/issues">Trinity-RFT issue 页面</a>反馈（请注明 RL Tutorial），或向 <code>tutorial</code> 分支提交 PR——让具身 Agentic RL 从「少数有集群的团队能做的事」变成「每个有 GPU 的工程师都能上手的事」。</p>
+    </article>
+    <nav class="mt-14 grid gap-4 sm:grid-cols-2"><a href="./ch5_loss与权重更新.html" class="group block rounded-xl border border-slate-200 bg-white p-5 transition hover:border-indigo-300 hover:shadow-md"><div class="mb-1 text-xs text-slate-400">← 上一章</div><div class="font-semibold text-slate-800 group-hover:text-indigo-700">第 5 章 · loss 与更新：advantage 变梯度</div></a><a href="./lora32_reproduction.html" class="group block rounded-xl border border-slate-200 bg-white p-5 transition hover:border-indigo-300 hover:shadow-md sm:text-right"><div class="mb-1 text-xs text-slate-400">运行参考 →</div><div class="font-semibold text-slate-800 group-hover:text-indigo-700">LoRA32 运行参考</div></a></nav>
+    <footer class="mt-12 border-t border-slate-200 pt-6 text-center text-xs text-slate-400">
+      RL Tutorial · 基于 <a href="https://github.com/agentscope-ai/Trinity-RFT" class="underline decoration-slate-300 underline-offset-2 hover:text-slate-600">Trinity-RFT</a>
+      · 本页由 build_html.py 从 Markdown 生成
+    </footer>
+  </div>
+</main>
+
+<aside class="hidden xl:block w-64 shrink-0">
+  <div class="sticky top-8 max-h-[calc(100vh-4rem)] overflow-y-auto py-10 pr-6">
+    <div class="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">本页目录</div>
+    <nav id="toc" class="border-l border-slate-200 text-[13px]"><a href="#60-怎么用这一章" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">6.0 怎么用这一章</a>
+<a href="#61-推荐实践用-lora32-训练-alfworld" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">6.1 推荐实践：用 LoRA32 训练 ALFWorld</a>
+<a href="#62-开放实验-a早停与-checkpoint-选择" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">6.2 开放实验 A：早停与 checkpoint 选择</a>
+<a href="#63-开放实验-b减小-grepeat_times-16-8" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">6.3 开放实验 B：减小 G（repeat_times 16 → 8）</a>
+<a href="#64-开放实验-c换算法-multi_step_grpo-gigpo" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">6.4 开放实验 C：换算法 multi_step_grpo → GiGPO</a>
+<a href="#65-开放实验-d改-max_env_steps30-20-50" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">6.5 开放实验 D：改 max_env_steps（30 → 20 / 50）</a>
+<a href="#66-开放实验-elr-与-kl_coef检验退化原因" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">6.6 开放实验 E：lr 与 kl_coef（检验退化原因）</a>
+<a href="#67-分析工具任务族成功率分解不用重训" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">6.7 分析工具：任务族成功率分解（不用重训）</a>
+<a href="#68-本章回顾与实践目标" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">6.8 本章回顾与实践目标</a>
+<a href="#69-教程到此结束-接下来去哪" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">6.9 教程到此结束 — 接下来去哪</a></nav>
+  </div>
+</aside>
+</div>
+<script>
+(function () {
+  var links = [].slice.call(document.querySelectorAll('#toc a'));
+  if (!links.length) return;
+  var pairs = links.map(function (a) {
+    var id = decodeURIComponent((a.getAttribute('href') || '').slice(1));
+    var el = document.getElementById(id);
+    return el ? { el: el, a: a } : null;
+  }).filter(Boolean);
+  var ACTIVE = ['border-indigo-500', 'text-indigo-700', 'font-medium'];
+  function onScroll() {
+    var y = window.scrollY + 96, cur = pairs[0];
+    pairs.forEach(function (p) { if (p.el.offsetTop <= y) cur = p; });
+    pairs.forEach(function (p) {
+      var on = (p === cur);
+      ACTIVE.forEach(function (c) { p.a.classList.toggle(c, on); });
+      p.a.classList.toggle('border-transparent', !on);
+      p.a.classList.toggle('text-slate-500', !on);
+    });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+<style>.lora-figure{--lora-teal:#087f82;--lora-ink:#243648;--lora-muted:#617585;--lora-line:#dbe5e8;container-type:inline-size;margin:26px 0;background:#fff;border:1px solid var(--lora-line);border-radius:18px;overflow:hidden;color:var(--lora-ink);font:15px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif;box-shadow:0 8px 28px #18374406}
+.lora-figure *{box-sizing:border-box}.lora-figure p{margin:0}.lora-figure strong{color:inherit}.lora-figure .lora-head{padding:20px 22px 15px;border-bottom:1px solid var(--lora-line)}.lora-figure .lora-kicker{font-size:11px;letter-spacing:2px;font-weight:750;color:var(--lora-teal)}.lora-figure .lora-title{font-size:21px;font-weight:750;margin:5px 0 0}.lora-figure .lora-body{padding:22px}.lora-figure .lora-foot{padding:14px 22px;background:#f6f9fa;border-top:1px solid var(--lora-line);font-size:13px;color:var(--lora-muted)}
+.lora-figure .lora-pill{display:inline-block;border-radius:20px;font-size:12px;padding:3px 9px;background:#e3f3ee;color:#087271;font-weight:650}.lora-figure .lora-pill.frozen{background:#e9edf3;color:#536277}.lora-figure .lora-note{font-size:13px;color:var(--lora-muted)}.lora-figure .lora-math{font-family:ui-monospace,'SF Mono',monospace;font-size:19px;letter-spacing:.2px}
+.lora-figure .lora-full{display:flex;gap:12px;align-items:center;padding:14px 18px;background:#f4f0fc;border:1px solid #dbd0ed;border-radius:12px;flex-wrap:wrap}.lora-figure .lora-full .lora-weight{background:#7964ad;color:white;border-radius:8px;padding:10px 16px}.lora-figure .lora-full .lora-note{flex:1;min-width:150px;color:#6a558a}.lora-figure .lora-arrow{font-size:23px;color:#8b9dad;line-height:1.2;text-align:center}.lora-figure .lora-split{margin-top:22px;text-align:center}.lora-figure .lora-input{display:inline-block;padding:5px 18px;background:#f3f6f8;border:1px solid var(--lora-line);border-radius:9px}.lora-figure .lora-branches{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:12px 0}.lora-figure .lora-path{border:1px solid var(--lora-line);border-radius:12px;padding:15px;display:flex;flex-direction:column;align-items:center;gap:9px;background:#f5f7fa}.lora-figure .lora-path.adapter{border-color:#b6dcd1;background:#eff9f5}.lora-figure .lora-path strong{font-size:21px}.lora-figure .lora-pair{display:flex;align-items:center;gap:8px}.lora-figure .lora-small-matrix{background:var(--lora-teal);color:white;width:58px;padding:9px 0;border-radius:7px;font-size:20px;font-weight:700}.lora-figure .lora-sum{display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap}.lora-figure .lora-plus{border:1px solid #b6dcd1;border-radius:50%;width:35px;height:35px;color:var(--lora-teal);font-size:25px;line-height:32px}.lora-figure .lora-output{padding:9px 14px;border-radius:9px;background:#e9f5f1;color:#075d61}
+.lora-figure .lora-rank-buttons{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:0 0 18px}.lora-figure button{font:inherit;border:1px solid #cbd7df;background:white;border-radius:8px;min-width:43px;min-height:40px;padding:6px 11px;cursor:pointer;color:var(--lora-ink)}.lora-figure button:hover{border-color:var(--lora-teal)}.lora-figure button[aria-pressed=true]{background:var(--lora-teal);border-color:var(--lora-teal);color:white}.lora-figure button:focus-visible{outline:3px solid #e9a43e;outline-offset:3px}.lora-figure .lora-rank-label{margin-right:5px;font-weight:650}.lora-figure .lora-shapes{display:grid;grid-template-columns:1fr 32px 1fr;gap:8px;align-items:center;text-align:center;margin:8px 0 20px}.lora-figure .lora-shape-slot{height:138px;display:flex;align-items:center;justify-content:center;gap:9px}.lora-figure .lora-matrix{background-color:#9daabc;background-image:linear-gradient(#ffffff44 1px,transparent 1px),linear-gradient(90deg,#ffffff44 1px,transparent 1px);background-size:12px 12px;border:1px solid #8797ac;border-radius:4px;width:112px;height:112px}.lora-figure .lora-matrix.thin{background-color:#087f82;border-color:#087f82}.lora-figure .lora-matrix.b{width:var(--rank-width,12px);height:112px}.lora-figure .lora-matrix.a{height:var(--rank-width,12px);width:112px}.lora-figure .lora-shape-label{font-size:14px;line-height:1.6}.lora-figure .lora-counts{display:grid;grid-template-columns:1fr 1fr;gap:12px}.lora-figure .lora-count{background:#f5f7fa;border:1px solid var(--lora-line);border-radius:10px;padding:14px}.lora-figure .lora-count.trainable{background:#eff9f5;border-color:#b6dcd1}.lora-figure .lora-number{display:block;font-variant-numeric:tabular-nums;font-size:24px;font-weight:750;line-height:1.4}.lora-figure .lora-formula{font-size:13px;color:var(--lora-muted)}.lora-figure .lora-ratio{margin-top:15px;font-size:16px}.lora-figure .lora-ratio strong{color:var(--lora-teal);font-size:23px}
+.lora-figure img.lora-overview{display:block;width:100%;height:auto;margin:0 0 22px;border:0;border-radius:10px;box-shadow:none}.lora-figure .lora-shared-result{margin-top:17px;border-top:1px dashed var(--lora-line);padding-top:13px;text-align:center;font-size:14px;color:var(--lora-muted)}
+.lora-figure .lora-task-comparison{display:grid;grid-template-columns:1fr 1fr;gap:18px}.lora-figure .lora-task-option{padding:17px;border-radius:12px;background:#faf8fd;border:1px solid #dbd0ed}.lora-figure .lora-task-option.shared{background:#f3faf7;border-color:#b6dcd1}.lora-figure .lora-option-title{font-size:17px;font-weight:750;margin-bottom:14px}.lora-figure .lora-task-list{display:grid;gap:9px}.lora-figure .lora-task-model{background:#ece5f6;color:#655187;padding:11px 14px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;gap:10px}.lora-figure .lora-task-model span{font-size:12px}.lora-figure .lora-adapter-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.lora-figure .lora-task-adapter{padding:12px 3px;border-radius:8px;background:#dff1e9;color:#076462;text-align:center;font-size:12px}.lora-figure .lora-task-adapter span{display:block;font-size:11px}.lora-figure .lora-sharing-arrows{text-align:center;font-size:24px;color:#6b9b8b;margin:4px 0}.lora-figure .lora-base-model{padding:15px 8px;border-radius:9px;background:#e9edf3;text-align:center}.lora-figure .lora-base-model span{display:block;font-size:12px;color:var(--lora-muted);margin-top:4px}.lora-figure .lora-task-caption{margin-top:13px;font-size:12px;color:var(--lora-muted)}
+@container(max-width:600px){.lora-figure .lora-task-comparison{grid-template-columns:1fr}.lora-figure .lora-task-option{padding:14px}}
+@container(max-width:480px){.lora-figure .lora-head,.lora-figure .lora-body{padding:16px}.lora-figure .lora-title{font-size:19px}.lora-figure .lora-foot{padding:12px 16px}.lora-figure .lora-branches{gap:8px}.lora-figure .lora-path{padding:12px 6px}.lora-figure .lora-small-matrix{width:39px;font-size:18px}.lora-figure .lora-math{font-size:15px}.lora-figure .lora-shapes{grid-template-columns:1fr 22px 1fr;gap:3px}.lora-figure .lora-shape-slot{height:105px;gap:5px}.lora-figure .lora-matrix{width:78px;height:78px}.lora-figure .lora-matrix.b{height:78px}.lora-figure .lora-matrix.a{width:78px}.lora-figure .lora-shape-label{font-size:12px}.lora-figure .lora-counts{grid-template-columns:1fr}.lora-figure .lora-number{font-size:23px}}
+</style><script>/* A parameter-count illustration, not a model-quality or runtime simulation. */
+document.querySelectorAll('[data-lora-rank-demo]').forEach(function (figure) {
+  const dimension = 4096;
+  const buttons = Array.from(figure.querySelectorAll('[data-rank]'));
+  function select(rank) {
+    if (![8, 16, 32, 64, 128].includes(rank)) return;
+    buttons.forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.rank) === rank)));
+    figure.querySelectorAll('[data-rank-value]').forEach(node => { node.textContent = rank; });
+    const count = 2 * dimension * rank;
+    figure.querySelector('[data-parameter-count]').textContent = count.toLocaleString('en-US');
+    figure.querySelector('[data-parameter-ratio]').textContent = (100 * count / (dimension * dimension)).toFixed(2) + '%';
+    figure.style.setProperty('--rank-width', (8 + rank / 8) + 'px');
+  }
+  buttons.forEach(button => button.addEventListener('click', () => select(Number(button.dataset.rank))));
+  select(32);
+});
+</script>
+</body>
+</html>

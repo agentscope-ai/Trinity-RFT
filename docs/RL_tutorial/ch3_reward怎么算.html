@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 3 章：reward — 环境怎么给分 · RL Tutorial</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏠</text></svg>">
+<!-- Tailwind CSS（含 typography 插件）本地预编译内嵌，完全离线可用；重编译: build_html.py --css -->
+<style>*,:after,:before{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/*! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com*/*,:after,:before{box-sizing:border-box;border:0 solid #e5e7eb}:after,:before{--tw-content:""}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;-o-tab-size:4;tab-size:4;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,PingFang SC,Hiragino Sans GB,Microsoft YaHei,Noto Sans SC,sans-serif;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace,SF Mono,SFMono-Regular,Menlo,Consolas,Liberation Mono,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0}fieldset,legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::-moz-placeholder,textarea::-moz-placeholder{opacity:1;color:#9ca3af}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.prose{color:var(--tw-prose-body);max-width:65ch}.prose :where(p):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:1.25em;margin-bottom:1.25em}.prose :where([class~=lead]):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-lead);font-size:1.25em;line-height:1.6;margin-top:1.2em;margin-bottom:1.2em}.prose :where(a):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-links);text-decoration:underline;font-weight:500}.prose :where(strong):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-bold);font-weight:600}.prose :where(a strong):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(blockquote strong):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(thead th strong):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(ol):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:decimal;margin-top:1.25em;margin-bottom:1.25em;padding-inline-start:1.625em}.prose :where(ol[type=A]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:upper-alpha}.prose :where(ol[type=a]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:lower-alpha}.prose :where(ol[type=A s]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:upper-alpha}.prose :where(ol[type=a s]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:lower-alpha}.prose :where(ol[type=I]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:upper-roman}.prose :where(ol[type=i]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:lower-roman}.prose :where(ol[type=I s]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:upper-roman}.prose :where(ol[type=i s]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:lower-roman}.prose :where(ol[type="1"]):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:decimal}.prose :where(ul):not(:where([class~=not-prose],[class~=not-prose] *)){list-style-type:disc;margin-top:1.25em;margin-bottom:1.25em;padding-inline-start:1.625em}.prose :where(ol>li):not(:where([class~=not-prose],[class~=not-prose] *))::marker{font-weight:400;color:var(--tw-prose-counters)}.prose :where(ul>li):not(:where([class~=not-prose],[class~=not-prose] *))::marker{color:var(--tw-prose-bullets)}.prose :where(dt):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:600;margin-top:1.25em}.prose :where(hr):not(:where([class~=not-prose],[class~=not-prose] *)){border-color:var(--tw-prose-hr);border-top-width:1px;margin-top:3em;margin-bottom:3em}.prose :where(blockquote):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:500;font-style:italic;color:var(--tw-prose-quotes);border-inline-start-width:.25rem;border-inline-start-color:var(--tw-prose-quote-borders);quotes:"\201C""\201D""\2018""\2019";margin-top:1.6em;margin-bottom:1.6em;padding-inline-start:1em}.prose :where(blockquote p:first-of-type):not(:where([class~=not-prose],[class~=not-prose] *)):before{content:open-quote}.prose :where(blockquote p:last-of-type):not(:where([class~=not-prose],[class~=not-prose] *)):after{content:close-quote}.prose :where(h1):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:800;font-size:2.25em;margin-top:0;margin-bottom:.8888889em;line-height:1.1111111}.prose :where(h1 strong):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:900;color:inherit}.prose :where(h2):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:700;font-size:1.5em;margin-top:2em;margin-bottom:1em;line-height:1.3333333}.prose :where(h2 strong):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:800;color:inherit}.prose :where(h3):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:600;font-size:1.25em;margin-top:1.6em;margin-bottom:.6em;line-height:1.6}.prose :where(h3 strong):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:700;color:inherit}.prose :where(h4):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:600;margin-top:1.5em;margin-bottom:.5em;line-height:1.5}.prose :where(h4 strong):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:700;color:inherit}.prose :where(img):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:2em;margin-bottom:2em}.prose :where(picture):not(:where([class~=not-prose],[class~=not-prose] *)){display:block;margin-top:2em;margin-bottom:2em}.prose :where(video):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:2em;margin-bottom:2em}.prose :where(kbd):not(:where([class~=not-prose],[class~=not-prose] *)){font-weight:500;font-family:inherit;color:var(--tw-prose-kbd);box-shadow:0 0 0 1px rgb(var(--tw-prose-kbd-shadows)/10%),0 3px 0 rgb(var(--tw-prose-kbd-shadows)/10%);font-size:.875em;border-radius:.3125rem;padding-top:.1875em;padding-inline-end:.375em;padding-bottom:.1875em;padding-inline-start:.375em}.prose :where(code):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-code);font-weight:600;font-size:.875em}.prose :where(code):not(:where([class~=not-prose],[class~=not-prose] *)):before{content:"`"}.prose :where(code):not(:where([class~=not-prose],[class~=not-prose] *)):after{content:"`"}.prose :where(a code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(h1 code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(h2 code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit;font-size:.875em}.prose :where(h3 code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit;font-size:.9em}.prose :where(h4 code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(blockquote code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(thead th code):not(:where([class~=not-prose],[class~=not-prose] *)){color:inherit}.prose :where(pre):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-pre-code);background-color:var(--tw-prose-pre-bg);overflow-x:auto;font-weight:400;font-size:.875em;line-height:1.7142857;margin-top:1.7142857em;margin-bottom:1.7142857em;border-radius:.375rem;padding-top:.8571429em;padding-inline-end:1.1428571em;padding-bottom:.8571429em;padding-inline-start:1.1428571em}.prose :where(pre code):not(:where([class~=not-prose],[class~=not-prose] *)){background-color:transparent;border-width:0;border-radius:0;padding:0;font-weight:inherit;color:inherit;font-size:inherit;font-family:inherit;line-height:inherit}.prose :where(pre code):not(:where([class~=not-prose],[class~=not-prose] *)):before{content:none}.prose :where(pre code):not(:where([class~=not-prose],[class~=not-prose] *)):after{content:none}.prose :where(table):not(:where([class~=not-prose],[class~=not-prose] *)){width:100%;table-layout:auto;margin-top:2em;margin-bottom:2em;font-size:.875em;line-height:1.7142857}.prose :where(thead):not(:where([class~=not-prose],[class~=not-prose] *)){border-bottom-width:1px;border-bottom-color:var(--tw-prose-th-borders)}.prose :where(thead th):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-headings);font-weight:600;vertical-align:bottom;padding-inline-end:.5714286em;padding-bottom:.5714286em;padding-inline-start:.5714286em}.prose :where(tbody tr):not(:where([class~=not-prose],[class~=not-prose] *)){border-bottom-width:1px;border-bottom-color:var(--tw-prose-td-borders)}.prose :where(tbody tr:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){border-bottom-width:0}.prose :where(tbody td):not(:where([class~=not-prose],[class~=not-prose] *)){vertical-align:baseline}.prose :where(tfoot):not(:where([class~=not-prose],[class~=not-prose] *)){border-top-width:1px;border-top-color:var(--tw-prose-th-borders)}.prose :where(tfoot td):not(:where([class~=not-prose],[class~=not-prose] *)){vertical-align:top}.prose :where(th,td):not(:where([class~=not-prose],[class~=not-prose] *)){text-align:start}.prose :where(figure>*):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0;margin-bottom:0}.prose :where(figcaption):not(:where([class~=not-prose],[class~=not-prose] *)){color:var(--tw-prose-captions);font-size:.875em;line-height:1.4285714;margin-top:.8571429em}.prose{--tw-prose-body:#374151;--tw-prose-headings:#111827;--tw-prose-lead:#4b5563;--tw-prose-links:#111827;--tw-prose-bold:#111827;--tw-prose-counters:#6b7280;--tw-prose-bullets:#d1d5db;--tw-prose-hr:#e5e7eb;--tw-prose-quotes:#111827;--tw-prose-quote-borders:#e5e7eb;--tw-prose-captions:#6b7280;--tw-prose-kbd:#111827;--tw-prose-kbd-shadows:17 24 39;--tw-prose-code:#111827;--tw-prose-pre-code:#e5e7eb;--tw-prose-pre-bg:#1f2937;--tw-prose-th-borders:#d1d5db;--tw-prose-td-borders:#e5e7eb;--tw-prose-invert-body:#d1d5db;--tw-prose-invert-headings:#fff;--tw-prose-invert-lead:#9ca3af;--tw-prose-invert-links:#fff;--tw-prose-invert-bold:#fff;--tw-prose-invert-counters:#9ca3af;--tw-prose-invert-bullets:#4b5563;--tw-prose-invert-hr:#374151;--tw-prose-invert-quotes:#f3f4f6;--tw-prose-invert-quote-borders:#374151;--tw-prose-invert-captions:#9ca3af;--tw-prose-invert-kbd:#fff;--tw-prose-invert-kbd-shadows:255 255 255;--tw-prose-invert-code:#fff;--tw-prose-invert-pre-code:#d1d5db;--tw-prose-invert-pre-bg:rgba(0,0,0,.5);--tw-prose-invert-th-borders:#4b5563;--tw-prose-invert-td-borders:#374151;font-size:1rem;line-height:1.75}.prose :where(picture>img):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0;margin-bottom:0}.prose :where(li):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:.5em;margin-bottom:.5em}.prose :where(ol>li):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-start:.375em}.prose :where(ul>li):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-start:.375em}.prose :where(.prose>ul>li p):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:.75em;margin-bottom:.75em}.prose :where(.prose>ul>li>p:first-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:1.25em}.prose :where(.prose>ul>li>p:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-bottom:1.25em}.prose :where(.prose>ol>li>p:first-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:1.25em}.prose :where(.prose>ol>li>p:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-bottom:1.25em}.prose :where(ul ul,ul ol,ol ul,ol ol):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:.75em;margin-bottom:.75em}.prose :where(dl):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:1.25em;margin-bottom:1.25em}.prose :where(dd):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:.5em;padding-inline-start:1.625em}.prose :where(hr+*):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0}.prose :where(h2+*):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0}.prose :where(h3+*):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0}.prose :where(h4+*):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0}.prose :where(thead th:first-child):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-start:0}.prose :where(thead th:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-end:0}.prose :where(tbody td,tfoot td):not(:where([class~=not-prose],[class~=not-prose] *)){padding-top:.5714286em;padding-inline-end:.5714286em;padding-bottom:.5714286em;padding-inline-start:.5714286em}.prose :where(tbody td:first-child,tfoot td:first-child):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-start:0}.prose :where(tbody td:last-child,tfoot td:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){padding-inline-end:0}.prose :where(figure):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:2em;margin-bottom:2em}.prose :where(.prose>:first-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-top:0}.prose :where(.prose>:last-child):not(:where([class~=not-prose],[class~=not-prose] *)){margin-bottom:0}.prose-slate{--tw-prose-body:#334155;--tw-prose-headings:#0f172a;--tw-prose-lead:#475569;--tw-prose-links:#0f172a;--tw-prose-bold:#0f172a;--tw-prose-counters:#64748b;--tw-prose-bullets:#cbd5e1;--tw-prose-hr:#e2e8f0;--tw-prose-quotes:#0f172a;--tw-prose-quote-borders:#e2e8f0;--tw-prose-captions:#64748b;--tw-prose-kbd:#0f172a;--tw-prose-kbd-shadows:15 23 42;--tw-prose-code:#0f172a;--tw-prose-pre-code:#e2e8f0;--tw-prose-pre-bg:#1e293b;--tw-prose-th-borders:#cbd5e1;--tw-prose-td-borders:#e2e8f0;--tw-prose-invert-body:#cbd5e1;--tw-prose-invert-headings:#fff;--tw-prose-invert-lead:#94a3b8;--tw-prose-invert-links:#fff;--tw-prose-invert-bold:#fff;--tw-prose-invert-counters:#94a3b8;--tw-prose-invert-bullets:#475569;--tw-prose-invert-hr:#334155;--tw-prose-invert-quotes:#f1f5f9;--tw-prose-invert-quote-borders:#334155;--tw-prose-invert-captions:#94a3b8;--tw-prose-invert-kbd:#fff;--tw-prose-invert-kbd-shadows:255 255 255;--tw-prose-invert-code:#fff;--tw-prose-invert-pre-code:#cbd5e1;--tw-prose-invert-pre-bg:rgba(0,0,0,.5);--tw-prose-invert-th-borders:#475569;--tw-prose-invert-td-borders:#334155}.sticky{position:sticky}.top-0{top:0}.top-8{top:2rem}.z-20{z-index:20}.mx-auto{margin-left:auto;margin-right:auto}.-ml-px{margin-left:-1px}.mb-1{margin-bottom:.25rem}.mb-10{margin-bottom:2.5rem}.mb-3{margin-bottom:.75rem}.mb-4{margin-bottom:1rem}.mt-0\.5{margin-top:.125rem}.mt-12{margin-top:3rem}.mt-14{margin-top:3.5rem}.mt-6{margin-top:1.5rem}.mt-auto{margin-top:auto}.block{display:block}.flex{display:flex}.inline-flex{display:inline-flex}.table{display:table}.grid{display:grid}.hidden{display:none}.h-4{height:1rem}.h-6{height:1.5rem}.h-screen{height:100vh}.max-h-\[calc\(100vh-4rem\)\]{max-height:calc(100vh - 4rem)}.w-4{width:1rem}.w-6{width:1.5rem}.w-64{width:16rem}.w-72{width:18rem}.min-w-0{min-width:0}.max-w-3xl{max-width:48rem}.max-w-\[96rem\]{max-width:96rem}.max-w-none{max-width:none}.flex-1{flex:1 1 0%}.shrink-0{flex-shrink:0}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-center{align-items:center}.justify-center{justify-content:center}.gap-1\.5{gap:.375rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.space-y-1>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.25rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.25rem*var(--tw-space-y-reverse))}.overflow-x-auto{overflow-x:auto}.overflow-y-auto{overflow-y:auto}.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}.rounded-md{border-radius:.375rem}.rounded-xl{border-radius:.75rem}.border{border-width:1px}.border-b{border-bottom-width:1px}.border-l{border-left-width:1px}.border-l-2{border-left-width:2px}.border-t{border-top-width:1px}.border-indigo-500{--tw-border-opacity:1;border-color:rgb(99 102 241/var(--tw-border-opacity,1))}.border-slate-200{--tw-border-opacity:1;border-color:rgb(226 232 240/var(--tw-border-opacity,1))}.border-transparent{border-color:transparent}.bg-amber-100{--tw-bg-opacity:1;background-color:rgb(254 243 199/var(--tw-bg-opacity,1))}.bg-emerald-100{--tw-bg-opacity:1;background-color:rgb(209 250 229/var(--tw-bg-opacity,1))}.bg-indigo-100{--tw-bg-opacity:1;background-color:rgb(224 231 255/var(--tw-bg-opacity,1))}.bg-indigo-50{--tw-bg-opacity:1;background-color:rgb(238 242 255/var(--tw-bg-opacity,1))}.bg-indigo-600{--tw-bg-opacity:1;background-color:rgb(79 70 229/var(--tw-bg-opacity,1))}.bg-sky-100{--tw-bg-opacity:1;background-color:rgb(224 242 254/var(--tw-bg-opacity,1))}.bg-slate-100{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.bg-slate-200{--tw-bg-opacity:1;background-color:rgb(226 232 240/var(--tw-bg-opacity,1))}.bg-slate-50{--tw-bg-opacity:1;background-color:rgb(248 250 252/var(--tw-bg-opacity,1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity,1))}.bg-white\/90{background-color:hsla(0,0%,100%,.9)}.fill-current{fill:currentColor}.p-5{padding:1.25rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-4{padding-left:1rem;padding-right:1rem}.py-0\.5{padding-top:.125rem;padding-bottom:.125rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-10{padding-top:2.5rem;padding-bottom:2.5rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.py-2\.5{padding-top:.625rem;padding-bottom:.625rem}.py-8{padding-top:2rem;padding-bottom:2rem}.pl-3{padding-left:.75rem}.pl-6{padding-left:1.5rem}.pr-4{padding-right:1rem}.pr-6{padding-right:1.5rem}.pt-6{padding-top:1.5rem}.pt-8{padding-top:2rem}.text-center{text-align:center}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-\[13px\]{font-size:13px}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-xs{font-size:.75rem;line-height:1rem}.font-black{font-weight:900}.font-bold{font-weight:700}.font-medium{font-weight:500}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.italic{font-style:italic}.leading-snug{line-height:1.375}.tracking-tight{letter-spacing:-.025em}.tracking-wider{letter-spacing:.05em}.text-amber-800{--tw-text-opacity:1;color:rgb(146 64 14/var(--tw-text-opacity,1))}.text-emerald-800{--tw-text-opacity:1;color:rgb(6 95 70/var(--tw-text-opacity,1))}.text-indigo-700{--tw-text-opacity:1;color:rgb(67 56 202/var(--tw-text-opacity,1))}.text-indigo-800{--tw-text-opacity:1;color:rgb(55 48 163/var(--tw-text-opacity,1))}.text-indigo-900{--tw-text-opacity:1;color:rgb(49 46 129/var(--tw-text-opacity,1))}.text-sky-800{--tw-text-opacity:1;color:rgb(7 89 133/var(--tw-text-opacity,1))}.text-slate-400{--tw-text-opacity:1;color:rgb(148 163 184/var(--tw-text-opacity,1))}.text-slate-500{--tw-text-opacity:1;color:rgb(100 116 139/var(--tw-text-opacity,1))}.text-slate-600{--tw-text-opacity:1;color:rgb(71 85 105/var(--tw-text-opacity,1))}.text-slate-700{--tw-text-opacity:1;color:rgb(51 65 85/var(--tw-text-opacity,1))}.text-slate-800{--tw-text-opacity:1;color:rgb(30 41 59/var(--tw-text-opacity,1))}.text-slate-900{--tw-text-opacity:1;color:rgb(15 23 42/var(--tw-text-opacity,1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1))}.underline{text-decoration-line:underline}.decoration-slate-300{text-decoration-color:#cbd5e1}.underline-offset-2{text-underline-offset:2px}.antialiased{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}.ring-1{--tw-ring-offset-shadow:var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);--tw-ring-shadow:var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);box-shadow:var(--tw-ring-offset-shadow),var(--tw-ring-shadow),var(--tw-shadow,0 0 #0000)}.ring-inset{--tw-ring-inset:inset}.ring-amber-200{--tw-ring-opacity:1;--tw-ring-color:rgb(253 230 138/var(--tw-ring-opacity,1))}.ring-emerald-200{--tw-ring-opacity:1;--tw-ring-color:rgb(167 243 208/var(--tw-ring-opacity,1))}.ring-indigo-200{--tw-ring-opacity:1;--tw-ring-color:rgb(199 210 254/var(--tw-ring-opacity,1))}.ring-sky-200{--tw-ring-opacity:1;--tw-ring-color:rgb(186 230 253/var(--tw-ring-opacity,1))}.ring-slate-200{--tw-ring-opacity:1;--tw-ring-color:rgb(226 232 240/var(--tw-ring-opacity,1))}.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.backdrop-blur{--tw-backdrop-blur:blur(8px);-webkit-backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);backdrop-filter:var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)}.transition{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,-webkit-backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter,-webkit-backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.hover\:border-indigo-300:hover{--tw-border-opacity:1;border-color:rgb(165 180 252/var(--tw-border-opacity,1))}.hover\:bg-slate-100:hover{--tw-bg-opacity:1;background-color:rgb(241 245 249/var(--tw-bg-opacity,1))}.hover\:text-slate-600:hover{--tw-text-opacity:1;color:rgb(71 85 105/var(--tw-text-opacity,1))}.hover\:text-slate-700:hover{--tw-text-opacity:1;color:rgb(51 65 85/var(--tw-text-opacity,1))}.hover\:text-slate-900:hover{--tw-text-opacity:1;color:rgb(15 23 42/var(--tw-text-opacity,1))}.hover\:shadow-md:hover{--tw-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color),0 2px 4px -2px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.group:hover .group-hover\:bg-slate-300{--tw-bg-opacity:1;background-color:rgb(203 213 225/var(--tw-bg-opacity,1))}.group:hover .group-hover\:text-indigo-700{--tw-text-opacity:1;color:rgb(67 56 202/var(--tw-text-opacity,1))}@media (min-width:640px){.sm\:block{display:block}.sm\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.sm\:px-8{padding-left:2rem;padding-right:2rem}.sm\:text-right{text-align:right}.sm\:text-4xl{font-size:2.25rem;line-height:2.5rem}}@media (min-width:1024px){.lg\:block{display:block}.lg\:flex{display:flex}.lg\:hidden{display:none}.lg\:py-14{padding-top:3.5rem;padding-bottom:3.5rem}}@media (min-width:1280px){.xl\:block{display:block}}</style>
+<style>html { scroll-behavior: smooth; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', sans-serif; }
+code, pre, kbd { font-family: ui-monospace, 'SF Mono', SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace; }
+
+
+.prose { line-height: 1.85; }
+.prose h2 { scroll-margin-top: 5rem; border-bottom: 1px solid #e2e8f0; padding-bottom: .45rem; }
+.prose h3, .prose h4 { scroll-margin-top: 5rem; }
+.prose hr { margin: 2.75em 0; border-color: #e2e8f0; }
+
+/* 原文入口显示为一行链接，展开后仍保留原有排版。 */
+.prose details.tutorial-original {
+  border: 0; border-radius: 0; background: transparent; padding: 0;
+  margin: 1.25rem 0 2rem;
+}
+.prose details.tutorial-original > summary {
+  display: inline-block; font-size: .9rem; font-weight: 500;
+  color: #4f46e5; text-decoration: underline; text-underline-offset: 4px;
+  cursor: pointer; list-style: none;
+}
+.prose details.tutorial-original > summary::-webkit-details-marker { display: none; }
+.prose details.tutorial-original[open] > summary { margin-bottom: 1rem; }
+.prose details.tutorial-original > summary:focus-visible { outline: 2px solid #6366f1; outline-offset: 5px; }
+
+/* 行内代码：小圆角芯片，去掉 typography 默认的反引号 */
+.prose :where(code):not(:where(pre code)) {
+  background: #eef2ff; color: #4338ca; padding: .12em .42em;
+  border-radius: .375rem; font-weight: 500; font-size: .85em;
+}
+.prose :where(code)::before, .prose :where(code)::after { content: none !important; }
+
+/* 代码块：深色卡片（配 pygments github-dark） */
+.prose .highlight { margin: 1.6em 0; }
+.prose .highlight pre {
+  background: #0d1117; color: #e6edf3; border-radius: .75rem;
+  padding: 1.05rem 1.3rem; overflow-x: auto; font-size: .85em;
+  line-height: 1.7; margin: 0; border: 1px solid #1f2937;
+}
+.highlight { background: transparent !important; }
+
+/* 引用块：柔和的左边条 callout */
+.prose blockquote {
+  border-left: 4px solid #6366f1; background: #f5f6ff;
+  border-radius: 0 .75rem .75rem 0; padding: .75rem 1.25rem;
+  font-style: normal; color: #3f3f6e; font-weight: 400;
+}
+.prose blockquote p:first-of-type::before,
+.prose blockquote p:last-of-type::after { content: none; }
+
+/* 表格：圆角卡片 + 斑马纹 + 移动端横向滚动 */
+.table-wrap {
+  overflow-x: auto; border: 1px solid #e2e8f0; border-radius: .75rem;
+  margin: 1.7em 0; background: #fff; box-shadow: 0 1px 2px rgba(15,23,42,.04);
+}
+.table-wrap table { margin: 0 !important; width: 100%; font-size: .9em; }
+.prose thead { background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+.prose thead th { padding: .7rem 1rem; color: #334155; white-space: nowrap; }
+.prose tbody td { padding: .62rem 1rem; vertical-align: top; }
+.prose tbody tr { border-bottom: 1px solid #f1f5f9; }
+.prose tbody tr:last-child { border-bottom: none; }
+.prose tbody tr:nth-child(even) { background: #fafbfd; }
+
+/* 折叠块 */
+.prose details {
+  border: 1px solid #e2e8f0; border-radius: .75rem;
+  padding: .85rem 1.15rem; background: #fafafa; margin: 1.3em 0;
+}
+.prose summary { cursor: pointer; font-weight: 600; color: #4f46e5; }
+
+.prose img {
+  border-radius: .75rem; border: 1px solid #e2e8f0;
+  box-shadow: 0 4px 14px rgba(15,23,42,.06);
+}
+.prose a { color: #4f46e5; text-decoration-color: #c7d2fe; text-underline-offset: 3px; }
+.prose a:hover { color: #3730a3; }
+</style>
+<style>pre { line-height: 125%; }
+td.linenos .normal { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+span.linenos { color: #6e7681; background-color: #0d1117; padding-left: 5px; padding-right: 5px; }
+td.linenos .special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+span.linenos.special { color: #e6edf3; background-color: #6e7681; padding-left: 5px; padding-right: 5px; }
+.highlight .hll { background-color: #6e7681 }
+.highlight { background: #0d1117; color: #E6EDF3 }
+.highlight .c { color: #8B949E; font-style: italic } /* Comment */
+.highlight .err { color: #F85149 } /* Error */
+.highlight .esc { color: #E6EDF3 } /* Escape */
+.highlight .g { color: #E6EDF3 } /* Generic */
+.highlight .k { color: #FF7B72 } /* Keyword */
+.highlight .l { color: #A5D6FF } /* Literal */
+.highlight .n { color: #E6EDF3 } /* Name */
+.highlight .o { color: #FF7B72; font-weight: bold } /* Operator */
+.highlight .x { color: #E6EDF3 } /* Other */
+.highlight .p { color: #E6EDF3 } /* Punctuation */
+.highlight .ch { color: #8B949E; font-style: italic } /* Comment.Hashbang */
+.highlight .cm { color: #8B949E; font-style: italic } /* Comment.Multiline */
+.highlight .cp { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Preproc */
+.highlight .cpf { color: #8B949E; font-style: italic } /* Comment.PreprocFile */
+.highlight .c1 { color: #8B949E; font-style: italic } /* Comment.Single */
+.highlight .cs { color: #8B949E; font-weight: bold; font-style: italic } /* Comment.Special */
+.highlight .gd { color: #FFA198; background-color: #490202 } /* Generic.Deleted */
+.highlight .ge { color: #E6EDF3; font-style: italic } /* Generic.Emph */
+.highlight .ges { color: #E6EDF3; font-weight: bold; font-style: italic } /* Generic.EmphStrong */
+.highlight .gr { color: #FFA198 } /* Generic.Error */
+.highlight .gh { color: #79C0FF; font-weight: bold } /* Generic.Heading */
+.highlight .gi { color: #56D364; background-color: #0F5323 } /* Generic.Inserted */
+.highlight .go { color: #8B949E } /* Generic.Output */
+.highlight .gp { color: #8B949E } /* Generic.Prompt */
+.highlight .gs { color: #E6EDF3; font-weight: bold } /* Generic.Strong */
+.highlight .gu { color: #79C0FF } /* Generic.Subheading */
+.highlight .gt { color: #FF7B72 } /* Generic.Traceback */
+.highlight .g-Underline { color: #E6EDF3; text-decoration: underline } /* Generic.Underline */
+.highlight .kc { color: #79C0FF } /* Keyword.Constant */
+.highlight .kd { color: #FF7B72 } /* Keyword.Declaration */
+.highlight .kn { color: #FF7B72 } /* Keyword.Namespace */
+.highlight .kp { color: #79C0FF } /* Keyword.Pseudo */
+.highlight .kr { color: #FF7B72 } /* Keyword.Reserved */
+.highlight .kt { color: #FF7B72 } /* Keyword.Type */
+.highlight .ld { color: #79C0FF } /* Literal.Date */
+.highlight .m { color: #A5D6FF } /* Literal.Number */
+.highlight .s { color: #A5D6FF } /* Literal.String */
+.highlight .na { color: #E6EDF3 } /* Name.Attribute */
+.highlight .nb { color: #E6EDF3 } /* Name.Builtin */
+.highlight .nc { color: #F0883E; font-weight: bold } /* Name.Class */
+.highlight .no { color: #79C0FF; font-weight: bold } /* Name.Constant */
+.highlight .nd { color: #D2A8FF; font-weight: bold } /* Name.Decorator */
+.highlight .ni { color: #FFA657 } /* Name.Entity */
+.highlight .ne { color: #F0883E; font-weight: bold } /* Name.Exception */
+.highlight .nf { color: #D2A8FF; font-weight: bold } /* Name.Function */
+.highlight .nl { color: #79C0FF; font-weight: bold } /* Name.Label */
+.highlight .nn { color: #FF7B72 } /* Name.Namespace */
+.highlight .nx { color: #E6EDF3 } /* Name.Other */
+.highlight .py { color: #79C0FF } /* Name.Property */
+.highlight .nt { color: #7EE787 } /* Name.Tag */
+.highlight .nv { color: #79C0FF } /* Name.Variable */
+.highlight .ow { color: #FF7B72; font-weight: bold } /* Operator.Word */
+.highlight .pm { color: #E6EDF3 } /* Punctuation.Marker */
+.highlight .w { color: #6E7681 } /* Text.Whitespace */
+.highlight .mb { color: #A5D6FF } /* Literal.Number.Bin */
+.highlight .mf { color: #A5D6FF } /* Literal.Number.Float */
+.highlight .mh { color: #A5D6FF } /* Literal.Number.Hex */
+.highlight .mi { color: #A5D6FF } /* Literal.Number.Integer */
+.highlight .mo { color: #A5D6FF } /* Literal.Number.Oct */
+.highlight .sa { color: #79C0FF } /* Literal.String.Affix */
+.highlight .sb { color: #A5D6FF } /* Literal.String.Backtick */
+.highlight .sc { color: #A5D6FF } /* Literal.String.Char */
+.highlight .dl { color: #79C0FF } /* Literal.String.Delimiter */
+.highlight .sd { color: #A5D6FF } /* Literal.String.Doc */
+.highlight .s2 { color: #A5D6FF } /* Literal.String.Double */
+.highlight .se { color: #79C0FF } /* Literal.String.Escape */
+.highlight .sh { color: #79C0FF } /* Literal.String.Heredoc */
+.highlight .si { color: #A5D6FF } /* Literal.String.Interpol */
+.highlight .sx { color: #A5D6FF } /* Literal.String.Other */
+.highlight .sr { color: #79C0FF } /* Literal.String.Regex */
+.highlight .s1 { color: #A5D6FF } /* Literal.String.Single */
+.highlight .ss { color: #A5D6FF } /* Literal.String.Symbol */
+.highlight .bp { color: #E6EDF3 } /* Name.Builtin.Pseudo */
+.highlight .fm { color: #D2A8FF; font-weight: bold } /* Name.Function.Magic */
+.highlight .vc { color: #79C0FF } /* Name.Variable.Class */
+.highlight .vg { color: #79C0FF } /* Name.Variable.Global */
+.highlight .vi { color: #79C0FF } /* Name.Variable.Instance */
+.highlight .vm { color: #79C0FF } /* Name.Variable.Magic */
+.highlight .il { color: #A5D6FF } /* Literal.Number.Integer.Long */</style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased">
+
+<div class="lg:hidden sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur">
+  <div class="flex items-center gap-3 px-4 py-2.5">
+    <a href="./index.html" class="text-sm font-black tracking-tight text-slate-900 shrink-0">RL Tutorial</a>
+    <div class="flex gap-1.5 overflow-x-auto py-0.5" style="scrollbar-width:none"><a href="./index.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">总览</a><a href="./ch0_什么是强化学习.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第0章</a><a href="./ch1_跑通.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第1章</a><a href="./ch2_rollout与experience.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第2章</a><a href="./ch3_reward怎么算.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-indigo-600 text-white">第3章</a><a href="./ch4_advantage怎么来.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第4章</a><a href="./ch5_loss与权重更新.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第5章</a><a href="./ch6_动手实验.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">第6章</a><a href="./lora32_reproduction.html" class="shrink-0 rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">运行参考</a></div>
+  </div>
+</div>
+<div class="mx-auto max-w-[96rem] lg:flex">
+
+<aside class="hidden lg:block w-72 shrink-0">
+  <div class="sticky top-0 h-screen overflow-y-auto py-8 pl-6 pr-4 flex flex-col">
+    <a href="./index.html" class="block px-3">
+      <div class="text-lg font-black tracking-tight text-slate-900">RL Tutorial</div>
+      <div class="mt-0.5 text-xs text-slate-500">跑通并看懂强化学习 · 以 ALFWorld 为实验环境</div>
+    </a>
+    <nav class="mt-6 space-y-1"><a href="./index.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">§</span><span class="truncate">教程总览</span></a>
+<a href="./ch0_什么是强化学习.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">0</span><span class="truncate">什么是强化学习？</span></a>
+<a href="./ch1_跑通.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">1</span><span class="truncate">跑通：先看 RL 真的有用</span></a>
+<a href="./ch2_rollout与experience.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">2</span><span class="truncate">rollout：state/action/reward</span></a>
+<a href="./ch3_reward怎么算.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition bg-indigo-50 text-indigo-900 font-semibold"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-indigo-600 text-white">3</span><span class="truncate">reward：环境怎么给分</span></a>
+<a href="./ch4_advantage怎么来.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">4</span><span class="truncate">advantage：为什么不用 reward 直接训</span></a>
+<a href="./ch5_loss与权重更新.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">5</span><span class="truncate">loss 与更新：advantage 变梯度</span></a>
+<a href="./ch6_动手实验.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">6</span><span class="truncate">LoRA 实测与开放实验</span></a>
+<a href="./lora32_reproduction.html" class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition text-slate-600 hover:bg-slate-100 hover:text-slate-900"><span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-xs font-bold bg-slate-200 text-slate-500 group-hover:bg-slate-300">▶</span><span class="truncate">LoRA32 运行参考</span></a></nav>
+    <div class="mt-auto pt-8 px-3">
+      <a href="https://github.com/agentscope-ai/Trinity-RFT/tree/tutorial" target="_blank" rel="noopener"
+         class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-400 hover:text-slate-700 transition">
+        <svg viewBox="0 0 16 16" class="h-4 w-4 fill-current"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        教程代码 · tutorial 分支
+      </a>
+    </div>
+  </div>
+</aside>
+<main class="min-w-0 flex-1 px-4 py-10 sm:px-8 lg:py-14">
+  <div class="mx-auto max-w-3xl">
+    <header class="mb-10">
+      <div class="mb-4 flex flex-wrap items-center gap-3">
+        <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ring-1 ring-inset bg-sky-100 text-sky-800 ring-sky-200 ">拆解</span>
+        <span class="inline-flex items-center gap-1.5 text-sm text-slate-500"><svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>15 分钟阅读</span>
+      </div>
+      <h1 class="text-3xl font-bold leading-snug tracking-tight text-slate-900 sm:text-4xl">第 3 章：reward — 环境怎么给分</h1>
+    </header>
+    <article class="prose prose-slate max-w-none">
+<blockquote>
+<p><strong>本章模式：拆解</strong>。第 2 章你看到一条轨迹末尾会拿 <code>1.0</code>（成功）或 <code>-0.1</code>（失败），而且这个值被广播到轨迹的每一步。这一章讲：reward 从哪来、为什么这么稀疏还能学、以及一个<strong>反直觉的事实</strong>——那个 <code>-0.1</code> 的负号其实不改变 advantage。</p>
+</blockquote>
+<hr />
+<h2 id="30-reward-是-rl-唯一的监督信号">3.0 reward 是 RL 唯一的监督信号</h2>
+<p>回顾第 0 章：RL 没有「标准答案」，只有「分数」。这个分数就是 <strong>reward</strong>——它告诉模型「刚才那一整局做得好不好」，是训练<strong>唯一</strong>的监督信号。reward 给得好不好，直接决定 RL 能不能学、学得多快。</p>
+<p>reward 有两种典型形态——用 candle 例子看区别：</p>
+<ul>
+<li><strong>稀疏 reward（sparse）</strong>：只在<strong>整局结束</strong>给一个分。candle 例子里，只有「candle 放上台面」这一下算数（1.0），中间的 <code>take candle</code>、<code>go to countertop</code> 等步骤<strong>全是 0 分</strong>。</li>
+<li><strong>密集 reward（dense）</strong>：<strong>每完成一个子目标就给一点分</strong>（假想对照）。candle 例子里可以是：找到 candle +0.3、拿起 candle +0.3、放上台面 +0.4——分段给分，「半成品」也有学习信号。</li>
+</ul>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>形态</th>
+<th>在 candle 例子里</th>
+<th>信号强度</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>稀疏（sparse）</strong></td>
+<td>只在 candle 放上台面时给分（1.0 / -0.1），中间步全 0</td>
+<td>弱：要靠 16 条 rollout 的差异挤信号</td>
+</tr>
+<tr>
+<td><strong>密集（dense）</strong></td>
+<td>（假想）找到 candle +0.3、拿起 +0.3、放上 +0.4</td>
+<td>强：半成品也有学习信号</td>
+</tr>
+</tbody>
+</table></div>
+<p>本实验的 ALFWorld 是<strong>稀疏终止分</strong>：判分由环境内置，任务完成 =1.0、没完成 =-0.1，<strong>中间步 reward 全是 0</strong>，你一行判分器都不用写。</p>
+<blockquote>
+<p>📎 <strong>顺带回答「为什么失败是 -0.1 而不是 0」</strong>（第 2 章末尾的问题）：这个负号<strong>不影响训练</strong>——RL 用的是组内相对比较（advantage，第 4 章），给组内所有 reward 加同一个常数不改变比较结果，所以 -0.1 还是 0 都一样。-0.1 只是<strong>让曲线更可读</strong>（全失败时显示负值，比 0 醒目）。第 4 章讲 advantage 时展开。</p>
+</blockquote>
+<p>这一章的核心问题就是：<strong>只有 {-0.1, 1.0} 两档的稀疏 reward，为什么还能让训练分数逐步提高？</strong>（答案在 §3.4 的 G=16 组内差异，以及第 4 章的 advantage。）</p>
+<hr />
+<h2 id="31-第一层env-怎么给-reward">3.1 第一层：env 怎么给 reward</h2>
+<p>ALFWorld 的 reward 由<strong>环境</strong>判定，逻辑很简单（伪代码）：</p>
+<div class="highlight"><pre><span></span><code>final_reward = -0.1                 # 默认：没完成 = 失败
+for step in 1 .. 30:
+    action = policy(state)
+    state, reward, done = env.step(action)
+    if done:                        # 任务完成！
+        # candle 例子：move candle 2 to countertop 1 后，candle 放上台面 → done=True
+        final_reward = 1.0          # 成功
+        break
+# 轨迹结束：final_reward 就是这局的 reward
+    # candle 例子：放上台面 → 1.0；§2.2 那条 30 步没放上去 → -0.1
+</code></pre></div>
+
+<p><strong>什么叫「任务完成」（<code>done=True</code>）</strong>？用 §2.2 / §2.3 贯穿始终的例子：任务是 <code>put a candle in countertop.</code>——<strong>当 candle 被放到 countertop 上时，环境就判定任务完成</strong>（<code>done=True</code>），给 <code>reward=1.0</code>。§2.3 里 step 8 <code>move candle 2 to countertop 1</code> 之后任务就完成了。反之，30 步内 candle 一直没放到 countertop（比如 §2.2 拿错了 toiletpaper、卡在死循环），就是没完成，<code>reward=-0.1</code>。</p>
+<blockquote>
+<p>你不需要写任何判分器——环境内置了「目标达成」的判定，这就是 §0.3 说的「可验证 reward」。ALFWorld 是<strong>二值成功判定</strong>：要么完成（1.0），要么没完成（-0.1），没有「完成一半给 0.5 分」——这就是稀疏 reward 的根源。</p>
+</blockquote>
+<details>
+<summary>reward 产生与广播的源码（可选阅读）</summary>
+<div class="highlight"><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">final_reward</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.1</span>          <span class="c1"># ← 初始化为 -0.1（默认失败）</span>
+    <span class="o">...</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step_num</span><span class="p">):</span>
+    <span class="o">...</span>
+    <span class="n">observation</span><span class="p">,</span> <span class="n">reward</span><span class="p">,</span> <span class="n">done</span><span class="p">,</span> <span class="n">info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">action</span><span class="p">)</span>   <span class="c1"># env 返回即时 reward</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_step_meta</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">env_state_hash</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">reward</span><span class="p">)))</span>    <span class="c1"># 存「即时 reward」= step_reward</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">done</span> <span class="o">=</span> <span class="n">done</span>
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">done</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">final_reward</span> <span class="o">=</span> <span class="n">reward</span>     <span class="c1"># ← 任务完成时，env 给 reward=1.0</span>
+    <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">done</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">reward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">exps</span><span class="p">):</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">final_reward</span>           <span class="c1"># ← 整条轨迹的终止 reward</span>
+</code></pre></div>
+
+</details>
+<hr />
+<h2 id="32-第二层终止-reward-广播到每一步">3.2 第二层：终止 reward 广播到每一步</h2>
+<p>第 2 章 §2.5 讲过：一条轨迹的<strong>终止 reward 会广播（复制）到它的每一个 experience 上</strong>——这样每个训练样本都携带「这局最终成没成」。（具体实现见下方折叠。）</p>
+<details>
+<summary>reward 广播的源码（可选阅读）</summary>
+<div class="highlight"><pre><span></span><code><span class="n">reward</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reward</span><span class="p">(</span><span class="n">experiences</span><span class="p">)</span>      <span class="c1"># = final_reward = 1.0 或 -0.1</span>
+<span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">experiences</span><span class="p">:</span>
+    <span class="n">exp</span><span class="o">.</span><span class="n">reward</span> <span class="o">=</span> <span class="n">reward</span>                <span class="c1"># ← 轨迹里每一步的 exp.reward 都 = 这个终止值</span>
+    <span class="n">exp</span><span class="o">.</span><span class="n">metrics</span><span class="p">[</span><span class="s2">"actual_env_steps"</span><span class="p">]</span> <span class="o">=</span> <span class="n">step</span> <span class="o">+</span> <span class="mi">1</span>
+</code></pre></div>
+
+</details>
+<p>所以一条成功轨迹的 30 个（或 10 个）experience，<strong>每个的 <code>reward</code> 字段都是 1.0</strong>；失败轨迹每个都是 -0.1。</p>
+<p><strong>为什么这么设计</strong>：multi-step GRPO 要在「轨迹级别」做组内比较（第 4 章），它需要每条轨迹有一个统一的标量 reward。把终止 reward 广播到每步，是最简单的「让每个 experience 都携带轨迹结果」的方式。</p>
+<hr />
+<h2 id="33-reward-能换算什么先分清每局和每步">3.3 reward 能换算什么：先分清「每局」和「每步」</h2>
+<p>reward 只有 {-0.1, 1.0} 两档，所以平均值可以换算成成功占比。但<strong>先要问：这个平均值是按什么单位算的？</strong></p>
+<ul>
+<li><strong>每局（episode）等权</strong>：每完成一局只记一次终局 reward。换算得到的就是任务局成功率。</li>
+<li><strong>每条训练样本（turn / experience）等权</strong>：终局 reward 已广播到这一局的每个 turn；局越长，贡献的样本越多。换算得到的是训练 batch 中来自成功轨迹的 turn 占比。</li>
+</ul>
+<p>本教程的 <code>critic/score/mean</code> 属于第二种。它先汇总每条 experience 上的 reward，再对 batch 中的 experience 求平均，<strong>不是每局等权成功率，也不是 held-out 评测精度</strong>。</p>
+<p><strong>一个例子</strong>：一局成功，用了 10 个 turn；一局失败，用了 30 个 turn。</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>统计单位</th>
+<th>平均 reward</th>
+<th>换算后的成功占比</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>每局等权，共 2 局</td>
+<td><code>(1.0 − 0.1) / 2 = 0.45</code></td>
+<td><code>1 / 2 = 50%</code></td>
+</tr>
+<tr>
+<td>每个 turn 等权，共 40 个 turn</td>
+<td><code>(10 × 1.0 − 30 × 0.1) / 40 = 0.175</code></td>
+<td><code>10 / 40 = 25%</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>公式相同，<strong>分母不同，含义就不同</strong>。令 <code>p</code> 为当前统计单位下的成功占比：</p>
+<div class="highlight"><pre><span></span><code>mean_reward = p × 1.0 + (1 − p) × (−0.1) = 1.1p − 0.1
+p = (mean_reward + 0.1) / 1.1
+</code></pre></div>
+
+<p>用这个公式换算第 1 章的曲线，得到的是 <strong>turn 加权占比</strong>（运行 <code>python scripts/rl_tutorial/ch3_reward_to_success.py --sample</code> 可查看）：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th style="text-align: right;">trainer step</th>
+<th style="text-align: right;"><code>critic/score/mean</code></th>
+<th style="text-align: right;">来自成功轨迹的 turn 占比</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">-0.094</td>
+<td style="text-align: right;"><strong>0.5%</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">+0.012</td>
+<td style="text-align: right;">10.2%</td>
+</tr>
+<tr>
+<td style="text-align: right;">40</td>
+<td style="text-align: right;">+0.252</td>
+<td style="text-align: right;">32.0%</td>
+</tr>
+<tr>
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">+0.524</td>
+<td style="text-align: right;">56.7%</td>
+</tr>
+<tr>
+<td style="text-align: right;">80</td>
+<td style="text-align: right;">+0.905</td>
+<td style="text-align: right;">91.4%</td>
+</tr>
+<tr>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;">+0.768</td>
+<td style="text-align: right;">78.9%</td>
+</tr>
+<tr>
+<td style="text-align: right;"><strong>115（峰值）</strong></td>
+<td style="text-align: right;"><strong>+0.936</strong></td>
+<td style="text-align: right;"><strong>94.2%</strong></td>
+</tr>
+<tr>
+<td style="text-align: right;">133（崩溃末）</td>
+<td style="text-align: right;">+0.308</td>
+<td style="text-align: right;">37.1%</td>
+</tr>
+</tbody>
+</table></div>
+<p>任务族样本中的每局成功率另有统计来源，不能用它与这张换算表“数值接近”来相互验证。比较任务能力时，应另外查看每局等权的评测结果，并说明任务集和评测条件；训练曲线帮助我们观察训练过程。</p>
+<hr />
+<h2 id="34-核心问题稀疏-reward-为什么还能学">3.4 核心问题：稀疏 reward 为什么还能学</h2>
+<p>回到 §3.0 的问题。直觉上，只有 {-0.1, 1.0} 两档、中间步全 0，信号应该很弱。为什么能学起来？<strong>靠 G=16 的组内差异</strong>。</p>
+<p>看一个真实的 task 组（同一个 candle 类任务的 16 条 rollout 的终止 reward）：</p>
+<div class="highlight"><pre><span></span><code>rewards = [-0.1 ×13, 1.0 ×3]   # 3 条成功（candle 放上台面），13 条失败
+</code></pre></div>
+
+<p><strong>关键</strong>：虽然每条轨迹的 reward 只有两档，但<strong>一个组里 16 条轨迹的成功/失败是混合的</strong>（3 成功 + 13 失败）。RL 就能利用这个对比：<strong>成功的 3 条被鼓励、失败的 13 条被抑制</strong>。这个「鼓励/抑制」的信号在第 4 章叫 <strong>advantage</strong>，到那里再细讲——现在你只需要懂一件事：<strong>只要组内既有成功又有失败，RL 就有东西可学</strong>。</p>
+<p><strong>对比：如果 G=1 会怎样</strong>？单条轨迹没有「组」可比，RL 分不清「哪条更好」——<strong>完全学不动</strong>。这就是为什么 ALFWorld 必须用大 G：</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th style="text-align: right;">G（repeat_times）</th>
+<th>一组里出现「成功+失败混合」的概率</th>
+<th>能否学</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">1</td>
+<td>0%（永远只有一条）</td>
+<td>❌ 没有差异，学不动</td>
+</tr>
+<tr>
+<td style="text-align: right;">4</td>
+<td>低（base 成功率 10% 时，4 条全失败概率 = 0.9⁴ = 66%）</td>
+<td>⚠️ 一半以上的组没有差异</td>
+</tr>
+<tr>
+<td style="text-align: right;"><strong>16</strong></td>
+<td>高（16 条全失败概率 = 0.9¹⁶ = 18.5%）</td>
+<td>✅ 81% 的组有差异</td>
+</tr>
+</tbody>
+</table></div>
+<p>→ <strong>G=16 是稀疏 reward 的解药</strong>：它保证大部分 task 组里既有成功也有失败，RL 才有对比可学。代价是每 step 要采 256 条轨迹（wall time 变长）。</p>
+<h2 id="35-稀疏-reward-的代价16-条结果全一样的死组">3.5 稀疏 reward 的代价：「16 条结果全一样」的死组</h2>
+<p>§3.4 说：组内既有成功又有失败，RL 才有东西可学。反过来——<strong>如果一个组的 16 条轨迹结果全一样</strong>（全成功，或全失败），组内就没有「差异」，RL 分不清好坏，<strong>这个组这一步就白跑了</strong>。这种组叫「<strong>死组</strong>」。</p>
+<p>死组有两种来源：</p>
+<ul>
+<li><strong>全失败</strong>（训练早期常见）：难任务 base 一条都做不对（比如 <code>look_at_obj_in_light</code> 初始成功率才 2.6%），16 条全失败。这正是第 0 章 §0.3 强调「初始成功率必须 &gt; 0」的原因——如果<strong>所有</strong>组都全失败，整个 batch 都没有差异，训练完全不动。本实验幸运的是简单族（<code>pick_and_place</code> 27.8%）从一开始就有正样本，先把模型「点亮」，再逐渐攻克难族。</li>
+<li><strong>全成功</strong>（训练后期常见）：大部分任务都学会了，16 条全成功（<code>pick_and_place</code> 后期 97% 就是这样），也是死组。所以<strong>后期死组越来越多、可学的差异越来越少</strong>——这是「后期该停」的原因之一（第 6 章实验 A）。</li>
+</ul>
+<blockquote>
+<p>G 越大、任务难度越分散，死组越少。G=16 已把「全失败死组」的概率压到 18.5%（§3.4）。</p>
+</blockquote>
+<details>
+<summary>对应的训练日志指标（reward_std / skipped_group_ratio，可选阅读）</summary>
+<p>死组在训练日志里体现为「组内 reward 的标准差 = 0」。explorer.log 每个 explore step 会打印：</p>
+<div class="highlight"><pre><span></span><code>'experience_pipeline/group_advantages/reward_std/min':   0.000   # ⚠️ 有组 std=0 → 16 条结果全同（死组）
+'experience_pipeline/group_advantages/reward_std/mean':  0.414   # 组内 std 均值（健康）
+'experience_pipeline/group_advantages/reward_mean/min': -0.100   # 最难的组全失败 → mean=-0.1
+'experience_pipeline/skipped_group_ratio':               0.000   # 本实验没设 std_threshold，死组不跳过、只贡献 0
+</code></pre></div>
+
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>健康</th>
+<th>异常信号</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>reward_std/mean</code></td>
+<td>&gt; 0.2</td>
+<td>&lt; 0.05 → 大部分组趋同，信号枯竭（后期会这样，该停了）</td>
+</tr>
+<tr>
+<td><code>reward_std/min</code></td>
+<td>偶尔 = 0 正常</td>
+<td>大量组 = 0 → G 不够大，或任务难度两极分化</td>
+</tr>
+</tbody>
+</table></div>
+<blockquote>
+<p>本实验 <code>reward_std/mean</code> 从 step1 的 0.034 升到中段 ~0.41（信号最强），再回落到后期 ~0.06-0.15（大部分任务都会做了，组内趋同）——这条曲线本身就在提示「什么时候该停」。第 6 章实验 C 会试「设 std_threshold 主动跳过死组」。</p>
+</blockquote>
+</details>
+<hr />
+<h2 id="36-动手试试">3.6 动手试试</h2>
+<div class="highlight"><pre><span></span><code><span class="c1"># reward ↔ turn 加权成功占比换算表 + 真实 reward 分布</span>
+python<span class="w"> </span>scripts/rl_tutorial/ch3_reward_to_success.py<span class="w"> </span>--sample
+
+<span class="c1"># 自定义：如果 critic/score/mean = 0.62，成功轨迹的 turn 占比是多少？</span>
+python<span class="w"> </span>scripts/rl_tutorial/ch3_reward_to_success.py<span class="w"> </span>--reward<span class="w"> </span><span class="m">0</span>.62
+
+<span class="c1"># 验证「平移不变」：把失败 reward 从 -0.1 改成 0，看 advantage 变不变</span>
+python<span class="w"> </span>scripts/rl_tutorial/ch4_compute_advantage.py<span class="w"> </span>--sample<span class="w"> </span>--shift<span class="w"> </span><span class="m">0</span>.1
+</code></pre></div>
+
+<hr />
+<h2 id="37-这一章你应该带走的">3.7 这一章你应该带走的</h2>
+<ul>
+<li>✅ <strong>ALFWorld reward 是环境内置的稀疏终止分</strong>：成功 1.0 / 失败 -0.1，不用写 verifier。</li>
+<li>✅ <strong>终止 reward 广播到每一步</strong>：同一条轨迹的每个 experience，<code>reward</code> 都相同（GRPO 用它做组内比较，第 4 章）。</li>
+<li>✅ <strong>换算前先看统计单位</strong>：<code>p = (reward + 0.1) / 1.1</code>；对 <code>critic/score/mean</code> 得到的是 turn 加权占比，不是每局等权成功率。</li>
+<li>✅ <strong>稀疏 reward 靠 G=16 救</strong>：组内成功/失败混合 → 非零 advantage；G=1 时 advantage 恒 0 学不动。</li>
+<li>✅ <strong><code>-0.1</code> 不改变 advantage</strong>：给组内加常数不改变比较结果，负号只是让曲线更可读（第 4 章展开）。</li>
+</ul>
+<p>❌ <strong>你还不需要懂</strong>：</p>
+<ul>
+<li>advantage 的具体公式、怎么广播到 token、PPO clip（→ 第 4 章）</li>
+<li>更细的「每步功劳分配」方法 GiGPO（→ 第 4 章 §4.3 进阶注脚）</li>
+<li><code>reward_std=0</code> 的「死组」对训练信号的影响（→ 第 4 章）</li>
+</ul>
+<p>💡 <strong>留给自己的问题</strong>：你现在知道一个 task 组里有 3 条成功（reward 1.0）、13 条失败（reward -0.1）。GRPO 说「成功的鼓励、失败的抑制」——但<strong>具体鼓励多少、抑制多少</strong>？那 3 条成功轨迹的 advantage 是 +2.0 还是 +0.5？13 条失败的是 -0.46 还是 -2.0？为什么<strong>成功的力度比失败大 4 倍</strong>反而是对的？第 4 章揭晓。</p>
+    </article>
+    <nav class="mt-14 grid gap-4 sm:grid-cols-2"><a href="./ch2_rollout与experience.html" class="group block rounded-xl border border-slate-200 bg-white p-5 transition hover:border-indigo-300 hover:shadow-md"><div class="mb-1 text-xs text-slate-400">← 上一章</div><div class="font-semibold text-slate-800 group-hover:text-indigo-700">第 2 章 · rollout：state/action/reward</div></a><a href="./ch4_advantage怎么来.html" class="group block rounded-xl border border-slate-200 bg-white p-5 transition hover:border-indigo-300 hover:shadow-md sm:text-right"><div class="mb-1 text-xs text-slate-400">下一章 →</div><div class="font-semibold text-slate-800 group-hover:text-indigo-700">第 4 章 · advantage：为什么不用 reward 直接训</div></a></nav>
+    <footer class="mt-12 border-t border-slate-200 pt-6 text-center text-xs text-slate-400">
+      RL Tutorial · 基于 <a href="https://github.com/agentscope-ai/Trinity-RFT" class="underline decoration-slate-300 underline-offset-2 hover:text-slate-600">Trinity-RFT</a>
+      · 本页由 build_html.py 从 Markdown 生成
+    </footer>
+  </div>
+</main>
+
+<aside class="hidden xl:block w-64 shrink-0">
+  <div class="sticky top-8 max-h-[calc(100vh-4rem)] overflow-y-auto py-10 pr-6">
+    <div class="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">本页目录</div>
+    <nav id="toc" class="border-l border-slate-200 text-[13px]"><a href="#30-reward-是-rl-唯一的监督信号" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">3.0 reward 是 RL 唯一的监督信号</a>
+<a href="#31-第一层env-怎么给-reward" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">3.1 第一层：env 怎么给 reward</a>
+<a href="#32-第二层终止-reward-广播到每一步" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">3.2 第二层：终止 reward 广播到每一步</a>
+<a href="#33-reward-能换算什么先分清每局和每步" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">3.3 reward 能换算什么：先分清「每局」和「每步」</a>
+<a href="#34-核心问题稀疏-reward-为什么还能学" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">3.4 核心问题：稀疏 reward 为什么还能学</a>
+<a href="#35-稀疏-reward-的代价16-条结果全一样的死组" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">3.5 稀疏 reward 的代价：「16 条结果全一样」的死组</a>
+<a href="#36-动手试试" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">3.6 动手试试</a>
+<a href="#37-这一章你应该带走的" class="block border-l-2 border-transparent -ml-px pl-3 py-1 leading-snug text-slate-500 hover:text-slate-900 transition">3.7 这一章你应该带走的</a></nav>
+  </div>
+</aside>
+</div>
+<script>
+(function () {
+  var links = [].slice.call(document.querySelectorAll('#toc a'));
+  if (!links.length) return;
+  var pairs = links.map(function (a) {
+    var id = decodeURIComponent((a.getAttribute('href') || '').slice(1));
+    var el = document.getElementById(id);
+    return el ? { el: el, a: a } : null;
+  }).filter(Boolean);
+  var ACTIVE = ['border-indigo-500', 'text-indigo-700', 'font-medium'];
+  function onScroll() {
+    var y = window.scrollY + 96, cur = pairs[0];
+    pairs.forEach(function (p) { if (p.el.offsetTop <= y) cur = p; });
+    pairs.forEach(function (p) {
+      var on = (p === cur);
+      ACTIVE.forEach(function (c) { p.a.classList.toggle(c, on); });
+      p.a.classList.toggle('border-transparent', !on);
+      p.a.classList.toggle('text-slate-500', !on);
+    });
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+})();
+</script>
+</body>
+</html>
