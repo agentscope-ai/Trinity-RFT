@@ -108,6 +108,32 @@ class TestMathDAPORewardFn(unittest.TestCase):
         self.assertEqual(good["accuracy"], 1.0)
         self.assertEqual(bad["accuracy"], -1.0)
 
+    def test_overlong_penalty_piecewise(self):
+        fn = MathDAPORewardFn(
+            enable_overlong_penalty=True,
+            penalty_factor=1.0,
+            max_response_length=100,
+            cache_length=20,
+        )
+        # DAPO paper (Sec. 2.4): zero until `max_response_length - cache_length`,
+        # then linear, then -penalty_factor beyond `max_response_length`.
+        self.assertEqual(fn.compute_overlong_penalty(torch.zeros(79)), 0.0)
+        self.assertEqual(fn.compute_overlong_penalty(torch.zeros(80)), 0.0)
+        self.assertAlmostEqual(fn.compute_overlong_penalty(torch.zeros(90)), -0.5)
+        self.assertAlmostEqual(fn.compute_overlong_penalty(torch.zeros(100)), -1.0)
+        self.assertEqual(fn.compute_overlong_penalty(torch.zeros(101)), -1.0)
+
+    def test_overlong_penalty_without_soft_window(self):
+        fn = MathDAPORewardFn(
+            enable_overlong_penalty=True,
+            penalty_factor=1.0,
+            max_response_length=100,
+            cache_length=0,
+        )
+        self.assertEqual(fn.compute_overlong_penalty(torch.zeros(99)), 0.0)
+        self.assertEqual(fn.compute_overlong_penalty(torch.zeros(100)), 0.0)
+        self.assertEqual(fn.compute_overlong_penalty(torch.zeros(101)), -1.0)
+
 
 if __name__ == "__main__":
     unittest.main()
