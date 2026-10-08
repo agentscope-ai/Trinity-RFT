@@ -38,7 +38,7 @@ class StepWiseRewardWorkflow(Workflow):
                 exp.eid.step = step
             # Store the step experiences
             experiences.extend(exps)
-            if not continue_run:
+            if _has_truncated_response(exps) or not continue_run:
                 break
 
         return experiences
@@ -89,7 +89,7 @@ class AsyncStepWiseRewardWorkflow(StepWiseRewardWorkflow):
                 exp.eid.step = step
             # Store the step experiences
             experiences.extend(exps)
-            if not continue_run:
+            if _has_truncated_response(exps) or not continue_run:
                 break
 
         return experiences
@@ -144,7 +144,7 @@ class RewardPropagationWorkflow(Workflow):
                 exp.eid.step = step
             # Store the step experiences
             experiences.extend(exps)
-            if not continue_run:
+            if _has_truncated_response(exps) or not continue_run:
                 break
         reward = self.reward(experiences)
         for exp in experiences:
@@ -197,7 +197,7 @@ class AsyncRewardPropagationWorkflow(RewardPropagationWorkflow):
                 exp.eid.step = step
             # Store the step experiences
             experiences.extend(exps)
-            if not continue_run:
+            if _has_truncated_response(exps) or not continue_run:
                 break
         reward = await self.reward_async(experiences)
         for exp in experiences:
@@ -225,3 +225,8 @@ class AsyncRewardPropagationWorkflow(RewardPropagationWorkflow):
     async def reward_async(self, exps: list[Experience]) -> float:
         """Calculate the reward for the given experiences of the entire run asynchronously."""
         raise NotImplementedError
+
+
+def _has_truncated_response(exps: list[Experience]) -> bool:
+    """Return whether a model call ended because its response hit the length limit."""
+    return any(getattr(exp, "truncate_status", None) == "response_truncated" for exp in exps)
