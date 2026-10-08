@@ -10,11 +10,11 @@ CoD groups related tasks into a pack and generates a long rollout trajectory int
 The whole pack is trained end-to-end with RL, with fine-grained credit assignment rewarding context updates that make future tasks easier.
 A trained model's reward rises across pack positions, which is the signature of the elicited CoD meta-capability.
 
-> **The full implementation lives on the [`research/cod`](https://github.com/agentscope-ai/Trinity-RFT/tree/research/cod/examples/research_cod) branch.** Check out that branch to view or run the full code.
+> **The full implementation lives on the [`research/cod_v2`](https://github.com/agentscope-ai/Trinity-RFT/tree/research/cod_v2/examples/research_cod) branch.** Check out that branch to view or run the full code.
 
 <p align="center">
   <img src="assets/cod_overview.png" alt="CoD overview" width="760">
-  <br><sub><em>Figure 1: a visualization of CoD-Deploy and CoD-Train (compared with standard task-by-task RL). Environments A and B are used for training; M is a new environment for deployment or evaluation. Each block is one rollout episode, for solving a task x_i (which may itself be a long-horizon multi-turn task) or for updating the agent's context z_i about the current environment.</em></sub>
+  <br><sub><em>Figure: a visualization of CoD-Deploy and CoD-Train (compared with standard task-by-task RL). Environments A and B are used for training; M is a new environment for deployment or evaluation. Each block is one rollout episode, for solving a task x_i (which may itself be a long-horizon multi-turn task) or for updating the agent's context z_i about the current environment.</em></sub>
 </p>
 
 ---
@@ -40,7 +40,12 @@ Key metric: `reward_iterative_hint_e2e_taskset_{ts}_pos_{pos}`, the mean reward 
 
 <p align="center">
   <img src="assets/cod_effect.png" alt="reward rising across pack positions" width="820">
-  <br><sub><em>Figure 2: the CoD effect. Reward rises across pack positions during training and at OOD evaluation, both in-domain (harder FrozenLake) and cross-domain (Alchemy, Terminal).</em></sub>
+  <br><sub><em>Figure: the CoD effect. Reward rises across pack positions during training and at OOD evaluation, both in-domain (harder FrozenLake) and cross-domain (Alchemy, Terminal). Qwen3-8B is used as the initial model.</em></sub>
+</p>
+
+<p align="center">
+  <img src="assets/cod_qwen27b.png" alt="reward rising across pack positions" width="820">
+  <br><sub><em>Figure: scaling CoD to larger models and harder environments.</em></sub>
 </p>
 
 ---
@@ -56,14 +61,14 @@ In each environment, the tasks in a pack share something reusable: sometimes a h
 | Terminal | `cod_terminal_workflow` | How commands and paths work and their pitfalls, and roughly where files live |
 | Learn2Ask | `cod_learn2ask_workflow` | When to keep asking vs. when to stop and give a diagnosis |
 
-The workflow implementations live under [`trinity/common/workflows/connect_the_dots/`](https://github.com/agentscope-ai/Trinity-RFT/tree/research/cod/trinity/common/workflows/connect_the_dots) on the `research/cod` branch.
+The workflow implementations live under [`trinity/common/workflows/connect_the_dots/`](https://github.com/agentscope-ai/Trinity-RFT/tree/research/cod_v2/trinity/common/workflows/connect_the_dots) on the `research/cod_v2` branch.
 
 ---
 
 ## Run it
 
 ```bash
-git clone -b research/cod https://github.com/agentscope-ai/Trinity-RFT.git
+git clone -b research/cod_v2 https://github.com/agentscope-ai/Trinity-RFT.git
 cd Trinity-RFT
 conda create -n trinity python=3.12 && conda activate trinity
 pip install -e ".[vllm,flash_attn]"

@@ -10,11 +10,11 @@ CoD 把相关任务打成一个 pack（任务包），作为一条交替进行**
 整个 pack 用 RL 端到端训练，细粒度的信用分配让“使后续任务更好解的 context 更新”获得奖励。
 训练好的模型 reward 随 pack 位置递增，这正是 CoD 元能力被激发出来的标志。
 
-> **完整实现在 [`research/cod`](https://github.com/agentscope-ai/Trinity-RFT/tree/research/cod/examples/research_cod) 分支**，请切到该分支查看或运行完整代码。
+> **完整实现在 [`research/cod_v2`](https://github.com/agentscope-ai/Trinity-RFT/tree/research/cod_v2/examples/research_cod) 分支**，请切到该分支查看或运行完整代码。
 
 <p align="center">
   <img src="assets/cod_overview.png" alt="CoD 方法总览" width="760">
-  <br><sub><em>图 1：CoD-Deploy 与 CoD-Train 的示意（与标准的逐任务 RL 对比）。环境 A、B 用于训练，M 是部署或评测的新环境。每个 block 是一个 rollout 回合：求解任务 x_i（其本身可能是长程多轮任务），或更新 agent 对当前环境的 context z_i。</em></sub>
+  <br><sub><em>图：CoD-Deploy 与 CoD-Train 的示意（与标准的逐任务 RL 对比）。环境 A、B 用于训练，M 是部署或评测的新环境。每个 block 是一个 rollout 回合：求解任务 x_i（其本身可能是长程多轮任务），或更新 agent 对当前环境的 context z_i。</em></sub>
 </p>
 
 ---
@@ -40,7 +40,12 @@ pack = [ task0, task1, task2, task3 ]      # 同一 taskset 的一包相关任�
 
 <p align="center">
   <img src="assets/cod_effect.png" alt="reward 随 pack 位置递增" width="820">
-  <br><sub><em>图 2：CoD 效应。reward 随 pack 位置上升，训练时如此，OOD 评测时也如此，包括 in-domain（更难的 FrozenLake）与 cross-domain（Alchemy、Terminal）。</em></sub>
+  <br><sub><em>图：CoD 效应。reward 随 pack 位置上升，训练时如此，OOD 评测时也如此，包括 in-domain（更难的 FrozenLake）与 cross-domain（Alchemy、Terminal）。使用 Qwen3-8B 作为初始模型。</em></sub>
+</p>
+
+<p align="center">
+  <img src="assets/cod_qwen27b.png" alt="reward rising across pack positions" width="820">
+  <br><sub><em>图：将 CoD 扩展到更大的模型与更困难的环境。</em></sub>
 </p>
 
 ---
@@ -56,14 +61,14 @@ pack = [ task0, task1, task2, task3 ]      # 同一 taskset 的一包相关任�
 | Terminal | `cod_terminal_workflow` | 命令、路径的用法与易踩的坑，以及文件大致在哪 |
 | Learn2Ask | `cod_learn2ask_workflow` | 何时继续追问、何时停下来给诊断 |
 
-各环境的 workflow 实现位于 `research/cod` 分支的 [`trinity/common/workflows/connect_the_dots/`](https://github.com/agentscope-ai/Trinity-RFT/tree/research/cod/trinity/common/workflows/connect_the_dots)。
+各环境的 workflow 实现位于 `research/cod_v2` 分支的 [`trinity/common/workflows/connect_the_dots/`](https://github.com/agentscope-ai/Trinity-RFT/tree/research/cod_v2/trinity/common/workflows/connect_the_dots)。
 
 ---
 
 ## 运行
 
 ```bash
-git clone -b research/cod https://github.com/agentscope-ai/Trinity-RFT.git
+git clone -b research/cod_v2 https://github.com/agentscope-ai/Trinity-RFT.git
 cd Trinity-RFT
 conda create -n trinity python=3.12 && conda activate trinity
 pip install -e ".[vllm,flash_attn]"

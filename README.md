@@ -32,6 +32,8 @@ Trinity-RFT provides functionalities for users with different backgrounds and ob
 
 ## 🚀 News
 
+* [2026-09] Introducing [CoD ("Connect the Dots")](https://arxiv.org/pdf/2606.20002): training LLM agents by RL for cross-task adaptation and continual learning at deployment.
+* [2026-08] 🎉 [R3L](https://github.com/shiweijiezero/R3L) gets accepted by EMNLP 2026.
 * [2026-06] [[Release Notes]](https://github.com/agentscope-ai/Trinity-RFT/releases/tag/v0.6.0) Trinity-RFT v0.6.0 released: SGLang support, optimized fully async weights synchronization and scheduling to reduce bubbles, improved MoE training stability, and verl 0.8.0 upgrade.
 * [2026-06] 🎉 Two papers accepted by ICML 2026: [Learn-to-Ask](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/learn_to_ask), and [LLM-RL entropy dynamics](https://github.com/agentscope-ai/Trinity-RFT/tree/main/examples/entropy).
 * [2026-04] [[Release Notes]](https://github.com/agentscope-ai/Trinity-RFT/releases/tag/v0.5.2) Trinity-RFT v0.5.2 released: support for Qwen3.5 series, bug fixes and optimizations.
