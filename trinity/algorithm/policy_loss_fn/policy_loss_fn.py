@@ -36,8 +36,11 @@ class PolicyLossFnMeta(ABCMeta):
         3. Apply decorator to automatically convert input parameter names using the mapper
         """
         signature = inspect.signature(dct["__call__"])
+        runtime_keys = set(dct.get("_runtime_keys", ()))
         param_names = [
-            key for key in signature.parameters.keys() if key not in PolicyLossFnMeta.ignore_keys
+            key
+            for key in signature.parameters.keys()
+            if key not in PolicyLossFnMeta.ignore_keys and key not in runtime_keys
         ]
         dct["_select_keys"] = param_names
 
@@ -54,7 +57,9 @@ class PolicyLossFnMeta(ABCMeta):
                 new_kwargs = {}
                 for key, value in kwargs.items():
                     key = self.mapper.to_trinity(key)
-                    if key == "logprob" or key in self._select_keys:  # remove unused keys
+                    if (
+                        key == "logprob" or key in self._select_keys or key in runtime_keys
+                    ):  # remove unused keys
                         new_kwargs[key] = value
                 return func(self, *args, **new_kwargs)
 
