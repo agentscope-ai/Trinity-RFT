@@ -102,6 +102,8 @@ algorithm:
   optimizer:
     lr: 1e-6
     lr_scheduler_type: "constant"
+    fused: true
+    foreach: false
   # The following parameters are optional
   # If not specified, they will automatically be set based on the `algorithm_type`
   sample_strategy: "default"
@@ -117,6 +119,8 @@ algorithm:
   - `lr`: Learning rate for actor.
   - `warmup_style`: Deprecated, use `lr_scheduler_type` instead. We will remove this field in future versions.
   - `lr_scheduler_type`: Learning rate scheduler type for actor model. Default is `constant`. Supported types: `constant`, `cosine`.
+  - `fused`: Optional PyTorch optimizer setting for FSDP/FSDP2 trainers. When unset, the backend default is used. This setting is ignored by Megatron trainers.
+  - `foreach`: Optional PyTorch optimizer setting for FSDP/FSDP2 trainers. When unset, the backend default is used. This setting is ignored by Megatron trainers.
 - `sample_strategy`: The sampling strategy used for loading experiences from experience buffer. Supported types: `default`, `staleness_control`, `mix`.
 - `advantage_fn`: The advantage function used for computing advantages.
 - `kl_penalty_fn`: The KL penalty function used for computing KL penalty applied in reward.

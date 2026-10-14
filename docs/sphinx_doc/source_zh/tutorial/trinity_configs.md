@@ -102,6 +102,8 @@ algorithm:
   optimizer:
     lr: 1e-6
     lr_scheduler_type: constant
+    fused: true
+    foreach: false
   # 以下参数为可选
   # 若未指定，将根据 `algorithm_type` 自动设置
   sample_strategy: "default"
@@ -117,6 +119,8 @@ algorithm:
   - `lr`: 优化器的学习率。
   - `warmup_style`：已弃用，请改用 `lr_scheduler_type`。该域将会在未来版本中移除。
   - `lr_scheduler_type`：Actor 模型的学习率调度器类型。默认值为 `constant`。支持类型：`constant`、`cosine`。
+  - `fused`：FSDP/FSDP2 trainer 的可选 PyTorch 优化器设置。未设置时使用后端默认值；Megatron trainer 会忽略该设置。
+  - `foreach`：FSDP/FSDP2 trainer 的可选 PyTorch 优化器设置。未设置时使用后端默认值；Megatron trainer 会忽略该设置。
 - `sample_strategy`: 从 experience buffer 加载 experience 时使用的采样策略。支持类型：`default`、`staleness_control`、`mix`。
 - `advantage_fn`: 用于计算优势值的函数。
 - `kl_penalty_fn`: 用于在奖励中计算 KL 惩罚的函数。
