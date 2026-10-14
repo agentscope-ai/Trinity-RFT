@@ -216,26 +216,28 @@ for exp in exp_list:
 
 **A:** 目前支持两种加载方式：
 
+检查点路径遵循 `${checkpoint_root_dir}/${project}/${group}/${name}`；当 `group` 为空时，该路径层级会被省略。
+
 1. **推荐方式**：使用 `trinity convert` 命令将原始检查点转换为标准的 Hugging Face 格式。
    转换后，你就可以像加载普通 Hugging Face 模型一样直接使用它。
 
    转换单个检查点（指向某个 `global_step_*` 目录或其子目录均可）：
 
    ```bash
-   trinity convert -c /path/to/checkpoint_root/project/name/global_step_100
+   trinity convert -c ${checkpoint_root_dir}/${project}/${group}/${name}/global_step_100
    ```
 
    批量转换指定 step 的检查点（支持逗号分隔多个 step）：
 
    ```bash
-   trinity convert -c /path/to/checkpoint_root/project/name -s 100,200,300
+   trinity convert -c ${checkpoint_root_dir}/${project}/${group}/${name} -s 100,200,300
    ```
 
    如果某些 step 的目录不存在或转换失败，命令会跳过并继续处理其余 step，最后输出成功/失败的汇总报告。
 
    > **特殊情况**：如果 `global_step_*/actor/huggingface/` 目录下缺少 `config.json`（通常是因为训练时未完整保存配置），需要使用 `--base-model-dir` 指定原始基础模型的路径：
    > ```bash
-   > trinity convert -c /path/to/checkpoint_root/project/name -b /path/to/your/base/model
+   > trinity convert -c ${checkpoint_root_dir}/${project}/${group}/${name} -b /path/to/your/base/model
    > ```
 
 2. **直接加载（适用于 FSDP 训练的 actor 检查点）**：
@@ -247,9 +249,9 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from trinity.common.models.utils import load_fsdp_state_dict_from_verl_checkpoint
 
 # 假设我们需要第 780 步的检查点；
-# model_path、checkpoint_root_dir、project 和 name 已定义
+# model_path、checkpoint_root_dir、project、group 和 name 已定义
 model = AutoModelForCausalLM.from_pretrained(model_path)
-ckp_path = os.path.join(checkpoint_root_dir, project, name, "global_step_780", "actor")
+ckp_path = os.path.join(checkpoint_root_dir, project, group, name, "global_step_780", "actor")
 model.load_state_dict(load_fsdp_state_dict_from_verl_checkpoint(ckp_path))
 ```
 
