@@ -50,10 +50,9 @@ class KLFn(ABC):
         attention_mask = experiences.batch["attention_mask"]
         response_mask = experiences.batch["response_mask"]
         assert response_mask.shape == attention_mask[:, -response_length:].shape
-        logprob = experiences.batch["old_log_probs"]
-        ref_logprob = experiences.batch["ref_log_prob"]
-
         if "ref_log_prob" in experiences.batch.keys():
+            logprob = experiences.batch["old_log_probs"]
+            ref_logprob = experiences.batch["ref_log_prob"]
             kl = self.calculate_kl(logprob, ref_logprob)
             kl = kl * response_mask
             kl_coef = self.kl_coef

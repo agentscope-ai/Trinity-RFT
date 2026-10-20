@@ -129,3 +129,34 @@ class KLFnTest(unittest.TestCase):
             old_logprob=self.old_logprob,
         )
         self.assertGreater(kl_loss_sum.item(), kl_loss_mean.item())
+
+    def _penalty_batch(self, with_ref: bool):
+        from verl import DataProto
+
+        tensors = {
+            "responses": torch.zeros(4, 10, dtype=torch.long),
+            "token_level_scores": torch.rand(4, 10),
+            "attention_mask": torch.ones(4, 15, dtype=torch.long),
+            "response_mask": self.response_mask.long(),
+            "old_log_probs": self.logprob,
+        }
+        if with_ref:
+            tensors["ref_log_prob"] = self.ref_logprob
+        return DataProto.from_dict(tensors)
+
+    def test_kl_penalty_to_reward_without_reference(self):
+        kl_fn = KL_FN.get("k1")(kl_coef=0.1)
+        batch = self._penalty_batch(with_ref=False)
+        scores = batch.batch["token_level_scores"].clone()
+        batch, metrics = kl_fn.apply_kl_penalty_to_reward(batch)
+        self.assertTrue(torch.equal(batch.batch["token_level_rewards"], scores))
+        self.assertEqual(metrics["kl_coef"], 0.0)
+        self.assertEqual(metrics["kl"], 0.0)
+
+    def test_kl_penalty_to_reward_with_reference(self):
+        kl_fn = KL_FN.get("k1")(kl_coef=0.1)
+        batch = self._penalty_batch(with_ref=True)
+        scores = batch.batch["token_level_scores"].clone()
+        batch, _ = kl_fn.apply_kl_penalty_to_reward(batch)
+        expected = scores - 0.1 * (self.logprob - self.ref_logprob) * self.response_mask
+        self.assertTrue(torch.allclose(batch.batch["token_level_rewards"], expected))
