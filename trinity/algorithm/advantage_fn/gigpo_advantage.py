@@ -167,8 +167,8 @@ class GiGPOAdvantageFn(AdvantageFn, ExperienceOperator):
         """Compute GiGPO advantages for a batch of multi-step experiences.
 
         Episode-level: group by task, compare trajectory returns R(tau) across
-        runs (GRPO-style). Step-level: group by ``env_state_hash`` across the
-        batch, compare discounted returns R_t; singleton anchors get A_S = 0.
+        runs (GRPO-style). Step-level: group by ``env_state_hash`` within each
+        task, compare discounted returns R_t; singleton anchors get A_S = 0.
 
         Args:
             exps: Multi-step experiences with ``eid.task``, ``eid.run``,
@@ -223,7 +223,9 @@ class GiGPOAdvantageFn(AdvantageFn, ExperienceOperator):
             if state_hash is None:
                 continue
             r_t = exp_to_discounted_return[id(exp)]
-            anchor_buckets.setdefault(str(state_hash), []).append((exp, r_t))
+            # Anchor states are matched within the task group (as in GiGPO), so identical observations
+            # from different tasks are not compared.
+            anchor_buckets.setdefault(f"{exp.eid.tid}/{state_hash}", []).append((exp, r_t))
 
         exp_to_a_s: Dict[int, float] = {id(exp): 0.0 for exp in exps}
         for members in anchor_buckets.values():

@@ -108,6 +108,32 @@ class TestGiGPOAdvantageFn(unittest.TestCase):
         )
         self.assertGreater(metrics["gigpo/anchor_groups_size_gt1"], 0)
 
+    def test_anchor_states_are_not_shared_across_tasks(self):
+        """The same observation in two different tasks is not one anchor group."""
+        fn_full = GiGPOAdvantageFn(omega=1.0, gamma=1.0, fnorm="none")
+        fn_episode = GiGPOAdvantageFn(omega=0.0, gamma=1.0, fnorm="none")
+        shared_hash = "Observation: Nothing happens."
+        exps = [
+            # task 0: the run that saw the shared observation goes on to succeed
+            _make_exp(0, 0, 0, step_reward=1.0, env_state_hash=shared_hash),
+            _make_exp(0, 1, 0, step_reward=0.0, env_state_hash="task0_other"),
+            # task 1: the run that saw the same observation fails
+            _make_exp(1, 0, 0, step_reward=0.0, env_state_hash=shared_hash),
+            _make_exp(1, 1, 0, step_reward=1.0, env_state_hash="task1_other"),
+        ]
+        for e in exps:
+            e.reward = e.info["step_reward"]
+        p_full, metrics = fn_full.process(list(exps))
+        p_episode, _ = fn_episode.process(list(exps))
+
+        self.assertEqual(metrics["gigpo/anchor_groups_size_gt1"], 0)
+
+        def by_run(exp):
+            return (exp.eid.task, exp.eid.run)
+
+        for a, b in zip(sorted(p_full, key=by_run), sorted(p_episode, key=by_run)):
+            self.assertTrue(torch.allclose(a.advantages, b.advantages))
+
     def test_singleton_anchor_zero_step_adv(self):
         """Unique anchor hashes -> A^S = 0; only episode term remains."""
         fn_none = GiGPOAdvantageFn(omega=1.0, fnorm="none")
