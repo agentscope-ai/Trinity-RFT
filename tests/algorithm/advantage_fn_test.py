@@ -394,3 +394,20 @@ class TestGroupedAdvantageFn(unittest.TestCase):
         # Verify that all remaining experiences are from task 2
         for exp in processed_exps:
             self.assertEqual(exp.eid.task, 2)
+
+    def test_rec_advantage_single_experience_group(self):
+        advantage_fn_cls = ADVANTAGE_FN.get("rec")
+        for args in [{}, {"std_normalize": True}, {"drop": "balance"}]:
+            advantage_fn = advantage_fn_cls(**{**advantage_fn_cls.default_args(), **args})
+            exps = [
+                Experience(
+                    eid=EID(batch=0, task=0, run=0),
+                    tokens=torch.zeros(5),
+                    prompt_length=2,
+                    reward=0.5,
+                )
+            ]
+            processed_exps, _ = advantage_fn(exps)
+            self.assertEqual(len(processed_exps), 1)
+            # a group of one has no baseline (mean 0, std 1), as in GRPO
+            self.assertTrue(torch.allclose(processed_exps[0].advantages, torch.full((3,), 0.5)))

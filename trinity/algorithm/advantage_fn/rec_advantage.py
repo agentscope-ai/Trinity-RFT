@@ -40,11 +40,11 @@ class RECGroupedAdvantage(GroupAdvantage):
         N = len(exps)
         metrics = {}
         with torch.no_grad():
+            rewards = torch.tensor([exp.reward for exp in exps], dtype=torch.float32)
             if len(exps) == 1:
                 group_reward_mean = torch.tensor(0.0)
                 group_reward_std = torch.tensor(1.0)  # set to 1.0 to avoid division by zero
             else:
-                rewards = torch.tensor([exp.reward for exp in exps], dtype=torch.float32)
                 group_reward_mean = torch.mean(rewards)
                 group_reward_std = torch.std(rewards)
 
