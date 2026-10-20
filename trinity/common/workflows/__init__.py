@@ -36,6 +36,7 @@ WORKFLOWS: Registry = Registry(
         "sciworld_workflow": "trinity.common.workflows.envs.sciworld.sciworld_workflow.SciWorldWorkflow",
         "webshop_workflow": "trinity.common.workflows.envs.webshop.webshop_workflow.WebShopWorkflow",
         "intercode_sql_workflow": "trinity.common.workflows.envs.intercode_sql.intercode_sql_workflow.InterCodeSQLWorkflow",
+        "sqlite_sql_workflow": "trinity.common.workflows.envs.sqlite_sql.sqlite_sql_workflow.SQLiteSQLWorkflow",
         # general multi-turn
         "step_wise_alfworld_workflow": "trinity.common.workflows.envs.alfworld.alfworld_workflow.StepWiseAlfworldWorkflow",
         # ruler/llm_as_a_judge

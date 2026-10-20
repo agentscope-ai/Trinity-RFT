@@ -1,0 +1,81 @@
+project: "SQLITE_SQL"
+name: "BIRD_SQLITE_SQL_RFT"
+checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
+algorithm:
+  algorithm_type: grpo
+  repeat_times: 8
+  optimizer:
+    lr: 1e-6
+model:
+  model_path: ${oc.env:TRINITY_MODEL_PATH,Qwen/Qwen2.5-7B-Instruct}
+  max_prompt_tokens: 12288
+  max_response_tokens: 1024
+  max_model_len: 13312
+cluster:
+  node_num: 1
+  gpu_per_node: 8
+buffer:
+  total_epochs: 1
+  batch_size: 16
+  explorer_input:
+    taskset:
+      name: bird_sqlite_sql
+      storage_type: file
+      path: 'examples/grpo_sqlite_sql/bird_data'
+      split: train
+      format:
+        prompt_key: 'question'
+      rollout_args:
+        temperature: 1.0
+        logprobs: 0
+      workflow_args:
+        db_root: ${oc.env:BIRD_TRAIN_DB_ROOT,train/train_databases}
+        max_env_steps: 5
+        max_obs_rows: 10
+        timeout: 30
+    eval_tasksets:
+      - name: bird_minidev_eval
+        storage_type: file
+        path: 'examples/grpo_sqlite_sql/bird_data'
+        split: test
+        format:
+          prompt_key: 'question'
+        rollout_args:
+          temperature: 0.0
+          logprobs: 0
+        workflow_args:
+          db_root: ${oc.env:BIRD_DEV_DB_ROOT,minidev/MINIDEV/dev_databases}
+          max_env_steps: 5
+          max_obs_rows: 10
+          timeout: 30
+        repeat_times: 1
+    default_workflow_type: 'sqlite_sql_workflow'
+  trainer_input:
+    experience_buffer:
+      name: sqlite_sql_buffer
+      storage_type: queue
+      path: 'sqlite:///sqlite_sql.db'
+explorer:
+  eval_on_startup: true
+  eval_interval: 20
+  runner_per_model: 16
+  max_timeout: 3600
+  rollout_model:
+    engine_num: 2
+    tensor_parallel_size: 2
+    enable_prefix_caching: true
+    enforce_eager: true
+    dtype: bfloat16
+    seed: 42
+    gpu_memory_utilization: 0.7
+    enable_chunked_prefill: true
+synchronizer:
+  sync_method: 'nccl'
+  sync_interval: 8
+  sync_timeout: 1200
+trainer:
+  save_interval: 100
+  grad_clip: 1.0
+  use_dynamic_bsz: true
+  max_token_len_per_gpu: 13312
+  ulysses_sequence_parallel_size: 1
