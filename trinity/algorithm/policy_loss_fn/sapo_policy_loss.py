@@ -112,9 +112,9 @@ class SAPOPolicyLossFn(PolicyLossFn):
         soft_gate = self.soft_gate_function(ratio, advantages)
 
         # SAPO loss: -E[f_{i,t}(r_{i,t}) * Â_i]
-        # We multiply by logprob to get the policy gradient
-        # The gradient of log π_θ gives us the policy gradient direction
-        sapo_loss = -advantages * soft_gate.detach() * logprob
+        # Differentiate f(r) through the ratio: grad = f'(r) * r * A * grad(log pi), i.e. the weight
+        # 4 p (1 - p) * r of the paper (Eq. 7-8), which peaks at r = 1 and decays away from it.
+        sapo_loss = -advantages * soft_gate
 
         # Aggregate loss across tokens
         loss = aggregate_loss(sapo_loss, action_mask, loss_agg_mode=self.loss_agg_mode)

@@ -148,7 +148,7 @@ class VerlPolicyLossTest(unittest.TestCase):
         policy_loss_fn_args = policy_loss_fn_cls.default_args()
         policy_loss_fn = policy_loss_fn_cls(**policy_loss_fn_args)
         loss, metrics = policy_loss_fn(log_prob=self.logprob, **self.input_data.batch)
-        sapo_loss = torch.tensor(-0.05128994956612587)
+        sapo_loss = torch.tensor(0.24060271680355072)
         ppo_kl = torch.tensor(-0.21663446724414825)
         avg_soft_gate = torch.tensor(2.3191137313842773)
         avg_ratio = torch.tensor(1.630766749382019)
@@ -159,3 +159,21 @@ class VerlPolicyLossTest(unittest.TestCase):
         self.assertTrue(torch.allclose(torch.tensor(metrics["avg_soft_gate"]), avg_soft_gate))
         self.assertTrue(torch.allclose(torch.tensor(metrics["avg_ratio"]), avg_ratio))
         self.assertTrue(torch.allclose(torch.tensor(metrics["pos_adv_frac"]), pos_adv_frac))
+
+    def test_sapo_policy_loss_gradient(self):
+        # SAPO (arXiv:2511.20347, Eq. 7-8): d/dlogpi of -f(r) A is -w r A with w = 4 p (1 - p),
+        # p = sigmoid(tau (r - 1)); the weight is 1 at r = 1 and decays away from it.
+        policy_loss_fn_cls = POLICY_LOSS_FN.get("sapo")
+        policy_loss_fn = policy_loss_fn_cls(**policy_loss_fn_cls.default_args())
+        batch = self.input_data.batch
+        logprob = self.logprob.clone().requires_grad_(True)
+        loss, _ = policy_loss_fn(log_prob=logprob, **batch)
+        loss.backward()
+
+        mask = batch["response_mask"].float()
+        advantages = batch["advantages"]
+        ratio = torch.exp(self.logprob - batch["old_log_probs"])
+        tau = torch.where(advantages > 0, torch.tensor(1.0), torch.tensor(1.05))
+        p = torch.sigmoid(tau * (ratio - 1))
+        expected = -4 * p * (1 - p) * ratio * advantages * mask / mask.sum()
+        self.assertTrue(torch.allclose(logprob.grad, expected, atol=1e-6))
