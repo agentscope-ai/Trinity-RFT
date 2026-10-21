@@ -8,6 +8,7 @@ The loss function signature expected by veRL's engine:
 """
 import torch
 from tensordict import TensorDict
+from verl.utils import tensordict_utils as tu
 from verl.workers.utils.padding import no_padding_2_padding
 
 from trinity.algorithm import ENTROPY_LOSS_FN, KL_FN, POLICY_LOSS_FN
@@ -96,7 +97,33 @@ class TrinityPolicyLoss:
         # different scaling semantics.
         metrics["final_loss"] = policy_loss.detach().item()
 
-        return policy_loss, metrics
+        return policy_loss * self._global_batch_share(data, response_mask), metrics
+
+    def _global_batch_share(self, data: TensorDict, response_mask: torch.Tensor) -> float:
+        """Weight that turns this micro-batch's local loss into its share of the mini-batch loss.
+
+        veRL's engine sums the losses of all micro-batches before the optimizer step
+        (Megatron's per-micro-batch division is undone by the engine) and the gradients
+        are then averaged over data-parallel ranks, so a loss normalized only within the
+        micro-batch would be multiplied by the number of micro-batches per rank. Like
+        veRL's own ``ppo_loss``, weight each micro-batch by its fraction of the global
+        tokens (token-mean) or sequences (seq-mean-*), times ``dp_size``.
+        """
+        dp_size = tu.get_non_tensor_data(data, key="dp_size", default=1)
+        # losses without loss_agg_mode (e.g. DPO) average over the sequences of the micro-batch
+        loss_agg_mode = getattr(self.policy_loss_fn, "loss_agg_mode", "seq-mean-token-mean")
+        if loss_agg_mode == "seq-mean-token-sum-norm":
+            # already a sum over the micro-batch: only undo the data-parallel averaging
+            return dp_size
+        if loss_agg_mode == "token-mean":
+            global_count = tu.get_non_tensor_data(data, key="batch_num_tokens", default=None)
+            local_count = response_mask.sum().item()
+        else:
+            global_count = tu.get_non_tensor_data(data, key="global_batch_size", default=None)
+            local_count = response_mask.shape[0]
+        if not global_count:
+            return 1.0
+        return local_count * dp_size / global_count
 
     def __repr__(self) -> str:
         return (
