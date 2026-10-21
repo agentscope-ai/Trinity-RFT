@@ -22,6 +22,11 @@ class JSDAdvantage(AdvantageFn):
     - beta=1: JSD = KL(teacher || student)  [pure KL]
     - else: JSD = beta*KL(teacher||M) + (1-beta)*KL(student||M), M = mixture in log-space.
 
+    Only the sampled token's log-probs are available and the tokens are sampled from the
+    student, so the per-token value is a REINFORCE cost whose expected gradient is the
+    gradient of the divergence. For the mixture this cost is (1-beta) * (log s - log m):
+    d/ds(y) [beta*KL(T||M) + (1-beta)*KL(S||M)] = (1-beta) * log(s(y) / m(y)).
+
     The teacher_logprobs should be stored in Experience.teacher_logprobs
     by the workflow during exploration.
     """
@@ -57,7 +62,7 @@ class JSDAdvantage(AdvantageFn):
         Compute JSD per token in log-space only (no exp).
         - beta=0: KL(student || teacher) = student_logprobs - teacher_logprobs
         - beta=1: KL(teacher || student) = teacher_logprobs - student_logprobs
-        - else: mixture log_m = logsumexp([s+log(1-beta), t+log(beta)]); JSD = beta*(t-log_m) + (1-beta)*(s-log_m).
+        - else: mixture log_m = logsumexp([s+log(1-beta), t+log(beta)]); cost = (1-beta)*(s-log_m).
         """
         beta = self.lambda_coef
         s = student_logprobs
@@ -81,10 +86,9 @@ class JSDAdvantage(AdvantageFn):
                 torch.stack([s + log_1_minus_beta, t + log_beta]),
                 dim=0,
             )
-            # KL(teacher || mixture) = t - log_m, KL(student || mixture) = s - log_m (log-space, no exp)
-            kl_teacher = t - mixture_log
-            kl_student = s - mixture_log
-            jsd = beta_t * kl_teacher + (1 - beta_t) * kl_student
+            # The tokens are sampled from the student, so t - log_m is not an estimate of
+            # KL(teacher || mixture); the gradient of the whole JSD comes from this term alone.
+            jsd = (1 - beta_t) * (s - mixture_log)
 
         if mask is not None:
             jsd = jsd * mask
@@ -128,9 +132,7 @@ class JSDAdvantage(AdvantageFn):
                     torch.stack([s_chunk + log_1_minus_beta, t_chunk + log_beta]),
                     dim=0,
                 )
-                kl_t = t_chunk - mixture_log
-                kl_s = s_chunk - mixture_log
-                jsd_valid[start:end] = beta_t * kl_t + (1 - beta_t) * kl_s
+                jsd_valid[start:end] = (1 - beta_t) * (s_chunk - mixture_log)
 
         out = flat_s.new_zeros(flat_s.shape)
         out[valid] = jsd_valid

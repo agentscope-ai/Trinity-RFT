@@ -394,3 +394,50 @@ class TestGroupedAdvantageFn(unittest.TestCase):
         # Verify that all remaining experiences are from task 2
         for exp in processed_exps:
             self.assertEqual(exp.eid.task, 2)
+
+
+class TestJSDAdvantageFn(unittest.TestCase):
+    """The JSD advantage must follow the gradient of the generalized JSD."""
+
+    @staticmethod
+    def _expected_policy_gradient(advantage_fn, theta, teacher_logprobs, chunked):
+        # Exact expectation over the sampled token: E_{y~student}[A(y) * grad log student(y)].
+        student_logprobs = torch.log_softmax(theta, dim=-1)
+        detached = student_logprobs.detach()
+        if chunked:
+            cost = advantage_fn._js_divergence_per_token_chunked(
+                detached[None], teacher_logprobs[None], torch.ones(1, theta.numel())
+            )[0]
+        else:
+            cost = advantage_fn._js_divergence_per_token(detached, teacher_logprobs)
+        surrogate = (detached.exp() * -cost * student_logprobs).sum()
+        return torch.autograd.grad(surrogate, theta)[0]
+
+    def test_jsd_advantage_descends_jsd(self):
+        torch.manual_seed(0)
+        teacher_logprobs = torch.log_softmax(2 * torch.randn(8), dim=-1)
+        for beta in (0.3, 0.5, 0.9):
+            for chunked in (False, True):
+                advantage_fn = ADVANTAGE_FN.get("jsd")(lambda_coef=beta, chunk_size=3)
+                theta = torch.randn(8, requires_grad=True)
+                policy_gradient = self._expected_policy_gradient(
+                    advantage_fn, theta, teacher_logprobs, chunked
+                )
+
+                student_logprobs = torch.log_softmax(theta, dim=-1)
+                mixture = torch.logsumexp(
+                    torch.stack(
+                        [
+                            student_logprobs + np.log(1 - beta),
+                            teacher_logprobs + np.log(beta),
+                        ]
+                    ),
+                    dim=0,
+                )
+                jsd = (
+                    beta * (teacher_logprobs.exp() * (teacher_logprobs - mixture)).sum()
+                    + (1 - beta) * (student_logprobs.exp() * (student_logprobs - mixture)).sum()
+                )
+                jsd_gradient = torch.autograd.grad(jsd, theta)[0]
+
+                torch.testing.assert_close(policy_gradient, -jsd_gradient)
