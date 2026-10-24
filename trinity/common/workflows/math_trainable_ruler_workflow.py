@@ -144,7 +144,7 @@ class MathTrainableRULERWorkflow(SimpleWorkflow):
 
         question_prompt = (
             f"Question: {self.task_desc}\n\n"
-            f"""Solution format requirement: first think about the reasoning process in the mind and then provides the final answer. The reasoning process and answer are enclosed within <think> </think> and <answer> </answer> tags, respectively, i.e.,
+            f"""Solution format requirement: first think about the reasoning process in the mind and then provide the final answer. The reasoning process and answer are enclosed within <think> </think> and <answer> </answer> tags, respectively, i.e.,
 <think> reasoning process here </think>
 <answer> answer here </answer>."""
         )

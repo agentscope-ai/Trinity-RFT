@@ -32,7 +32,7 @@ class MathRULERWorkflow(SimpleWorkflow):
     def reset(self, task: Task):
         """
         Note that in this workflow, MathRewardFn is only used for calculating the 'golden reward',
-        whereasa the rewards used by RL training are calculated by RULER.
+        whereas the rewards used by RL training are calculated by RULER.
         """
 
         if task.reward_fn is None:
@@ -94,7 +94,7 @@ class MathRULERWorkflow(SimpleWorkflow):
 
         question_prompt = (
             f"Question: {self.task_desc}\n\n"
-            f"""Solution format requirement: first think about the reasoning process in the mind and then provides the final answer. The reasoning process and answer are enclosed within <think> </think> and <answer> </answer> tags, respectively, i.e.,
+            f"""Solution format requirement: first think about the reasoning process in the mind and then provide the final answer. The reasoning process and answer are enclosed within <think> </think> and <answer> </answer> tags, respectively, i.e.,
 <think> reasoning process here </think>
 <answer> answer here </answer>."""
         )

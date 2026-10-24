@@ -1,4 +1,4 @@
-"""Filed based buffer reader."""
+"""File-based buffer reader."""
 
 from typing import List, Optional, Tuple
 
