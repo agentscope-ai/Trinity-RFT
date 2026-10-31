@@ -90,6 +90,22 @@ synchronizer:
 上述设置意味着 `Explorer` 每运行 2 步就会与 `Trainer` 同步一次，且无论 `Trainer` 当前完成了多少步都会继续运行。这确保了只要 `Explorer` 在运行，`Trainer` 就总能获得足够的 experience 来启动训练步骤。
 ```
 
+### 内置算子
+
+Trinity-RFT 内置了以下 experience 算子，它们均已在 {class}`trinity.buffer.operators.EXPERIENCE_OPERATORS` 中注册，可在 `experience_pipeline.operators` 中通过名称直接使用：
+
+| 名称 | 说明 | 主要参数 |
+|------|------|----------|
+| `reward_filter` | 丢弃 reward 低于阈值的 experience。 | `threshold`（默认 `0.0`） |
+| `reward_std_filter` | 丢弃组内 reward 标准差不高于阈值（没有学习信号）的任务组。 | `threshold`（默认 `0.0`） |
+| `dapo_dynamic_sampling` | DAPO 动态采样：仅保留部分（而非全部）rollout 正确的任务组。 | `metric_key`（默认 `accuracy`）、`correct_threshold`（默认 `0.0`） |
+| `mask_response_truncated` | 将被截断的响应的 `action_mask` 置零，使其不参与 loss 计算。 | - |
+| `invalid_reward_filter` | 丢弃 reward 为 `None` 或 `NaN` 的 experience。 | - |
+| `repetition_filter` | 丢弃生成响应高度重复（重复坍缩）的 experience。仅对模型生成的 token 计算重复 n-gram 比例 `1 - unique_ngrams / total_ngrams`（忽略 prompt token 以及 `action_mask` 为 0 的 token），当该比例严格大于 `max_repeat_ratio` 时丢弃。空响应及短于 `min_response_tokens` 的响应总是保留。 | `ngram_size`（默认 `4`）、`max_repeat_ratio`（默认 `0.5`）、`min_response_tokens`（默认 `32`） |
+| `reward_shaping_mapper` | 利用 `Experience.info` 中的统计量对 reward 进行重塑。 | `reward_shaping_configs` |
+| `pass_rate_calculator` | 计算每个任务组的通过率。 | - |
+| `data_juicer` | 对 experience 应用 Data-Juicer 算子。 | `config_path` |
+
 ### 进阶特性
 
 #### 在 Operator 中使用辅助模型

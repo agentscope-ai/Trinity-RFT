@@ -81,6 +81,22 @@ The `RewardFilter` reduces the number of experiences, which may cause the traine
 The above setting means that the `Explorer` will sync with the `Trainer` every 2 steps and will continue running regardless of how many steps the `Trainer` has completed. This ensures that the `Trainer` can always get enough experiences to start a training step as long as the `Explorer` is running.
 ```
 
+### Built-in Operators
+
+Trinity-RFT ships with the following experience operators, all registered in {class}`trinity.buffer.operators.EXPERIENCE_OPERATORS` and usable by name in `experience_pipeline.operators`:
+
+| Name | Description | Main Arguments |
+|------|-------------|----------------|
+| `reward_filter` | Drop experiences whose reward is below a threshold. | `threshold` (default `0.0`) |
+| `reward_std_filter` | Drop task groups whose reward standard deviation is not above a threshold (no learning signal). | `threshold` (default `0.0`) |
+| `dapo_dynamic_sampling` | DAPO dynamic sampling: keep a task group only when some but not all rollouts are correct. | `metric_key` (default `accuracy`), `correct_threshold` (default `0.0`) |
+| `mask_response_truncated` | Zero the `action_mask` of truncated responses so they do not contribute to the loss. | - |
+| `invalid_reward_filter` | Drop experiences whose reward is `None` or `NaN`. | - |
+| `repetition_filter` | Drop experiences whose generated response is highly repetitive (repetition collapse). The response is scored by its duplicate n-gram ratio `1 - unique_ngrams / total_ngrams` over the model-generated tokens only (prompt tokens and tokens with a zero `action_mask` are ignored), and dropped when the ratio is strictly greater than `max_repeat_ratio`. Empty responses and responses shorter than `min_response_tokens` are always kept. | `ngram_size` (default `4`), `max_repeat_ratio` (default `0.5`), `min_response_tokens` (default `32`) |
+| `reward_shaping_mapper` | Reshape rewards using statistics stored in `Experience.info`. | `reward_shaping_configs` |
+| `pass_rate_calculator` | Compute the pass rate of each task group. | - |
+| `data_juicer` | Apply Data-Juicer operators to experiences. | `config_path` |
+
 ### Advanced Features
 
 #### Using Auxiliary Models inside Operators
