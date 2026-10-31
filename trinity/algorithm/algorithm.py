@@ -396,6 +396,33 @@ class SAPOAlgorithm(AlgorithmType):
         }
 
 
+class BAPOAlgorithm(AlgorithmType):
+    """BAPO (Balanced Policy Optimization with Adaptive Clipping) algorithm.
+
+    BAPO keeps the PPO-clip surrogate but adapts the clipping bounds for every update,
+    so that positive-advantage tokens keep a target share of the policy gradient.
+    See https://arxiv.org/abs/2510.18927
+    """
+
+    use_critic: bool = False
+    use_reference: bool = True
+    compute_advantage_in_trainer: bool = False
+    can_balance_batch: bool = True
+    schema: str = "experience"
+
+    @classmethod
+    def default_config(cls) -> Dict:
+        return {
+            "repeat_times": 2,
+            "advantage_fn": "grpo",
+            "sample_strategy": "default",
+            "policy_loss_fn": "bapo",
+            "kl_penalty_fn": "none",
+            "kl_loss_fn": "k2",
+            "entropy_loss_fn": "default",
+        }
+
+
 class MIXAlgorithm(AlgorithmType):
     """MIX algorithm."""
 
