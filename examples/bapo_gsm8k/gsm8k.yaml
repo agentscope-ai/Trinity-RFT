@@ -1,0 +1,76 @@
+project: "Trinity-RFT-gsm8k"
+name: "qwen2.5-1.5B-gsm8k-bapo"
+checkpoint_root_dir: ${oc.env:TRINITY_CHECKPOINT_ROOT_DIR,./checkpoints}
+algorithm:
+  algorithm_type: bapo
+  repeat_times: 8
+  policy_loss_fn_args:
+    # clipping bounds are explicit importance-ratio values (Sec. 5.1 of the paper)
+    lower_bound_start: 0.6  # a-
+    lower_bound_max: 0.9  # b-
+    lower_bound_step: 0.02  # delta_2
+    upper_bound_start: 1.2  # a+
+    upper_bound_max: 3.0  # b+
+    upper_bound_step: 0.05  # delta_1
+    target_positive_ratio: 0.4  # rho_0
+    clip_ratio_c: 3.0
+    loss_agg_mode: token-mean
+  optimizer:
+    lr: 1e-6
+model:
+  model_path: ${oc.env:TRINITY_MODEL_PATH,Qwen/Qwen2.5-1.5B-Instruct}
+  max_response_tokens: 1024
+  max_model_len: 2048
+cluster:
+  node_num: 1
+  gpu_per_node: 8
+buffer:
+  total_epochs: 1
+  batch_size: 96
+  explorer_input:
+    taskset:
+      name: gsm8k
+      storage_type: file
+      path: ${oc.env:TRINITY_TASKSET_PATH,openai/gsm8k}
+      subset_name: 'main'
+      split: 'train'
+      format:
+        prompt_key: 'question'
+        response_key: 'answer'
+      rollout_args:
+        temperature: 1.0
+    eval_tasksets:
+    - name: gsm8k-eval
+      storage_type: file
+      path: ${oc.env:TRINITY_TASKSET_PATH,openai/gsm8k}
+      subset_name: 'main'
+      split: 'test'
+      format:
+        prompt_key: 'question'
+        response_key: 'answer'
+    default_workflow_type: 'math_workflow'
+  trainer_input:
+    experience_buffer:
+      name: gsm8k_buffer
+      storage_type: queue
+      path: 'sqlite:///gsm8k.db'
+explorer:
+  eval_interval: 50
+  runner_per_model: 8
+  rollout_model:
+    engine_num: 2
+    tensor_parallel_size: 1
+    enable_prefix_caching: false
+    enforce_eager: true
+    dtype: bfloat16
+    seed: 42
+synchronizer:
+  sync_method: 'nccl'
+  sync_interval: 4
+  sync_timeout: 1200
+trainer:
+  save_interval: 100
+  grad_clip: 1.0
+  use_dynamic_bsz: true
+  max_token_len_per_gpu: 16384
+  ulysses_sequence_parallel_size: 1

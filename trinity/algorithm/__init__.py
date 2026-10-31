@@ -23,6 +23,7 @@ ALGORITHM_TYPE: Registry = Registry(
         "cispo": "trinity.algorithm.algorithm.CISPOAlgorithm",
         "gspo": "trinity.algorithm.algorithm.GSPOAlgorithm",
         "sapo": "trinity.algorithm.algorithm.SAPOAlgorithm",
+        "bapo": "trinity.algorithm.algorithm.BAPOAlgorithm",
         "mix": "trinity.algorithm.algorithm.MIXAlgorithm",
         "mix_chord": "trinity.algorithm.algorithm.MIXCHORDAlgorithm",
         "raft": "trinity.algorithm.algorithm.RAFTAlgorithm",
