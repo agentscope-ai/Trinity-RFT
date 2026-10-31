@@ -16,6 +16,7 @@ EXPERIENCE_OPERATORS: Registry = Registry(
         "pass_rate_calculator": "trinity.buffer.operators.mappers.pass_rate_calculator.PassRateCalculator",
         "data_juicer": "trinity.buffer.operators.data_juicer_operator.DataJuicerOperator",
         "invalid_reward_filter": "trinity.buffer.operators.filters.reward_filter.InvalidRewardFilter",
+        "repetition_filter": "trinity.buffer.operators.filters.repetition_filter.RepetitionFilter",
     },
 )
 
