@@ -134,6 +134,7 @@ class GRPOGroupedAdvantage(GroupAdvantage):
     ) -> Tuple[List[Experience], Dict]:
         metrics = {}
         with torch.no_grad():
+            rewards = torch.tensor([exp.reward for exp in exps], dtype=torch.float32)
             if len(exps) == 1:
                 group_reward_mean = torch.tensor(
                     0.0
@@ -143,8 +144,6 @@ class GRPOGroupedAdvantage(GroupAdvantage):
                     metrics["skipped_count"] = 1
                     exps.clear()  # Clear experiences if only one experience
             else:
-                rewards = torch.tensor([exp.reward for exp in exps], dtype=torch.float32)
-
                 if self.rank_penalty is not None:
                     # Correct bias by adjusting rewards based on their ranks
                     old_log_probs = torch.tensor(
@@ -162,11 +161,12 @@ class GRPOGroupedAdvantage(GroupAdvantage):
                     metrics["skipped_count"] = len(exps)
                     exps.clear()
 
-            for exp in exps:
+            # use the (possibly rank-penalized) rewards the group statistics were computed from
+            for exp, reward in zip(exps, rewards):
                 if self.std_cal_level == "batch" and precomputed_std is not None:
-                    score = (exp.reward - group_reward_mean) / (precomputed_std + self.epsilon)
+                    score = (reward - group_reward_mean) / (precomputed_std + self.epsilon)
                 else:
-                    score = (exp.reward - group_reward_mean) / (group_reward_std + self.epsilon)
+                    score = (reward - group_reward_mean) / (group_reward_std + self.epsilon)
                 exp.advantages = score * exp.action_mask
                 exp.returns = exp.advantages.clone()
 
