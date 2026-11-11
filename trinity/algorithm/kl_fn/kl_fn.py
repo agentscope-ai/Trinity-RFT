@@ -37,8 +37,8 @@ class KLFn(ABC):
         """Update kl coefficient."""
         if self.adaptive:
             target_kl = self.target_kl
-            proportional_error = torch.clip(current_kl / target_kl - 1, -0.2, 0.2).item()  # type: ignore
-            multiplier = 1 + proportional_error * batch_size / self.horizon
+            proportional_error = min(max(current_kl / target_kl - 1, -0.2), 0.2)  # type: ignore
+            multiplier = 1 + proportional_error * batch_size / self.horizon  # type: ignore
             self.kl_coef *= multiplier
 
     def apply_kl_penalty_to_reward(self, experiences: Any) -> Tuple[Any, Dict]:

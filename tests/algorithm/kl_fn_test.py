@@ -129,3 +129,28 @@ class KLFnTest(unittest.TestCase):
             old_logprob=self.old_logprob,
         )
         self.assertGreater(kl_loss_sum.item(), kl_loss_mean.item())
+
+    def test_adaptive_kl_penalty_updates_coef(self):
+        from verl import DataProto
+
+        batch_size, prompt_len, resp_len = 4, 3, 5
+        response_mask = torch.ones(batch_size, resp_len)
+        batch = DataProto.from_dict(
+            {
+                "responses": torch.zeros(batch_size, resp_len, dtype=torch.long),
+                "attention_mask": torch.ones(batch_size, prompt_len + resp_len),
+                "response_mask": response_mask,
+                "token_level_scores": torch.zeros(batch_size, resp_len),
+                "old_log_probs": torch.zeros(batch_size, resp_len),
+                "ref_log_prob": torch.full((batch_size, resp_len), -0.5),
+            }
+        )
+        # k1 KL is 0.5 per token, so the proportional error is clipped to +0.2 / -0.2
+        for target_kl, multiplier in [(0.1, 1.2), (1.0, 0.8)]:
+            kl_fn = KL_FN.get("k1")(adaptive=True, kl_coef=0.1, target_kl=target_kl, horizon=10)
+            _, metrics = kl_fn.apply_kl_penalty_to_reward(batch)
+            self.assertAlmostEqual(metrics["kl"], 0.5, places=6)
+            self.assertAlmostEqual(metrics["kl_coef"], 0.1)
+            # verl AdaptiveKLController: coef *= 1 + clip(kl / target - 1, -0.2, 0.2) * n / horizon
+            expected = 0.1 * (1 + (multiplier - 1) * batch_size / 10)
+            self.assertAlmostEqual(kl_fn.kl_coef, expected, places=6)
