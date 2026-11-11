@@ -146,6 +146,30 @@ class TestGroupedAdvantageFn(unittest.TestCase):
             places=6,
         )
 
+    def test_grpo_rank_penalty_advantages_use_adjusted_rewards(self):
+        advantage_fn_cls = ADVANTAGE_FN.get("grpo")
+        advantage_fn = advantage_fn_cls(epsilon=1e-6, rank_penalty=0.25)
+        rewards = [1.0, 1.0, 0.0, 0.0]
+        mean_logprobs = [-0.1, -2.0, -0.5, -1.0]  # ranks (ascending): 3, 0, 2, 1
+        exps = [
+            Experience(
+                eid=EID(batch=0, task=0, run=i),
+                tokens=torch.zeros(5),
+                logprobs=torch.full((3,), mean_logprobs[i]),
+                prompt_length=2,
+                reward=rewards[i],
+            )
+            for i in range(4)
+        ]
+        exps, _ = advantage_fn(exps)
+
+        adjusted = torch.tensor([1.0 * (1 - 0.25 * 3 / 4), 1.0, 0.0, 0.0])
+        expected = (adjusted - adjusted.mean()) / (adjusted.std() + 1e-6)
+        advantages = torch.stack([exp.advantages[0] for exp in exps])
+        self.assertTrue(torch.allclose(advantages, expected, atol=1e-5))
+        # the less likely correct response gets the larger advantage
+        self.assertGreater(advantages[1].item(), advantages[0].item())
+
     def test_batch_level_std_grpo(self):
         advantage_fn_cls = ADVANTAGE_FN.get("grpo")
         self.assertIsNotNone(advantage_fn_cls)
